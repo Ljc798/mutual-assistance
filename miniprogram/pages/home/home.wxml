@@ -1,0 +1,8 @@
+<view class="page">
+  <view class="content">
+    <!-- 这两个 <p> 标签应该在不同的行显示 -->
+    <p>欢迎来到首页！</p>
+    <p>你可以在这里添加更多的页面内容</p>
+  </view>
+  <bottom-nav></bottom-nav>
+</view>

@@ -1,0 +1,16 @@
+.page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.content {
+    margin-top: 120rpx;
+    text-align: center;
+}
+
+p {
+    display: block;
+    margin-bottom: 10rpx;
+    font-size: 20px;
+}

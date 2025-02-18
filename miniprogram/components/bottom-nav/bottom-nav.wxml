@@ -1,0 +1,22 @@
+<view class="bottom-nav">
+  <view class="nav-item" bindtap="goToPage" data-page="home">
+  <image src="/assets/icons/home-2-svgrepo-com.svg" class="icons"/>
+    <text>首页</text>
+  </view>
+  <view class="nav-item" bindtap="goToPage" data-page="classification">
+  <image src="/assets/icons/category-svgrepo-com.svg" class="icons"/>
+    <text>分类</text>
+  </view>
+  <view class="nav-item" bindtap="goToPage" data-page="publish">
+  <image src="/assets/icons/fabu.svg" class="icons"/>
+    <text>发布</text>
+  </view>
+  <view class="nav-item" bindtap="goToPage" data-page="message">
+  <image src="/assets/icons/home-communication-svgrepo-com.svg" class="icons"/>
+    <text>消息</text>
+  </view>
+  <view class="nav-item" bindtap="goToPage" data-page="profile">
+  <image src="/assets/icons/user-svgrepo-com.svg" class="icons"/>
+    <text>我的</text>
+  </view>
+</view>
