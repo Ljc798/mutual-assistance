@@ -1,8 +1,20 @@
 <view class="page">
-  <view class="content">
-    <!-- 这两个 <p> 标签应该在不同的行显示 -->
-    <p>欢迎来到首页！</p>
-    <p>你可以在这里添加更多的页面内容</p>
+  <!-- 上方固定部分 -->
+  <view class="header">
+    <view class="app-name">大学帮帮团</view>
+    <view class="location-icon">
+      <image src="/assets/icons/location-indicator-red-svgrepo-com.svg" class="location-icon-image" />
+      <span class="location-text">九江学院</span>
+    </view>
   </view>
+  
+  <!-- 搜索框 -->
+  <view class="search-container">
+    <view class="search-box">
+      <image src="/assets/icons/search-magnify-magnifier-glass-svgrepo-com.svg" class="search-icon" />
+      <input type="text" class="search-input" placeholder="请输入搜索内容" />
+    </view>
+  </view>
+
   <bottom-nav></bottom-nav>
 </view>

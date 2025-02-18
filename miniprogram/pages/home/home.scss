@@ -2,15 +2,63 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+  }
+
+.header {
+    display: flex;
+    align-items: center;
+    background-color: #FF416C;
+    padding: 100rpx 20rpx 20rpx 20rpx;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 10;
 }
 
-.content {
-    margin-top: 120rpx;
-    text-align: center;
+.app-name {
+    font-size: 40rpx;
+    color: white;
 }
 
-p {
-    display: block;
-    margin-bottom: 10rpx;
-    font-size: 20px;
+.location-icon {
+    display: flex;
+    align-items: center;
+}
+
+.location-icon-image {
+    margin-left: 10rpx;
+    width: 50rpx;
+    height: 50rpx;
+}
+
+.location-text {
+    font-size: 18px;
+}
+
+.search-container {
+    margin-top: 150rpx;
+    padding: 20rpx;
+}
+
+.search-box {
+    display: flex;
+    align-items: center;
+    background-color: #f8f8f8;
+    padding: 10rpx 20rpx;
+    border-radius: 30rpx;
+    box-shadow: 0 0 5rpx rgba(0, 0, 0, 0.1);
+}
+
+.search-icon {
+    width: 30rpx;
+    height: 30rpx;
+    margin-right: 10rpx;
+}
+
+.search-input {
+    width: 100%;
+    height: 50rpx;
+    border: none;
+    background-color: transparent;
+    font-size: 28rpx;
 }
