@@ -3,9 +3,9 @@
   <image src="/assets/icons/home-house-svgrepo-com.svg" class="icons"/>
     <text>首页</text>
   </view>
-  <view class="nav-item" bindtap="goToPage" data-page="classification">
+  <view class="nav-item" bindtap="goToPage" data-page="square">
   <image src="/assets/icons/file-svgrepo-com-2.svg" class="icons"/>
-    <text>分类</text>
+    <text>广场</text>
   </view>
   <view class="nav-item" bindtap="goToPage" data-page="publish">
   <image src="/assets/icons/fabu.svg" class="icons"/>
