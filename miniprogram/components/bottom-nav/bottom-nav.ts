@@ -1,13 +1,31 @@
 Component({
-    methods: {
-      // 去除跳转功能，只是为了渲染底部导航栏
-      goToPage(e: WechatMiniprogram.BaseEvent) {
-        // 这里只是为了渲染页面，不执行跳转
-        // const page: string = e.currentTarget.dataset.page;
-        // wx.navigateTo({
-        //   url: `/${page}/${page}` // 页面跳转被注释掉
-        // });
-        console.log('Bottom nav item clicked, but no navigation will happen.');
+  methods: {
+    goToPage(e: WechatMiniprogram.BaseEvent) {
+      const page: string = e.currentTarget.dataset.page; // 获取目标页面
+      let url: string;
+      switch (page) {
+        case 'home':
+          url = '/pages/home/home';
+          break;
+        case 'square':
+          url = '/pages/square/square';
+          break;
+        case 'publish':
+          url = '/pages/publish/publish';
+          break;
+        case 'message':
+          url = '/pages/message/message';
+          break;
+        case 'user':
+          url = '/pages/user/user';
+          break;
+        default:
+          url = '/pages/home/home';
       }
+      wx.redirectTo({
+        url: url,  // 跳转到对应页面
+      });
+      console.log('底部导航项被点击，跳转到: ' + page);
     }
-  });
+  }
+});

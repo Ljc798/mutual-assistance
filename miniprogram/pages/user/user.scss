@@ -1,0 +1,101 @@
+.header {
+    display: flex;
+    align-items: center;
+    background-color: #FF416C;
+    padding: 100rpx 20rpx 20rpx 20rpx;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 10;
+}
+
+.app-name {
+    font-size: 40rpx;
+    color: white;
+}
+
+.user-info {
+    display: flex;
+    margin-top: 200rpx;
+    margin-bottom: 30rpx;
+    align-items: center;
+}
+
+.avatar {
+    margin-left: 20rpx;
+    margin-right: 40rpx;
+}
+
+.avatar-img {
+    width: 188rpx;
+    height: 188rpx;
+    border-radius: 50%;
+}
+
+.info {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-name {
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.user-id {
+    font-size: 24px;
+    color: #888;
+}
+
+.info-box {
+    display: flex;
+    margin-bottom: 30rpx;
+}
+
+.box {
+    flex: 1;
+    margin-right: 20rpx;
+    padding: 20rpx;
+    background-color: #f8f8f8;
+    border-radius: 10rpx;
+    text-align: center;
+}
+
+.box:last-child {
+    margin-right: 0;
+}
+
+.label {
+    font-size: 24px;
+    color: #888;
+    display: block;
+}
+
+.value {
+    font-size: 28px;
+    font-weight: bold;
+    color: #ff416c;
+    display: block;
+    margin-top: 10rpx;
+}
+
+.action-box {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    margin-top: 30rpx;
+    width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.action-item {
+    padding: 20rpx;
+    background-color: #f8f8f8;
+    border-radius: 10rpx;
+    text-align: center;
+    font-size: 30px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 20rpx;
+}

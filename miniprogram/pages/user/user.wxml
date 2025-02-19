@@ -1,0 +1,43 @@
+<view>
+    <view class="header">
+        <view class="app-name">大学帮帮团</view>
+    </view>
+    <!-- 个人信息区域 -->
+    <view class="user-info">
+        <view class="avatar">
+            <image src="/assets/icons/pinche.svg" class="avatar-img" />
+        </view>
+        <view class="info">
+            <text class="user-name">姓名</text>
+            <text class="user-id">ID: 123456</text>
+        </view>
+    </view>
+
+    <!-- 免费次数和钱包余额 -->
+    <view class="info-box">
+        <view class="box">
+            <text class="label">免费次数</text>
+            <text class="value">10</text>
+        </view>
+        <view class="box">
+            <text class="label">钱包余额</text>
+            <text class="value">¥10.00</text>
+        </view>
+    </view>
+
+    <!-- 我的订单，我的空间，意见反馈 -->
+    <view class="action-box">
+        <view class="action-item">
+            <text>我的订单</text>
+        </view>
+        <view class="action-item">
+            <text>我的空间</text>
+        </view>
+        <view class="action-item">
+            <text>意见反馈</text>
+        </view>
+    </view>
+
+    <!-- 底部导航栏 -->
+    <bottom-nav></bottom-nav>
+</view>

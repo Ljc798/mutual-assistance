@@ -1,0 +1,8 @@
+<view class="page">
+  <view class="center-message">
+    <text class="kaifa">消息</text>
+  </view>
+
+  <!-- 底部导航栏 -->
+  <bottom-nav></bottom-nav>
+</view>

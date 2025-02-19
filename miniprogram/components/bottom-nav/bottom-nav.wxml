@@ -15,7 +15,7 @@
   <image src="/assets/icons/home-communication-svgrepo-com.svg" class="icons"/>
     <text>消息</text>
   </view>
-  <view class="nav-item" bindtap="goToPage" data-page="profile">
+  <view class="nav-item" bindtap="goToPage" data-page="user">
   <image src="/assets/icons/user-svgrepo-com.svg" class="icons"/>
     <text>我的</text>
   </view>

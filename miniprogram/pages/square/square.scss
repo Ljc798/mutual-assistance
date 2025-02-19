@@ -1,0 +1,18 @@
+.page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.center-message {
+    margin-top: 300rpx;
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #999;
+}
+
+.kaifa {
+    font-size: 40px;
+}

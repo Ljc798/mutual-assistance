@@ -1,6 +1,10 @@
 {
   "pages": [
-    "pages/home/home"
+    "pages/home/home",
+    "pages/square/square",
+    "pages/publish/publish",
+    "pages/message/message",
+    "pages/user/user"
   ],
   "window": {
     "navigationBarTextStyle": "black",
