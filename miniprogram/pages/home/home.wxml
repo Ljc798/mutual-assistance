@@ -1,64 +1,64 @@
 <view class="page">
-  <!-- 上方固定部分 -->
-  <view class="header">
-    <view class="app-name">大学帮帮团</view>
-    <view class="location-icon">
-      <image src="/assets/icons/location-indicator-red-svgrepo-com.svg" class="location-icon-image" />
-      <span class="location-text">九江学院</span>
+    <!-- 上方固定部分 -->
+    <view class="header">
+        <view class="app-name">大学帮帮团</view>
+        <view class="location-icon">
+            <image src="/assets/icons/location-indicator-red-svgrepo-com.svg" class="location-icon-image" />
+            <span class="location-text">九江学院</span>
+        </view>
     </view>
-  </view>
-  
-  <!-- 搜索框 -->
-  <view class="search-container">
-    <view class="search-box">
-      <image src="/assets/icons/search-magnify-magnifier-glass-svgrepo-com.svg" class="search-icon" />
-      <input type="text" class="search-input" placeholder="今天想找点什么呢-_^" />
-    </view>
-  </view>
 
-<!-- 分类部分 -->
-<view class="category-container">
-    <view class="category-item">
-      <image src="/assets/icons/kuaidi.svg" class="category-icon" />
-      <text class="category-text">代拿快递</text>
+    <!-- 搜索框 -->
+    <view class="search-container">
+        <view class="search-box">
+            <image src="/assets/icons/search-magnify-magnifier-glass-svgrepo-com.svg" class="search-icon" />
+            <input type="text" class="search-input" placeholder="今天想找点什么呢-_^" />
+        </view>
     </view>
-    <view class="category-item">
-      <image src="/assets/icons/tongchengwaimai.svg" class="category-icon" />
-      <text class="category-text">代拿外卖</text>
-    </view>
-    <view class="category-item">
-      <image src="/assets/icons/jianzhi.svg" class="category-icon" />
-      <text class="category-text">兼职发布</text>
-    </view>
-    <view class="category-item">
-      <image src="/assets/icons/zuoye.svg" class="category-icon" />
-      <text class="category-text">作业协助</text>
-    </view>
-    <view class="category-item">
-      <image src="/assets/icons/lanling-ershoujiaoyi.svg" class="category-icon" />
-      <text class="category-text">二手交易</text>
-    </view>
-    <view class="category-item">
-      <image src="/assets/icons/shiwuzhaoling.svg" class="category-icon" />
-      <text class="category-text">寻物启事</text>
-    </view>
-  </view>
 
-  <view class="task-list-container">
-  <!-- 使用 wx:for 循环渲染任务列表 -->
-  <view class="task-item" wx:for="{{tasks}}" wx:key="index">
-    <view class="task-left">
-      <text class="task-title">{{item.title}}</text>
-      <view class="task-details">
-        <view class="task-time">期望完成时间：{{item.time}}</view>
-        <view class="task-location">交易地点：{{item.location}}</view>
-      </view>
+    <!-- 分类部分 -->
+    <view class="category-container">
+        <view class="category-item">
+            <image src="/assets/icons/kuaidi.svg" class="category-icon" />
+            <text class="category-text">代拿快递</text>
+        </view>
+        <view class="category-item">
+            <image src="/assets/icons/tongchengwaimai.svg" class="category-icon" />
+            <text class="category-text">代拿外卖</text>
+        </view>
+        <view class="category-item">
+            <image src="/assets/icons/jianzhi.svg" class="category-icon" />
+            <text class="category-text">兼职发布</text>
+        </view>
+        <view class="category-item">
+            <image src="/assets/icons/zuoye.svg" class="category-icon" />
+            <text class="category-text">作业协助</text>
+        </view>
+        <view class="category-item">
+            <image src="/assets/icons/lanling-ershoujiaoyi.svg" class="category-icon" />
+            <text class="category-text">二手交易</text>
+        </view>
+        <view class="category-item">
+            <image src="/assets/icons/shiwuzhaoling.svg" class="category-icon" />
+            <text class="category-text">寻物启事</text>
+        </view>
     </view>
-    <view class="task-right">
-      <text class="task-reward">¥{{item.reward}}</text>
-    </view>
-  </view>
-</view>
 
-  <bottom-nav></bottom-nav>
+    <view class="task-list-container">
+        <!-- 使用 wx:for 循环渲染任务列表 -->
+        <view class="task-item" wx:for="{{tasks}}" wx:key="index">
+            <view class="task-left">
+                <text class="task-title">{{item.title}}</text>
+                <view class="task-details">
+                    <view class="task-time">期望完成时间：{{item.time}}</view>
+                    <view class="task-location">交易地点：{{item.location}}</view>
+                </view>
+            </view>
+            <view class="task-right">
+                <text class="task-reward">¥{{item.reward}}</text>
+            </view>
+        </view>
+    </view>
+
+    <bottom-nav></bottom-nav>
 </view>

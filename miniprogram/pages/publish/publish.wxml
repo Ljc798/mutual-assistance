@@ -1,8 +1,64 @@
-<view class="page">
-  <view class="center-message">
-    <text class="kaifa">发布</text>
-  </view>
+<view class="container">
+    <!-- 任务分类选择（下拉菜单） -->
+    <view class="field">
+        <text>任务分类</text>
+        <picker mode="selector" range="{{categories}}" bindchange="handleCategoryChange">
+            <view class="picker">
+                {{selectedCategory || '请选择任务分类'}}
+            </view>
+        </picker>
+    </view>
 
-  <!-- 底部导航栏 -->
-  <bottom-nav></bottom-nav>
+    <!-- 标题输入框 -->
+    <view class="field">
+        <text>标题</text>
+        <input type="text" placeholder="请输入任务标题" bindinput="handleTitleInput" />
+    </view>
+
+    <!-- 任务分类为“代拿快递”或“代拿外卖”时显示取件码输入框 -->
+    <view class="field">
+        <view wx:if="{{showTakeCode}}">
+            <text>快递取件码</text>
+            <input type="text" placeholder="请输入取件码" bindinput="handleTakeCodeInput" />
+        </view>
+    </view>
+
+    <view class="field">
+        <view wx:if="{{showTakeAwayCode}}">
+            <text>外卖姓名</text>
+            <input type="text" placeholder="请输入外卖姓名" bindinput="handleTakeNameInput" />
+        </view>
+    </view>
+
+    <view class="field">
+        <view wx:if="{{showTakeAwayCode}}">
+            <text>手机尾号</text>
+            <input type="text" placeholder="请输入手机尾号" bindinput="handleTakeTelInput" />
+        </view>
+    </view>
+
+    <view class="field">
+        <text>期望完成时间</text>
+        <input type="text" placeholder="请输入期望完成时间" bindinput="handleDDLInput" />
+    </view>
+
+    <view class="field">
+        <text>送达地点</text>
+        <input type="text" placeholder="请输入地点/线上交易" bindinput="handleAdressInput" />
+    </view>
+
+    <!-- 任务简介 -->
+    <view class="field">
+        <text>任务简介</text>
+        <textarea placeholder="请输入任务简介" bindinput="handleContentInput" />
+    </view>
+
+    <view class="field">
+        <text>报价</text>
+        <input type="text" placeholder="请输入金额" bindinput="handleOfferInput" />
+    </view>
+
+    <!-- 发布按钮 -->
+    <button bindtap="handlePublish" disabled="{{isDisabled}}">发布</button>
 </view>
+<bottom-nav></bottom-nav>

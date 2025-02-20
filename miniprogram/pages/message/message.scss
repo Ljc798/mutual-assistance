@@ -4,15 +4,24 @@
     height: 100%;
 }
 
-.center-message {
-    margin-top: 300rpx;
-    flex: 1;
+.page {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    height: 100%;
+  }
+
+.header {
+    display: flex;
     align-items: center;
-    color: #999;
+    background-color: #FF416C;
+    padding: 100rpx 20rpx 20rpx 20rpx;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 10;
 }
 
-.kaifa {
-    font-size: 40px;
+.app-name {
+    font-size: 40rpx;
+    color: white;
 }

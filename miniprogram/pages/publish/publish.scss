@@ -1,18 +1,97 @@
-.page {
+/* 定义基本的样式变量 */
+$primary-color: #ff3b30; // 主色调，用于按钮和一些高亮部分
+$input-border-color: #ccc; // 输入框边框色
+$text-color: #333; // 文字颜色
+$button-background-color: #ff3b30; // 按钮背景色
+
+.container {
+    padding: 20rpx;
+    margin-top: 140rpx;
     display: flex;
     flex-direction: column;
-    height: 100%;
+    justify-content: flex-start;
+    width: 100%;
 }
 
-.center-message {
-    margin-top: 300rpx;
-    flex: 1;
+.field {
+    width: 100%;
+}
+
+.text {
+    font-size: 14px;
+    color: $text-color;
+    margin-bottom: 15rpx;
+    font-weight: bold; // 设置标题文字加粗
+}
+
+input,
+textarea {
+    padding: 12rpx; // 增加内边距，提升用户输入体验
+    font-size: 16px; // 设置字体大小
+    border: 1rpx solid $input-border-color;
+    border-radius: 5rpx; // 增加圆角
+    margin-top: 8rpx; // 上边距确保输入框与标题有间隔
+}
+
+input:focus,
+textarea:focus {
+    border-color: $primary-color;
+    outline: none;
+}
+
+textarea {
+    width: 96.5%;  // 明确设置宽度为 100%
+    height: 166rpx;
+    padding: 12rpx;
+    font-size: 16px;
+    border: 1rpx solid $input-border-color;
+    border-radius: 5rpx;
+    margin-top: 8rpx;
+    resize: none;
+  }
+
+.picker {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
-    color: #999;
+    padding: 12rpx;
+    background-color: #fff;
+    border: 1px solid $input-border-color;
+    border-radius: 5rpx;
+    font-size: 16px;
+    color: $text-color;
+    margin-top: 8rpx;
 }
 
-.kaifa {
-    font-size: 40px;
+button {
+    width: 100%;
+    padding: 14rpx;
+    background-color: $button-background-color;
+    color: #fff;
+    border: none;
+    border-radius: 5rpx;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 20rpx;
+    transition: background-color 0.3s ease;
+
+    &:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+    }
+
+    &:not(:disabled):hover {
+        background-color: darken($button-background-color, 10%);
+    }
+}
+
+/* 让每个输入框和按钮之间有适当的间距 */
+input,
+textarea,
+.picker {
+    margin-bottom: 20rpx; // 输入框和下拉框之间的间距
+}
+
+button {
+    margin-top: 30rpx; // 发布按钮与下方的间距
 }

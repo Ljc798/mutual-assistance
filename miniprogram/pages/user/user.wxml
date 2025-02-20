@@ -20,8 +20,8 @@
             <text class="value">10</text>
         </view>
         <view class="box">
-            <text class="label">钱包余额</text>
-            <text class="value">¥10.00</text>
+            <text class="label">积分余额</text>
+            <text class="value">100</text>
         </view>
     </view>
 
@@ -35,6 +35,9 @@
         </view>
         <view class="action-item">
             <text>意见反馈</text>
+        </view>
+        <view style="text-align: center; font-weight: 400; color: #333;">
+            <text>您的意见真的真的对我们很重要🥺</text>
         </view>
     </view>
 

@@ -25,7 +25,6 @@ Component({
       wx.redirectTo({
         url: url,  // 跳转到对应页面
       });
-      console.log('底部导航项被点击，跳转到: ' + page);
     }
   }
 });
