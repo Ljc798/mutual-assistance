@@ -5,7 +5,7 @@ $text-color: #333; // 文字颜色
 $button-background-color: #ff3b30; // 按钮背景色
 
 .container {
-    padding: 20rpx;
+    padding: 20rpx 20rpx 200rpx 20rpx;
     margin-top: 140rpx;
     display: flex;
     flex-direction: column;

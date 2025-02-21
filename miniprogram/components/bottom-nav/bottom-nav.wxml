@@ -3,18 +3,18 @@
   <image src="/assets/icons/home-house-svgrepo-com.svg" class="icons"/>
     <text>首页</text>
   </view>
-  <view class="nav-item" bindtap="goToPage" data-page="square">
+  <!-- <view class="nav-item" bindtap="goToPage" data-page="square">
   <image src="/assets/icons/file-svgrepo-com-2.svg" class="icons"/>
     <text>广场</text>
-  </view>
+  </view> -->
   <view class="nav-item" bindtap="goToPage" data-page="publish">
   <image src="/assets/icons/fabu.svg" class="icons"/>
     <text>发布</text>
   </view>
-  <view class="nav-item" bindtap="goToPage" data-page="message">
+  <!-- <view class="nav-item" bindtap="goToPage" data-page="message">
   <image src="/assets/icons/home-communication-svgrepo-com.svg" class="icons"/>
     <text>消息</text>
-  </view>
+  </view> -->
   <view class="nav-item" bindtap="goToPage" data-page="user">
   <image src="/assets/icons/user-svgrepo-com.svg" class="icons"/>
     <text>我的</text>

@@ -1,0 +1,62 @@
+<view class="task-detail-container">
+    <!-- 圆形返回按钮 -->
+    <button class="back-button" bindtap="handleBack">←</button>
+    <!-- 任务介绍部分 -->
+    <view class="task-introduction">
+        <view class="task-header">
+            <text class="task-title">{{task.title}}</text>
+            <text class="task-reward">¥{{task.reward}}</text>
+        </view>
+        <view class="task-info">
+            <view class="task-time">期望完成时间：{{task.DDL}}</view>
+            <view class="task-location">交易地点：{{task.location}}</view>
+            <view class="task-address">交付地点：{{task.address}}</view>
+        </view>
+    </view>
+
+    <!-- 任务详情部分 -->
+    <view class="task-details">
+        <view class="task-description">任务描述：{{task.detail}}</view>
+
+        <!-- 根据任务类型显示不同的内容 -->
+        <view wx:if="{{task.category === '代拿快递'}}" class="task-detail-item">
+            <text class="label">快递单号：</text>
+            <text>{{task.takeCode}}</text>
+        </view>
+        <view wx:if="{{task.category === '代拿外卖'}}" class="task-detail-item">
+            <text class="label">外卖姓名：</text>
+            <text>{{task.takeName}}</text>
+        </view>
+        <view wx:if="{{task.category === '代拿外卖'}}" class="task-detail-item">
+            <text class="label">手机尾号：</text>
+            <text>{{task.takeTel}}</text>
+        </view>
+    </view>
+
+    <!-- 出价区部分 -->
+    <view class="task-bidding">
+        <view class="bidding-container">
+            <!-- 如果没有出价，则显示暂无人出价 -->
+            <view wx:if="{{!biddingAmount}}" class="no-bidding">暂无人出价</view>
+            <view wx:else class="bidding-amount">当前出价：¥{{biddingAmount}}</view>
+        </view>
+    </view>
+
+
+
+    <!-- 出价和接单按钮 -->
+    <view class="button-container">
+        <button class="bidding-button" bindtap="showBiddingDialog">出价</button>
+        <button class="accept-button" bindtap="handleAccept">接单</button>
+    </view>
+
+    <!-- 出价输入框弹窗 -->
+    <view wx:if="{{showBiddingModal}}" class="bidding-modal">
+        <view class="modal-content">
+            <text>请输入您的出价：</text>
+            <input type="number" class="bidding-input" placeholder="输入金额" bindinput="handleBiddingInput" />
+            <button class="bidding-confirm" bindtap="submitBidding">确定</button>
+            <button class="bidding-cancel" bindtap="hideBiddingModal">取消</button>
+        </view>
+    </view>
+</view>

@@ -18,27 +18,28 @@
 
     <!-- 分类部分 -->
     <view class="category-container">
-        <view class="category-item">
+        <!-- 分类项，点击后跳转到对应分类的任务列表页面 -->
+        <view class="category-item" bindtap="handleCategoryClick" data-category="代拿快递">
             <image src="/assets/icons/kuaidi.svg" class="category-icon" />
             <text class="category-text">代拿快递</text>
         </view>
-        <view class="category-item">
+        <view class="category-item" bindtap="handleCategoryClick" data-category="代拿外卖">
             <image src="/assets/icons/tongchengwaimai.svg" class="category-icon" />
             <text class="category-text">代拿外卖</text>
         </view>
-        <view class="category-item">
+        <view class="category-item" bindtap="handleCategoryClick" data-category="兼职发布">
             <image src="/assets/icons/jianzhi.svg" class="category-icon" />
             <text class="category-text">兼职发布</text>
         </view>
-        <view class="category-item">
+        <view class="category-item" bindtap="handleCategoryClick" data-category="作业协助">
             <image src="/assets/icons/zuoye.svg" class="category-icon" />
             <text class="category-text">作业协助</text>
         </view>
-        <view class="category-item">
+        <view class="category-item" bindtap="handleCategoryClick" data-category="二手交易">
             <image src="/assets/icons/lanling-ershoujiaoyi.svg" class="category-icon" />
             <text class="category-text">二手交易</text>
         </view>
-        <view class="category-item">
+        <view class="category-item" bindtap="handleCategoryClick" data-category="寻物启事">
             <image src="/assets/icons/shiwuzhaoling.svg" class="category-icon" />
             <text class="category-text">寻物启事</text>
         </view>
@@ -46,12 +47,13 @@
 
     <view class="task-list-container">
         <!-- 使用 wx:for 循环渲染任务列表 -->
-        <view class="task-item" wx:for="{{tasks}}" wx:key="index">
+        <view class="task-item" wx:for="{{tasks}}" wx:key="index" bindtap="handleTaskClick" data-index="{{index}}">
             <view class="task-left">
                 <text class="task-title">{{item.title}}</text>
                 <view class="task-details">
-                    <view class="task-time">期望完成时间：{{item.time}}</view>
+                    <view class="task-time">期望完成时间：{{item.DDL}}前</view>
                     <view class="task-location">交易地点：{{item.location}}</view>
+                    <view class="task-location">送达地点：{{item.address}}</view>
                 </view>
             </view>
             <view class="task-right">

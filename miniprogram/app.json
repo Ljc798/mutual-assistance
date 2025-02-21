@@ -4,7 +4,9 @@
     "pages/square/square",
     "pages/publish/publish",
     "pages/message/message",
-    "pages/user/user"
+    "pages/user/user",
+    "pages/task/task",
+    "pages/task-list/task-list"
   ],
   "window": {
     "navigationBarTextStyle": "black",

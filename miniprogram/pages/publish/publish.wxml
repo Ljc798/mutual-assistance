@@ -11,7 +11,7 @@
 
     <!-- 标题输入框 -->
     <view class="field">
-        <text>标题</text>
+        <text>任务标题</text>
         <input type="text" placeholder="请输入任务标题" bindinput="handleTitleInput" />
     </view>
 
@@ -37,25 +37,44 @@
         </view>
     </view>
 
+    <!-- 截止日期 -->
     <view class="field">
-        <text>期望完成时间</text>
-        <input type="text" placeholder="请输入期望完成时间" bindinput="handleDDLInput" />
+        <text class="label">预期完成日期</text>
+        <picker mode="date" bindchange="handleDateInput">
+            <view class="picker">
+                <text>{{date || '请选择预期完成日期'}}</text>
+            </view>
+        </picker>
+    </view>
+
+    <view class="field">
+        <text class="label">选择时间</text>
+        <picker mode="time" bindchange="handleTimeInput">
+            <view class="picker">
+                <text>{{time || '请选择具体时间'}}</text>
+            </view>
+        </picker>
+    </view>
+
+    <view class="field">
+        <text>交易地点</text>
+        <input type="text" placeholder="请输入交易地点/线上交易" bindinput="handlePositionInput" />
     </view>
 
     <view class="field">
         <text>送达地点</text>
-        <input type="text" placeholder="请输入地点/线上交易" bindinput="handleAdressInput" />
+        <input type="text" placeholder="请输入交付地点/线上交易" bindinput="handleAddressInput" />
     </view>
 
     <!-- 任务简介 -->
     <view class="field">
         <text>任务简介</text>
-        <textarea placeholder="请输入任务简介" bindinput="handleContentInput" />
+        <textarea placeholder="请输入任务简介并留下联系方式" bindinput="handleDetailInput" />
     </view>
 
     <view class="field">
         <text>报价</text>
-        <input type="text" placeholder="请输入金额" bindinput="handleOfferInput" />
+        <input type="text" placeholder="请输入金额" bindinput="handleRewardInput" />
     </view>
 
     <!-- 发布按钮 -->

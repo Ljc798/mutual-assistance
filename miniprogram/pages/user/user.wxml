@@ -30,9 +30,9 @@
         <view class="action-item">
             <text>我的订单</text>
         </view>
-        <view class="action-item">
+        <!-- <view class="action-item">
             <text>我的空间</text>
-        </view>
+        </view> -->
         <view class="action-item">
             <text>意见反馈</text>
         </view>

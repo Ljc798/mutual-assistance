@@ -2,7 +2,7 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-  }
+}
 
 .header {
     display: flex;
@@ -62,39 +62,41 @@
     background-color: transparent;
     font-size: 28rpx;
 }
+
 /* 分类部分样式 */
 .category-container {
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
     padding: 20rpx;
-  }
-  
-  .category-item {
+}
+
+.category-item {
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    width: 33%; /* 每个分类占用 20% 宽度 */
+    width: 33%;
+    /* 每个分类占用 20% 宽度 */
     margin-bottom: 20rpx;
-  }
-  
-  .category-icon {
+}
+
+.category-icon {
     width: 80rpx;
     height: 80rpx;
-  }
-  
-  .category-text {
+}
+
+.category-text {
     margin-top: 15rpx;
     font-size: 28rpx;
     color: #333;
-  }
+}
 
-  .task-list-container {
+.task-list-container {
     padding: 20rpx 20rpx 160rpx 20rpx;
-  }
-  
-  .task-item {
+}
+
+.task-item {
     display: flex;
     justify-content: space-between;
     background-color: #fff;
@@ -102,40 +104,42 @@
     margin-bottom: 15rpx;
     border-radius: 10rpx;
     box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
-  }
-  
-  .task-left {
+}
+
+.task-left {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     width: 70%;
-  }
-  
-  .task-title {
+}
+
+.task-title {
     font-size: 30rpx;
     color: #333;
     font-weight: bold;
     margin-bottom: 10rpx;
-  }
-  
-  .task-details {
+}
+
+.task-details {
     font-size: 24rpx;
     color: #666;
-  }
-  
-  .task-time, .task-location {
+}
+
+.task-time,
+.task-location {
     margin-bottom: 8rpx;
-  }
-  
-  .task-right {
+}
+
+.task-right {
     display: flex;
     align-items: flex-end;
     justify-content: flex-end;
     width: 30%;
-  }
-  
-  .task-reward {
+}
+
+.task-reward {
     font-size: 28rpx;
     font-weight: bold;
-    color: #FF416C; /* 报酬的颜色 */
-  }
+    color: #FF416C;
+    /* 报酬的颜色 */
+}

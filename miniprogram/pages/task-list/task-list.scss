@@ -1,0 +1,76 @@
+
+.task-list-container {
+    margin-top: 160rpx;
+    padding: 20rpx 20rpx 160rpx 20rpx;
+}
+
+.task-item {
+    display: flex;
+    justify-content: space-between;
+    background-color: #fff;
+    padding: 20rpx;
+    margin-bottom: 15rpx;
+    border-radius: 10rpx;
+    box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+.task-left {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 70%;
+}
+
+.task-title {
+    font-size: 30rpx;
+    color: #333;
+    font-weight: bold;
+    margin-bottom: 10rpx;
+}
+
+.task-details {
+    font-size: 24rpx;
+    color: #666;
+}
+
+.task-time,
+.task-location {
+    margin-bottom: 8rpx;
+}
+
+.task-right {
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    width: 30%;
+}
+
+.task-reward {
+    font-size: 28rpx;
+    font-weight: bold;
+    color: #FF416C;
+    /* 报酬的颜色 */
+}
+
+.back-button {
+    position: absolute;
+    top: 80rpx;
+    left: 20rpx;
+    background-color: #dddddd; // 按钮背景色
+    color: #333; // 按钮文字颜色
+    border: none;
+    border-radius: 50%; // 圆形按钮
+    font-size: 24px; // 设置符号的大小
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    max-width: 50px;
+    max-height: 50px;
+    flex-shrink: 0;
+
+    &:hover {
+        background-color: darken(#ff3b30, 10%); // 悬浮时变色
+    }
+}
