@@ -6,7 +6,8 @@
     "pages/message/message",
     "pages/user/user",
     "pages/task/task",
-    "pages/task-list/task-list"
+    "pages/task-list/task-list",
+    "pages/order/order"
   ],
   "window": {
     "navigationBarTextStyle": "black",

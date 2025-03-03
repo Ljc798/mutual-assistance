@@ -16,7 +16,7 @@
     <!-- 免费次数和钱包余额 -->
     <view class="info-box">
         <view class="box">
-            <text class="label">免费次数</text>
+            <text class="label">免广告次数</text>
             <text class="value">10</text>
         </view>
         <view class="box">
@@ -27,7 +27,7 @@
 
     <!-- 我的订单，我的空间，意见反馈 -->
     <view class="action-box">
-        <view class="action-item">
+        <view class="action-item" bindtap = "handleOrderClick">
             <text>我的订单</text>
         </view>
         <!-- <view class="action-item">

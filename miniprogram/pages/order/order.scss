@@ -1,0 +1,104 @@
+.back-button {
+    position: absolute;
+    top: 80rpx;
+    left: 20rpx;
+    background-color: #dddddd; // 按钮背景色
+    color: #333; // 按钮文字颜色
+    border: none;
+    border-radius: 50%; // 圆形按钮
+    font-size: 24px; // 设置符号的大小
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    max-width: 50px;
+    max-height: 50px;
+    flex-shrink: 0;
+
+    &:hover {
+        background-color: darken(#ff3b30, 10%); // 悬浮时变色
+    }
+}
+
+/* 容器 */
+.container {
+    padding: 20rpx;
+    font-size: 28rpx;
+    margin-top: 160rpx
+}
+
+/* 筛选栏 */
+.filter-bar {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 30rpx;
+    width: 90%;
+}
+
+.filter-bar-second {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 50rpx;
+    width: 90%;
+}
+
+
+.filter-item {
+    font-size: 20px;
+    color: #333;
+}
+
+.filter-item-second {
+    font-size: 16px;
+    color: #333;
+}
+
+.active {
+    font-weight: bold;
+    color: tomato;
+    border-bottom: 1px solid tomato;
+}
+
+/* 订单列表 */
+.order-list {
+    display: flex;
+    flex-direction: column;
+    width: 95%;
+}
+
+/* 订单项 */
+.order-item {
+    border: 1rpx solid #333;
+    padding: 20rpx;
+    border-radius: 20rpx;
+    margin-bottom: 25rpx;
+}
+
+/* 订单头部 */
+.order-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 26rpx;
+    font-weight: bold;
+    color: #333;
+}
+
+/* 订单正文 */
+.order-body {
+    margin-top: 10rpx;
+    font-size: 20px;
+    font-weight: bold;
+    color: #333;
+}
+
+/* 订单左下角 */
+.order-footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10rpx;
+    font-size: 30rpx;
+    font-weight: bold;
+    font-size: 16px;
+    color: #666;
+}

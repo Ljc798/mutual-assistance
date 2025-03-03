@@ -57,6 +57,7 @@
                 </view>
             </view>
             <view class="task-right">
+            <text class="task-status">{{item.status}}</text>
                 <text class="task-reward">¥{{item.reward}}</text>
             </view>
         </view>

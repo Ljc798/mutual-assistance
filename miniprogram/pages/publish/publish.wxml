@@ -12,28 +12,28 @@
     <!-- 标题输入框 -->
     <view class="field">
         <text>任务标题</text>
-        <input type="text" placeholder="请输入任务标题" bindinput="handleTitleInput" />
+        <input type="text" placeholder="请输入任务标题(取件请标注大/中/小件)" bindinput="handleTitleInput" />
     </view>
 
     <!-- 任务分类为“代拿快递”或“代拿外卖”时显示取件码输入框 -->
     <view class="field">
         <view wx:if="{{showTakeCode}}">
             <text>快递取件码</text>
-            <input type="text" placeholder="请输入取件码" bindinput="handleTakeCodeInput" />
+            <input type="text" placeholder="请输入取件码(仅对接单员可见)" bindinput="handleTakeCodeInput" />
         </view>
     </view>
 
     <view class="field">
         <view wx:if="{{showTakeAwayCode}}">
             <text>外卖姓名</text>
-            <input type="text" placeholder="请输入外卖姓名" bindinput="handleTakeNameInput" />
+            <input type="text" placeholder="请输入外卖姓名(仅对接单员可见)" bindinput="handleTakeNameInput" />
         </view>
     </view>
 
     <view class="field">
         <view wx:if="{{showTakeAwayCode}}">
             <text>手机尾号</text>
-            <input type="text" placeholder="请输入手机尾号" bindinput="handleTakeTelInput" />
+            <input type="text" placeholder="请输入手机尾号(仅对接单员可见)" bindinput="handleTakeTelInput" />
         </view>
     </view>
 
@@ -69,7 +69,7 @@
     <!-- 任务简介 -->
     <view class="field">
         <text>任务简介</text>
-        <textarea placeholder="请输入任务简介并留下联系方式" bindinput="handleDetailInput" />
+        <textarea placeholder="请输入任务简介并留下联系方式(联系方式仅对接单员可见)" bindinput="handleDetailInput" />
     </view>
 
     <view class="field">

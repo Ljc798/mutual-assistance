@@ -9,6 +9,7 @@ interface Task {
     takeTel?: number;  //  手机尾号
     detail: string;  //  任务简介
     reward: string;  //  报酬
+    status: string; //  状态
 }
 
 Page({
@@ -28,7 +29,8 @@ Page({
                     takeCode: '12-2321',
                     address: 'xxx',
                     detail: '111',
-                    reward: '1.00'
+                    reward: '1.00',
+                    status: '待接单',
                 },
                 {
                     title: '北门拿外卖',
@@ -39,7 +41,8 @@ Page({
                     takeTel: 1234,
                     address: 'xxx',
                     detail: '111',
-                    reward: '5.00'
+                    reward: '5.00',
+                    status: '进行中',
                 },
                 {
                     title: '二手交易',
@@ -48,7 +51,8 @@ Page({
                     location: '学生宿舍10栋',
                     address: 'xxx',
                     detail: '111',
-                    reward: '2.50'
+                    reward: '2.50',
+                    status: '已完成',
                 }
             ]
         });

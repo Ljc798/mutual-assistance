@@ -1,0 +1,41 @@
+<view class="container">
+    <!-- 圆形返回按钮 -->
+    <button class="back-button" bindtap="handleBack">←</button>
+    <!-- 一级筛选菜单 -->
+    <view class="filter-bar">
+        <view wx:for="{{filterOptions1}}" wx:key="index" bindtap="selectFilter1" data-index="{{index}}" class="filter-item {{index === activeFilter1 ? 'active' : ''}}">
+            {{item}}
+        </view>
+    </view>
+
+    <!-- 二级筛选菜单 -->
+    <view class="filter-bar-second">
+        <view wx:for="{{filterOptions2}}" wx:key="index" bindtap="selectFilter2" data-index="{{index}}" class="filter-item-second {{index === activeFilter2 ? 'active' : ''}}">
+            {{item}}
+        </view>
+    </view>
+
+    <!-- 订单列表 -->
+    <view class="order-list">
+        <block wx:for="{{orders}}" wx:key="orderId">
+            <view class="order-item">
+                <!-- 订单号和状态 -->
+                <view class="order-header">
+                    <text class="order-id">订单号：{{item.orderId}}</text>
+                    <text class="order-status">{{item.status}}</text>
+                </view>
+
+                <!-- 任务信息 -->
+                <view class="order-body">
+                    <text class="order-title">{{item.title}}</text>
+                </view>
+
+                <!-- 接受订单时间 -->
+                <view class="order-footer">
+                    <text class="order-title">{{item.time}}</text>
+                    <text class="order-salary">{{item.salary}}</text>
+                </view>
+            </view>
+        </block>
+    </view>
+</view>
