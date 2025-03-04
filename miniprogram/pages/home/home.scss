@@ -17,7 +17,7 @@
 
 .app-name {
     font-size: 40rpx;
-    color: white;
+    color: #222;
 }
 
 .location-icon {
@@ -26,13 +26,14 @@
 }
 
 .location-icon-image {
-    margin-left: 10rpx;
+    margin-left: 15rpx;
     width: 50rpx;
     height: 50rpx;
 }
 
-.location-text {
-    font-size: 18px;
+.location-text {   
+    font-size: 35rpx;
+    color: #222;
 }
 
 .search-container {
@@ -76,19 +77,19 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    width: 33%;
+    width: 20%;
     /* 每个分类占用 20% 宽度 */
     margin-bottom: 20rpx;
 }
 
 .category-icon {
-    width: 80rpx;
-    height: 80rpx;
+    width: 66rpx;
+    height: 66rpx;
 }
 
 .category-text {
     margin-top: 15rpx;
-    font-size: 28rpx;
+    font-size: 27rpx;
     color: #333;
 }
 

@@ -3,7 +3,7 @@
     <view class="header">
         <view class="app-name">大学帮帮团</view>
         <view class="location-icon">
-            <image src="/assets/icons/location-indicator-red-svgrepo-com.svg" class="location-icon-image" />
+            <image src="/assets/icons/ditu.svg" class="location-icon-image" />
             <span class="location-text">九江学院</span>
         </view>
     </view>
@@ -31,9 +31,13 @@
             <image src="/assets/icons/jianzhi.svg" class="category-icon" />
             <text class="category-text">兼职发布</text>
         </view>
-        <view class="category-item" bindtap="handleCategoryClick" data-category="作业协助">
-            <image src="/assets/icons/zuoye.svg" class="category-icon" />
-            <text class="category-text">作业协助</text>
+        <view class="category-item" bindtap="handleCategoryClick" data-category="代办服务">
+            <image src="/assets/icons/bangbandaiban.svg" class="category-icon" />
+            <text class="category-text">代办服务</text>
+        </view>
+        <view class="category-item">
+            <image src="/assets/icons/kebiao.svg" class="category-icon" />
+            <text class="category-text">我的课表</text>
         </view>
         <view class="category-item" bindtap="handleCategoryClick" data-category="二手交易">
             <image src="/assets/icons/lanling-ershoujiaoyi.svg" class="category-icon" />
@@ -42,6 +46,18 @@
         <view class="category-item" bindtap="handleCategoryClick" data-category="寻物启事">
             <image src="/assets/icons/shiwuzhaoling.svg" class="category-icon" />
             <text class="category-text">寻物启事</text>
+        </view>
+        <view class="category-item" bindtap="handleCategoryClick" data-category="作业协助">
+            <image src="/assets/icons/zuoye.svg" class="category-icon" />
+            <text class="category-text">作业协助</text>
+        </view>
+        <view class="category-item" bindtap="handleCategoryClick" data-category="万能服务">
+            <image src="/assets/icons/fuwu.svg" class="category-icon" />
+            <text class="category-text">万能服务</text>
+        </view>
+        <view class="category-item">
+            <image src="/assets/icons/ditu_line.svg" class="category-icon" />
+            <text class="category-text">校园地图</text>
         </view>
     </view>
 

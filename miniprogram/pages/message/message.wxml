@@ -2,7 +2,6 @@
     <view class="header">
         <view class="app-name">消息列表</view>
         
-    <text class="kaifa">即将上线，敬请期待</text>
     </view>
 
   <!-- 底部导航栏 -->

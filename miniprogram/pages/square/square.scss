@@ -1,18 +1,151 @@
-.page {
+.square-container {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    height: 100vh;
 }
 
-.center-message {
-    margin-top: 300rpx;
-    flex: 1;
+/* 头部栏 */
+.header {
     display: flex;
-    justify-content: center;
     align-items: center;
-    color: #999;
+    background-color: #FF416C;
+    padding: 100rpx 20rpx 20rpx 20rpx;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 10;
 }
 
-.kaifa {
-    font-size: 40px;
+/* 广场名称 */
+.app-name {
+    font-size: 40rpx;
+    color: #222;
+}
+
+/* 位置图标 */
+.location-icon {
+    display: flex;
+    align-items: center;
+}
+
+.location-icon-image {
+    margin-left: 15rpx;
+    width: 50rpx;
+    height: 50rpx;
+}
+
+.location-text {
+    font-size: 35rpx;
+    color: #222;
+}
+
+/* === 滑动分类栏，放在 header 下面 === */
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #fff;
+    padding: 20rpx;
+    position: fixed;
+    top: 170rpx; /* 让它紧挨着 header */
+    width: 100%;
+    border-top: 2rpx solid #eee;
+    border-bottom: 2rpx solid #eee;
+    z-index: 9;
+}
+
+/* 滑动分类框 */
+.category-scroll {
+    display: flex;
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow-x: auto;
+}
+
+/* 分类项 */
+.category-item {
+    display: inline-block;
+    padding: 15rpx 30rpx;
+    margin-right: 15rpx;
+    background-color: #F5F5F5;
+    border-radius: 30rpx;
+    font-size: 32rpx;
+    color: #333;
+    transition: background 0.3s;
+}
+
+.category-item.active {
+    background-color: #FF416C;
+    color: #fff;
+}
+
+/* 打卡按钮（图标） */
+.checkin {
+    width: 66rpx;
+    height: 66rpx;
+    margin-right: 40rpx;
+    padding-left: 20rpx;
+}
+
+.content {
+    padding: 20rpx;
+    margin-top: 300rpx; /* 避免被 header 遮挡 */
+}
+
+/* 帖子卡片 */
+.post-card {
+    background: #fff;
+    padding: 20rpx;
+    margin-bottom: 20rpx;
+    border-radius: 16rpx;
+    box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+/* 用户信息 */
+.post-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10rpx;
+}
+
+.user-avatar {
+    width: 50rpx;
+    height: 50rpx;
+    border-radius: 50%;
+    margin-right: 10rpx;
+}
+
+.username {
+    font-size: 28rpx;
+    font-weight: bold;
+}
+
+/* 文字内容 */
+.post-text {
+    font-size: 30rpx;
+    color: #333;
+    margin-bottom: 10rpx;
+}
+
+/* 图片内容 */
+.image-scroll {
+    display: flex;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+.post-image {
+    width: 150rpx;
+    height: 150rpx;
+    margin-right: 10rpx;
+    border-radius: 10rpx;
+}
+
+/* 底部信息 */
+.post-footer {
+    display: flex;
+    justify-content: space-between;
+    font-size: 26rpx;
+    color: #666;
+    margin-top: 10rpx;
 }

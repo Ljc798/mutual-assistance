@@ -1,6 +1,6 @@
 <view>
     <view class="header">
-        <view class="app-name">大学帮帮团</view>
+        <view class="app-name">我的信息</view>
     </view>
     <!-- 个人信息区域 -->
     <view class="user-info">
@@ -30,9 +30,12 @@
         <view class="action-item" bindtap = "handleOrderClick">
             <text>我的订单</text>
         </view>
-        <!-- <view class="action-item">
+        <view class="action-item">
             <text>我的空间</text>
-        </view> -->
+        </view>
+        <view class="action-item">
+            <text>个人信息</text>
+        </view>
         <view class="action-item">
             <text>意见反馈</text>
         </view>
