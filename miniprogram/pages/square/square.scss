@@ -47,7 +47,8 @@
     background-color: #fff;
     padding: 20rpx;
     position: fixed;
-    top: 170rpx; /* 让它紧挨着 header */
+    top: 170rpx;
+    /* 让它紧挨着 header */
     width: 100%;
     border-top: 2rpx solid #eee;
     border-bottom: 2rpx solid #eee;
@@ -89,7 +90,9 @@
 
 .content {
     padding: 20rpx;
-    margin-top: 300rpx; /* 避免被 header 遮挡 */
+    margin-top: 300rpx;
+    /* 避免被 header 遮挡 */
+    padding-bottom: 160rpx;
 }
 
 /* 帖子卡片 */
@@ -116,13 +119,13 @@
 }
 
 .username {
-    font-size: 28rpx;
+    font-size: 32rpx;
     font-weight: bold;
 }
 
 /* 文字内容 */
 .post-text {
-    font-size: 30rpx;
+    font-size: 36rpx;
     color: #333;
     margin-bottom: 10rpx;
 }
@@ -135,8 +138,7 @@
 }
 
 .post-image {
-    width: 150rpx;
-    height: 150rpx;
+    width: 400rpx;
     margin-right: 10rpx;
     border-radius: 10rpx;
 }
@@ -145,7 +147,180 @@
 .post-footer {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     font-size: 26rpx;
     color: #666;
     margin-top: 10rpx;
+}
+
+/* 右侧点赞 & 评论 */
+.post-footer-right {
+    display: flex;
+    align-items: center;
+    gap: 20rpx; /* **增加点赞和评论之间的间距** */
+}
+
+/* 确保点赞和评论对齐 */
+.likes, .comments {
+    display: flex;
+    align-items: center;
+}
+
+/* 点赞图标 */
+.likes image {
+    width: 36rpx;
+    height: 36rpx;
+    margin-right: 6rpx;
+    transition: transform 0.2s ease-in-out;
+}
+
+/* 点击时增加动画 */
+.likes:active image {
+    transform: scale(1.2);
+}
+
+/* 数字固定宽度，保证对齐 */
+.likes text,
+.comments text {
+    display: inline-block;
+    width: 50rpx; /* **固定宽度，防止数字长短不一影响对齐** */
+    text-align: center; /* **让数字靠右对齐，使得布局整齐** */
+}
+
+/* 图标大小 */
+.likes image,
+.comments image {
+    width: 36rpx;
+    height: 36rpx;
+}
+
+
+/* 右下角固定的 + 按钮 */
+.floating-btn {
+    position: fixed;
+    bottom: 200rpx;
+    right: 40rpx;
+    width: 100rpx;
+    height: 100rpx;
+    background-color: #FF416C99;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 20;
+    transition: transform 0.3s ease-in-out;
+}
+
+.plus-icon {
+    width: 60rpx;
+    height: 60rpx;
+}
+
+/* 发布界面 */
+.post-modal {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #fff;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 30;
+}
+
+.post-modal.open {
+    display: flex;
+}
+
+/* 发布内容 */
+.post-modal-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 90%;
+    padding: 40rpx;
+    text-align: center;
+}
+
+/* 关闭按钮 */
+.close-btn {
+    position: absolute;
+    top: 100rpx;
+    left: 40rpx;
+    font-size: 80rpx;
+    color: #333;
+    cursor: pointer;
+}
+
+/* 标题 */
+.modal-title {
+    font-size: 40rpx;
+    color: #333;
+    margin-bottom: 30rpx;
+}
+
+/* 选择分类 */
+.picker {
+    width: 90%;
+    padding: 20rpx;
+    border: 1px solid #ccc;
+    border-radius: 10rpx;
+    text-align: center;
+    font-size: 30rpx;
+    margin-bottom: 30rpx;
+}
+
+/* 文本输入框 */
+.post-input {
+    width: 90%;
+    height: 200rpx;
+    background-color: #f5f5f5;
+    border-radius: 10rpx;
+    padding: 20rpx;
+    font-size: 30rpx;
+    color: #333;
+    margin-bottom: 30rpx;
+}
+
+/* 图片上传 */
+.image-upload {
+    display: flex;
+    gap: 10rpx;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 30rpx;
+}
+
+.uploaded-image {
+    width: 100rpx;
+    height: 100rpx;
+    border-radius: 10rpx;
+    object-fit: cover;
+}
+
+.add-image-btn {
+    width: 100rpx;
+    height: 100rpx;
+    border: 2rpx dashed #ccc;
+    border-radius: 10rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 50rpx;
+    color: #888;
+    cursor: pointer;
+}
+
+/* 发布按钮 */
+.submit-btn {
+    width: 200rpx;
+    height: 60rpx;
+    background-color: #FF416C;
+    color: #fff;
+    font-size: 30rpx;
+    border-radius: 30rpx;
+    text-align: center;
 }

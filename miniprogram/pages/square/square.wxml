@@ -18,38 +18,79 @@
         </scroll-view>
 
         <!-- 右侧签到按钮 (点击切换图片) -->
-        <image src="{{checkinIcon}}" class="checkin" bindtap="handleCheckIn"/>
+        <image src="{{checkinIcon}}" class="checkin" bindtap="handleCheckIn" />
     </view>
     <!-- 动态内容展示区 -->
     <view class="content">
-    <block wx:for="{{posts}}" wx:key="post_id">
-        <view class="post-card">
-            <!-- 用户信息 -->
-            <view class="post-header">
-                <image class="user-avatar" src="{{item.user_avatar}}" />
-                <text class="username">{{item.username}}</text>
-                <text class="post-time">{{item.timestamp}}</text>
+        <block wx:for="{{posts}}" wx:key="post_id">
+            <view class="post-card">
+                <!-- 用户信息 -->
+                <view class="post-header">
+                    <image class="user-avatar" src="{{item.user_avatar}}" />
+                    <text class="username">{{item.username}}</text>
+                </view>
+
+                <!-- 文字内容 -->
+                <view class="post-text">{{item.content}}</view>
+
+                <!-- 图片内容（如果有） -->
+                <block wx:if="{{item.images.length > 0}}">
+                    <scroll-view class="image-scroll" scroll-x="true">
+                        <image wx:for="{{item.images}}" wx:key="index" src="{{item}}" class="post-image" mode="aspectFill" />
+                    </scroll-view>
+                </block>
+                <!-- 点赞 & 评论 -->
+                <view class="post-footer">
+                    <text class="post-time">{{item.timestamp}}</text>
+
+                    <view class="post-footer-right">
+                        <view class="likes" bindtap="toggleLike" data-index="{{index}}">
+                            <image src="{{item.isLiked ? '/assets/icons/heart-fill.svg' : '/assets/icons/heart-line.svg'}}" />
+                            <text>{{item.likes}}</text>
+                        </view>
+                        <view class="comments">
+                            <image src="/assets/icons/comment-3-svgrepo-com.svg " />
+                            <text>{{item.comments}}</text>
+                        </view>
+                    </view>
+                </view>
+            </view>
+        </block>
+    </view>
+
+    <!-- 右下角固定 ➕ 按钮 -->
+    <view class="floating-btn" bindtap="openPostModal">
+        <image src="/assets/icons/plus-large-svgrepo-com.svg" class="plus-icon" />
+    </view>
+
+    <!-- 简约风格发布界面 -->
+    <view class="post-modal {{isModalOpen ? 'open' : ''}}">
+        <view class="post-modal-content">
+            <text class="modal-title">发布新内容</text>
+
+            <!-- 选择分类（发布时） -->
+            <picker mode="selector" range="{{postCategories}}" bindchange="selectPostCategory">
+                <view class="picker">
+                    {{ selectedPostCategory ? selectedPostCategory : "选择分类" }}
+                </view>
+            </picker>
+
+            <!-- 文字输入框 -->
+            <textarea class="post-input" placeholder="写点什么吧..." bindinput="handlePostInput" />
+
+            <!-- 图片上传 -->
+            <view class="image-upload">
+                <block wx:for="{{imageList}}" wx:key="index">
+                    <image class="uploaded-image" src="{{item}}" mode="aspectFill" />
+                </block>
+                <view class="add-image-btn" bindtap="chooseImage">+</view>
             </view>
 
-            <!-- 文字内容 -->
-            <view class="post-text">{{item.content}}</view>
-
-            <!-- 图片内容（如果有） -->
-            <block wx:if="{{item.images.length > 0}}">
-                <scroll-view class="image-scroll" scroll-x="true">
-                    <image wx:for="{{item.images}}" wx:key="index" src="{{item}}" class="post-image" mode="aspectFill"/>
-                </scroll-view>
-            </block>
-
-            <!-- 点赞 & 评论 -->
-            <view class="post-footer">
-                <text class="likes">❤️ {{item.likes}}</text>
-                <text class="comments">💬 {{item.comments}}</text>
-            </view>
+            <!-- 发布按钮 -->
+            <button class="submit-btn" bindtap="submitPost">发布</button>
+            <text class="close-btn" bindtap="closePostModal">×</text>
         </view>
-    </block>
-</view>
+    </view>
 
-    <!-- 底部导航 -->
-    <bottom-nav></bottom-nav>
 </view>
+<bottom-nav></bottom-nav>
