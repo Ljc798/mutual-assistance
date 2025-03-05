@@ -174,4 +174,11 @@ Page({
             isModalOpen: false // 关闭模态框
         });
     },
+    // **跳转到帖子详情页**
+  goToDetail(e: any) {
+    const postId = e.currentTarget.dataset.postid;
+    wx.navigateTo({
+      url: `/pages/square-detail/square-detail?post_id=${postId}`
+    });
+  },
 });

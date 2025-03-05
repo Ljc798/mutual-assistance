@@ -1,6 +1,6 @@
 <view class="task-detail-container">
     <!-- 圆形返回按钮 -->
-    <button class="back-button" bindtap="handleBack">←</button>
+    <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack" />
     <!-- 任务介绍部分 -->
     <view class="task-introduction">
         <view class="task-header">

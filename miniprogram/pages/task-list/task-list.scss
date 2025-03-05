@@ -77,25 +77,11 @@
     margin-top: 10rpx;
 }
 
-.back-button {
+.back-btn {
     position: absolute;
-    top: 80rpx;
+    top: 110rpx;
     left: 20rpx;
-    background-color: #dddddd; // 按钮背景色
-    color: #333; // 按钮文字颜色
-    border: none;
-    border-radius: 50%; // 圆形按钮
-    font-size: 24px; // 设置符号的大小
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    max-width: 50px;
-    max-height: 50px;
-    flex-shrink: 0;
-
-    &:hover {
-        background-color: darken(#ff3b30, 10%); // 悬浮时变色
-    }
+    width: 50rpx;
+    height: 50rpx;
+    margin-right: 20rpx;
 }

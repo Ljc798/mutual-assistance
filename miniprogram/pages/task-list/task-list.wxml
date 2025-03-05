@@ -1,6 +1,6 @@
 <view class="container">
     <!-- 返回按钮 -->
-    <button class="back-button" bindtap="handleBack">←</button>
+    <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack"/>
 
     <!-- 筛选菜单 -->
     <view class="filter-bar">

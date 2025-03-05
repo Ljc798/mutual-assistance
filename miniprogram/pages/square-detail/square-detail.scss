@@ -1,0 +1,137 @@
+/* 详情页整体布局 */
+.post-detail {
+    padding: 30rpx;
+    background-color: #fff;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 顶部导航 */
+.post-header {
+    display: flex;
+    align-items: center;
+    margin-top: 60rpx;
+}
+
+/* 返回按钮 */
+.back-btn {
+    width: 50rpx;
+    height: 50rpx;
+    margin-right: 20rpx;
+}
+
+/* 用户头像 */
+.user-avatar {
+    width: 80rpx;
+    height: 80rpx;
+    border-radius: 50%;
+    margin-right: 20rpx;
+}
+
+/* 用户名 */
+.username {
+    font-size: 34rpx;
+    font-weight: bold;
+    color: #333;
+}
+
+/* 帖子内容 */
+.post-content {
+    padding-top: 20rpx;
+}
+
+/* 标题 */
+.post-title {
+    font-size: 36rpx;
+    margin-top: 20rpx;
+    margin-bottom: 20rpx;
+}
+
+/* 图片 */
+.image-scroll {
+    display: flex;
+    gap: 10rpx;
+    white-space: nowrap;
+    overflow-x: auto;
+    margin-top: 20rpx;
+    margin-bottom: 20rpx;
+}
+
+.post-image {
+    width: 300rpx;
+    height: 300rpx;
+    border-radius: 10rpx;
+    object-fit: cover;
+}
+
+/* 帖子信息（时间 & 分类） */
+.post-info {
+    display: flex;
+    justify-content: space-between;
+    padding: 10rpx 30rpx;
+    font-size: 28rpx;
+    color: #666;
+}
+
+/* 评论区 */
+.comment-section {
+    padding: 20rpx 30rpx;
+    border-top: 1rpx solid #eee;
+}
+
+.comment-title {
+    font-size: 32rpx;
+    font-weight: bold;
+    margin-bottom: 20rpx;
+}
+
+/* 单条评论 */
+.comment-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 20rpx;
+}
+
+/* 评论头像 */
+.comment-avatar {
+    width: 60rpx;
+    height: 60rpx;
+    border-radius: 50%;
+    margin-right: 15rpx;
+}
+
+/* 评论内容 */
+.comment-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.comment-username {
+    font-size: 28rpx;
+    font-weight: bold;
+    color: #333;
+}
+
+.comment-text {
+    font-size: 28rpx;
+    color: #666;
+}
+
+/* 底部输入框 */
+.bottom-bar {
+    position: fixed;
+    bottom: 0;
+    width: 93%;
+    padding-bottom: 20rpx;
+    padding-top: 10rpx;
+    background-color: #fff;
+    border-top: 1rpx solid #eee;
+}
+
+/* 评论输入框 */
+.comment-input {
+    padding: 15rpx;
+    font-size: 28rpx;
+    border-radius: 30rpx;
+    background-color: #f5f5f5;
+}

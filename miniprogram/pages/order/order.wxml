@@ -1,6 +1,6 @@
 <view class="container">
     <!-- 圆形返回按钮 -->
-    <button class="back-button" bindtap="handleBack">←</button>
+    <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack" />
     <!-- 一级筛选菜单 -->
     <view class="filter-bar">
         <view wx:for="{{filterOptions1}}" wx:key="index" bindtap="selectFilter1" data-index="{{index}}" class="filter-item {{index === activeFilter1 ? 'active' : ''}}">

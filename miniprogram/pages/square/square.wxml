@@ -23,7 +23,7 @@
     <!-- 动态内容展示区 -->
     <view class="content">
         <block wx:for="{{posts}}" wx:key="post_id">
-            <view class="post-card">
+            <view class="post-card" bindtap="goToDetail" data-postid="{{item.post_id}}">
                 <!-- 用户信息 -->
                 <view class="post-header">
                     <image class="user-avatar" src="{{item.user_avatar}}" />
