@@ -64,6 +64,11 @@ Page({
             url: `/pages/task-list/task-list?category=${category}`,  // 跳转到任务列表页并传递分类信息
         });
     },
+    handleTimetableClick(e: any) {
+      wx.navigateTo({
+          url: '/pages/timetable/timetable',
+      })  
+    },
 
     // 处理点击任务项，跳转到详情页
     handleTaskClick(e: any) {

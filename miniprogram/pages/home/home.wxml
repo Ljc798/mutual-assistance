@@ -35,7 +35,7 @@
             <image src="/assets/icons/bangbandaiban.svg" class="category-icon" />
             <text class="category-text">代办服务</text>
         </view>
-        <view class="category-item">
+        <view class="category-item" bindtap="handleTimetableClick">
             <image src="/assets/icons/kebiao.svg" class="category-icon" />
             <text class="category-text">我的课表</text>
         </view>

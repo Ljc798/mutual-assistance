@@ -1,7 +1,11 @@
 Page({
     data: {
       post: {},
-      comments: []
+      comments: [],
+      keyboardHeight: 0, // 记录键盘高度
+        isKeyboardOpen: false,
+        preventScroll: false, // 用于控制页面滚动
+        pageScrollTop: 0 // 记录页面初始滚动位置
     },
   
     onLoad(options: any) {
@@ -29,6 +33,30 @@ Page({
       ];
   
       this.setData({ post: fakePost, comments: fakeComments });
+
+      // 监听键盘高度变化
+      wx.onKeyboardHeightChange(res => {
+        if (res.height > 0) {
+            this.setData({
+                keyboardHeight: res.height,
+                isKeyboardOpen: true,
+                preventScroll: true
+            });
+
+            // **确保输入框缓慢升起，避免突兀**
+            setTimeout(() => {
+                this.setData({
+                    keyboardHeight: res.height
+                });
+            }, 50); // **50ms 让 UI 和键盘动画匹配**
+        } else {
+            this.setData({
+                keyboardHeight: 0,
+                isKeyboardOpen: false,
+                preventScroll: false
+            });
+        }
+    });
     },
   
     // **返回上一页**
@@ -44,8 +72,31 @@ Page({
       this.setData({ post });
     },
   
-    // **点击评论框，弹出键盘**
-    focusComment() {
-      console.log("弹出键盘输入评论...");
+    focusComment(e: any) {
+        // **提前记录页面当前滚动位置**
+        wx.createSelectorQuery()
+            .selectViewport()
+            .scrollOffset(res => {
+                this.setData({ pageScrollTop: res.scrollTop });
+            })
+            .exec();
+
+        // **提前调整页面，防止上移**
+        wx.pageScrollTo({
+            scrollTop: this.data.pageScrollTop,
+            duration: 0 // **0ms 立即生效**
+        });
+
+        this.setData({
+            preventScroll: true
+        });
+    },
+
+    blurComment() {
+        this.setData({
+            keyboardHeight: 0,
+            isKeyboardOpen: false,
+            preventScroll: false
+        });
     }
   });

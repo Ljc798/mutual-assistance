@@ -44,7 +44,7 @@
                     <text class="post-time">{{item.timestamp}}</text>
 
                     <view class="post-footer-right">
-                        <view class="likes" bindtap="toggleLike" data-index="{{index}}">
+                        <view class="likes" catchtap="toggleLike" data-index="{{index}}">
                             <image src="{{item.isLiked ? '/assets/icons/heart-fill.svg' : '/assets/icons/heart-line.svg'}}" />
                             <text>{{item.likes}}</text>
                         </view>

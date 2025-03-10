@@ -1,0 +1,135 @@
+.timetable-container {
+    padding: 20rpx;
+    margin-top: 160rpx;
+}
+
+.back-btn {
+    position: absolute;
+    top: 110rpx;
+    left: 20rpx;
+    width: 50rpx;
+    height: 50rpx;
+    margin-right: 20rpx;
+}
+
+/* 顶部切换栏 */
+.top-bar {
+    display: flex;
+    justify-content: space-around;
+    padding: 10rpx 0;
+    background-color: #f5f5f5;
+    border-radius: 20rpx;
+}
+
+.tab {
+    flex: 1;
+    text-align: center;
+    padding: 15rpx 0;
+    font-size: 32rpx;
+    color: #666;
+}
+
+.active {
+    font-weight: bold;
+    color: #000;
+    border-bottom: 4rpx solid #ff4d4f;
+}
+
+/* 日期选择器 */
+.date-selector {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 20rpx;
+    font-size: 32rpx;
+}
+
+.menu-icon {
+    width: 40rpx;
+    height: 40rpx;
+}
+
+.course-item {
+    display: flex;
+    align-items: center;
+    background: #ffffff;
+    padding: 20rpx;
+    margin-bottom: 20rpx;
+    border-radius: 20rpx;
+    box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+
+}
+
+/* 左侧时间（竖向排列） */
+.course-time {
+    width: 120rpx;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    font-size: 26rpx;
+    color: #555;
+}
+
+.start-time {
+    font-weight: bold;
+}
+
+.time-separator {
+    margin: 5rpx 0;
+    color: #aaa;
+}
+
+.end-time {
+    color: #999;
+    font-size: 24rpx;
+}
+
+/* 课程信息部分 */
+.course-info {
+    flex: 1;
+    padding-left: 20rpx;
+}
+
+.course-name {
+    font-size: 34rpx;
+    font-weight: bold;
+    color: #333;
+}
+
+.course-details {
+    font-size: 26rpx;
+    color: #888;
+    margin-top: 10rpx;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* 状态灯位置优化 */
+.status-light {
+    width: 25rpx;
+    height: 25rpx;
+    border-radius: 50%;
+    margin-left: 10rpx;
+    margin-bottom: 40rpx;
+    position: absolute;
+    right: 30rpx; /* 固定到右侧位置，更美观 */
+}
+
+/* 状态颜色 */
+.ended {
+    background-color: #ccc; /* 灰色：已结束 */
+}
+
+.ongoing {
+    background-color: #4caf50; /* 绿色：正在上课 */
+}
+
+.upcoming {
+    background-color: #2196f3; /* 蓝色：即将上课 */
+}
+
+/* 调整 course-item 为相对定位，支持状态灯绝对定位 */
+.course-item {
+    position: relative;
+}

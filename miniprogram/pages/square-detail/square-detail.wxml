@@ -1,4 +1,4 @@
-<view class="post-detail">
+<view class="post-detail" disable-scroll="{{preventScroll}}">
     <!-- 顶部导航栏 -->
     <view class="post-header">
         <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="goBack"/>
@@ -6,38 +6,40 @@
         <text class="username">{{post.username}}</text>
     </view>
 
-    <!-- 帖子内容 -->
-    <view class="post-content">
-        <text class="post-title">{{post.title}}</text>
-        <block wx:if="{{post.images.length > 0}}">
-            <scroll-view class="image-scroll" scroll-x="true">
-                <image wx:for="{{post.images}}" wx:key="index" src="{{item}}" class="post-image" mode="aspectFill"/>
-            </scroll-view>
-        </block>
-    </view>
+    <!-- 主要内容区 -->
+    <scroll-view class="main-content" scroll-y="true">
+        <view class="post-content">
+            <text class="post-title">{{post.title}}</text>
+            <block wx:if="{{post.images.length > 0}}">
+                <scroll-view class="image-scroll" scroll-x="true">
+                    <image wx:for="{{post.images}}" wx:key="index" src="{{item}}" class="post-image" mode="aspectFill"/>
+                </scroll-view>
+            </block>
+        </view>
 
-    <!-- 信息区 -->
-    <view class="post-info">
-        <text class="post-time">{{post.timestamp}}</text>
-        <text class="post-category">#{{post.category}}</text>
-    </view>
+        <!-- 信息区 -->
+        <view class="post-info">
+            <text class="post-time">{{post.timestamp}}</text>
+            <text class="post-category">#{{post.category}}</text>
+        </view>
 
-    <!-- 评论区 -->
-    <view class="comment-section">
-        <text class="comment-title">评论区</text>
-        <block wx:for="{{comments}}" wx:key="comment_id">
-            <view class="comment-item">
-                <image class="comment-avatar" src="{{item.avatar}}"/>
-                <view class="comment-content">
-                    <text class="comment-username">{{item.username}}</text>
-                    <text class="comment-text">{{item.text}}</text>
+        <!-- 评论区 -->
+        <scroll-view class="comment-section" scroll-y="true">
+            <text class="comment-title">评论区</text>
+            <block wx:for="{{comments}}" wx:key="comment_id">
+                <view class="comment-item">
+                    <image class="comment-avatar" src="{{item.avatar}}"/>
+                    <view class="comment-content">
+                        <text class="comment-username">{{item.username}}</text>
+                        <text class="comment-text">{{item.text}}</text>
+                    </view>
                 </view>
-            </view>
-        </block>
-    </view>
+            </block>
+        </scroll-view>
+    </scroll-view>
 
-    <!-- 底部固定评论框 -->
-    <view class="bottom-bar">
-        <input class="comment-input" placeholder="发布你的评论..." bindfocus="focusComment" />
+    <!-- 底部固定输入框 -->
+    <view class="bottom-bar" style="bottom: {{keyboardHeight}}px;">
+        <input class="comment-input" placeholder="发布你的评论..." bindfocus="focusComment" bindblur="blurComment"/>
     </view>
 </view>

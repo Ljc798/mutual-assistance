@@ -1,0 +1,43 @@
+<view class="timetable-container">
+    <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack" />
+    <!-- 顶部选择器 -->
+    <view class="top-bar">
+        <view class="tab {{selectedTab === 'daily' ? 'active' : ''}}" bindtap="switchToDaily">日课表</view>
+        <view class="tab {{selectedTab === 'weekly' ? 'active' : ''}}" bindtap="switchToWeekly">周课表</view>
+    </view>
+
+    <!-- 日期选择 & 编辑菜单 -->
+    <view class="date-selector">
+        <text class="day-of-week">{{dayOfWeek}}</text>
+        <picker mode="date" value="{{selectedDate}}" bindchange="onDateChange">
+            <text class="selected-date">{{selectedDate}}</text>
+        </picker>
+        <image class="menu-icon" src="/assets/icons/menu-dots-svgrepo-com.svg   " bindtap="openMenu" />
+    </view>
+
+    <!-- 课程列表 -->
+    <view class="course-list">
+        <block wx:for="{{courses}}" wx:key="index">
+            <view class="course-item">
+                <!-- 左侧时间 -->
+                <view class="course-time">
+                    <text>{{item.time_start}}</text>
+                    <text>~</text>
+                    <text>{{item.time_end}}</text>
+                </view>
+
+                <!-- 课程信息 -->
+                <view class="course-info">
+                    <text class="course-name">{{item.course_name}}</text>
+                    <view class="course-details">
+                        <text class="course-location">{{item.location}}</text>
+                        <text class="course-teacher">{{item.teacher}}</text>
+                    </view>
+                </view>
+
+                <!-- 右侧状态灯 -->
+                <view class="status-light {{item.status}}"></view>
+            </view>
+        </block>
+    </view>
+</view>
