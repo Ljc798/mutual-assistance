@@ -1,23 +1,23 @@
+# 使用 Node.js 20 作为基础镜像
 FROM node:20.18.0
+
+# 设置工作目录
 WORKDIR /app
 
-# 复制整个项目到容器中
+# 复制 package.json 和 package-lock.json，优先安装依赖，减少构建时间
+COPY package*.json ./
+
+# 安装依赖
+RUN npm install
+
+# 复制项目所有文件到容器
 COPY . .
 
-# 确保 `cert` 目录存在
-RUN mkdir -p /app/cert
+# 指定运行端口
+EXPOSE 3000
 
-# 复制 `initenv.sh`
-COPY ./server/cert/initenv.sh /app/cert/initenv.sh
+# 设置环境变量（可选，部署时也可以通过云环境变量注入）
+ENV NODE_ENV=production
 
-# 复制 `certificate.crt`（如果需要）
-COPY ./server/cert/certificate.crt /app/cert/certificate.crt
-
-# 确保 `initenv.sh` 可执行
-RUN chmod +x /app/cert/initenv.sh
-
-# 运行 `initenv.sh` 初始化环境
-RUN /app/cert/initenv.sh
-
-# 运行服务器
+# 启动服务器
 CMD ["node", "index.js"]
