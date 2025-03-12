@@ -59,7 +59,7 @@ Page({
         }
   
         wx.request({
-          url: "http://localhost:3000/api/user/info", // 云托管请换成线上地址
+          url: "http://express-ffi1-145923-5-1348081197.sh.run.tcloudbase.com/api/user/info", // 云托管请换成线上地址
           method: "GET",
           header: { 
             "Authorization": `Bearer ${token}`,
