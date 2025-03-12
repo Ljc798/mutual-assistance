@@ -5,9 +5,12 @@
 
     <!-- 未登录状态 -->
     <block wx:if="{{!isLoggedIn}}">
-        <view class="login-box">
-            <button class="login-btn" bindtap="loginUser">立即登录 / 注册</button>
-        </view>
+        <view class="login-container">
+    <button class="wx-login-btn" open-type="getUserInfo" bindtap="loginUser">
+        <image class="wx-icon" src="/assets/icons/wechat.svg"/>
+        微信一键登录
+    </button>
+</view>
     </block>
     <!-- 已登录状态 -->
     <block wx:if="{{isLoggedIn}}">

@@ -1,40 +1,91 @@
 const express = require("express");
-const router = express.Router();
-const db = require("../db"); // 连接数据库
+const axios = require("axios");
 const jwt = require("jsonwebtoken");
+const db = require("../db");
 
-// 用户登录或注册
+const router = express.Router();
+require("dotenv").config();
+
+const SECRET_KEY = process.env.SECRET_KEY || "default_secret_key";
+const WX_APPID = process.env.WX_APPID;
+const WX_SECRET = process.env.WX_SECRET;
+
+// 处理微信登录
 router.post("/login", async (req, res) => {
-    const { nickname, avatarUrl } = req.body;
-    
-    if (!nickname || !avatarUrl) {
-        return res.status(400).json({ error: "缺少必要参数" });
+    const { code, nickname, avatarUrl } = req.body;
+
+    if (!code) {
+        return res.status(400).json({ error: "缺少 code 参数" });
     }
 
-    // 查询数据库，看看用户是否已注册
-    const sql = `SELECT * FROM user WHERE username = ?`;
-    db.query(sql, [nickname], (err, result) => {
-        if (err) {
-            return res.status(500).json({ error: "数据库查询失败" });
+    try {
+        // 1️⃣ 通过 code 获取 openid
+        const wxResponse = await axios.get(`https://api.weixin.qq.com/sns/jscode2session`, {
+            params: {
+                appid: WX_APPID,
+                secret: WX_SECRET,
+                js_code: code,
+                grant_type: "authorization_code"
+            }
+        });
+
+        if (wxResponse.data.errcode) {
+            return res.status(400).json({ error: "微信认证失败", details: wxResponse.data });
         }
 
-        if (result.length > 0) {
-            // 用户已存在，生成 Token
-            const token = jwt.sign({ id: result[0].id }, "your_secret_key", { expiresIn: "7d" });
-            res.json({ message: "登录成功", token, user: result[0] });
-        } else {
-            // 新用户，插入数据库
-            const insertSql = `INSERT INTO user (username, wxid, free_counts, points, school_id) VALUES (?, ?, ?, ?, ?)`;
-            db.query(insertSql, [nickname, "wx-" + Date.now(), 10, 0, 1], (err, insertResult) => {
+        const openid = wxResponse.data.openid;
+
+        // 2️⃣ 先检查 `username` 是否已存在
+        const checkUsernameQuery = "SELECT * FROM users WHERE username = ?";
+        db.query(checkUsernameQuery, [nickname], (err, nameResults) => {
+            if (err) {
+                console.error("❌ 查询用户名失败:", err);
+                return res.status(500).json({ error: "数据库查询失败" });
+            }
+
+            if (nameResults.length > 0) {
+                return res.status(400).json({ error: "用户名已被使用，请换一个" });
+            }
+
+            // 3️⃣ 再查询 `wxid` 是否已存在
+            const checkUserQuery = "SELECT * FROM users WHERE wxid = ?";
+            db.query(checkUserQuery, [openid], (err, userResults) => {
                 if (err) {
-                    return res.status(500).json({ error: "注册失败" });
+                    console.error("❌ 查询用户失败:", err);
+                    return res.status(500).json({ error: "数据库查询失败" });
                 }
-                const newUser = { id: insertResult.insertId, username: nickname, free_counts: 10, points: 0, school_id: 1 };
-                const token = jwt.sign({ id: newUser.id }, "your_secret_key", { expiresIn: "7d" });
-                res.json({ message: "注册成功", token, user: newUser });
+
+                let user;
+                if (userResults.length > 0) {
+                    // 用户已存在，直接登录
+                    user = userResults[0];
+                } else {
+                    // 4️⃣ 用户不存在，创建新用户
+                    const insertUserQuery = "INSERT INTO users (username, wxid, avatar_url, free_counts, points) VALUES (?, ?, ?, 5, 10)";
+                    db.query(insertUserQuery, [nickname, openid, avatarUrl], (err, result) => {
+                        if (err) {
+                            console.error("❌ 用户创建失败:", err);
+                            return res.status(500).json({ error: "用户创建失败" });
+                        }
+
+                        user = { id: result.insertId, username: nickname, wxid: openid, avatar_url: avatarUrl };
+                    });
+                }
+
+                // 5️⃣ 生成 JWT 令牌
+                const token = jwt.sign({ id: user.id }, SECRET_KEY, { expiresIn: "7d" });
+
+                res.json({
+                    message: "登录成功",
+                    token,
+                    user
+                });
             });
-        }
-    });
+        });
+    } catch (error) {
+        console.error("❌ 登录错误:", error);
+        res.status(500).json({ error: "服务器错误" });
+    }
 });
 
 module.exports = router;

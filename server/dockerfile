@@ -1,5 +1,23 @@
 FROM node:20.18.0
 WORKDIR /app
+
+# 复制整个项目到容器中
 COPY . .
-RUN npm install
+
+# 确保 `cert` 目录存在
+RUN mkdir -p /app/cert
+
+# 复制 `initenv.sh`
+COPY ./server/cert/initenv.sh /app/cert/initenv.sh
+
+# 复制 `certificate.crt`（如果需要）
+COPY ./server/cert/certificate.crt /app/cert/certificate.crt
+
+# 确保 `initenv.sh` 可执行
+RUN chmod +x /app/cert/initenv.sh
+
+# 运行 `initenv.sh` 初始化环境
+RUN /app/cert/initenv.sh
+
+# 运行服务器
 CMD ["node", "index.js"]
