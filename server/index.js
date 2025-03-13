@@ -1,26 +1,18 @@
 const express = require("express");
-const cors = require("cors");
+const cors = require("cors"); // 解决跨域问题
+const tasksRouter = require("./routes/tasks"); // 任务 API
+
 const app = express();
 
-// 允许解析 JSON
-app.use(express.json());
-app.use(cors());
+// 中间件
+app.use(express.json()); // 解析 JSON
+app.use(cors()); // 允许跨域访问
 
-// 引入路由
-const wechatRoutes = require("./routes/wechat"); // 确保路径正确
-const taskRoutes = require("./routes/tasks");
-app.use("/wechat", wechatRoutes);
-app.use("/tasks", taskRoutes);
+// API 路由
+app.use("/api", tasksRouter); // 绑定任务 API
 
-app.get('/', (req, res) => {
-    res.send("🌍 服务器运行正常！");
-});
-app.get('/api/test', (req, res) => {
-    res.json({ message: "API 正常运行" });
-});
-
-// 启动服务器
-const PORT = process.env.APP_PORT || 3000;
+// 服务器监听端口
+const PORT = 3000;
 app.listen(PORT, () => {
     console.log(`✅ 服务器运行在 http://localhost:${PORT}`);
 });

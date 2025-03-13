@@ -5,11 +5,11 @@
     <view class="task-introduction">
         <view class="task-header">
             <text class="task-title">{{task.title}}</text>
-            <text class="task-reward">¥{{task.reward}}</text>
+            <text class="task-reward">¥{{task.offer}}</text>
         </view>
         <view class="task-info">
-            <view class="task-time">期望完成时间：{{task.DDL}}</view>
-            <view class="task-location">交易地点：{{task.location}}</view>
+            <view class="task-time">期望完成时间：{{formattedDDL}}前</view>
+            <view class="task-location">交易地点：{{task.position}}</view>
             <view class="task-address">交付地点：{{task.address}}</view>
         </view>
     </view>
@@ -21,15 +21,15 @@
         <!-- 根据任务类型显示不同的内容 -->
         <view wx:if="{{task.category === '代拿快递'}}" class="task-detail-item">
             <text class="label">快递单号：</text>
-            <text>{{task.takeCode}}</text>
+            <text>{{task.takeaway_code}}</text>
         </view>
         <view wx:if="{{task.category === '代拿外卖'}}" class="task-detail-item">
             <text class="label">外卖姓名：</text>
-            <text>{{task.takeName}}</text>
+            <text>{{task.takeaway_name}}</text>
         </view>
         <view wx:if="{{task.category === '代拿外卖'}}" class="task-detail-item">
             <text class="label">手机尾号：</text>
-            <text>{{task.takeTel}}</text>
+            <text>{{task.takeaway_tel}}</text>
         </view>
     </view>
 
