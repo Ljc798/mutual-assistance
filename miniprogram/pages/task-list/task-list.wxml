@@ -4,35 +4,40 @@
 
     <!-- 筛选菜单 -->
     <view class="filter-bar">
-        <view 
-            wx:for="{{filterOptions}}" 
-            wx:key="index" 
-            bindtap="selectFilter" 
-            data-index="{{index}}" 
-            class="filter-item {{index === activeFilter ? 'active' : ''}}">
-            {{item}}
-        </view>
-    </view>
-
-    <!-- 任务列表 -->
-    <view class="task-list-container">
-        <block wx:for="{{filteredTaskList}}" wx:key="index">
-            <view class="task-item" bindtap="handleTaskClick" data-index="{{index}}">
-                <view class="task-left">
-                    <text class="task-title">{{item.title}}</text>
-                    <view class="task-details">
-                        <view class="task-time">期望完成时间：{{item.DDL}}前</view>
-                        <view class="task-location">交易地点：{{item.location}}</view>
-                        <view class="task-location">送达地点：{{item.address}}</view>
-                    </view>
-                </view>
-                <view class="task-right">
-                    <text class="task-status">{{item.status}}</text>
-                    <text class="task-reward">¥{{item.reward}}</text>
-                </view>
+        <block wx:for="{{filterOptions}}" wx:key="index">
+            <view 
+                bindtap="selectFilter" 
+                data-index="{{index}}" 
+                class="filter-item {{index === activeFilter ? 'active' : ''}}">
+                {{item}}
             </view>
         </block>
     </view>
 
+    <!-- 任务列表 -->
+    <view class="task-list-container">
+        <block wx:if="{{filteredTaskList.length > 0}}">
+            <block wx:for="{{filteredTaskList}}" wx:key="_id">
+                <view class="task-item" bindtap="handleTaskClick" data-index="{{index}}">
+                    <view class="task-left">
+                        <text class="task-title">{{item.title}}</text>
+                        <view class="task-details">
+                            <view class="task-time">期望完成时间：{{item.DDL}}前</view>
+                            <view class="task-location">交易地点：{{item.location}}</view>
+                            <view class="task-location">送达地点：{{item.address}}</view>
+                        </view>
+                    </view>
+                    <view class="task-right">
+                        <text class="task-status">{{item.status}}</text>
+                        <text class="task-reward">¥{{item.reward}}</text>
+                    </view>
+                </view>
+            </block>
+        </block>
+        <!-- 如果没有任务 -->
+        <block wx:if="{{filteredTaskList.length === 0}}">
+            <view class="no-task">暂无相关任务</view>
+        </block>
+    </view>
 </view>
-    <bottom-nav></bottom-nav>
+<bottom-nav></bottom-nav>

@@ -6,11 +6,30 @@
     <!-- 未登录状态 -->
     <block wx:if="{{!isLoggedIn}}">
         <view class="login-container">
-    <button class="wx-login-btn" open-type="getUserInfo" bindtap="loginUser">
-        <image class="wx-icon" src="/assets/icons/wechat.svg"/>
-        微信一键登录
-    </button>
-</view>
+            <!-- 头像选择 -->
+            <view class="avatar-picker" bindtap="chooseAvatar">
+                <image class="avatar-img" src="{{userInfo.avatarUrl}}" mode="aspectFill"></image>
+                <text class="avatar-text">点击更换头像</text>
+            </view>
+
+            <!-- 姓名输入框 -->
+            <input class="name-input" placeholder="请输入您的姓名" bindinput="handleNameInput" value="{{userInfo.nickName}}" />
+
+            <view class="btns">
+
+                <!-- 微信获取信息 -->
+                <button class="wx-btn" open-type="getUserProfile" bindtap="getUserProfile">
+                    使用微信头像与昵称
+                </button>
+
+                <!-- 登录按钮 -->
+                <button class="login-btn" bindtap="handleLogin">注册并登录</button>
+            </view>
+
+            <view class="existing-user" bindtap="handleExistingLogin">
+                已有账号？点击登录👉
+            </view>
+        </view>
     </block>
     <!-- 已登录状态 -->
     <block wx:if="{{isLoggedIn}}">

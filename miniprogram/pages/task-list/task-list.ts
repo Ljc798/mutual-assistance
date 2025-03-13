@@ -1,73 +1,46 @@
 Page({
     data: {
-      category: '',  // 分类名称
-      taskList: [],  // 存储任务列表
+      category: "", // 任务分类
+      taskList: [], // 所有任务
       filteredTaskList: [], // 筛选后的任务列表
-  
-      // 筛选选项
       filterOptions: ["全部", "待接单", "进行中", "已完成"],
       activeFilter: 0, // 当前筛选索引
     },
   
-    onLoad: function (options: any) {
-      const category = options.category || "全部";  // 获取传递的分类，默认为"全部"
+    onLoad(options: any) {
+      const category = options.category || "全部";
       this.setData({ category });
-      
-      // 加载该分类下的任务数据
       this.loadTasksForCategory(category);
     },
   
-    // 处理返回操作
-    handleBack() {
-      wx.navigateBack({
-        delta: 1  // 返回上一级页面
-      });
-    },
-  
     // 加载任务数据（按分类）
-    loadTasksForCategory(category: string) {
-      const tasks = {
-        '代拿快递': [
-          { title: '快递任务1', detail: '帮我拿快递', status: "待接单", reward: "5" },
-          { title: '快递任务2', detail: '代取快递', status: "进行中", reward: "10" },
-        ],
-        '代拿外卖': [
-          { title: '外卖任务1', detail: '代拿外卖', status: "待接单", reward: "8" },
-          { title: '外卖任务2', detail: '取外卖', status: "已完成", reward: "15" },
-        ],
-        '兼职发布': [
-          { title: '兼职任务1', detail: '寻找兼职工作', status: "进行中", reward: "50" },
-          { title: '兼职任务2', detail: '招聘兼职人员', status: "待接单", reward: "80" },
-        ],
-        '作业协助': [
-          { title: '作业任务1', detail: '作业辅导', status: "已完成", reward: "20" },
-          { title: '作业任务2', detail: '帮助完成作业', status: "待接单", reward: "25" },
-        ],
-        '二手交易': [
-          { title: '二手任务1', detail: '出售二手物品', status: "待接单", reward: "100" },
-          { title: '二手任务2', detail: '二手交易', status: "进行中", reward: "120" },
-        ],
-        '寻物启事': [
-          { title: '寻物任务1', detail: '帮忙找丢失物品', status: "已完成", reward: "30" },
-          { title: '寻物任务2', detail: '寻找丢失物品', status: "待接单", reward: "40" },
-        ]
-      };
+    async loadTasksForCategory(category: string) {
+      const db = wx.cloud.database();
+      try {
+        const res = await db.collection("tasks")
+          .where(category !== "全部" ? { category } : {}) // 查询当前分类任务
+          .orderBy("createTime", "desc") // 按创建时间降序排序
+          .get();
   
-      const taskList = tasks[category] || [];
-      this.setData({ taskList });
+        console.log("✅ 获取任务:", res.data);
+        this.setData({ taskList: res.data });
   
-      // 默认按筛选条件（全部）进行筛选
-      this.filterTasks();
+        // 默认筛选
+        this.filterTasks();
+      } catch (error) {
+        console.error("❌ 任务加载失败:", error);
+        wx.showToast({ title: "加载失败", icon: "none" });
+      }
     },
   
-    // 选择筛选项
+    // 选择筛选条件
     selectFilter(event: any) {
       const index = event.currentTarget.dataset.index;
       this.setData({ activeFilter: index });
       this.filterTasks();
     },
   
-    // 任务筛选
+    // 筛选任务
     filterTasks() {
       const { activeFilter, filterOptions, taskList } = this.data;
       const selectedStatus = filterOptions[activeFilter];
@@ -80,13 +53,17 @@ Page({
       }
     },
   
-    // 任务点击事件（可跳转详情页）
+    // 点击任务跳转详情页
     handleTaskClick(event: any) {
       const index = event.currentTarget.dataset.index;
-      console.log("点击任务", this.data.filteredTaskList[index]);
-  
+      const task = this.data.filteredTaskList[index];
       wx.navigateTo({
-        url: `/pages/task-detail/task-detail?title=${this.data.filteredTaskList[index].title}`
+        url: `/pages/task-detail/task-detail?id=${task._id}`
       });
+    },
+  
+    // 返回上一页
+    handleBack() {
+      wx.navigateBack({ delta: 1 });
     },
   });

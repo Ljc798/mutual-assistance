@@ -121,52 +121,26 @@
 /* 底部输入框 */
 .bottom-bar {
     position: fixed;
-    left: 0;
+    left: 50%;
     bottom: 0;
     width: 100%;
+    padding-bottom: 15rpx;
+    max-width: 700rpx; // 限制最大宽度
     height: 100rpx;
     display: flex;
     align-items: center;
-    padding: 0 20rpx;
     background-color: #ffffff;
     border-top: 1px solid #ddd;
-}
+    transform: translateX(-50%); // 让它居中
+  }
 
-.placeholder {
-    color: #aaa;
-    font-size: 30rpx;
-}
-
-/* 模态输入框 */
-.comment-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0, 0, 0, 0.6);
-    z-index: 9999;
-}
-
-/* 输入框区域 */
-.comment-box {
-    width: 80%;
-    background: white;
-    padding: 20rpx;
-    border-radius: 20rpx;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
 
 /* 输入框 */
 .comment-input {
     flex: 1;
+    width: 300rpx;
     height: 80rpx;
-    border-radius: 10rpx;
+    border-radius: 20rpx;
     padding: 0 20rpx;
     background-color: #f5f5f5;
     font-size: 28rpx;
@@ -179,13 +153,4 @@
     background-color: #ff4d4f;
     color: white;
     border-radius: 10rpx;
-}
-
-/* 模态框外层点击关闭 */
-.modal-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100vh;
 }

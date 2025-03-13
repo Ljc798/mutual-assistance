@@ -9,8 +9,79 @@
     z-index: 10;
 }
 
-.login-box {
-    padding-top: 200rpx;
+.login-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 400rpx;
+}
+
+.avatar-picker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+}
+
+.avatar-img {
+    width: 120rpx;
+    height: 120rpx;
+    border-radius: 50%;
+    border: 2rpx solid #ccc;
+}
+
+.avatar-text {
+    font-size: 24rpx;
+    color: #666;
+    margin-top: 10rpx;
+}
+
+.name-input {
+    width: 80%;
+    padding: 20rpx;
+    margin-top: 30rpx;
+    border: 1rpx solid #ddd;
+    border-radius: 10rpx;
+    font-size: 28rpx;
+}
+
+.btns {
+    display: flex;
+    flex-direction: row;
+    gap: 20rpx;
+    margin-top: 20rpx;
+}
+
+.wx-btn {
+    width: 80%;
+    padding: 20rpx;
+    margin-top: 20rpx;
+    background-color: #07c160;
+    color: white;
+    font-size: 30rpx;
+    border-radius: 10rpx;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-btn {
+    width: 80%;
+    padding: 20rpx;
+    margin-top: 20rpx;
+    background-color: #07c160;
+    color: white;
+    font-size: 30rpx;
+    border-radius: 10rpx;
+    text-align: center;
+}
+
+.existing-user {
+    margin-top: 20px;
+    font-size: 14px;
+    color: #666;
+    text-decoration: underline;
 }
 
 .app-name {

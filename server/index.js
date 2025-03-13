@@ -11,7 +11,7 @@ const wechatRoutes = require("./routes/wechat"); // 确保路径正确
 app.use("/wechat", wechatRoutes);
 
 // 启动服务器
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.APP_PORT || 3000;
 app.listen(PORT, () => {
     console.log(`✅ 服务器运行在 http://localhost:${PORT}`);
 });

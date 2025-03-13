@@ -18,7 +18,6 @@
 
     <!-- 分类部分 -->
     <view class="category-container">
-        <!-- 分类项，点击后跳转到对应分类的任务列表页面 -->
         <view class="category-item" bindtap="handleCategoryClick" data-category="代拿快递">
             <image src="/assets/icons/kuaidi.svg" class="category-icon" />
             <text class="category-text">代拿快递</text>
@@ -61,22 +60,24 @@
         </view>
     </view>
 
+    <!-- 任务列表 -->
     <view class="task-list-container">
-        <!-- 使用 wx:for 循环渲染任务列表 -->
-        <view class="task-item" wx:for="{{tasks}}" wx:key="index" bindtap="handleTaskClick" data-index="{{index}}">
-            <view class="task-left">
-                <text class="task-title">{{item.title}}</text>
-                <view class="task-details">
-                    <view class="task-time">期望完成时间：{{item.DDL}}前</view>
-                    <view class="task-location">交易地点：{{item.location}}</view>
-                    <view class="task-location">送达地点：{{item.address}}</view>
+        <block wx:for="{{tasks}}" wx:key="index">
+            <view class="task-item" bindtap="handleTaskClick" data-index="{{index}}">
+                <view class="task-left">
+                    <text class="task-title">{{item.title}}</text>
+                    <view class="task-details">
+                        <view class="task-time">期望完成时间：{{item.DDL}}</view>
+                        <view class="task-location">交易地点：{{item.location}}</view>
+                        <view class="task-address">送达地点：{{item.address}}</view>
+                    </view>
+                </view>
+                <view class="task-right">
+                    <text class="task-status">{{item.status}}</text>
+                    <text class="task-reward">¥{{item.reward}}</text>
                 </view>
             </view>
-            <view class="task-right">
-            <text class="task-status">{{item.status}}</text>
-                <text class="task-reward">¥{{item.reward}}</text>
-            </view>
-        </view>
+        </block>
     </view>
 
     <bottom-nav></bottom-nav>
