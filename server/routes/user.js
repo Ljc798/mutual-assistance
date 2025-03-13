@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const db = require("../db");
+const db = require("../config/db");
 
 // 获取用户信息
 router.get("/info", (req, res) => {

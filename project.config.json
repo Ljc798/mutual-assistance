@@ -21,10 +21,13 @@
     "ignoreUploadUnusedFiles": true,
     "compileHotReLoad": false,
     "skylineRenderEnable": true,
-    "es6": true
+    "es6": true,
+    "condition": true
   },
   "simulatorType": "wechat",
-  "simulatorPluginLibVersion": {},
+  "simulatorPluginLibVersion": {
+    "wxext14566970e7e9f62": "3.6.5-25"
+  },
   "condition": {},
   "srcMiniprogramRoot": "miniprogram/",
   "editorSetting": {
@@ -37,5 +40,6 @@
     "include": []
   },
   "appid": "wxc16b2296bf6c1074",
-  "cloudfunctionTemplateRoot": "cloudfunctionTemplate/"
+  "cloudfunctionTemplateRoot": "cloudfunctionTemplate/",
+  "projectArchitecture": "multiPlatform"
 }
