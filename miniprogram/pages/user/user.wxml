@@ -3,78 +3,47 @@
         <view class="app-name">我的信息</view>
     </view>
 
-    <!-- 未登录状态 -->
-    <block wx:if="{{!isLoggedIn}}">
-        <view class="login-container">
-            <!-- 头像选择 -->
-            <view class="avatar-picker" bindtap="chooseAvatar">
-                <image class="avatar-img" src="{{userInfo.avatarUrl}}" mode="aspectFill"></image>
-                <text class="avatar-text">点击更换头像</text>
-            </view>
-
-            <!-- 姓名输入框 -->
-            <input class="name-input" placeholder="请输入您的姓名" bindinput="handleNameInput" value="{{userInfo.nickName}}" />
-
-            <view class="btns">
-
-                <!-- 微信获取信息 -->
-                <button class="wx-btn" open-type="getUserProfile" bindtap="getUserProfile">
-                    使用微信头像与昵称
-                </button>
-
-                <!-- 登录按钮 -->
-                <button class="login-btn" bindtap="handleLogin">注册并登录</button>
-            </view>
-
-            <view class="existing-user" bindtap="handleExistingLogin">
-                已有账号？点击登录👉
-            </view>
+    <!-- 个人信息区域 -->
+    <view class="user-info">
+        <view class="avatar">
+            <image src="{{userInfo.avatar_url}}" class="avatar-img" />
         </view>
-    </block>
-    <!-- 已登录状态 -->
-    <block wx:if="{{isLoggedIn}}">
-        <!-- 个人信息区域 -->
-        <view class="user-info">
-            <view class="avatar">
-                <image src="/assets/icons/pinche.svg" class="avatar-img" />
-            </view>
-            <view class="info">
-                <text class="user-name">姓名</text>
-                <text class="user-id">ID: 123456</text>
-            </view>
+        <view class="info">
+            <text class="user-name">{{userInfo.username}}</text>
+            <text class="user-id">ID: {{userInfo.wxid}}</text>
         </view>
+    </view>
 
-        <!-- 免费次数和钱包余额 -->
-        <view class="info-box">
-            <view class="box">
-                <text class="label">免广告次数</text>
-                <text class="value">10</text>
-            </view>
-            <view class="box">
-                <text class="label">积分余额</text>
-                <text class="value">100</text>
-            </view>
+    <!-- 免费次数和钱包余额 -->
+    <view class="info-box">
+        <view class="box">
+            <text class="label">免广告次数</text>
+            <text class="value">{{userInfo.free_counts}}</text>
         </view>
+        <view class="box">
+            <text class="label">积分余额</text>
+            <text class="value">{{userInfo.points}}</text>
+        </view>
+    </view>
 
-        <!-- 我的订单，我的空间，意见反馈 -->
-        <view class="action-box">
-            <view class="action-item" bindtap="handleOrderClick">
-                <text>我的订单</text>
-            </view>
-            <view class="action-item">
-                <text>我的空间</text>
-            </view>
-            <view class="action-item">
-                <text>个人信息</text>
-            </view>
-            <view class="action-item">
-                <text>意见反馈</text>
-            </view>
-            <view style="text-align: center; font-weight: 400; color: #333;">
-                <text>您的意见真的真的对我们很重要🥺</text>
-            </view>
+    <!-- 我的订单，我的空间，意见反馈 -->
+    <view class="action-box">
+        <view class="action-item" bindtap="handleOrderClick">
+            <text>我的订单</text>
         </view>
-    </block>
+        <view class="action-item">
+            <text>我的空间</text>
+        </view>
+        <view class="action-item">
+            <text>个人信息</text>
+        </view>
+        <view class="action-item">
+            <text>意见反馈</text>
+        </view>
+        <view style="text-align: center; font-weight: 400; color: #333;">
+            <text>您的意见真的真的对我们很重要🥺</text>
+        </view>
+    </view>
 
     <!-- 底部导航栏 -->
     <bottom-nav></bottom-nav>

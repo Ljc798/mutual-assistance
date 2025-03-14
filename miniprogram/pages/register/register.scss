@@ -1,0 +1,54 @@
+.register-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background-color: #f4f4f4;
+}
+
+.phone-btn, .logout-btn, .home-btn {
+    width: 80%;
+    padding: 15px;
+    font-size: 16px;
+    border-radius: 8px;
+    text-align: center;
+    margin-top: 20px;
+    border: none;
+}
+
+.phone-btn {
+    background-color: #07c160;
+    color: #fff;
+}
+
+.logout-btn {
+    background-color: #e64340;
+    color: #fff;
+}
+
+.home-btn {
+    background-color: #0081ff;
+    color: #fff;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 40px;
+}
+
+.avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    margin-bottom: 10px;
+}
+
+.username {
+    font-size: 18px;
+    color: #333;
+    font-weight: bold;
+    margin-bottom: 20px;
+}

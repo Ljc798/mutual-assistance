@@ -1,0 +1,16 @@
+<view class="register-container">
+    <!-- 未登录时显示一键登录按钮 -->
+    <view wx:if="{{!isLoggedIn}}">
+        <button class="phone-btn" open-type="getPhoneNumber" bindgetphonenumber="getPhoneNumber">
+            一键登录
+        </button>
+    </view>
+
+    <!-- 已登录时显示用户信息和操作按钮 -->
+    <view wx:if="{{isLoggedIn}}" class="user-info">
+        <image class="avatar" src="{{userInfo.avatar_url}}" />
+        <text class="username">{{userInfo.username}}</text>
+        <button class="logout-btn" bindtap="logout">退出登录</button>
+        <button class="home-btn" bindtap="goToHome">前往主页</button>
+    </view>
+</view>

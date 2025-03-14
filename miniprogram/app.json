@@ -9,7 +9,8 @@
     "pages/task-list/task-list",
     "pages/order/order",
     "pages/square-detail/square-detail",
-    "pages/timetable/timetable"
+    "pages/timetable/timetable",
+    "pages/register/register"
   ],
   "window": {
     "navigationBarTextStyle": "black",
