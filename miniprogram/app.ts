@@ -7,7 +7,7 @@ App<IAppOption>({
     async onLaunch() {
         console.log("✅ 小程序启动中...");
 
-        // ✅ 获取本地存储的 token
+        // ✅ 1. 获取本地存储的 token
         const token = wx.getStorageSync("token") || null;
 
         if (!token) {
@@ -16,12 +16,20 @@ App<IAppOption>({
             return;
         }
 
-        console.log("📡 服务器校验用户是否存在...");
-        await this.verifyUserFromServer(token);
+        // ✅ 2. 获取本地存储的用户信息
+        const user = wx.getStorageSync("user") || null;
+        if (user) {
+            console.log("✅ 直接使用本地缓存的用户信息:", user);
+            this.globalData.userInfo = user;
+            this.globalData.token = token;
+        } else {
+            console.warn("⚠️ 本地用户信息丢失，重新向服务器验证...");
+            this.verifyUserFromServer(token);
+        }
     },
 
-    // ✅ 服务器校验用户是否存在
-    async verifyUserFromServer(token: string) {
+    // ✅ 服务器校验用户是否存在（仅在用户信息丢失时调用）
+    verifyUserFromServer(token: string) {
         wx.request({
             url: "http://localhost:3000/api/user/info",
             method: "GET",
@@ -43,12 +51,23 @@ App<IAppOption>({
         });
     },
 
-    // ✅ 清除本地存储的用户信息
+    // ✅ 清除本地存储的用户信息（用户主动退出时调用）
     clearUserData() {
         wx.removeStorageSync("user");
         wx.removeStorageSync("token");
         this.globalData.userInfo = null;
         this.globalData.token = null;
         wx.redirectTo({ url: "/pages/register/register" });
+    },
+
+    // ✅ 用户登录成功后，存储 token 和用户信息
+    setGlobalUserInfo(user: any, token: string) {
+        console.log("📌 更新全局用户信息:", user);
+
+        this.globalData.userInfo = user;
+        this.globalData.token = token;
+
+        wx.setStorageSync("user", user);
+        wx.setStorageSync("token", token);
     }
 });

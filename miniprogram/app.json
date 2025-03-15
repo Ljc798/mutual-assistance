@@ -10,7 +10,8 @@
     "pages/order/order",
     "pages/square-detail/square-detail",
     "pages/timetable/timetable",
-    "pages/register/register"
+    "pages/register/register",
+    "pages/edit-profile/edit-profile"
   ],
   "window": {
     "navigationBarTextStyle": "black",

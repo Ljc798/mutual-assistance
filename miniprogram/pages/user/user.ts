@@ -5,7 +5,10 @@ Page({
 
     onLoad() {
         this.loadUserInfo(); // 页面加载时获取用户信息
-        
+    },
+
+    onShow() {
+        this.loadUserInfo(); // **每次页面显示时获取最新数据**
     },
 
     // ✅ **优化获取用户信息的逻辑**
@@ -60,6 +63,13 @@ Page({
                 console.error("❌ 获取用户信息失败:", err);
                 wx.showToast({ title: "网络错误，请稍后再试", icon: "none" });
             }
+        });
+    },
+
+    // 跳转到信息修改页面
+    goToEditProfile() {
+        wx.navigateTo({
+            url: "/pages/edit-profile/edit-profile"
         });
     },
 

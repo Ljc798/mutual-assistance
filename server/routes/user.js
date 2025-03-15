@@ -93,4 +93,48 @@ router.post("/phone-login", async (req, res) => {
     }
 });
 
+// 📌 **修改用户信息 API**
+router.post("/update", async (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({ success: false, message: "未提供有效的 Token" });
+    }
+
+    const token = authHeader.replace("Bearer ", ""); // 提取 token
+    if (!token.startsWith("mock_token_")) {
+        return res.status(401).json({ success: false, message: "无效的 Token" });
+    }
+
+    const userId = token.replace("mock_token_", "");
+
+    db.query("SELECT * FROM users WHERE id = ?", [userId], (err, results) => {
+        if (err) {
+            return res.status(500).json({ success: false, message: "服务器错误" });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({ success: false, message: "用户不存在" });
+        }
+
+        db.query(
+            "UPDATE users SET username = ?, avatar_url = ?, wxid = ? WHERE id = ?",
+            [req.body.username, req.body.avatar_url, req.body.wxid, userId],
+            (updateErr) => {
+                if (updateErr) {
+                    return res.status(500).json({ success: false, message: "更新失败" });
+                }
+
+                db.query("SELECT * FROM users WHERE id = ?", [userId], (fetchErr, updatedUser) => {
+                    if (fetchErr) {
+                        return res.status(500).json({ success: false, message: "获取最新用户信息失败" });
+                    }
+
+                    return res.json({ success: true, message: "用户信息更新成功", user: updatedUser[0] });
+                });
+            }
+        );
+    });
+});
+
+
 module.exports = router;

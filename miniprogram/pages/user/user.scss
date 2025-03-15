@@ -94,6 +94,8 @@
     margin-top: 200rpx;
     margin-bottom: 30rpx;
     align-items: center;
+    position: relative;  // 让右箭头可以绝对定位
+    padding-right: 60rpx; // 预留箭头空间
 }
 
 .avatar {
@@ -122,10 +124,23 @@
     color: #888;
 }
 
+.arrow {
+    position: absolute;
+    right: 40rpx;  // **保持箭头在右侧**
+    top: 50%;
+    transform: translateY(-50%);
+
+    .arrow-icon {
+        width: 66rpx;
+        height: 66rpx;
+    }
+}
+
 .info-box {
     display: flex;
     margin-bottom: 30rpx;
 }
+
 
 .box {
     flex: 1;

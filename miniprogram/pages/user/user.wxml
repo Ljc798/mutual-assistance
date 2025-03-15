@@ -4,7 +4,7 @@
     </view>
 
     <!-- 个人信息区域 -->
-    <view class="user-info">
+    <view class="user-info" bindtap="goToEditProfile">
         <view class="avatar">
             <image src="{{userInfo.avatar_url}}" class="avatar-img" />
         </view>
@@ -12,6 +12,9 @@
             <text class="user-name">{{userInfo.username}}</text>
             <text class="user-id">ID: {{userInfo.wxid}}</text>
         </view>
+        <view class="arrow">
+        <image src="/assets/icons/right-chevron-svgrepo-com.svg" class="arrow-icon"/>
+    </view>
     </view>
 
     <!-- 免费次数和钱包余额 -->
@@ -34,7 +37,7 @@
         <view class="action-item">
             <text>我的空间</text>
         </view>
-        <view class="action-item">
+        <view class="action-item" bindtap="goToEditProfile">
             <text>个人信息</text>
         </view>
         <view class="action-item">

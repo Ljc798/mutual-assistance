@@ -1,0 +1,22 @@
+<view class="edit-profile-container">
+    <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack" />
+    <view class="section">
+        <text class="label">头像</text>
+        <view class="avatar-picker" bindtap="chooseAvatar">
+            <image class="avatar-img" src="{{userInfo.avatar_url}}" />
+        </view>
+    </view>
+
+    <view class="section">
+        <text class="label">姓名</text>
+        <input class="input-field" placeholder="请输入您的姓名(3-10个字符)" value="{{userInfo.username}}" bindinput="updateUsername"/>
+    </view>
+
+    <view class="section">
+        <text class="label">用户 ID</text>
+        <input class="input-field" placeholder="请输入您的id(8-15个字符)" value="{{userInfo.wxid}}" bindinput="updateWxid"/>
+    </view>
+
+    <button class="save-btn" bindtap="saveChanges">保存修改</button>
+    <button class="logout-btn" bindtap="logout">退出登录</button>
+</view>
