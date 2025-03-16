@@ -26,7 +26,7 @@
             <view class="post-card" bindtap="goToDetail" data-postid="{{item.post_id}}">
                 <!-- 用户信息 -->
                 <view class="post-header">
-                    <image class="user-avatar" src="{{item.user_avatar}}" />
+                    <image class="user-avatar" src="{{item.avatar_url}}" />
                     <text class="username">{{item.username}}</text>
                 </view>
 
@@ -41,16 +41,16 @@
                 </block>
                 <!-- 点赞 & 评论 -->
                 <view class="post-footer">
-                    <text class="post-time">{{item.timestamp}}</text>
+                    <text class="post-time">{{item.created_time}}</text>
 
                     <view class="post-footer-right">
                         <view class="likes" catchtap="toggleLike" data-index="{{index}}">
                             <image src="{{item.isLiked ? '/assets/icons/heart-fill.svg' : '/assets/icons/heart-line.svg'}}" />
-                            <text>{{item.likes}}</text>
+                            <text>{{item.likes_count}}</text>
                         </view>
                         <view class="comments">
                             <image src="/assets/icons/comment-3-svgrepo-com.svg " />
-                            <text>{{item.comments}}</text>
+                            <text>{{item.comments_count}}</text>
                         </view>
                     </view>
                 </view>
@@ -76,14 +76,19 @@
             </picker>
 
             <!-- 文字输入框 -->
-            <textarea class="post-input" placeholder="写点什么吧..." bindinput="handlePostInput" />
+            <textarea class="post-input" placeholder="写点什么吧..." bindinput="handlePostInput" value="{{newPostContent}}" />
 
-            <!-- 图片上传 -->
+            <!-- 图片上传区域 -->
             <view class="image-upload">
-                <block wx:for="{{imageList}}" wx:key="index">
-                    <image class="uploaded-image" src="{{item}}" mode="aspectFill" />
+                <block wx:for="{{tempImageList}}" wx:key="index">
+                    <view class="image-wrapper">
+                        <image class="uploaded-image" src="{{item}}" mode="aspectFill" />
+                        <!-- 删除按钮 -->
+                        <view class="delete-btn" bindtap="removeImage" data-index="{{index}}">×</view>
+                    </view>
                 </block>
-                <view class="add-image-btn" bindtap="chooseImage">+</view>
+                <!-- 添加图片按钮 -->
+                <view wx:if="{{tempImageList.length < 9}}" class="add-image-btn" bindtap="chooseImage">+</view>
             </view>
 
             <!-- 发布按钮 -->

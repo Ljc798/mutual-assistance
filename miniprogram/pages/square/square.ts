@@ -1,184 +1,275 @@
 Page({
     data: {
-        schoolName: "九江学院", // 默认学校
-        categories: ["全部", "校园墙", "吐槽", "失物", "拼车", "二手交易", "拼单", "选课分享", "社团", "好物美景分享"], // 分类列表
-        postCategories: ["校园墙", "吐槽", "失物", "拼车", "二手交易", "拼单", "选课分享", "社团", "好物美景分享", "其他"], // 发布帖子时的分类
-        selectedCategory: "全部", // 默认选中
-        posts: [], // 这里存放假数据
-        checkinIcon: "/assets/icons/rili-2.svg", // 默认签到图标
-        isCheckedIn: false, // 是否已签到
-        isModalOpen: false, // 控制发布页面开关
-        newPostContent: "", // 存储用户输入的内容
+        categories: ["全部", "校园墙", "吐槽", "失物", "拼车", "二手交易", "拼单", "选课分享", "社团", "好物美景分享"],
+        selectedCategory: "全部",
+        posts: [],
+        isModalOpen: false,
+        postCategories: ["校园墙", "吐槽", "失物", "拼车", "二手交易", "拼单", "选课分享", "社团", "好物美景分享", "其他"],
+        selectedPostCategory: "",
+        newPostContent: "",
+        tempImageList: [], // 临时存储选中的图片（但未上传）
+        uploadedImages: [], // 已上传的图片 URL
     },
 
     onLoad() {
-        this.fetchPosts("全部"); // 初始加载所有帖子
+        this.fetchPosts("全部");
     },
 
-    // 切换分类时，从本地数据获取相应的帖子
     selectCategory(e: any) {
         const category = e.currentTarget.dataset.category;
         this.setData({ selectedCategory: category });
-
-        this.fetchPosts(category); // 更新数据
+        this.fetchPosts(category);
     },
 
-    // 选择发布分类
-  selectPostCategory(e: any) {
-    this.setData({ selectedPostCategory: this.data.postCategories[e.detail.value] });
-  },
-
-    // **使用本地假数据**
+    // ✅ 获取帖子数据
     fetchPosts(category: string) {
-        const fakePosts = [
-            {
-                post_id: "1",
-                category: "校园墙",
-                user_avatar: "/assets/icons/zuoye.svg",
-                username: "张三",
-                content: "今天的天空好蓝！希望期末考试顺利！📚✨",
-                images: ["/assets/icons/zuoye.svg", "/assets/icons/zuoye.svg", "/assets/icons/zuoye.svg"],
-                timestamp: "2025-03-04 10:30",
-                likes: 12,
-                comments: 3,
-                isLiked: false,
-            },
-            {
-                post_id: "2",
-                category: "吐槽",
-                user_avatar: "/assets/icons/user2.png",
-                username: "李四",
-                content: "学校食堂的饭又涨价了…😭",
-                images: [],
-                timestamp: "2025-03-04 09:15",
-                likes: 25,
-                comments: 10,
-                isLiked: false,
-            },
-            {
-                post_id: "3",
-                category: "失物",
-                user_avatar: "/assets/icons/user3.png",
-                username: "王五",
-                content: "有人在教学楼 302 教室捡到一串钥匙吗？📢",
-                images: [],
-                timestamp: "2025-03-03 18:45",
-                likes: 8,
-                comments: 2,
-                isLiked: false,
-            },
-            {
-                post_id: "4",
-                category: "拼车",
-                user_avatar: "/assets/icons/user4.png",
-                username: "赵六",
-                content: "明天 8:00 从学校去市中心，有人一起拼车吗？🚗",
-                images: [],
-                timestamp: "2025-03-03 22:10",
-                likes: 15,
-                comments: 5,
-                isLiked: false,
-            },
-            {
-                post_id: "5",
-                category: "二手交易",
-                user_avatar: "/assets/icons/user5.png",
-                username: "孙七",
-                content: "出一台 9 成新的 iPad Pro，有意者私聊📱",
-                images: [],
-                timestamp: "2025-03-02 15:30",
-                likes: 30,
-                comments: 12,
-                isLiked: false,
-            }
-        ];
-
-        // 如果选中的是 "全部"，显示所有数据，否则筛选数据
-        const filteredPosts = category === "全部" ? fakePosts : fakePosts.filter(post => post.category === category);
-
-        this.setData({ posts: filteredPosts });
-    },
-
-    // **点赞 / 取消点赞**
-  toggleLike(e: any) {
-    const index = e.currentTarget.dataset.index;
-    let posts = [...this.data.posts];
-
-    posts[index].isLiked = !posts[index].isLiked;
-    posts[index].likes += posts[index].isLiked ? 1 : -1;
-
-    this.setData({ posts });
-  },
-
-    // 处理签到
-    handleCheckIn() {
-        if (!this.data.isCheckedIn) {
-            this.setData({
-                checkinIcon: "/assets/icons/daka.svg", // 切换为已签到图标
-                isCheckedIn: true
-            });
-            wx.showToast({
-                title: "签到成功！",
-                icon: "success"
-            });
-        } else {
-            wx.showToast({
-                title: "今天已签到",
-                icon: "none"
-            });
+        const app = getApp();
+        const user_id = app.globalData.userInfo?.id || null;
+        if (!user_id) {
+            wx.showToast({ title: "请先登录", icon: "none" });
+            return;
         }
+
+        wx.request({
+            url: "http://localhost:3000/api/square/posts",
+            method: "GET",
+            data: { category, user_id },
+            success: (res: any) => {
+                if (res.data.success) {
+                    let posts = res.data.posts || [];
+                    posts = posts.map(post => ({
+                        ...post,
+                        isLiked: post.isLiked || false,
+                        created_time: this.formatTime(post.created_time)
+                    }));
+                    this.setData({ posts });
+                }
+            },
+            fail: (err) => {
+                console.error("❌ 获取帖子失败:", err);
+            }
+        });
     },
-    // 打开发布页面
+
+    // ✅ 时间格式化
+    formatTime(timeStr: string): string {
+        const date = new Date(timeStr);
+        const month = (date.getMonth() + 1).toString().padStart(2, "0");
+        const day = date.getDate().toString().padStart(2, "0");
+        const hours = date.getHours().toString().padStart(2, "0");
+        const minutes = date.getMinutes().toString().padStart(2, "0");
+        return `${month}-${day} ${hours}:${minutes}`;
+    },
+
+    // ✅ 点赞/取消点赞
+    toggleLike(e: any) {
+        const index = e.currentTarget.dataset.index;
+        let posts = [...this.data.posts];
+        let post = posts[index];
+
+        const app = getApp();
+        const user_id = app.globalData.userInfo?.id;
+        if (!user_id) {
+            wx.showToast({ title: "请先登录", icon: "none" });
+            return;
+        }
+
+        const url = post.isLiked
+            ? "http://localhost:3000/api/square/unlike"
+            : "http://localhost:3000/api/square/like";
+
+        wx.request({
+            url,
+            method: "POST",
+            header: { Authorization: `Bearer ${app.globalData.token}` },
+            data: { user_id, square_id: post.id },
+            success: (res: any) => {
+                if (res.data.success) {
+                    post.isLiked = !post.isLiked;
+                    post.likes_count += post.isLiked ? 1 : -1;
+                    this.setData({ posts });
+                }
+            },
+            fail: (err) => {
+                console.error("❌ 点赞/取消点赞失败:", err);
+            }
+        });
+    },
+
+    // **跳转到帖子详情页**
+    goToDetail(e: any) {
+        const postId = e.currentTarget.dataset.postid;
+        wx.navigateTo({
+            url: `/pages/square-detail/square-detail?post_id=${postId}`
+        });
+    },
+
+    // **打开发布界面**
     openPostModal() {
         this.setData({ isModalOpen: true });
     },
 
-    // 关闭发布页面
+    // **关闭发布界面**
     closePostModal() {
         this.setData({ isModalOpen: false });
     },
 
-    // 监听输入内容
+    // **选择发布分类**
+    selectPostCategory(e: any) {
+        this.setData({ selectedPostCategory: this.data.postCategories[e.detail.value] });
+    },
+
+    // **监听输入内容**
     handlePostInput(e: any) {
         this.setData({ newPostContent: e.detail.value });
     },
 
-    // 提交发布内容
-    submitPost() {
+    // ✅ 选择图片（但不立即上传）
+    chooseImage() {
+        this.setData({
+            tempImageList: this.data.tempImageList || [] // ✅ 确保 tempImageList 是数组
+        });
+
+        wx.chooseMedia({
+            count: 9 - this.data.tempImageList.length, // 这里可能报错，如果 tempImageList 是 undefined
+            mediaType: ["image"],
+            sourceType: ["album", "camera"],
+            success: (res) => {
+                console.log("✅ 选中的图片:", res.tempFiles);
+                const tempFilePaths = res.tempFiles.map(file => file.tempFilePath);
+                this.setData({ tempImageList: [...this.data.tempImageList, ...tempFilePaths] });
+            }
+        });
+    },
+
+    // ✅ 移除未上传的图片
+    removeImage(e: any) {
+        const index = e.currentTarget.dataset.index;
+        let tempImageList = [...this.data.tempImageList];
+        tempImageList.splice(index, 1);
+        this.setData({ tempImageList });
+    },
+
+    // ✅ 上传单张图片到 COS
+    uploadImageToCOS(filePath: string, square_id: number): Promise<string | null> {
+        return new Promise((resolve) => {
+            wx.uploadFile({
+                url: "http://localhost:3000/api/uploads/upload-image",
+                filePath,
+                name: "image",
+                formData: {
+                    type: "square",
+                    postId: square_id
+                },
+                success: (res: any) => {
+                    const data = JSON.parse(res.data);
+                    if (data.success) {
+                        console.log("✅ 图片上传成功:", data.imageUrl);
+                        resolve(data.imageUrl);
+                    } else {
+                        console.error("❌ 图片上传失败:", data);
+                        resolve(null);
+                    }
+                },
+                fail: (err) => {
+                    console.error("❌ 图片上传错误:", err);
+                    resolve(null);
+                }
+            });
+        });
+    },
+
+    async submitPost() {
+        const app = getApp();
+        const user_id = app.globalData.userInfo?.id;
+        if (!user_id) {
+            wx.showToast({ title: "请先登录", icon: "none" });
+            return;
+        }
+    
+        if (!this.data.selectedPostCategory) {
+            wx.showToast({ title: "请选择分类", icon: "none" });
+            return;
+        }
+    
         if (!this.data.newPostContent.trim()) {
             wx.showToast({ title: "内容不能为空", icon: "none" });
             return;
         }
-
-        wx.showToast({ title: "发布成功", icon: "success" });
-
-        // 模拟将新帖子加入数据
-        const newPost = {
-            post_id: new Date().getTime().toString(),
-            category: "校园墙",
-            user_avatar: "/assets/icons/user1.png",
-            username: "张三",
-            content: this.data.newPostContent,
-            images: [],
-            timestamp: "刚刚",
-            likes: 0,
-            comments: 0
-        };
-
-        // 添加到帖子列表
-        const updatedPosts = [newPost, ...this.data.posts];
-
-        this.setData({
-            posts: updatedPosts,
-            newPostContent: "",
-            isModalOpen: false // 关闭模态框
+    
+        wx.showLoading({ title: "发布中..." });
+    
+        // **🚀 先创建帖子（无图片）**
+        wx.request({
+            url: "http://localhost:3000/api/square/create",
+            method: "POST",
+            header: { Authorization: `Bearer ${app.globalData.token}` },
+            data: {
+                user_id,
+                category: this.data.selectedPostCategory,
+                content: this.data.newPostContent,
+                images: []  // 先不传图片
+            },
+            success: async (res) => {
+                if (res.data.success) {
+                    const square_id = res.data.square_id;
+                    console.log("✅ 帖子创建成功:", square_id);
+    
+                    // **如果没有图片，直接完成**
+                    if (this.data.tempImageList.length === 0) {
+                        wx.hideLoading();
+                        wx.showToast({ title: "发布成功", icon: "success" });
+                        this.fetchPosts("全部");  // ✅ 重新拉取帖子
+                        this.resetPostForm();
+                        return;
+                    }
+    
+                    // **🚀 上传所有图片**
+                    let uploadedImageUrls = [];
+                    for (const filePath of this.data.tempImageList) {
+                        const uploadedImageUrl = await this.uploadImageToCOS(filePath, square_id);
+                        if (uploadedImageUrl) {
+                            uploadedImageUrls.push(uploadedImageUrl);
+                        }
+                    }
+    
+                    // **🚀 更新帖子，添加图片**
+                    wx.request({
+                        url: "http://localhost:3000/api/square/update-images",
+                        method: "POST",
+                        data: {
+                            square_id,  // 只需要更新已有的帖子
+                            images: uploadedImageUrls
+                        },
+                        success: () => {
+                            wx.hideLoading();
+                            wx.showToast({ title: "发布成功", icon: "success" });
+    
+                            this.fetchPosts("全部");  // ✅ 重新拉取帖子
+                            this.resetPostForm();
+                        },
+                        fail: (err) => {
+                            wx.hideLoading();
+                            console.error("❌ 更新帖子图片失败:", err);
+                            wx.showToast({ title: "发布失败", icon: "none" });
+                        }
+                    });
+                }
+            },
+            fail: (err) => {
+                wx.hideLoading();
+                console.error("❌ 发布帖子失败:", err);
+                wx.showToast({ title: "发布失败", icon: "none" });
+            }
         });
     },
-    // **跳转到帖子详情页**
-  goToDetail(e: any) {
-    const postId = e.currentTarget.dataset.postid;
-    wx.navigateTo({
-      url: `/pages/square-detail/square-detail?post_id=${postId}`
-    });
-  },
+    // **重置表单**
+    resetPostForm() {
+        this.setData({
+            isModalOpen: false,
+            selectedPostCategory: "",
+            newPostContent: "",
+            tempImageList: []
+        });
+    }
 });
