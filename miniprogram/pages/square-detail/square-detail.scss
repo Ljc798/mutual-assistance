@@ -65,13 +65,46 @@
     object-fit: cover;
 }
 
-/* 帖子信息（时间 & 分类） */
+.post-information {
+    display: flex;
+    align-items: center;
+    justify-content:space-between;
+}
+
+.post-like {
+    display: flex;
+    align-items: center;
+    gap: 15rpx;
+    padding: 5rpx 15rpx;
+
+
+    .like-icon {
+        width: 45rpx;
+        height: 45rpx;
+    }
+
+    text {
+        font-size: 34rpx;
+    }
+}
+
 .post-info {
     display: flex;
-    justify-content: space-between;
-    padding: 10rpx 30rpx;
-    font-size: 28rpx;
+    align-items: center;
+    font-size: 26rpx;
     color: #666;
+}
+
+.post-time {
+    color: #999;
+    margin-right: 20rpx;
+}
+
+.post-category {
+    font-weight: bold;
+    background-color: #ddd;
+    border-radius: 30rpx;
+    padding: 10rpx 15rpx 10rpx 15rpx;
 }
 
 /* 评论区 */
@@ -132,7 +165,7 @@
     background-color: #ffffff;
     border-top: 1px solid #ddd;
     transform: translateX(-50%); // 让它居中
-  }
+}
 
 
 /* 输入框 */

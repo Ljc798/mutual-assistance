@@ -9,10 +9,107 @@ Page({
         newPostContent: "",
         tempImageList: [], // 临时存储选中的图片（但未上传）
         uploadedImages: [], // 已上传的图片 URL
+        checkinIcon: "../../assets/icons/rili-2.svg", // 默认签到前的图标
+        checkedIn: false, // 是否已签到
     },
 
     onLoad() {
         this.fetchPosts("全部");
+        this.getCheckinStatus();
+    },
+
+    onShow() {
+        this.fetchPosts("全部");
+    },
+
+    // ✅ 监听下拉刷新
+    onPullDownRefresh() {
+        console.log("用户触发下拉刷新...");
+
+        const category = this.data.selectedCategory || "全部"; // **确保分类有效**
+        this.fetchPosts(category, () => {
+            console.log("✅ 下拉刷新完成，数据已更新");
+            wx.stopPullDownRefresh(); // **停止下拉刷新动画**
+        });
+    },
+
+    // ✅ 获取签到状态
+    getCheckinStatus() {
+        const app = getApp();
+        const user_id = app.globalData.userInfo?.id;
+
+        wx.request({
+            url: "http://localhost:3000/api/checkins/status",
+            method: "GET",
+            data: { user_id },
+            success: (res: any) => {
+                if (res.data.success) {
+                    this.setData({
+                        userInfo: app.globalData.userInfo, // **同步全局数据**
+                        checkedIn: res.data.checked_in,
+                        checkinIcon: res.data.checked_in ? "../../assets/icons/daka.svg" : "../../assets/icons/rili-2.svg"
+                    });
+                }
+            }
+        });
+    },
+
+    // ✅ 处理签到逻辑
+    handleCheckIn() {
+        const app = getApp();
+        const user_id = app.globalData.userInfo?.id;
+
+        if (!user_id) {
+            wx.showToast({ title: "请先登录", icon: "none" });
+            return;
+        }
+
+        wx.request({
+            url: "http://localhost:3000/api/checkins/checkin",
+            method: "POST",
+            data: { user_id },
+            success: (res: any) => {
+                if (res.data.success) {
+                    const { message, earned_points, consecutive_days } = res.data;
+
+                    // ✅ 生成提示信息
+                    let content = message;
+                    if (consecutive_days > 1) {
+                        content += `\n已连续签到${consecutive_days} 天！`;
+                    }
+
+                    // ✅ 弹出签到成功提示框
+                    wx.showModal({
+                        title: "签到成功",
+                        content: content,
+                        showCancel: false,
+                        confirmText: "知道了"
+                    });
+
+                    // ✅ 更新全局积分
+                    app.globalData.userInfo.points += earned_points;
+                    wx.setStorageSync("user", app.globalData.userInfo);
+
+                    // ✅ 刷新签到状态
+                    this.getCheckinStatus();
+
+                } else {
+                    wx.showModal({
+                        title: "签到失败",
+                        content: res.data.message || "网络错误，请稍后再试",
+                        showCancel: false
+                    });
+                }
+            },
+            fail: (err) => {
+                wx.showModal({
+                    title: "签到失败",
+                    content: "网络错误，请稍后再试",
+                    showCancel: false
+                });
+                console.error("❌ 签到失败:", err);
+            }
+        });
     },
 
     selectCategory(e: any) {
@@ -22,19 +119,26 @@ Page({
     },
 
     // ✅ 获取帖子数据
-    fetchPosts(category: string) {
+    fetchPosts(category: string, callback?: Function) {
         const app = getApp();
         const user_id = app.globalData.userInfo?.id || null;
+
         if (!user_id) {
             wx.showToast({ title: "请先登录", icon: "none" });
             return;
         }
+
+        console.log("📌 当前分类:", category);
+
+        wx.showLoading({ title: "加载中..." });
 
         wx.request({
             url: "http://localhost:3000/api/square/posts",
             method: "GET",
             data: { category, user_id },
             success: (res: any) => {
+                console.log("✅ 获取帖子成功:", res); // **检查 API 返回数据**
+
                 if (res.data.success) {
                     let posts = res.data.posts || [];
                     posts = posts.map(post => ({
@@ -42,11 +146,21 @@ Page({
                         isLiked: post.isLiked || false,
                         created_time: this.formatTime(post.created_time)
                     }));
-                    this.setData({ posts });
+
+                    this.setData({ posts }, () => {
+                        console.log("✅ 文章列表更新成功！");
+                    });
+                } else {
+                    console.error("❌ API 返回错误:", res.data.message);
                 }
             },
             fail: (err) => {
                 console.error("❌ 获取帖子失败:", err);
+                wx.showToast({ title: "获取帖子失败", icon: "none" });
+            },
+            complete: () => {
+                wx.hideLoading();
+                if (callback) callback(); // **停止下拉刷新动画**
             }
         });
     },
@@ -96,7 +210,7 @@ Page({
         });
     },
 
-    // **跳转到帖子详情页**
+    // 跳转到帖子详情页
     goToDetail(e: any) {
         const postId = e.currentTarget.dataset.postid;
         wx.navigateTo({
@@ -104,22 +218,22 @@ Page({
         });
     },
 
-    // **打开发布界面**
+    // 打开发布界面
     openPostModal() {
         this.setData({ isModalOpen: true });
     },
 
-    // **关闭发布界面**
+    // 关闭发布界面
     closePostModal() {
         this.setData({ isModalOpen: false });
     },
 
-    // **选择发布分类**
+    // 选择发布分类
     selectPostCategory(e: any) {
         this.setData({ selectedPostCategory: this.data.postCategories[e.detail.value] });
     },
 
-    // **监听输入内容**
+    // 监听输入内容
     handlePostInput(e: any) {
         this.setData({ newPostContent: e.detail.value });
     },
@@ -186,20 +300,20 @@ Page({
             wx.showToast({ title: "请先登录", icon: "none" });
             return;
         }
-    
+
         if (!this.data.selectedPostCategory) {
             wx.showToast({ title: "请选择分类", icon: "none" });
             return;
         }
-    
+
         if (!this.data.newPostContent.trim()) {
             wx.showToast({ title: "内容不能为空", icon: "none" });
             return;
         }
-    
+
         wx.showLoading({ title: "发布中..." });
-    
-        // **🚀 先创建帖子（无图片）**
+
+        // 🚀 先创建帖子（无图片）
         wx.request({
             url: "http://localhost:3000/api/square/create",
             method: "POST",
@@ -214,8 +328,8 @@ Page({
                 if (res.data.success) {
                     const square_id = res.data.square_id;
                     console.log("✅ 帖子创建成功:", square_id);
-    
-                    // **如果没有图片，直接完成**
+
+                    // 如果没有图片，直接完成
                     if (this.data.tempImageList.length === 0) {
                         wx.hideLoading();
                         wx.showToast({ title: "发布成功", icon: "success" });
@@ -223,8 +337,8 @@ Page({
                         this.resetPostForm();
                         return;
                     }
-    
-                    // **🚀 上传所有图片**
+
+                    // 🚀 上传所有图片
                     let uploadedImageUrls = [];
                     for (const filePath of this.data.tempImageList) {
                         const uploadedImageUrl = await this.uploadImageToCOS(filePath, square_id);
@@ -232,8 +346,8 @@ Page({
                             uploadedImageUrls.push(uploadedImageUrl);
                         }
                     }
-    
-                    // **🚀 更新帖子，添加图片**
+
+                    // 🚀 更新帖子，添加图片
                     wx.request({
                         url: "http://localhost:3000/api/square/update-images",
                         method: "POST",
@@ -244,7 +358,7 @@ Page({
                         success: () => {
                             wx.hideLoading();
                             wx.showToast({ title: "发布成功", icon: "success" });
-    
+
                             this.fetchPosts("全部");  // ✅ 重新拉取帖子
                             this.resetPostForm();
                         },
@@ -263,7 +377,7 @@ Page({
             }
         });
     },
-    // **重置表单**
+    // 重置表单
     resetPostForm() {
         this.setData({
             isModalOpen: false,

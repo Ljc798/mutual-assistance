@@ -1,96 +1,98 @@
 Page({
     data: {
-        post: {},
-        comments: [],
-        isCommentModalOpen: false,
-        commentText: ""
+        post: null, // 存储帖子详情
+        postId: null, // 记录帖子 ID
+        isLoading: true, // 加载状态
     },
 
     onLoad(options: any) {
-        const postId = options.post_id;
-
-        // 模拟帖子数据
-        const fakePost = {
-            post_id: postId,
-            title: "出售 9 成新 iPad Pro，有意者私聊！",
-            category: "二手交易",
-            user_avatar: "/assets/icons/ditu.svg",
-            username: "张三",
-            content: "几乎全新，没有磕碰，低价出售。",
-            images: ["/assets/icons/zuoye.svg"],
-            timestamp: "2025-03-04 10:30",
-            likes: 12,
-            comments: 3,
-            isLiked: false
-        };
-
-        // 模拟评论数据
-        const fakeComments = [
-            { comment_id: "1", username: "李四", avatar: "/assets/icons/user2.png", text: "多少钱？" },
-            { comment_id: "2", username: "王五", avatar: "/assets/icons/user3.png", text: "能走闲鱼吗？" },
-            { comment_id: "3", username: "李四", avatar: "/assets/icons/user2.png", text: "多少钱？" },
-            { comment_id: "4", username: "李四", avatar: "/assets/icons/user2.png", text: "多少钱？" },
-            { comment_id: "5", username: "李四", avatar: "/assets/icons/user2.png", text: "多少钱？" },
-            { comment_id: "6", username: "李四", avatar: "/assets/icons/user2.png", text: "多少钱？" },
-            { comment_id: "7", username: "李四", avatar: "/assets/icons/user2.png", text: "多少钱？" },
-            { comment_id: "8", username: "李四", avatar: "/assets/icons/user2.png", text: "多少钱？" },
-            { comment_id: "9", username: "李四", avatar: "/assets/icons/user2.png", text: "多少钱？" },
-            { comment_id: "10", username: "李四", avatar: "/assets/icons/user2.png", text: "多少钱？" },
-            { comment_id: "11", username: "李四", avatar: "/assets/icons/user2.png", text: "多少钱？" },
-            { comment_id: "12", username: "李四", avatar: "/assets/icons/user2.png", text: "多少钱？" },
-
-        ];
-
-        this.setData({ post: fakePost, comments: fakeComments });
-
+        if (options.post_id) {
+            this.setData({ postId: options.post_id });
+            this.fetchPostDetail(options.post_id);
+        } else {
+            wx.showToast({ title: "无效的帖子 ID", icon: "none" });
+            wx.navigateBack();
+        }
     },
 
-    // **返回上一页**
-    goBack() {
-        wx.navigateBack();
+    // ✅ 获取帖子详情
+    fetchPostDetail(postId: string) {
+        const app = getApp();
+        const user_id = app.globalData.userInfo?.id;
+    
+        wx.showLoading({ title: "加载中..." });
+    
+        wx.request({
+            url: `http://localhost:3000/api/square/detail`,
+            method: "GET",
+            data: { post_id: postId, user_id }, // ✅ 传递 user_id
+            success: (res: any) => {
+                wx.hideLoading();
+                if (res.data.success) {
+                    let post = res.data.post;
+                    post.created_time = this.formatTime(post.created_time); // ✅ 格式化时间
+                    post.isLiked = Boolean(post.isLiked); // ✅ 确保 `isLiked` 是布尔值
+    
+                    this.setData({ post, isLoading: false });
+                } else {
+                    wx.showToast({ title: "获取帖子失败", icon: "none" });
+                }
+            },
+            fail: (err) => {
+                wx.hideLoading();
+                console.error("❌ 获取帖子失败:", err);
+                wx.showToast({ title: "网络错误", icon: "none" });
+            }
+        });
     },
 
-    // **点赞 / 取消点赞**
+    // ✅ 时间格式化（YYYY-MM-DD HH:mm）
+    formatTime(timeStr: string): string {
+        const date = new Date(timeStr);
+        const year = date.getFullYear();
+        const month = (date.getMonth() + 1).toString().padStart(2, "0");
+        const day = date.getDate().toString().padStart(2, "0");
+        const hours = date.getHours().toString().padStart(2, "0");
+        const minutes = date.getMinutes().toString().padStart(2, "0");
+
+        return `${year}-${month}-${day} ${hours}:${minutes}`;
+    },
+
+    // ✅ 点赞/取消点赞
     toggleLike() {
         let post = this.data.post;
-        post.isLiked = !post.isLiked;
-        post.likes += post.isLiked ? 1 : -1;
-        this.setData({ post });
-    },
-    // 打开输入框模态
-    openCommentModal() {
-        this.setData({
-            isCommentModalOpen: true
-        });
-    },
-
-    // 关闭输入框模态
-    closeCommentModal() {
-        this.setData({
-            isCommentModalOpen: false
-        });
-    },
-
-    // 监听输入
-    handleCommentInput(e: any) {
-        this.setData({
-            commentText: e.detail.value
-        });
-    },
-
-    // 发送评论
-    sendComment() {
-        if (!this.data.commentText.trim()) {
-            wx.showToast({ title: "请输入评论内容", icon: "none" });
+        const app = getApp();
+        const user_id = app.globalData.userInfo?.id;
+        if (!user_id) {
+            wx.showToast({ title: "请先登录", icon: "none" });
             return;
         }
 
-        wx.showToast({ title: "评论成功！", icon: "success" });
+        const url = post.isLiked
+            ? "http://localhost:3000/api/square/unlike"
+            : "http://localhost:3000/api/square/like";
 
-        this.setData({
-            isCommentModalOpen: false,
-            commentText: ""
+        wx.request({
+            url,
+            method: "POST",
+            header: { Authorization: `Bearer ${app.globalData.token}` },
+            data: { user_id, square_id: post.id },
+            success: (res: any) => {
+                if (res.data.success) {
+                    post.isLiked = !post.isLiked;
+                    post.likes_count += post.isLiked ? 1 : -1;
+                    this.setData({ post });
+                }
+            },
+            fail: (err) => {
+                console.error("❌ 点赞/取消点赞失败:", err);
+                wx.showToast({ title: "网络错误", icon: "none" });
+            }
         });
-    }
+    },
 
+    // ✅ 返回上一页
+    goBack() {
+        wx.navigateBack();
+    }
 });

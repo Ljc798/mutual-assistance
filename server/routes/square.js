@@ -138,7 +138,6 @@ router.post("/unlike", (req, res) => {
     );
 });
 
-// ✅ **创建帖子**
 // ✅ 创建帖子（支持带图片 & 不带图片）
 router.post("/create", async (req, res) => {
     const { user_id, category, content } = req.body;
@@ -184,6 +183,53 @@ router.post("/update-images", async (req, res) => {
             return res.json({ success: true });
         }
     );
+});
+
+router.get("/detail", (req, res) => {
+    const { post_id, user_id } = req.query;  // ✅ 需要传递 user_id
+
+    if (!post_id) {
+        return res.status(400).json({ success: false, message: "缺少 post_id" });
+    }
+
+    let query = `
+        SELECT s.*, 
+               u.username, 
+               u.avatar_url, 
+               (SELECT COUNT(*) FROM square_likes WHERE square_id = s.id AND user_id = ?) AS isLiked
+        FROM square s
+        LEFT JOIN users u ON s.user_id = u.id
+        WHERE s.id = ?;
+    `;
+
+    db.query(query, [user_id || null, post_id], (err, posts) => {  // ✅ 传入 user_id 和 post_id
+        if (err) {
+            console.error("❌ 获取帖子详情失败:", err);
+            return res.status(500).json({ success: false, message: "获取帖子失败" });
+        }
+
+        if (posts.length === 0) {
+            return res.json({ success: false, message: "帖子不存在" });
+        }
+
+        let post = posts[0];
+        post.isLiked = Boolean(post.isLiked);  // ✅ 确保 isLiked 为 Boolean 值
+
+        // 查询帖子图片
+        db.query(
+            "SELECT image_url FROM square_images WHERE square_id = ?",
+            [post_id],
+            (err, images) => {
+                if (err) {
+                    console.error("❌ 获取帖子图片失败:", err);
+                    return res.status(500).json({ success: false, message: "获取帖子图片失败" });
+                }
+
+                post.images = images.map(img => img.image_url);
+                res.json({ success: true, post });
+            }
+        );
+    });
 });
 
 module.exports = router;

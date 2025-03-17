@@ -2,14 +2,14 @@
     <!-- 顶部导航栏 -->
     <view class="post-header">
         <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="goBack" />
-        <image class="user-avatar" src="{{post.user_avatar}}" />
+        <image class="user-avatar" src="{{post.avatar_url}}" />
         <text class="username">{{post.username}}</text>
     </view>
 
     <!-- 主要内容区 -->
     <view class="main-content" scroll-y="true">
         <view class="post-content">
-            <text class="post-title">{{post.title}}</text>
+            <text class="post-title">{{post.content}}</text>
             <block wx:if="{{post.images.length > 0}}">
                 <scroll-view class="image-scroll" scroll-x="true">
                     <image wx:for="{{post.images}}" wx:key="index" src="{{item}}" class="post-image" mode="aspectFill" />
@@ -18,9 +18,18 @@
         </view>
 
         <!-- 信息区 -->
-        <view class="post-info">
-            <text class="post-time">{{post.timestamp}}</text>
-            <text class="post-category">#{{post.category}}</text>
+        <view class="post-information">
+            <view class="post-info">
+                <text class="post-time">{{post.created_time}}</text>
+                <text class="post-category">#{{post.category}}</text>
+
+
+            </view>
+            <!-- ✅ 点赞按钮 -->
+            <view class="post-like" bindtap="toggleLike">
+                <image class="like-icon" src="{{post.isLiked ? '/assets/icons/heart-fill.svg' : '/assets/icons/heart-line.svg'}}" />
+                <text>{{post.likes_count}}</text>
+            </view>
         </view>
 
         <!-- 评论区 -->
@@ -28,10 +37,10 @@
             <text class="comment-title">评论区</text>
             <block wx:for="{{comments}}" wx:key="comment_id">
                 <view class="comment-item">
-                    <image class="comment-avatar" src="{{item.avatar}}" />
+                    <image class="comment-avatar" src="{{item.avatar_url}}" />
                     <view class="comment-content">
                         <text class="comment-username">{{item.username}}</text>
-                        <text class="comment-text">{{item.text}}</text>
+                        <text class="comment-text">{{item.content}}</text>
                     </view>
                 </view>
             </block>

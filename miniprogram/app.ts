@@ -70,4 +70,4 @@ App<IAppOption>({
         wx.setStorageSync("user", user);
         wx.setStorageSync("token", token);
     }
-});
+}); 

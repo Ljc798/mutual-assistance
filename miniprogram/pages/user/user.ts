@@ -11,26 +11,31 @@ Page({
         this.loadUserInfo(); // **每次页面显示时获取最新数据**
     },
 
-    // ✅ **优化获取用户信息的逻辑**
+    // ✅ **从全局数据或本地存储加载用户信息**
     loadUserInfo() {
         const app = getApp();
         
+        // ✅ **1. 先检查 `globalData` 是否有数据**
         if (app.globalData.userInfo) {
-            // ✅ 直接从 `globalData` 读取，避免重复请求
-            console.log("📌 从 globalData 获取用户信息:", app.globalData.userInfo);
+            console.log("📌 从 globalData 直接获取用户信息:", app.globalData.userInfo);
             this.setData({ userInfo: app.globalData.userInfo });
-        } else {
-            // ✅ 尝试从本地存储读取
-            const storedUser = wx.getStorageSync("user");
-            if (storedUser) {
-                console.log("📌 从本地存储加载用户信息:", storedUser);
-                this.setData({ userInfo: storedUser });
-                app.globalData.userInfo = storedUser; // 同步到 `globalData`
-            } else {
-                console.warn("⚠️ 用户信息丢失，尝试从服务器获取...");
-                this.getUserInfo(); // 服务器获取
-            }
+            return;
         }
+
+        // ✅ **2. 如果 `globalData` 为空，尝试从本地存储读取**
+        const storedUser = wx.getStorageSync("user");
+        if (storedUser) {
+            console.log("📌 从本地存储加载用户信息:", storedUser);
+            this.setData({ userInfo: storedUser });
+
+            // **同步到 `globalData`，避免下次重复请求**
+            app.globalData.userInfo = storedUser;
+            return;
+        }
+
+        // ✅ **3. 服务器获取（最后手段）**
+        console.warn("⚠️ 用户信息丢失，尝试从服务器获取...");
+        this.getUserInfo();
     },
 
     // ✅ **从后端获取用户信息**

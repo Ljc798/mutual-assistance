@@ -15,7 +15,8 @@
   ],
   "window": {
     "navigationBarTextStyle": "black",
-    "navigationStyle": "custom"
+    "navigationStyle": "custom",
+    "enablePullDownRefresh": true 
   },
   "style": "v2",
   "rendererOptions": {
