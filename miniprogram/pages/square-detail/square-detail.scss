@@ -44,23 +44,47 @@
 /* 标题 */
 .post-title {
     font-size: 36rpx;
-    margin-top: 20rpx;
-    margin-bottom: 20rpx;
 }
 
-/* 图片 */
-.image-scroll {
-    display: flex;
+
+/* 单张图片 */
+.single-image {
+    width: 100%;
+    max-width: 400rpx; /* 限制最大宽度 */
+    border-radius: 10rpx;
+}
+
+/* 图片宫格布局 */
+.image-grid {
+    display: grid;
     gap: 10rpx;
-    white-space: nowrap;
-    overflow-x: auto;
-    margin-top: 20rpx;
-    margin-bottom: 20rpx;
 }
 
-.post-image {
-    width: 300rpx;
-    height: 300rpx;
+/* 2 张图片（两张并排） */
+.two-grid {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+/* 3 张图片（3 宫格） */
+.three-grid {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+/* 4 张图片（2x2 特殊布局） */
+.four-grid {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+/* 5-9 张图片（九宫格） */
+.nine-grid {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+/* 所有宫格图片 */
+.grid-image {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1; /* 保持正方形 */
     border-radius: 10rpx;
     object-fit: cover;
 }
@@ -69,6 +93,7 @@
     display: flex;
     align-items: center;
     justify-content:space-between;
+    margin-top: 20rpx;
 }
 
 .post-like {
@@ -107,83 +132,136 @@
     padding: 10rpx 15rpx 10rpx 15rpx;
 }
 
-/* 评论区 */
+// 评论区
 .comment-section {
-    padding: 20rpx 30rpx;
-    border-top: 1rpx solid #eee;
+    padding: 10rpx;
+    background: #fff;
+    border-top: 1px solid #ccc;
+    margin-top: 10rpx;
 }
 
 .comment-title {
-    font-size: 32rpx;
-    font-weight: bold;
-    margin-bottom: 20rpx;
+    padding-bottom: 10rpx;
 }
 
-/* 单条评论 */
+// 一级评论
 .comment-item {
     display: flex;
-    align-items: flex-start;
-    margin-bottom: 20rpx;
 }
 
-/* 评论头像 */
 .comment-avatar {
     width: 60rpx;
     height: 60rpx;
     border-radius: 50%;
-    margin-right: 15rpx;
+    margin-right: 20rpx;
 }
 
-/* 评论内容 */
 .comment-content {
+    flex: 1;
+}
+
+.comment-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.comment-main {
     display: flex;
     flex-direction: column;
+    flex: 1;
 }
 
-.comment-username {
+.comment-header {
     font-size: 28rpx;
-    font-weight: bold;
     color: #333;
 }
 
 .comment-text {
-    font-size: 28rpx;
-    color: #666;
+    font-size: 34rpx;
+    color: #333;
+    margin-top: 5rpx;
 }
+
+.comment-time {
+    color: #999;
+    font-size: 24rpx;
+}
+
+.comment-actions {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    margin-left: 20rpx;
+}
+
+.like-icon {
+    width: 37rpx;
+    height: 37rpx;
+    margin-right: 10rpx;
+}
+
+// 二级评论
+.sub-comments {
+    margin-left: 80rpx;  // ✅ 让二级评论整体右缩进
+}
+
+.sub-comment-item {
+    display: flex;
+    padding: 15rpx 0;
+}
+
+.sub-comment-avatar {
+    width: 45rpx;  // ✅ 头像缩小
+    height: 45rpx;
+    border-radius: 50%;
+    margin-right: 15rpx;
+}
+
+.sub-comment-content {
+    flex: 1;
+}
+
 
 /* 底部输入框 */
 .bottom-bar {
     position: fixed;
-    left: 50%;
     bottom: 0;
+    left: 0;
     width: 100%;
-    padding-bottom: 15rpx;
-    max-width: 700rpx; // 限制最大宽度
-    height: 100rpx;
+    background: #fff;
     display: flex;
     align-items: center;
-    background-color: #ffffff;
-    border-top: 1px solid #ddd;
-    transform: translateX(-50%); // 让它居中
-}
+    padding: 10rpx 20rpx 20rpx 20rpx;
+    border-top: 1px solid #eee;
+    box-sizing: border-box;
 
+    .comment-input {
+        flex: 1;
+        height: 80rpx;
+        font-size: 28rpx;
+        padding: 0 20rpx;
+        border: 1px solid #ddd;
+        border-radius: 10rpx;
+        background: #f5f5f5;
+        outline: none;
+        min-width: 50%;  // ✅ 限制最小宽度，防止输入框挤占按钮空间
+    }
 
-/* 输入框 */
-.comment-input {
-    flex: 1;
-    width: 300rpx;
-    height: 80rpx;
-    border-radius: 20rpx;
-    padding: 0 20rpx;
-    background-color: #f5f5f5;
-    font-size: 28rpx;
-}
-
-/* 发送按钮 */
-.send-btn {
-    margin-left: 15rpx;
-    padding: 15rpx 30rpx;
-    background-color: #ff4d4f;
-    color: white;
-    border-radius: 10rpx;
+    .send-button {
+        flex-shrink: 0; // ✅ 防止被压缩
+        min-width: 100rpx; // ✅ 设定最小宽度，防止按钮过小
+        width: auto;  // ✅ 适应文字宽度
+        height: 70rpx;
+        margin-left: 15rpx;
+        padding: 0 30rpx;  // ✅ 增加左右填充，适应不同屏幕
+        background-color: #0084ff;
+        color: white;
+        border-radius: 10rpx;
+        font-size: 28rpx;
+        text-align: center;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
 }

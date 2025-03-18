@@ -6,8 +6,11 @@ const moment = require("moment"); // 处理日期
 // **签到积分奖励规则**
 const CHECKIN_POINTS = 10;
 const BONUS_REWARDS = {
-    7: 50,  // 连续 7 天额外 +50 积分
-    30: 200 // 连续 30 天额外 +200 积分
+    7: 30,
+    30: 150,
+    90: 300,
+    180: 900,
+    360: 2000
 };
 
 // ✅ **用户签到 API**

@@ -11,9 +11,38 @@
         <view class="post-content">
             <text class="post-title">{{post.content}}</text>
             <block wx:if="{{post.images.length > 0}}">
-                <scroll-view class="image-scroll" scroll-x="true">
-                    <image wx:for="{{post.images}}" wx:key="index" src="{{item}}" class="post-image" mode="aspectFill" />
-                </scroll-view>
+                <!-- 单张图片 -->
+                <view class="post-images" wx:if="{{post.images.length === 1}}">
+                    <image src="{{post.images[0]}}" class="single-image" mode="widthFix" bindtap="previewImage" data-current="{{post.images[0]}}" data-urls="{{post.images}}" />
+                </view>
+
+                <!-- 2 张图片（两张并排） -->
+                <view class="image-grid two-grid" wx:elif="{{post.images.length === 2}}">
+                    <block wx:for="{{post.images}}" wx:key="index">
+                        <image src="{{item}}" class="grid-image" bindtap="previewImage" data-current="{{item}}" data-urls="{{post.images}}" />
+                    </block>
+                </view>
+
+                <!-- 3 张图片（3 宫格） -->
+                <view class="image-grid three-grid" wx:elif="{{post.images.length === 3}}">
+                    <block wx:for="{{post.images}}" wx:key="index">
+                        <image src="{{item}}" class="grid-image" bindtap="previewImage" data-current="{{item}}" data-urls="{{post.images}}" />
+                    </block>
+                </view>
+
+                <!-- 4 张图片（特殊 2x2 处理） -->
+                <view class="image-grid four-grid" wx:elif="{{post.images.length === 4}}">
+                    <block wx:for="{{post.images}}" wx:key="index">
+                        <image src="{{item}}" class="grid-image" bindtap="previewImage" data-current="{{item}}" data-urls="{{post.images}}" />
+                    </block>
+                </view>
+
+                <!-- 5-9 张图片（九宫格） -->
+                <view class="image-grid nine-grid" wx:elif="{{post.images.length >= 5}}">
+                    <block wx:for="{{post.images}}" wx:key="index">
+                        <image src="{{item}}" class="grid-image" bindtap="previewImage" data-current="{{item}}" data-urls="{{post.images}}" />
+                    </block>
+                </view>
             </block>
         </view>
 
@@ -33,21 +62,61 @@
         </view>
 
         <!-- 评论区 -->
-        <view class="comment-section" scroll-y="true">
-            <text class="comment-title">评论区</text>
-            <block wx:for="{{comments}}" wx:key="comment_id">
-                <view class="comment-item">
+        <view class="comment-section">
+            <view class="comment-title">
+                <text>评论区</text>
+            </view>
+
+            <block wx:for="{{comments}}" wx:key="id">
+                <view class="comment-item" bindtap="handleReply" data-commentid="{{item.id}}" data-username="{{item.username}}">
                     <image class="comment-avatar" src="{{item.avatar_url}}" />
                     <view class="comment-content">
-                        <text class="comment-username">{{item.username}}</text>
-                        <text class="comment-text">{{item.content}}</text>
+                        <view class="comment-row">
+                            <view class="comment-main">
+                                <text class="comment-username">{{item.username}}</text>
+                                <text class="comment-text">{{item.content}}</text>
+                                <text class="comment-time">{{item.created_time}}</text>
+                            </view>
+                            <view class="comment-actions">
+                                <image class="like-icon" src="{{item.isLiked ? '/assets/icons/heart-fill.svg' : '/assets/icons/heart-line.svg'}}" bindtap="toggleCommentLike" data-commentid="{{item.id}}" data-isliked="{{item.isLiked}}" />
+                                <text>{{item.likes_count}}</text>
+                            </view>
+                        </view>
                     </view>
                 </view>
+
+                <!-- 🔹 二级评论 -->
+                <block wx:if="{{item.children.length > 0}}">
+                    <view class="sub-comments">
+                        <block wx:for="{{item.children}}" wx:key="id">
+                            <view class="sub-comment-item" bindtap="handleReply" data-commentid="{{item.id}}" data-rootid="{{item.root_parent_id}}" data-username="{{item.username}}">
+                                <image class="sub-comment-avatar" src="{{item.avatar_url}}" />
+                                <view class="sub-comment-content">
+                                    <view class="comment-row">
+                                        <view class="comment-main">
+                                            <view class="comment-header">
+                                                <text class="comment-username">{{item.username}} 回复 {{item.reply_to_username}}</text>
+                                            </view>
+                                            <text class="comment-text">{{item.content}}</text>
+                                            <text class="comment-time">{{item.created_time}}</text>
+                                        </view>
+                                        <view class="comment-actions">
+                                            <image class="like-icon" src="{{item.isLiked ? '/assets/icons/heart-fill.svg' : '/assets/icons/heart-line.svg'}}" bindtap="toggleCommentLike" data-commentid="{{item.id}}" data-isliked="{{item.isLiked}}" />
+                                            <text>{{item.likes_count}}</text>
+                                        </view>
+                                    </view>
+                                </view>
+                            </view>
+                        </block>
+                    </view>
+                </block>
             </block>
         </view>
-    </view>
-    <!-- 底部固定输入框 -->
-    <view class="bottom-bar" style="bottom: {{keyboardHeight}}px;">
-        <input class="comment-input" placeholder="发布你的评论..." bindfocus="focusComment" bindblur="blurComment" />
+
+        <!-- 底部固定输入框 -->
+        <view class="bottom-bar" style="bottom: {{keyboardHeight}}px;">
+            <input class="comment-input" placeholder="{{replyPlaceholder}}" bindinput="handleInput" bindfocus="focusComment" bindblur="blurComment" />
+            <button class="send-button" bindtap="submitComment">发送</button>
+        </view>
     </view>
 </view>
