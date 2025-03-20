@@ -5,6 +5,8 @@ const userRouter = require("./routes/user");
 const squareRouter = require("./routes/square");
 const uploadsRouter = require("./routes/uploads");
 const checkinsRouter = require("./routes/checkins");
+const timetableRouter = require("./routes/timetable");
+const timetableConfigRouter = require("./routes/timetableConfig");
 
 const app = express();
 
@@ -18,6 +20,8 @@ app.use("/api/user", userRouter);
 app.use("/api/square", squareRouter);
 app.use("/api/uploads", uploadsRouter);
 app.use("/api/checkins", checkinsRouter);
+app.use("/api/timetable", timetableRouter);
+app.use("/api/timetableConfig", timetableConfigRouter);
 
 // 监听端口
 const PORT = 3000;

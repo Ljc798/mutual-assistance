@@ -11,7 +11,9 @@
     "pages/square-detail/square-detail",
     "pages/timetable/timetable",
     "pages/register/register",
-    "pages/edit-profile/edit-profile"
+    "pages/edit-profile/edit-profile",
+    "pages/timetable-config/timetable-config",
+    "pages/course/course"
   ],
   "window": {
     "navigationBarTextStyle": "black",

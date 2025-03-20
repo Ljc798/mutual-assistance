@@ -1,8 +1,9 @@
 .timetable-container {
     padding: 20rpx;
-    margin-top: 160rpx;
+    margin-top: 70rpx;
 }
 
+/* 返回按钮 */
 .back-btn {
     position: absolute;
     top: 110rpx;
@@ -10,6 +11,24 @@
     width: 50rpx;
     height: 50rpx;
     margin-right: 20rpx;
+}
+
+/* 顶部信息栏 */
+.header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20rpx 0;
+    font-size: 32rpx;
+    font-weight: bold;
+}
+
+/* 周数选择 */
+.current-week {
+    font-size: 36rpx;
+    font-weight: bold;
+    padding: 10rpx 20rpx;
+    border-radius: 10rpx;
 }
 
 /* 顶部切换栏 */
@@ -40,15 +59,18 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin: 20rpx;
+    padding: 10rpx 20rpx;
     font-size: 32rpx;
+    background: #ffffff;
+    border-radius: 20rpx;
+    box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
 }
 
 .menu-icon {
-    width: 40rpx;
-    height: 40rpx;
+    width: 30rpx;
 }
 
+/* 课程列表 */
 .course-item {
     display: flex;
     align-items: center;
@@ -57,10 +79,24 @@
     margin-bottom: 20rpx;
     border-radius: 20rpx;
     box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
-
 }
 
-/* 左侧时间（竖向排列） */
+.practice-alert {
+    background-color: #fffbcc;
+    padding: 20rpx;
+    border-radius: 10rpx;
+    color: #555;
+    font-size: 28rpx;
+    text-align: center;
+    margin: 20rpx 0;
+}
+
+.practice-detail {
+    color: #ff6600;
+    font-weight: bold;
+}
+
+/* 左侧时间 */
 .course-time {
     width: 120rpx;
     text-align: center;
@@ -71,7 +107,7 @@
 }
 
 .start-time {
-    font-weight: bold;
+    font-size: 26rpx;
 }
 
 .time-separator {
@@ -80,11 +116,10 @@
 }
 
 .end-time {
-    color: #999;
-    font-size: 24rpx;
+    font-size: 26rpx;
 }
 
-/* 课程信息部分 */
+/* 课程信息 */
 .course-info {
     flex: 1;
     padding-left: 20rpx;
@@ -105,18 +140,16 @@
     align-items: center;
 }
 
-/* 状态灯位置优化 */
+/* 状态灯 */
 .status-light {
     width: 25rpx;
     height: 25rpx;
     border-radius: 50%;
-    margin-left: 10rpx;
-    margin-bottom: 40rpx;
     position: absolute;
-    right: 30rpx; /* 固定到右侧位置，更美观 */
+    right: 40rpx;
+    bottom: 77rpx;
 }
 
-/* 状态颜色 */
 .ended {
     background-color: #ccc; /* 灰色：已结束 */
 }
@@ -129,7 +162,91 @@
     background-color: #2196f3; /* 蓝色：即将上课 */
 }
 
-/* 调整 course-item 为相对定位，支持状态灯绝对定位 */
+/* 让课程项支持状态灯的绝对定位 */
 .course-item {
     position: relative;
+}
+
+/* 遮罩层，点击关闭菜单 */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0);
+    z-index: 98;
+}
+
+/* 菜单图标 */
+.menu-icon {
+    width: 40rpx;
+    height: 40rpx;
+}
+
+/* 向下展开的菜单 */
+.menu-popup {
+    position: absolute;
+    right: 15rpx;
+    top: 330rpx;  /* 调整菜单向下展开 */
+    background: white;
+    border-radius: 10rpx;
+    box-shadow: 0 0 10rpx rgba(0, 0, 0, 0.2);
+    z-index: 99;
+}
+
+/* 菜单项 */
+.menu-item {
+    padding: 20rpx;
+    border-bottom: 1px solid #ddd;
+    text-align: center;
+}
+
+.import-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    width: 80%;
+    padding: 20rpx;
+    border-radius: 10rpx;
+    box-shadow: 0 0 20rpx rgba(0, 0, 0, 0.3);
+    z-index: 30;
+}
+
+.modal-content {
+    text-align: center;
+}
+
+.input-box {
+    width: 90%;
+    margin: 10rpx 0;
+    padding: 10rpx;
+    border: 1px solid #ddd;
+    border-radius: 5rpx;
+}
+
+.import-button {
+    background: #4CAF50;
+    color: white;
+    padding: 10rpx;
+    border-radius: 5rpx;
+}
+
+.cancel-button {
+    background: #F44336;
+    color: white;
+    padding: 10rpx;
+    border-radius: 5rpx;
+}
+
+.no-class-box {
+    text-align: center;
+    font-size: 32rpx;
+    padding: 40rpx;
+    background: #f0f9eb;
+    border-radius: 20rpx;
+    margin: 20rpx;
+    color: #4caf50;
 }

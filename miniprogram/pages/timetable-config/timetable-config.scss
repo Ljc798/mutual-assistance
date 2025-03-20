@@ -1,0 +1,29 @@
+.container {
+    padding: 10rpx;
+    margin-top: 100rpx;
+
+}
+
+.back-btn {
+    position: absolute;
+    top: 110rpx;
+    left: 20rpx;
+    width: 50rpx;
+    height: 50rpx;
+    margin-right: 20rpx;
+}
+
+.title {
+    font-size: 36rpx;
+    margin-bottom: 20rpx;
+}
+
+.setting-item {
+    display: flex;
+    width: 90%;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20rpx;
+    border-bottom: 1rpx solid #333;
+    margin-bottom: 20rpx;
+  }

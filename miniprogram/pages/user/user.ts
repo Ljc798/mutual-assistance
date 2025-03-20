@@ -17,7 +17,6 @@ Page({
         
         // ✅ **1. 先检查 `globalData` 是否有数据**
         if (app.globalData.userInfo) {
-            console.log("📌 从 globalData 直接获取用户信息:", app.globalData.userInfo);
             this.setData({ userInfo: app.globalData.userInfo });
             return;
         }

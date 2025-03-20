@@ -1,0 +1,40 @@
+<view class="container">
+    <text class="title">课表设置</text>
+    <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack" />
+
+    <!-- 总教学周 -->
+    <view class="setting-item">
+        <text>总教学周</text>
+        <picker mode="selector" range="{{weeksRange}}" bindchange="onWeeksChange">
+            <text>{{totalWeeks}} 周</text>
+        </picker>
+    </view>
+
+    <!-- 学期开始时间 -->
+    <view class="setting-item">
+        <text>本学期开始时间</text>
+        <picker mode="date" value="{{startDate}}" bindchange="onDateChange">
+            <text>{{startDate}}</text>
+        </picker>
+    </view>
+
+    <!-- 统一的课程时长选择 -->
+    <view class="setting-item">
+        <text>每节课时长</text>
+        <picker mode="selector" range="{{durationOptions}}" bindchange="onDurationChange">
+            <text>{{classDuration}} 分钟</text>
+        </picker>
+    </view>
+
+    <!-- 课程时间设置 -->
+    <block wx:for="{{classSchedule}}" wx:key="index">
+        <view class="setting-item">
+            <text>第{{index + 1}}节课上课时间</text>
+            <picker mode="time" value="{{item.startTime}}" bindchange="onTimeChange" data-index="{{index}}">
+                <text> {{item.startTime}}</text>
+            </picker>
+        </view>
+    </block>
+
+    <button bindtap="saveSettings">保存设置</button>
+</view>

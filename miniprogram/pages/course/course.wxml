@@ -1,0 +1,41 @@
+<view class="course-detail-container">
+    <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack" />
+
+    <!-- 标题栏 -->
+    <view class="header">
+        <text class="title">{{course.course_name}}</text>
+        <image class="edit-icon" src="/assets/icons/edit.svg" bindtap="toggleEdit" />
+    </view>
+
+    <!-- 课程信息 -->
+    <view class="info-section">
+        <view class="info-item">
+            <text class="label">教师:</text>
+            <input class="value" value="{{course.teacher_name}}" disabled="{{!isEditing}}" bindinput="onInputChange" data-field="teacher_name"/>
+        </view>
+        <view class="info-item">
+            <text class="label">上课时间:</text>
+            <picker mode="time" value="{{course.time_start}}" bindchange="onTimeChange" data-field="time_start">
+                <text class="value">{{course.time_start}}</text>
+            </picker>
+            ~
+            <picker mode="time" value="{{course.time_end}}" bindchange="onTimeChange" data-field="time_end">
+                <text class="value">{{course.time_end}}</text>
+            </picker>
+        </view>
+        <view class="info-item">
+            <text class="label">上课地点:</text>
+            <input class="value" value="{{course.location}}" disabled="{{!isEditing}}" bindinput="onInputChange" data-field="location"/>
+        </view>
+        <view class="info-item">
+            <text class="label">周次:</text>
+            <input class="value" value="{{course.weeks}}" disabled="{{!isEditing}}" bindinput="onInputChange" data-field="weeks"/>
+        </view>
+    </view>
+
+    <!-- 按钮 -->
+    <view class="button-group">
+        <button wx:if="{{!isEditing}}" class="delete-button" bindtap="deleteCourse">删除课程</button>
+        <button wx:if="{{isEditing}}" class="save-button" bindtap="saveChanges">保存</button>
+    </view>
+</view>

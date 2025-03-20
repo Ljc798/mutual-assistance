@@ -1,6 +1,16 @@
 <view class="timetable-container">
-    <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack" />
-    <!-- 顶部选择器 -->
+
+    <!-- 顶部信息栏 -->
+    <view class="header">
+        <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack" />
+
+        <!-- 显示当前周数 -->
+        <picker mode="selector" range="{{weeksRange}}" bindchange="onWeekChange">
+            <text class="current-week">{{weeksRange[currentWeek - 1]}} ▼</text>
+        </picker>
+    </view>
+
+    <!-- 选项卡：日课表 / 周课表 -->
     <view class="top-bar">
         <view class="tab {{selectedTab === 'daily' ? 'active' : ''}}" bindtap="switchToDaily">日课表</view>
         <view class="tab {{selectedTab === 'weekly' ? 'active' : ''}}" bindtap="switchToWeekly">周课表</view>
@@ -12,32 +22,73 @@
         <picker mode="date" value="{{selectedDate}}" bindchange="onDateChange">
             <text class="selected-date">{{selectedDate}}</text>
         </picker>
-        <image class="menu-icon" src="/assets/icons/menu-dots-svgrepo-com.svg   " bindtap="openMenu" />
+        <image class="menu-icon" src="/assets/icons/menu-dots-svgrepo-com.svg" bindtap="openMenu" />
+    </view>
+
+    <!-- 遮罩层（点击可关闭菜单） -->
+    <view wx:if="{{showMenu}}" class="overlay" bindtap="closeMenu"></view>
+
+    <!-- 菜单弹窗 -->
+    <view wx:if="{{showMenu}}" class="menu-popup">
+        <view class="menu-item" bindtap="openImportModal">📥 导入课表</view>
+        <view class="menu-item" bindtap="openSettings">⚙️ 设置</view>
+        <view class="menu-item" bindtap="closeMenu">❌ 关闭</view>
+    </view>
+
+    <!-- 导入课表弹窗 -->
+    <view wx:if="{{showImportModal}}" class="import-modal">
+        <view class="modal-content">
+            <text class="modal-title">导入课表</text>
+            <input class="input-box" placeholder="请输入教务系统账号" bindinput="onUsernameInput" />
+            <input class="input-box" placeholder="请输入密码" bindinput="onPasswordInput" password="true" />
+            <button class="import-button" bindtap="importSchedule">提交</button>
+            <button class="cancel-button" bindtap="closeImportModal">取消</button>
+        </view>
     </view>
 
     <!-- 课程列表 -->
-    <view class="course-list">
-        <block wx:for="{{courses}}" wx:key="index">
-            <view class="course-item">
-                <!-- 左侧时间 -->
-                <view class="course-time">
-                    <text>{{item.time_start}}</text>
-                    <text>~</text>
-                    <text>{{item.time_end}}</text>
-                </view>
+    <view class="course-list" wx:if="{{selectedTab === 'daily'}}">
 
-                <!-- 课程信息 -->
-                <view class="course-info">
-                    <text class="course-name">{{item.course_name}}</text>
-                    <view class="course-details">
-                        <text class="course-location">{{item.location}}</text>
-                        <text class="course-teacher">{{item.teacher}}</text>
+        <!-- 如果今天没课，显示休息提示 -->
+        <view wx:if="{{noClassesToday}}" class="no-class-box">
+            🎉 今天没课，可以好好休息一下啦！
+        </view>
+        <view wx:if="{{hasPractice}}" class="practice-alert">
+            🔔 本周有实践课
+            <text class="practice-detail" bindtap="viewPracticeDetails">查看详情</text>
+        </view>
+
+
+        <!-- 课程列表 -->
+        <view wx:if="{{!noClassesToday}}" class="course-list">
+            <block wx:for="{{courses}}" wx:key="index">
+                <view class="course-item" bindtap="goToCourseDetail" data-course-id="{{item.id}}">
+                    <!-- 左侧时间 -->
+                    <view class="course-time">
+                        <text class="start-time">{{item.time_start}}</text>
+                        <text class="time-separator">~</text>
+                        <text class="end-time">{{item.time_end}}</text>
                     </view>
-                </view>
 
-                <!-- 右侧状态灯 -->
-                <view class="status-light {{item.status}}"></view>
-            </view>
-        </block>
+                    <!-- 课程信息 -->
+                    <view class="course-info">
+                        <text class="course-name">{{item.course_name}}</text>
+                        <view class="course-details">
+                            <text class="course-location">{{item.location}}</text>
+                            <text class="course-teacher">{{item.teacher}}</text>
+                        </view>
+                    </view>
+
+                    <!-- 右侧状态灯 -->
+                    <view class="status-light {{item.status}}"></view>
+                </view>
+            </block>
+        </view>
     </view>
+
+    <!-- 周课表（占位，暂不实现） -->
+    <view wx:if="{{selectedTab === 'weekly'}}">
+        <text class="weekly-placeholder">周课表功能待开发...</text>
+    </view>
+
 </view>
