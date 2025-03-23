@@ -16,15 +16,6 @@
         <view class="tab {{selectedTab === 'weekly' ? 'active' : ''}}" bindtap="switchToWeekly">周课表</view>
     </view>
 
-    <!-- 日期选择 & 编辑菜单 -->
-    <view class="date-selector">
-        <text class="day-of-week">{{dayOfWeek}}</text>
-        <picker mode="date" value="{{selectedDate}}" bindchange="onDateChange">
-            <text class="selected-date">{{selectedDate}}</text>
-        </picker>
-        <image class="menu-icon" src="/assets/icons/menu-dots-svgrepo-com.svg" bindtap="openMenu" />
-    </view>
-
     <!-- 遮罩层（点击可关闭菜单） -->
     <view wx:if="{{showMenu}}" class="overlay" bindtap="closeMenu"></view>
 
@@ -48,10 +39,18 @@
 
     <!-- 课程列表 -->
     <view class="course-list" wx:if="{{selectedTab === 'daily'}}">
+        <!-- 日期选择 & 编辑菜单 -->
+        <view class="date-selector">
+            <text class="day-of-week">{{dayOfWeek}}</text>
+            <picker mode="date" value="{{selectedDate}}" bindchange="onDateChange">
+                <text class="selected-date">{{selectedDate}}</text>
+            </picker>
+            <image class="menu-icon" src="/assets/icons/menu-dots-svgrepo-com.svg" bindtap="openMenu" />
+        </view>
 
         <!-- 如果今天没课，显示休息提示 -->
         <view wx:if="{{noClassesToday}}" class="no-class-box">
-            🎉 今天没课，可以好好休息一下啦！
+            🎉 今天没课，快去玩吧 😎
         </view>
         <view wx:if="{{hasPractice}}" class="practice-alert">
             🔔 本周有实践课
@@ -86,9 +85,47 @@
         </view>
     </view>
 
-    <!-- 周课表（占位，暂不实现） -->
-    <view wx:if="{{selectedTab === 'weekly'}}">
-        <text class="weekly-placeholder">周课表功能待开发...</text>
+    <!-- 周课表 -->
+    <view wx:if="{{selectedTab === 'weekly'}}" class="weekly-container">
+
+        <!-- 顶部日期栏 -->
+        <view class="week-header">
+            <view class="empty-cell"></view> <!-- 占位，确保对齐 -->
+            <block wx:for="{{weekDates}}" wx:key="index">
+                <view class="day-box">
+                    <text class="day-name">{{item.weekday}}</text>
+                    <text class="date">{{item.date}}</text>
+                </view>
+            </block>
+        </view>
+
+        <!-- 课程网格表 -->
+        <scroll-view scroll-y class="week-scroll">
+            <view class="week-grid">
+                <!-- 遍历节次 -->
+                <block wx:for="{{periods}}" wx:key="period" wx:for-item="period">
+                    <view class="row">
+                        <!-- 左侧节次 -->
+                        <view class="week-cell period-label">{{period}}</view>
+
+                        <block wx:for="{{weekDays}}" wx:key="weekday" wx:for-item="weekday">
+                            <view class="week-cell course-cell">
+                                <!-- 只显示起始节次的盒子 -->
+                                <block wx:if="{{weeklyTimetable[period][weekday].length > 0}}">
+                                    <block wx:for="{{weeklyTimetable[period][weekday]}}" wx:for-item="course" wx:key="course.id">
+                                        <view class="course-box" style="height: {{course.rowSpan * 120}}rpx;" wx:if="{{period == course.startPeriod}}" bindtap="goToCourseDetail" data-course-id="{{course.id}}">
+                                            <text class="classname">{{course.course_name}}</text>
+                                            <text class="teacher">{{course.teacher_name}}</text>
+                                            <text class="location">{{course.location || "待定"}}</text>
+                                        </view>
+                                    </block>
+                                </block>
+                            </view>
+                        </block>
+                    </view>
+                </block>
+            </view>
+        </scroll-view>
     </view>
 
 </view>

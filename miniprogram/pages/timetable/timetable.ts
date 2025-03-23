@@ -25,7 +25,11 @@ Page({
         courses: [],
         weeksRange: [],
         hasPractice: false, // 是否有实践课
-        practiceInfo: "" // 实践课信息
+        practiceInfo: "", // 实践课信息
+        weekDays: ["周一", "周二", "周三", "周四", "周五", "周六", "周日"],
+        periods: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        weeklyTimetable: {}, // 课程数据
+        weekDates: [],  // 日期数组
     },
 
     onLoad() {
@@ -55,36 +59,48 @@ Page({
             this.loadCourses();
             this.loadPracticeCourses(); // ✅ 额外获取实践课信息
         });
+        this.getWeekDates(this.data.currentWeek);
+        this.loadWeeklyCourses();
+    },
+    onShow() {
+        this.processWeeklyCourses();
     },
 
     // 计算选中日期是第几周，周几
     computeDateInfo(selectedDate, callback) {
         const weekDays = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
         const app = getApp();
-        const startDateISO = new Date(app.globalData.timetableConfig.start_date); // 获取开学日期
+        const startDate = new Date(app.globalData.timetableConfig.start_date); // 学期开始日期
+        const currentDate = new Date(selectedDate); // 选中的日期
 
-        const startDate = new Date(startDateISO);
-        const diffDays = Math.floor((selectedDate - startDate.getTime()) / (1000 * 60 * 60 * 24));
-        const selectedWeek = Math.ceil(diffDays / 7);
-        const selectedWeekday = selectedDate.getDay(); // 0 = 周日, 1 = 周一, ..., 6 = 周六
+        // 1. 获取本天是周几（0=周日，7=周日）
+        const currentWeekday = currentDate.getDay() || 7;
 
+        // 2. 计算这个日期所在周的周一
+        const monday = new Date(currentDate);
+        monday.setDate(currentDate.getDate() - currentWeekday + 1);
+
+        // 3. 计算这周一距开学多少天
+        const weekDiffDays = Math.floor((monday - startDate) / (1000 * 60 * 60 * 24));
+
+        // 4. 计算这是第几周
+        const selectedWeek = Math.floor(weekDiffDays / 7) + 1;
+
+        // 5. 最终渲染
+        const selectedDayText = weekDays[currentDate.getDay()];
         const finalWeek = selectedWeek > 0 ? selectedWeek : 1;
-        const finalWeekday = selectedWeekday === 0 ? 7 : selectedWeekday; // 修正周日
-        const selectedDayText = weekDays[selectedWeekday];
 
         this.setData({
-            selectedDate: selectedDate.toISOString().split("T")[0],
+            selectedDate: currentDate.toISOString().split("T")[0],
             currentWeek: finalWeek,
             dayOfWeek: selectedDayText,
-            currentDate: `${selectedDate.getMonth() + 1}.${selectedDate.getDate()}`
+            currentDate: `${currentDate.getMonth() + 1}.${currentDate.getDate()}`
         }, callback);
     },
 
     // 获取日课表
     loadCourses() {
         if (!this.data.userId) return;
-
-        wx.showLoading({ title: "加载中..." });
 
         wx.request({
             url: `${API_BASE_URL}/daily`,
@@ -96,9 +112,8 @@ Page({
             },
             success: (res) => {
                 wx.hideLoading();
-                
+
                 if (res.data.success) {
-                console.log(res.data);
 
                     const now = new Date();
                     const app = getApp();
@@ -152,7 +167,7 @@ Page({
                         } else {
                             status = "upcoming"; // 未来的课程
                         }
-                        
+
                         return {
                             id: course.id,
                             course_name: course.course_name,
@@ -165,6 +180,8 @@ Page({
                     });
 
                     this.setData({ courses: updatedCourses });
+                    this.checkIfNoCourses();
+
                 } else {
                     wx.showToast({ title: "暂无课程", icon: "none" });
                     this.setData({ courses: [] });
@@ -212,6 +229,8 @@ Page({
         // ✅ 重新获取课程
         this.loadCourses();
         this.loadPracticeCourses();
+        this.getWeekDates(this.data.currentWeek);
+        this.loadWeeklyCourses();
     },
 
     // 获取实践课
@@ -221,12 +240,12 @@ Page({
             method: "GET",
             data: { user_id: this.data.userId, week: this.data.currentWeek },
             success: (res) => {
-    
+
                 if (res.data.success && res.data.has_practice) {
                     // ✅ 只在周一到周五显示实践课
                     const today = new Date(this.data.selectedDate);
                     const todayWeekday = today.getDay(); // 0 = 周日, 1 = 周一, ..., 6 = 周六
-    
+
                     if (todayWeekday >= 1 && todayWeekday <= 5) {
                         this.setData({
                             hasPractice: true,
@@ -241,7 +260,7 @@ Page({
                 } else {
                     this.setData({ hasPractice: false, practiceInfo: [] });
                 }
-    
+
                 // ✅ 重新判断今天是否真的有课
                 this.checkIfNoCourses();
             },
@@ -252,34 +271,49 @@ Page({
             }
         });
     },
-    
+
     checkIfNoCourses() {
         const noTheoryCourses = this.data.courses.length === 0;
         const noPracticeCourses = !this.data.hasPractice;
-    
+
         this.setData({
             noClassesToday: noTheoryCourses && noPracticeCourses // ✅ 如果都没有，就显示休息 UI
         });
     },
-    
+
     viewPracticeDetails() {
         if (!this.data.practiceInfo || this.data.practiceInfo.length === 0) {
             wx.showToast({ title: "没有实践课信息", icon: "none" });
             return;
         }
-    
-        const practiceDetails = this.data.practiceInfo.map(p => 
+
+        const practiceDetails = this.data.practiceInfo.map(p =>
             `📌 课程: ${p.course_name}
     👨‍🏫 教师: ${p.teacher_name}
     📍 地点: ${p.location || "待定"}
     📅 周次: ${p.weeks}`
         ).join("\n\n");
-    
+
         wx.showModal({
             title: "实践课详情",
             content: practiceDetails,
             showCancel: false
         });
+    },
+
+    // 切换到日课表
+    switchToDaily() {
+        this.setData({ selectedTab: "daily" });
+        // 重新加载日课表数据（必要时）
+        this.loadCourses();
+        this.loadPracticeCourses();
+    },
+
+    // 切换到周课表
+    switchToWeekly() {
+        this.setData({ selectedTab: "weekly" });
+        this.getWeekDates(this.data.currentWeek);  // 计算这周日期
+        this.loadWeeklyCourses();                  // 加载这周所有课程
     },
 
 
@@ -391,18 +425,127 @@ Page({
         wx.navigateTo({ url: "/pages/timetable-config/timetable-config" });
     },
 
-    // **课程详情跳转**
+    // 课程详情跳转
     goToCourseDetail(e) {
-        console.log("点击的课程数据:", e.currentTarget.dataset); // ✅ 调试 dataset
-    
         const courseId = e.currentTarget.dataset.courseId; // 获取课程 ID
         if (!courseId) {
             wx.showToast({ title: "课程 ID 获取失败", icon: "none" });
             return;
         }
-    
+
         wx.navigateTo({
-            url: `/pages/course-detail/detail?course_id=${courseId}`
+            url: `/pages/course/course?course_id=${courseId}`
         });
+    },
+
+    //周课表
+    // 计算当前周的每一天
+    getWeekDates(selectedWeek) {
+        const weekDays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
+        const app = getApp();
+        const startDate = new Date(app.globalData.timetableConfig.start_date);
+
+        // 计算周一日期
+        const monday = new Date(startDate);
+        monday.setDate(startDate.getDate() + (selectedWeek - 1) * 7);
+
+        let weekDates = [];
+        for (let i = 0; i < 7; i++) {
+            let currentDate = new Date(monday);
+            currentDate.setDate(monday.getDate() + i);
+
+            weekDates.push({
+                weekday: weekDays[i],
+                date: `${currentDate.getMonth() + 1}.${currentDate.getDate()}`
+            });
+        }
+
+        this.setData({ weekDates });
+    },
+
+    // 加载周课表数据
+    loadWeeklyCourses() {
+        wx.request({
+            url: `${API_BASE_URL}/weekly`,
+            method: "GET",
+            data: {
+                user_id: this.data.userId,
+                week: this.data.currentWeek
+            },
+            success: (res) => {
+                if (res.data.success && typeof res.data.data === "object") {
+                    const weeklyCourses = res.data.data;  // 这是一个对象，key 是星期几
+    
+                    // ✅ 处理成数组结构
+                    let formattedCourses = [];
+                    for (let day in weeklyCourses) {
+                        if (Array.isArray(weeklyCourses[day])) {
+                            weeklyCourses[day].forEach(course => {
+                                formattedCourses.push({
+                                    ...course,
+                                    weekday: Number(day) // 把 key (字符串) 转成数字
+                                });
+                            });
+                        }
+                    }
+    
+                    this.setData({ weeklyCourses: formattedCourses }, () => {
+                        this.processWeeklyCourses(); // **数据加载完毕后再处理**
+                    });
+                } else {
+                    console.error("❌ weeklyCourses 数据格式错误:", res.data.data);
+                    wx.showToast({ title: "获取周课表失败", icon: "none" });
+                }
+            },
+            fail: () => {
+                wx.showToast({ title: "网络错误", icon: "none" });
+            }
+        });
+    },
+
+    // 解析 weeklyCourses 并填充表格
+    processWeeklyCourses() {
+        if (!this.data.weeklyCourses || !Array.isArray(this.data.weeklyCourses)) {
+            console.error("❌ weeklyCourses 数据为空或格式错误，无法处理周课表:", this.data.weeklyCourses);
+            return;
+        }
+    
+        const MAX_PERIODS = 10;
+        const weekDays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
+        
+        // ✅ 初始化周课表结构
+        let weeklyTimetable = {};
+        for (let i = 1; i <= MAX_PERIODS; i++) {
+            weeklyTimetable[i] = {};
+            weekDays.forEach(day => {
+                weeklyTimetable[i][day] = [];
+            });
+        }
+    
+        // ✅ 解析 weeklyCourses 并填充表格
+        this.data.weeklyCourses.forEach(course => {
+            const { class_period, course_name, teacher_name, location, weekday } = course;
+    
+            if (!class_period || !weekday) {
+                console.warn("⚠️ 课程缺少 class_period 或 weekday，跳过:", course);
+                return;
+            }
+    
+            const [startPeriod, endPeriod] = class_period.split("-").map(Number);
+            const weekdayName = weekDays[weekday - 1]; // `weekday` 是数字，需要转换为 "周一"
+    
+            weeklyTimetable[startPeriod][weekdayName].push({
+                id: course.id,
+                course_name: course.course_name,
+                teacher_name: course.teacher_name,
+                location: course.location,
+                startPeriod,
+                endPeriod,
+                rowSpan: endPeriod - startPeriod + 1,
+              });
+        });
+    
+        this.setData({ weeklyTimetable });
     }
+
 });

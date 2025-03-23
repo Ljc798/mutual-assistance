@@ -1,0 +1,98 @@
+.course-detail-container {
+    padding: 40rpx 30rpx;
+    font-size: 30rpx;
+    background-color: #f5f5f5;
+    min-height: 100vh;
+    box-sizing: border-box;
+    position: relative;
+  }
+  
+  /* 返回按钮 */
+  .back-btn {
+    position: absolute;
+    top: 110rpx;
+    left: 30rpx;
+    width: 50rpx;
+    height: 50rpx;
+    z-index: 10;
+  }
+  
+  /* 顶部标题栏 */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 150rpx;
+    margin-bottom: 40rpx;
+  }
+  
+  .title {
+    font-size: 40rpx;
+    font-weight: bold;
+    color: #333;
+  }
+  
+  .edit-icon {
+    width: 40rpx;
+    height: 40rpx;
+  }
+  
+  /* 信息区域 */
+  .info-section {
+    background-color: #fff;
+    border-radius: 20rpx;
+    padding: 30rpx;
+    box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+  }
+  
+  .info-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 25rpx;
+    flex-wrap: wrap;
+  }
+  
+  .label {
+    width: 160rpx;
+    font-weight: 600;
+    color: #555;
+  }
+  
+  .value {
+    flex: 1;
+    padding: 15rpx;
+    background-color: #f0f0f0;
+    border-radius: 10rpx;
+    font-size: 28rpx;
+    color: #333;
+    margin-left: 10rpx;
+  }
+  
+  input.value {
+    background-color: #fff;
+    border: 1rpx solid #ddd;
+  }
+  
+  /* 按钮组 */
+  .button-group {
+    margin-top: 60rpx;
+    display: flex;
+    justify-content: center;
+    gap: 40rpx;
+  }
+  
+  .delete-button {
+    background-color: #f44336;
+    color: white;
+    padding: 20rpx 60rpx;
+    border-radius: 50rpx;
+    font-size: 32rpx;
+  }
+  
+  .save-button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 20rpx 60rpx;
+    border-radius: 50rpx;
+    font-size: 32rpx;
+  }

@@ -1,3 +1,5 @@
+import { getCourseTime } from '../../utils/courseTimeUtil';
+
 const API_BASE_URL = "http://localhost:3000/api/timetable";
 
 Page({
@@ -21,10 +23,22 @@ Page({
         wx.request({
             url: `${API_BASE_URL}/course-detail`,
             method: "GET",
-            data: { user_id: this.data.userId, course_id: this.data.courseId },
+            data: {
+                user_id: this.data.userId,
+                course_id: this.data.courseId
+            },
             success: (res) => {
                 if (res.data.success) {
-                    this.setData({ course: res.data.data });
+                    const course = res.data.data;
+                    const config = getApp().globalData.timetableConfig;
+
+                    const { startTime, endTime } = getCourseTime(course.class_period, config);
+                    course.time_start = startTime;
+                    course.time_end = endTime;
+
+                    this.setData({ course });
+
+                    this.setData({ course });
                 } else {
                     wx.showToast({ title: "加载失败", icon: "none" });
                 }

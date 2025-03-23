@@ -1,7 +1,7 @@
 <view class="page">
     <!-- 上方固定部分 -->
     <view class="header">
-        <view class="app-name">大学帮帮团</view>
+        <view class="app-name">互助Campus</view>
         <view class="location-icon">
             <image src="/assets/icons/ditu.svg" class="location-icon-image" />
             <span class="location-text">九江学院</span>

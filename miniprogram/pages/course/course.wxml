@@ -4,7 +4,7 @@
     <!-- 标题栏 -->
     <view class="header">
         <text class="title">{{course.course_name}}</text>
-        <image class="edit-icon" src="/assets/icons/edit.svg" bindtap="toggleEdit" />
+        <image class="edit-icon" src="/assets/icons/edit-3-svgrepo-com.svg" bindtap="toggleEdit" />
     </view>
 
     <!-- 课程信息 -->

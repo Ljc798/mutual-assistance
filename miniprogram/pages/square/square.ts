@@ -128,7 +128,6 @@ Page({
             return;
         }
 
-        console.log("📌 当前分类:", category);
 
         wx.showLoading({ title: "加载中..." });
 
@@ -137,7 +136,6 @@ Page({
             method: "GET",
             data: { category, user_id },
             success: (res: any) => {
-                console.log("✅ 获取帖子成功:", res); // **检查 API 返回数据**
 
                 if (res.data.success) {
                     let posts = res.data.posts || [];
@@ -148,7 +146,6 @@ Page({
                     }));
 
                     this.setData({ posts }, () => {
-                        console.log("✅ 文章列表更新成功！");
                     });
                 } else {
                     console.error("❌ API 返回错误:", res.data.message);

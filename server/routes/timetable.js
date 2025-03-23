@@ -13,7 +13,7 @@ router.get("/daily", async (req, res) => {
     try {
         // 获取所有可能包含该用户的课程
         const [courses] = await db.promise().query(
-            `SELECT course_name, teacher_name, class_period, location, weeks
+            `SELECT id, course_name, teacher_name, class_period, location, weeks
              FROM timetable_theory
              WHERE user_id = ? AND weekday = ?`,
             [user_id, weekday]
@@ -153,6 +153,93 @@ router.post("/update-course", async (req, res) => {
     } catch (error) {
         console.error("❌ 更新课程失败:", error);
         res.status(500).json({ success: false, message: "服务器错误", error });
+    }
+});
+
+router.get("/weekly", async (req, res) => {
+    const { user_id, week } = req.query;
+
+    if (!user_id || !week) {
+        return res.status(400).json({ success: false, message: "缺少必要参数" });
+    }
+
+    try {
+        // 初始化每天的课程结构 1 ~ 7（周一 ~ 周日）
+        const weeklyData = {
+            1: [],
+            2: [],
+            3: [],
+            4: [],
+            5: [],
+            6: [],
+            7: []
+        };
+
+        // 获取该用户本周所有理论课（包含所有 weekday）
+        const [theoryCourses] = await db.promise().query(
+            `SELECT id, course_name, teacher_name, class_period, location, weeks, weekday
+             FROM timetable_theory
+             WHERE user_id = ?`,
+            [user_id]
+        );
+
+        // 过滤出符合当前周的理论课
+        const filteredTheory = theoryCourses.filter(course => {
+            const weekRanges = course.weeks.split(",");
+            return weekRanges.some(range => {
+                if (range.includes("-")) {
+                    const [start, end] = range.split("-").map(Number);
+                    return week >= start && week <= end;
+                } else {
+                    return Number(range) === Number(week);
+                }
+            });
+        });
+
+        // 按 weekday 放入 weeklyData 中
+        filteredTheory.forEach(course => {
+            const day = course.weekday;
+            if (weeklyData[day]) {
+                weeklyData[day].push(course);
+            }
+        });
+
+        // 获取本周实践课（整周作为一门课）
+        const [practiceCourses] = await db.promise().query(
+            `SELECT id, course_name, teacher_name, location, weeks
+             FROM timetable_practice
+             WHERE user_id = ?`,
+            [user_id]
+        );
+
+        // 过滤符合当前周的实践课
+        const filteredPractice = practiceCourses.filter(course => {
+            const weekRanges = course.weeks.split(",");
+            return weekRanges.some(range => {
+                if (range.includes("-")) {
+                    const [start, end] = range.split("-").map(Number);
+                    return week >= start && week <= end;
+                } else {
+                    return Number(range) === Number(week);
+                }
+            });
+        });
+
+        // 将实践课统一加入每个工作日（1 ~ 5）作为提示（如果需要你可以只放一天）
+        if (filteredPractice.length > 0) {
+            for (let d = 1; d <= 5; d++) {
+                weeklyData[d].push(...filteredPractice.map(p => ({
+                    ...p,
+                    isPractice: true
+                })));
+            }
+        }
+
+        res.json({ success: true, data: weeklyData });
+
+    } catch (err) {
+        console.error("❌ 获取周课表失败:", err);
+        res.status(500).json({ success: false, message: "服务器错误" });
     }
 });
 
