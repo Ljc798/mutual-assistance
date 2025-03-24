@@ -26,8 +26,7 @@ Page({
     fetchPostDetail(postId: string) {
         const app = getApp();
         const user_id = app.globalData.userInfo?.id;
-    
-        wx.showLoading({ title: "加载中..." });
+
 
         wx.request({
             url: `http://localhost:3000/api/square/detail`,
@@ -37,7 +36,7 @@ Page({
                 wx.hideLoading();
                 if (res.data.success) {
                     let post = res.data.post;
-                    
+
                     post.created_time = this.formatTime(post.created_time); // ✅ 格式化时间
                     post.isLiked = Boolean(post.isLiked); // ✅ 确保 `isLiked` 是布尔值
                     this.setData({ post, isLoading: false });
@@ -98,7 +97,7 @@ Page({
                         return comment;
                     });
                     console.log(comments);
-                    
+
                     this.setData({ comments });
                 }
             },
@@ -111,73 +110,93 @@ Page({
 
     // ✅ 点击评论进行回复
     handleReply(e) {
-        const { commentid, username, rootid } = e.currentTarget.dataset;
-        console.log(`📝 处理回复: comment_id=${commentid}, root_parent_id=${rootid || commentid}`);
-    
+        const { commentid, username, parentid, rootid } = e.currentTarget.dataset;
+
+        console.log(`📝 处理回复: comment_id=${commentid}, parent_id=${parentid}, root_parent_id=${rootid}`);
+
+        const isFirstLevel = parentid == null; // null 或 undefined 都算一级
+
         this.setData({
-            replyTo: commentid,  
-            rootParentId: rootid || commentid,  
+            replyTo: commentid,
+            rootParentId: isFirstLevel ? commentid : rootid,
             replyPlaceholder: `回复 @${username}...`,
             inputFocus: true
         });
     },
 
-    // ✅ 监听输入框失去焦点，恢复默认 placeholder
+    // ✅ 输入框失焦恢复
     blurComment() {
+        // ❌ 不要清空 replyTo，这会导致评论变一级！
+        // this.setData({
+        //     replyTo: null,
+        //     replyPlaceholder: "发布你的评论..."
+        // });
+
+        // ✅ 你可以只做 focus 状态控制
         this.setData({
-            replyTo: null,
-            replyPlaceholder: "发布你的评论..."
+            inputFocus: false
         });
     },
 
-    // ✅ 监听输入框输入
-    handleInput(e: any) {
+    // ✅ 输入监听
+    handleInput(e) {
         this.setData({ newComment: e.detail.value });
     },
 
-    // 发布评论
+    // ✅ 发布评论
     submitComment() {
         const app = getApp();
         const user_id = app.globalData.userInfo?.id;
+
         if (!user_id) {
             wx.showToast({ title: "请先登录", icon: "none" });
             return;
         }
-    
+
         if (!this.data.newComment.trim()) {
             wx.showToast({ title: "评论不能为空", icon: "none" });
             return;
         }
-    
-        const isReply = !!this.data.replyTo; // 是否是回复评论
-    
+
+        const isReply = !!this.data.replyTo;
+
+        // ✅ 构建评论对象，避免传 null
+        const commentData = {
+            user_id,
+            square_id: this.data.postId,
+            content: this.data.newComment
+        };
+
+        if (isReply) {
+            commentData.parent_id = this.data.replyTo;
+            commentData.root_parent_id = this.data.rootParentId ?? this.data.replyTo;
+        }
+
+        console.log("📤 最终提交评论数据：", commentData);
+
         wx.request({
             url: "http://localhost:3000/api/square/comments/create",
             method: "POST",
-            data: {
-                user_id,
-                square_id: this.data.postId,
-                content: this.data.newComment,
-                parent_id: isReply ? this.data.replyTo : null,  // ✅ 二级评论的 parent_id 是回复对象的 id
-                root_parent_id: isReply ? this.data.rootParentId : null  // ✅ 保持 root_parent_id 一致
-            },
+            data: commentData,
             success: (res: any) => {
                 if (res.data.success) {
                     wx.showToast({ title: "评论成功", icon: "success" });
-    
-                    this.fetchComments(this.data.postId);  // ✅ 重新获取评论列表
+                    this.fetchComments(this.data.postId); // 刷新评论列表
                     this.setData({
                         newComment: "",
                         replyTo: null,
-                        rootParentId: null,  
+                        rootParentId: null,
                         replyPlaceholder: "发布你的评论...",
                         inputFocus: false
                     });
+                } else {
+                    wx.showToast({ title: "发布失败", icon: "none" });
+                    console.error("❌ 发布失败:", res.data);
                 }
             },
             fail: (err) => {
                 wx.showToast({ title: "发布失败", icon: "none" });
-                console.error("❌ 发布失败:", err);
+                console.error("❌ 网络错误:", err);
             }
         });
     },
@@ -224,6 +243,6 @@ Page({
     },
 
     goBack() {
-        wx.navigateBack({delta: 1});
+        wx.navigateBack({ delta: 1 });
     }
 });

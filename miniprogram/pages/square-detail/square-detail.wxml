@@ -68,20 +68,21 @@
             </view>
 
             <block wx:for="{{comments}}" wx:key="id">
-                <view class="comment-item" bindtap="handleReply" data-commentid="{{item.id}}" data-username="{{item.username}}">
+                <view class="comment-item" bindtap="handleReply" data-commentid="{{item.id}}" data-username="{{item.username}}" data-parentid="{{item.parent_id}}" data-rootid="{{item.root_parent_id}}">
                     <image class="comment-avatar" src="{{item.avatar_url}}" />
                     <view class="comment-content">
-                        <view class="comment-row">
-                            <view class="comment-main">
-                                <text class="comment-username">{{item.username}}</text>
-                                <text class="comment-text">{{item.content}}</text>
+                        <view class="comment-main">
+                            <text class="comment-username">{{item.username}}</text>
+                            <text class="comment-text">{{item.content}}</text>
+                            <view class="comment-row">
                                 <text class="comment-time">{{item.created_time}}</text>
-                            </view>
-                            <view class="comment-actions">
-                                <image class="like-icon" src="{{item.isLiked ? '/assets/icons/heart-fill.svg' : '/assets/icons/heart-line.svg'}}" bindtap="toggleCommentLike" data-commentid="{{item.id}}" data-isliked="{{item.isLiked}}" />
-                                <text>{{item.likes_count}}</text>
+                                <view class="comment-actions">
+                                    <image class="like-icon" src="{{item.isLiked ? '/assets/icons/heart-fill.svg' : '/assets/icons/heart-line.svg'}}" bindtap="toggleCommentLike" data-commentid="{{item.id}}" data-isliked="{{item.isLiked}}" />
+                                    <text>{{item.likes_count}}</text>
+                                </view>
                             </view>
                         </view>
+
                     </view>
                 </view>
 
@@ -89,20 +90,20 @@
                 <block wx:if="{{item.children.length > 0}}">
                     <view class="sub-comments">
                         <block wx:for="{{item.children}}" wx:key="id">
-                            <view class="sub-comment-item" bindtap="handleReply" data-commentid="{{item.id}}" data-rootid="{{item.root_parent_id}}" data-username="{{item.username}}">
+                            <view class="sub-comment-item" bindtap="handleReply" data-commentid="{{item.id}}" data-username="{{item.username}}" data-parentid="{{item.parent_id}}" data-rootid="{{item.root_parent_id}}">
                                 <image class="sub-comment-avatar" src="{{item.avatar_url}}" />
                                 <view class="sub-comment-content">
-                                    <view class="comment-row">
-                                        <view class="comment-main">
-                                            <view class="comment-header">
-                                                <text class="comment-username">{{item.username}} 回复 {{item.reply_to_username}}</text>
-                                            </view>
-                                            <text class="comment-text">{{item.content}}</text>
-                                            <text class="comment-time">{{item.created_time}}</text>
+                                    <view class="comment-main">
+                                        <view class="comment-header">
+                                            <text class="comment-username">{{item.username}} 回复 {{item.reply_to_username}}</text>
                                         </view>
-                                        <view class="comment-actions">
-                                            <image class="like-icon" src="{{item.isLiked ? '/assets/icons/heart-fill.svg' : '/assets/icons/heart-line.svg'}}" bindtap="toggleCommentLike" data-commentid="{{item.id}}" data-isliked="{{item.isLiked}}" />
-                                            <text>{{item.likes_count}}</text>
+                                        <text class="comment-text">{{item.content}}</text>
+                                        <view class="comment-row">
+                                            <text class="comment-time">{{item.created_time}}</text>
+                                            <view class="comment-actions">
+                                                <image class="like-icon" src="{{item.isLiked ? '/assets/icons/heart-fill.svg' : '/assets/icons/heart-line.svg'}}" bindtap="toggleCommentLike" data-commentid="{{item.id}}" data-isliked="{{item.isLiked}}" />
+                                                <text>{{item.likes_count}}</text>
+                                            </view>
                                         </view>
                                     </view>
                                 </view>

@@ -13,22 +13,39 @@
             <text class="user-id">ID: {{userInfo.wxid}}</text>
         </view>
         <view class="arrow">
-        <image src="/assets/icons/right-chevron-svgrepo-com.svg" class="arrow-icon"/>
-    </view>
+            <image src="/assets/icons/right-chevron-svgrepo-com.svg" class="arrow-icon" />
+        </view>
     </view>
 
     <!-- 免费次数和钱包余额 -->
     <view class="info-box">
-        <view class="box">
+        <view class="box" bindtap="goToShop">
             <text class="label">免广告次数</text>
             <text class="value">{{userInfo.free_counts}}</text>
         </view>
-        <view class="box">
+        <view class="box" bindtap="goToShop">
             <text class="label">积分余额</text>
             <text class="value">{{userInfo.points}}</text>
         </view>
     </view>
 
+    <view class="vip-card" wx:if="{{isVip}}">
+  <image class="vip-badge" src="/assets/icons/huiyuanVIP.svg" />
+  <view class="vip-info">
+    <text class="vip-label">VIP 用户</text>
+    <text class="vip-expire">到期时间：{{vip_expire_time}}</text>
+  </view>
+  <button class="vip-renew-btn" size="mini" bindtap="goToVipPage">续 费</button>
+</view>
+
+<!-- 非 VIP 展示普通盒子 -->
+<view class="vip-box" wx:else>
+  <view class="vip-status">
+    <image src="/assets/icons/huiyuanVIP-2.svg" class="vip-icon" />
+    <text>当前不是 VIP 用户</text>
+  </view>
+  <button class="vip-btn" size="mini" bindtap="goToVipPage">立即开通</button>
+</view>
     <!-- 我的订单，我的空间，意见反馈 -->
     <view class="action-box">
         <view class="action-item" bindtap="handleOrderClick">
@@ -37,8 +54,8 @@
         <view class="action-item">
             <text>我的空间</text>
         </view>
-        <view class="action-item" bindtap="goToEditProfile">
-            <text>个人信息</text>
+        <view class="action-item" bindtap="goToShop">
+            <text>商城</text>
         </view>
         <view class="action-item">
             <text>意见反馈</text>

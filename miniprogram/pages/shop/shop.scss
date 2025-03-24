@@ -1,0 +1,95 @@
+.shop-container {
+    padding: 30rpx;
+    background-color: #f7f7f7;
+    min-height: 100vh;
+    padding-top: 110rpx;
+}
+
+.back-btn {
+    position: absolute;
+    top: 110rpx;
+    left: 20rpx;
+    width: 50rpx;
+    height: 50rpx;
+    margin-right: 20rpx;
+}
+
+
+.shop-header {
+    font-size: 36rpx;
+    font-weight: bold;
+    margin-bottom: 30rpx;
+    text-align: center;
+    color: #333;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20rpx;
+}
+
+.shop-card {
+    background-color: #fff;
+    border-radius: 20rpx;
+    padding: 24rpx;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.05);
+    min-height: 250rpx; // 加高卡片高度让内容有呼吸感
+}
+
+.item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8rpx;
+    margin-bottom: 16rpx;
+}
+
+.item-name {
+    font-size: 30rpx;
+    font-weight: 600;
+    color: #222;
+}
+
+.item-desc {
+    font-size: 24rpx;
+    color: #666;
+    min-height: 50rpx;
+}
+
+.item-meta {
+    font-size: 22rpx;
+    color: #999;
+}
+
+.item-price {
+    font-size: 26rpx;
+    font-weight: 500;
+    color: #444;
+    margin-top: 6rpx;
+    margin-bottom: 16rpx;
+    line-height: 1.6;
+}
+
+.highlight {
+    color: #f56c6c;
+    font-weight: bold;
+}
+
+.item-actions {
+    display: flex;
+    justify-content: center;
+    gap: 20rpx;
+}
+
+button {
+    padding: 10rpx 20rpx;
+    font-size: 24rpx;
+    border-radius: 12rpx;
+}
+
+button::after {
+    border: none;
+}

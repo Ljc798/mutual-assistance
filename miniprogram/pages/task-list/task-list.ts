@@ -33,10 +33,9 @@ Page({
         wx.showLoading({ title: "加载中...", mask: true });
 
         wx.request({
-            url: `http://localhost:3000/api/tasks?category=${encodeURIComponent(category)}`,
+            url: `http://localhost:3000/api/task/tasks?category=${encodeURIComponent(category)}`,
             method: "GET",
             success: (res: any) => {
-                console.log("✅ 获取任务:", res.data);
 
                 const formattedTasks = res.data.map((task: Task) => ({
                     ...task,

@@ -50,7 +50,8 @@
 /* 单张图片 */
 .single-image {
     width: 100%;
-    max-width: 400rpx; /* 限制最大宽度 */
+    max-width: 400rpx;
+    /* 限制最大宽度 */
     border-radius: 10rpx;
 }
 
@@ -84,7 +85,8 @@
 .grid-image {
     width: 100%;
     height: auto;
-    aspect-ratio: 1; /* 保持正方形 */
+    aspect-ratio: 1;
+    /* 保持正方形 */
     border-radius: 10rpx;
     object-fit: cover;
 }
@@ -92,7 +94,7 @@
 .post-information {
     display: flex;
     align-items: center;
-    justify-content:space-between;
+    justify-content: space-between;
     margin-top: 20rpx;
 }
 
@@ -181,6 +183,12 @@
     font-size: 34rpx;
     color: #333;
     margin-top: 5rpx;
+    word-break: break-all;
+    /* 🔥 强制在任意字符断开 */
+    white-space: normal;
+    /* ✅ 正常换行 */
+    overflow-wrap: break-word;
+    /* 🔄 防止超出 */
 }
 
 .comment-time {
@@ -203,7 +211,7 @@
 
 // 二级评论
 .sub-comments {
-    margin-left: 80rpx;  // ✅ 让二级评论整体右缩进
+    margin-left: 80rpx; // ✅ 让二级评论整体右缩进
 }
 
 .sub-comment-item {
@@ -212,7 +220,7 @@
 }
 
 .sub-comment-avatar {
-    width: 45rpx;  // ✅ 头像缩小
+    width: 45rpx; // ✅ 头像缩小
     height: 45rpx;
     border-radius: 50%;
     margin-right: 15rpx;
@@ -245,16 +253,16 @@
         border-radius: 10rpx;
         background: #f5f5f5;
         outline: none;
-        min-width: 50%;  // ✅ 限制最小宽度，防止输入框挤占按钮空间
+        min-width: 50%; // ✅ 限制最小宽度，防止输入框挤占按钮空间
     }
 
     .send-button {
         flex-shrink: 0; // ✅ 防止被压缩
         min-width: 100rpx; // ✅ 设定最小宽度，防止按钮过小
-        width: auto;  // ✅ 适应文字宽度
+        width: auto; // ✅ 适应文字宽度
         height: 70rpx;
         margin-left: 15rpx;
-        padding: 0 30rpx;  // ✅ 增加左右填充，适应不同屏幕
+        padding: 0 30rpx; // ✅ 增加左右填充，适应不同屏幕
         background-color: #0084ff;
         color: white;
         border-radius: 10rpx;

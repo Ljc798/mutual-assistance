@@ -31,10 +31,9 @@ Page({
         wx.showLoading({ title: "加载中...", mask: true });
 
         wx.request({
-            url: "http://localhost:3000/api/tasks", // 本地 API 地址
+            url: "http://localhost:3000/api/task/tasks", // 本地 API 地址
             method: "GET",
             success: (res: any) => {
-                console.log("✅ 获取任务数据:", res.data);
 
                 const formattedTasks = res.data.map((task: Task) => ({
                     ...task,
@@ -60,6 +59,8 @@ Page({
     // 处理分类点击事件
     handleCategoryClick(e: any) {
         const category = e.currentTarget.dataset.category;  // 获取点击的分类
+        console.log(category);
+        
         wx.navigateTo({
             url: `/pages/task-list/task-list?category=${encodeURIComponent(category)}`,  // 传递分类信息
         });

@@ -7,56 +7,57 @@
     top: 0;
     width: 100%;
     z-index: 10;
-}
-
-.login-container {
+  }
+  
+  .login-container {
     display: flex;
     flex-direction: column;
     align-items: center;
     margin-top: 400rpx;
-}
-
-.avatar-picker {
+  }
+  
+  .avatar-picker {
     display: flex;
     flex-direction: column;
     align-items: center;
     cursor: pointer;
-}
-
-.avatar-img {
+  }
+  
+  .avatar-img {
     width: 120rpx;
     height: 120rpx;
     border-radius: 50%;
-    border: 2rpx solid #ccc;
-}
-
-.avatar-text {
+    border: 2rpx solid #ffb6c1;
+  }
+  
+  .avatar-text {
     font-size: 24rpx;
-    color: #666;
+    color: #999;
     margin-top: 10rpx;
-}
-
-.name-input {
+  }
+  
+  .name-input {
     width: 80%;
     padding: 20rpx;
     margin-top: 30rpx;
-    border: 1rpx solid #ddd;
+    border: 1rpx solid #ffd6e7;
     border-radius: 10rpx;
     font-size: 28rpx;
-}
-
-.btns {
+  }
+  
+  .btns {
     display: flex;
     flex-direction: row;
     gap: 20rpx;
     margin-top: 20rpx;
-}
-
-.wx-btn {
+  }
+  
+  .wx-btn,
+  .login-btn {
     width: 80%;
     padding: 20rpx;
     margin-top: 20rpx;
-    background-color: #07c160;
+    background-color: #ff80ab;
     color: white;
     font-size: 30rpx;
     border-radius: 10rpx;
@@ -64,112 +65,100 @@
     display: flex;
     align-items: center;
     justify-content: center;
-}
-
-.login-btn {
-    width: 80%;
-    padding: 20rpx;
-    margin-top: 20rpx;
-    background-color: #07c160;
-    color: white;
-    font-size: 30rpx;
-    border-radius: 10rpx;
-    text-align: center;
-}
-
-.existing-user {
+  }
+  
+  .existing-user {
     margin-top: 20px;
     font-size: 14px;
-    color: #666;
+    color: #999;
     text-decoration: underline;
-}
-
-.app-name {
-    font-size: 40rpx;
-    color: #222;
-}
-
-.user-info {
+  }
+  
+  .app-name {
+    font-size: 45rpx;
+    color: #333;
+  }
+  
+  .user-info {
     display: flex;
     margin-top: 200rpx;
     margin-bottom: 30rpx;
     align-items: center;
-    position: relative;  // 让右箭头可以绝对定位
-    padding-right: 60rpx; // 预留箭头空间
-}
-
-.avatar {
+    position: relative;
+    padding-right: 60rpx;
+  }
+  
+  .avatar {
     margin-left: 20rpx;
     margin-right: 40rpx;
-}
-
-.avatar-img {
+  }
+  
+  .avatar-img {
     width: 188rpx;
     height: 188rpx;
     border-radius: 50%;
-}
-
-.info {
+  }
+  
+  .info {
     display: flex;
     flex-direction: column;
-}
-
-.user-name {
+  }
+  
+  .user-name {
     font-size: 28px;
     font-weight: bold;
-}
-
-.user-id {
+  }
+  
+  .user-id {
     font-size: 24px;
-    color: #888;
-}
-
-.arrow {
+    color: #bbb;
+  }
+  
+  .arrow {
     position: absolute;
-    right: 40rpx;  // **保持箭头在右侧**
+    right: 40rpx;
     top: 50%;
     transform: translateY(-50%);
-
+  
     .arrow-icon {
-        width: 66rpx;
-        height: 66rpx;
+      width: 66rpx;
+      height: 66rpx;
     }
-}
-
-.info-box {
+  }
+  
+  .info-box {
     display: flex;
     margin-bottom: 30rpx;
-}
-
-
-.box {
+  }
+  
+  .box {
     flex: 1;
     margin-right: 20rpx;
     padding: 20rpx;
-    background-color: #f8f8f8;
+    background-color: #fff5f7;
     border-radius: 10rpx;
     text-align: center;
-}
-
-.box:last-child {
+  }
+  
+  .box:last-child {
     margin-right: 0;
-}
-
-.label {
+  }
+  
+  .label {
     font-size: 24px;
-    color: #888;
+    color: #e91e63;
     display: block;
-}
-
-.value {
+  }
+  
+  .value {
     font-size: 28px;
     font-weight: bold;
-    color: #ff416c;
+    color: #ff4f81;
     display: block;
     margin-top: 10rpx;
-}
-
-.action-box {
+  }
+  
+  .action-box {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -177,11 +166,11 @@
     width: 90%;
     margin-left: auto;
     margin-right: auto;
-}
-
-.action-item {
+  }
+  
+  .action-item {
     padding: 20rpx;
-    background-color: #f8f8f8;
+    background-color: #fff0f5;
     border-radius: 10rpx;
     text-align: center;
     font-size: 30px;
@@ -189,4 +178,83 @@
     font-weight: bold;
     color: #333;
     margin-bottom: 20rpx;
-}
+  }
+  
+  .vip-box {
+    background-color: #fff0f5;
+    border-radius: 20rpx;
+    padding: 24rpx;
+    margin: 24rpx 20rpx 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.05);
+  }
+  
+  .vip-status {
+    display: flex;
+    align-items: center;
+    font-size: 26rpx;
+    color: #e91e63;
+    font-weight: 500;
+  }
+  
+  .vip-icon {
+    width: 36rpx;
+    height: 36rpx;
+    margin-right: 12rpx;
+    filter: brightness(0) saturate(100%) invert(40%) sepia(50%) saturate(300%) hue-rotate(300deg);
+  }
+  
+  .vip-btn {
+    background-color: #ff80ab;
+    color: #fff;
+    font-size: 24rpx;
+    border-radius: 32rpx;
+    margin-left: 180rpx;
+    line-height: 1;
+  }
+
+  .vip-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(to right, #fff4e6, #ffe0b2); // 金色渐变
+    border: 2rpx solid #f6b100;
+    border-radius: 20rpx;
+    margin: 30rpx 20rpx 0;
+    padding: 24rpx 32rpx;
+    box-shadow: 0 6rpx 10rpx rgba(246, 177, 0, 0.2);
+  }
+  
+  .vip-badge {
+    width: 64rpx;
+    height: 64rpx;
+    margin-right: 20rpx;
+  }
+  
+  .vip-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .vip-label {
+    font-size: 30rpx;
+    font-weight: bold;
+    color: #b8860b;
+  }
+  
+  .vip-expire {
+    font-size: 24rpx;
+    color: #8d6e63;
+    margin-top: 8rpx;
+  }
+  
+  .vip-renew-btn {
+    background-color: #f6b100;
+    color: #fff;
+    font-size: 24rpx;
+    padding: 10rpx 24rpx;
+    border-radius: 32rpx;
+  }

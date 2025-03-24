@@ -1,10 +1,11 @@
 const express = require("express");
 const cors = require("cors");
-const tasksRouter = require("./routes/tasks");
+const taskRouter = require("./routes/task");
 const userRouter = require("./routes/user");
 const squareRouter = require("./routes/square");
 const uploadsRouter = require("./routes/uploads");
 const checkinsRouter = require("./routes/checkins");
+const shopRouter = require("./routes/shop");
 const timetableRouter = require("./routes/timetable");
 const timetableConfigRouter = require("./routes/timetableConfig");
 
@@ -15,11 +16,12 @@ app.use(express.json());
 app.use(cors());
 
 // 绑定 API
-app.use("/api", tasksRouter);
+app.use("/api/task", taskRouter);
 app.use("/api/user", userRouter);
 app.use("/api/square", squareRouter);
 app.use("/api/uploads", uploadsRouter);
 app.use("/api/checkins", checkinsRouter);
+app.use("/api/shop", shopRouter);
 app.use("/api/timetable", timetableRouter);
 app.use("/api/timetableConfig", timetableConfigRouter);
 

@@ -1,0 +1,32 @@
+<view class="shop-container">
+    <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="goBack" />
+    <view class="shop-header">积分商城</view>
+
+    <view class="grid-container">
+        <block wx:for="{{items}}" wx:key="id">
+            <view class="shop-card">
+                <view class="item-info">
+                    <view class="item-name">{{item.name}}</view>
+                    <view class="item-desc">{{item.description}}</view>
+                    <view class="item-meta">剩余：{{item.remaining}} / {{item.total}}</view>
+                    <view class="item-price">
+                        <block wx:if="{{item.exchange_type == 'point'}}">
+                            所需积分：<text class="highlight">{{item.cost}}</text>
+                        </block>
+                        <block wx:if="{{item.exchange_type == 'money'}}">
+                            价格：<text class="highlight">¥{{item.price}}</text>
+                        </block>
+                        <block wx:if="{{item.exchange_type == 'both'}}">
+                            积分：<text class="highlight">{{item.cost}}</text> 或 ¥<text class="highlight">{{item.price}}</text>
+                        </block>
+                    </view>
+                </view>
+
+                <!-- 兑换按钮 -->
+                <view class="item-actions">
+                    <button size="mini" bindtap="handleRedeem" data-id="{{item.id}}" data-type="{{item.exchange_type}}">立即兑换</button>
+                </view>
+            </view>
+        </block>
+    </view>
+</view>

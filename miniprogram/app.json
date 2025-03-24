@@ -13,12 +13,13 @@
     "pages/register/register",
     "pages/edit-profile/edit-profile",
     "pages/timetable-config/timetable-config",
-    "pages/course/course"
+    "pages/course/course",
+    "pages/shop/shop"
   ],
   "window": {
     "navigationBarTextStyle": "black",
     "navigationStyle": "custom",
-    "enablePullDownRefresh": true 
+    "enablePullDownRefresh": true
   },
   "style": "v2",
   "rendererOptions": {

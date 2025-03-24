@@ -129,7 +129,6 @@ Page({
         }
 
 
-        wx.showLoading({ title: "加载中..." });
 
         wx.request({
             url: "http://localhost:3000/api/square/posts",

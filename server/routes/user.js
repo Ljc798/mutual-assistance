@@ -136,5 +136,36 @@ router.post("/update", async (req, res) => {
     });
 });
 
+// ✅ 获取用户信息（通过 token 验证）
+router.get("/info", async (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({ success: false, message: "未提供有效的 Token" });
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    if (!token.startsWith("mock_token_")) {
+        return res.status(401).json({ success: false, message: "无效的 Token" });
+    }
+
+    const userId = token.replace("mock_token_", "");
+
+    db.query("SELECT * FROM users WHERE id = ?", [userId], (err, results) => {
+        if (err) {
+            console.error("❌ 查询用户失败:", err);
+            return res.status(500).json({ success: false, message: "数据库错误" });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({ success: false, message: "用户不存在" });
+        }
+
+        return res.json({
+            success: true,
+            user: results[0],
+        });
+    });
+});
+
 
 module.exports = router;
