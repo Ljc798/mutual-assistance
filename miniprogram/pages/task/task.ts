@@ -2,9 +2,11 @@ Page({
     data: {
         task: {} as Task,  // 存储任务详细信息
         formattedDDL: "",  // 格式化后的时间
-        showBiddingModal: false,  // 控制出价弹窗显示
-        biddingAmount: '',  // 用户输入的出价金额
         statusText: "", // 任务状态文本
+        showPopup: false,
+        commentContent: '',
+        commentPrice: '',
+        bids: [],
     },
 
     onLoad(options: any) {
@@ -15,6 +17,7 @@ Page({
 
         console.log("✅ 详情页任务 ID:", options.taskId);
         this.loadTaskDetail(options.taskId);
+        this.loadBids(options.taskId);
     },
 
     async loadTaskDetail(taskId: string) {
@@ -28,16 +31,13 @@ Page({
                     wx.showToast({ title: "任务不存在", icon: "none" });
                     return;
                 }
-                console.log("✅ 获取任务详情:", res.data);
-                console.log("⏳ 原始 DDL:", res.data.DDL); // 确保 DDL 数据存在
 
                 // 格式化数据
                 const formattedDDL = this.formatTime(res.data.DDL); // 格式化DDL时间
                 const statusText = this.getStatusText(res.data.status); // 格式化状态
 
-                console.log("🕒 格式化后 DDL:", formattedDDL);
 
-                this.setData({ 
+                this.setData({
                     task: res.data,
                     formattedDDL, // 存储格式化时间
                     statusText,
@@ -55,40 +55,6 @@ Page({
     // 返回上一级
     handleBack() {
         wx.navigateBack({ delta: 1 });
-    },
-
-    // 显示出价弹窗
-    showBiddingDialog() {
-        this.setData({ showBiddingModal: true });
-    },
-
-    // 隐藏出价弹窗
-    hideBiddingModal() {
-        this.setData({ showBiddingModal: false, biddingAmount: '' });
-    },
-
-    // 处理用户输入的出价金额
-    handleBiddingInput(e: any) {
-        this.setData({ biddingAmount: e.detail.value });
-    },
-
-    // 提交出价
-    submitBidding() {
-        const { biddingAmount } = this.data;
-
-        if (!biddingAmount || parseFloat(biddingAmount) <= 0) {
-            wx.showToast({ title: '请输入有效的出价金额', icon: 'none' });
-            return;
-        }
-
-        console.log('📌 提交的出价金额:', this.formatPrice(biddingAmount));
-
-        this.setData({ 
-            showBiddingModal: false, 
-            biddingAmount: '' 
-        });
-
-        wx.showToast({ title: '出价成功', icon: 'success' });
     },
 
     // 处理接单逻辑
@@ -146,5 +112,76 @@ Page({
         const minutes = date.getMinutes(); // 获取分钟
 
         return `${month}-${day} ${hours}:${minutes < 10 ? "0" + minutes : minutes}`; // 保证分钟是两位数
+    },
+
+    loadBids(taskId: string) {
+        wx.request({
+          url: `http://localhost:3000/api/task/${taskId}/bids`,
+          method: 'GET',
+          success: (res) => {
+            if (res.data.success) {
+              console.log("💬 加载留言成功:", res.data.bids);
+              this.setData({ bids: res.data.bids });
+            } else {
+              wx.showToast({ title: '留言加载失败', icon: 'none' });
+            }
+          },
+          fail: () => {
+            wx.showToast({ title: '网络错误', icon: 'none' });
+          }
+        });
+      },
+
+
+    openPopup() {
+        this.setData({ showPopup: true });
+    },
+
+    cancelPopup() {
+        this.setData({ showPopup: false, commentContent: '', commentPrice: '' });
+    },
+
+    handleCommentInput(e) {
+        this.setData({ commentContent: e.detail.value });
+    },
+
+    handlePriceInput(e) {
+        this.setData({ commentPrice: e.detail.value });
+    },
+
+    submitMessage() {
+        const app = getApp();
+        const userId = app.globalData.userInfo?.id;
+        const { commentContent, commentPrice, task } = this.data;
+
+        if (!commentContent.trim() || !commentPrice) {
+            wx.showToast({ title: '请填写留言和出价', icon: 'none' });
+            return;
+        }
+
+        // ❗调用的是 /bid 接口
+        wx.request({
+            url: 'http://localhost:3000/api/task/bid',
+            method: 'POST',
+            data: {
+                task_id: task.id,
+                user_id: userId,
+                price: commentPrice,
+                advantage: commentContent,
+            },
+            success: (res) => {
+                if (res.data.success) {
+                    wx.showToast({ title: '投标成功', icon: 'success' });
+                    this.setData({
+                        showPopup: false,
+                        commentContent: '',
+                        commentPrice: ''
+                    });
+                    this.loadBids(task.id);
+                } else {
+                    wx.showToast({ title: res.data.message || '提交失败', icon: 'none' });
+                }
+            }
+        });
     },
 });

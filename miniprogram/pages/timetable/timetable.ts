@@ -30,6 +30,8 @@ Page({
         periods: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
         weeklyTimetable: {}, // 课程数据
         weekDates: [],  // 日期数组
+        touchStartX: 0,
+        touchEndX: 0,
     },
 
     onLoad() {
@@ -155,19 +157,26 @@ Page({
                         const now = new Date();
                         const courseDate = new Date(this.data.selectedDate); // 课程对应的日期
 
-                        if (courseDate < now.setHours(0, 0, 0, 0)) {
-                            status = "ended"; // 过去的课程
-                        } else if (courseDate.toDateString() === now.toDateString()) {
-                            // 如果是今天的课程，按照时间计算
-                            if (startTime !== "未知" && now >= new Date(`2025-01-01T${startTime}`) && now < new Date(`2025-01-01T${endTime}`)) {
-                                status = "ongoing";
-                            } else if (startTime !== "未知" && now >= new Date(`2025-01-01T${endTime}`)) {
-                                status = "ended";
-                            }
-                        } else {
-                            status = "upcoming"; // 未来的课程
-                        }
+                        // 课程当天的时间戳范围比较
+                        const courseDay = new Date(this.data.selectedDate);
+                        const courseDateStr = courseDay.toISOString().split("T")[0]; // e.g. "2025-03-25"
 
+                        const startDateTime = startTime !== "未知" ? new Date(`${courseDateStr}T${startTime}`) : null;
+                        const endDateTime = endTime !== "未知" ? new Date(`${courseDateStr}T${endTime}`) : null;
+
+
+                        if (courseDay < new Date(now.getFullYear(), now.getMonth(), now.getDate())) {
+                            status = "ended"; // 昨天或更早
+                        } else if (courseDateStr === now.toISOString().split("T")[0]) {
+                            // 是今天的课
+                            if (startDateTime && endDateTime) {
+                                if (now >= startDateTime && now < endDateTime) {
+                                    status = "ongoing";
+                                } else if (now >= endDateTime) {
+                                    status = "ended";
+                                }
+                            }
+                        }
                         return {
                             id: course.id,
                             course_name: course.course_name,
@@ -475,7 +484,7 @@ Page({
             success: (res) => {
                 if (res.data.success && typeof res.data.data === "object") {
                     const weeklyCourses = res.data.data;  // 这是一个对象，key 是星期几
-    
+
                     // ✅ 处理成数组结构
                     let formattedCourses = [];
                     for (let day in weeklyCourses) {
@@ -488,7 +497,7 @@ Page({
                             });
                         }
                     }
-    
+
                     this.setData({ weeklyCourses: formattedCourses }, () => {
                         this.processWeeklyCourses(); // **数据加载完毕后再处理**
                     });
@@ -509,10 +518,10 @@ Page({
             console.error("❌ weeklyCourses 数据为空或格式错误，无法处理周课表:", this.data.weeklyCourses);
             return;
         }
-    
+
         const MAX_PERIODS = 10;
         const weekDays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
-        
+
         // ✅ 初始化周课表结构
         let weeklyTimetable = {};
         for (let i = 1; i <= MAX_PERIODS; i++) {
@@ -521,19 +530,19 @@ Page({
                 weeklyTimetable[i][day] = [];
             });
         }
-    
+
         // ✅ 解析 weeklyCourses 并填充表格
         this.data.weeklyCourses.forEach(course => {
             const { class_period, course_name, teacher_name, location, weekday } = course;
-    
+
             if (!class_period || !weekday) {
                 console.warn("⚠️ 课程缺少 class_period 或 weekday，跳过:", course);
                 return;
             }
-    
+
             const [startPeriod, endPeriod] = class_period.split("-").map(Number);
             const weekdayName = weekDays[weekday - 1]; // `weekday` 是数字，需要转换为 "周一"
-    
+
             weeklyTimetable[startPeriod][weekdayName].push({
                 id: course.id,
                 course_name: course.course_name,
@@ -542,10 +551,49 @@ Page({
                 startPeriod,
                 endPeriod,
                 rowSpan: endPeriod - startPeriod + 1,
-              });
+            });
         });
-    
+
         this.setData({ weeklyTimetable });
-    }
+    },
+
+    // 记录手指按下的位置
+    handleTouchStart(e: any) {
+        this.setData({
+            touchStartX: e.touches[0].clientX,
+        });
+    },
+
+    // 手指离开时计算滑动方向
+    handleTouchEnd(e: any) {
+        const touchEndX = e.changedTouches[0].clientX;
+        const deltaX = touchEndX - this.data.touchStartX;
+
+        // 滑动阈值，避免误触
+        if (Math.abs(deltaX) < 50) return;
+
+        if (deltaX > 0) {
+            // 👉 右滑，切换到前一天
+            this.changeDateByOffset(-1);
+        } else {
+            // 👈 左滑，切换到后一天
+            this.changeDateByOffset(1);
+        }
+    },
+
+    // 根据偏移量切换日期
+    changeDateByOffset(offset: number) {
+        const currentDate = new Date(this.data.selectedDate);
+        currentDate.setDate(currentDate.getDate() + offset);
+
+        const nextDateStr = currentDate.toISOString().split("T")[0];
+
+        this.setData({
+            selectedDate: nextDateStr,
+        });
+
+        // 重新拉取当天课程（你原来的方法）
+        this.loadDailyCourses(nextDateStr);
+    },
 
 });

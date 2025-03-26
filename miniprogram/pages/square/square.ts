@@ -138,11 +138,18 @@ Page({
 
                 if (res.data.success) {
                     let posts = res.data.posts || [];
-                    posts = posts.map(post => ({
-                        ...post,
-                        isLiked: post.isLiked || false,
-                        created_time: this.formatTime(post.created_time)
-                    }));
+                    posts = posts.map(post => {
+                        const isVip =
+                            post.vip_expire_time &&
+                            new Date(post.vip_expire_time).getTime() > Date.now();
+                    
+                        return {
+                            ...post,
+                            isLiked: post.isLiked || false,
+                            isVip,
+                            created_time: this.formatTime(post.created_time)
+                        };
+                    });
 
                     this.setData({ posts }, () => {
                     });

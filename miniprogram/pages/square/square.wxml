@@ -27,7 +27,10 @@
                 <!-- 用户信息 -->
                 <view class="post-header">
                     <image class="user-avatar" src="{{item.avatar_url}}" />
-                    <text class="username">{{item.username}}</text>
+                    <view class="username-area">
+                        <text class="username {{item.isVip ? 'vip-username' : ''}}">{{item.username}}</text>
+                        <image wx:if="{{item.isVip}}" src="/assets/icons/vip-2.svg" class="vip-badge" />
+                    </view>
                 </view>
 
                 <!-- 文字内容 -->

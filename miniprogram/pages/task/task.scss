@@ -103,89 +103,142 @@
     transition: background-color 0.3s ease;
   }
   
-
-/* 出价弹窗 */
-.bidding-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);  /* 半透明背景 */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
   
-  .modal-content {
-    background-color: white;
-    padding: 30rpx;
-    border-radius: 10rpx;
-    width: 80%;
-    max-width: 400rpx;
-  }
-  
-  .bidding-input {
-    width: 100%;
-    height: 40rpx;
-    margin: 10rpx 0;
-    padding: 5rpx;
-    border: 1rpx solid #ccc;
-    border-radius: 5rpx;
-  }
-  
-  .bidding-confirm, .bidding-cancel {
-    width: 100%;
-    padding: 12rpx;
-    margin-top: 15rpx;
-    border-radius: 5rpx;
-    color: white;
-    font-size: 16px;
-  }
-  
-  .bidding-confirm {
-    background-color: #4CAF50;
-  }
-  
-  .bidding-cancel {
-    background-color: #f44336;
-  }
-  
-  .bidding-confirm:hover {
-    background-color: darken(#4CAF50, 10%);
-  }
-  
-  .bidding-cancel:hover {
-    background-color: darken(#f44336, 10%);
-  }
 
   /* 任务详情页面 */
 .task-detail-container {
     padding: 20rpx;
   }
   
-  .task-bidding {
+  
+
+  .popup-mask {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
     display: flex;
     justify-content: center;
     align-items: center;
-    flex-direction: column;
   }
   
-  /* 出价显示区域 */
-  .bidding-container {
-    margin-bottom: 10rpx;
+  .popup-box {
+    width: 600rpx;
+    background-color: #fff;
+    border-radius: 20rpx;
+    padding: 30rpx;
+    box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.2);
   }
   
-  .no-bidding {
-    font-size: 14px;
-    color: #888;
-    text-align: center;
-  }
-  
-  .bidding-amount {
-    font-size: 16px;
+  .popup-title {
+    font-size: 32rpx;
+    font-weight: bold;
+    margin-bottom: 20rpx;
     color: #333;
-    text-align: center;
   }
   
+  .popup-textarea {
+    height: 160rpx;
+    border: 1rpx solid #ccc;
+    padding: 20rpx;
+    border-radius: 10rpx;
+    margin-bottom: 20rpx;
+  }
   
+  .popup-price {
+    width: 100%;
+    border: 1rpx solid #ccc;
+    padding: 20rpx;
+    border-radius: 10rpx;
+    margin-bottom: 20rpx;
+  }
+  
+  .popup-buttons {
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  .popup-btn {
+    width: 45%;
+  }
+  
+  .cancel {
+    background-color: #ccc;
+    color: white;
+  }
+  
+  .confirm {
+    background-color: #07c160;
+    color: white;
+  }
+
+  .comment-section {
+    padding: 20rpx;
+  
+    .section-title {
+      font-size: 32rpx;
+      font-weight: bold;
+      margin-bottom: 20rpx;
+      color: #333;
+    }
+  
+    .comment-card {
+      background: #fff;
+      padding: 20rpx;
+      border-radius: 12rpx;
+      box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.05);
+      margin-bottom: 20rpx;
+    }
+  
+    .comment-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10rpx;
+    }
+  
+    .comment-avatar {
+        width: 80rpx;
+        height: 80rpx;
+        border-radius: 50%;
+        margin-right: 20rpx;
+        overflow: hidden;
+    }
+  
+    .comment-user {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+    }
+  
+    .username {
+      font-size: 28rpx;
+      font-weight: 600;
+    }
+  
+    .price {
+      font-size: 26rpx;
+      color: #e91e63;
+    }
+  
+    .comment-content {
+      font-size: 28rpx;
+      color: #444;
+      margin-top: 10rpx;
+    }
+  
+    .comment-time {
+      font-size: 24rpx;
+      color: #999;
+      margin-top: 6rpx;
+    }
+  
+    .empty-comment {
+      color: #aaa;
+      font-size: 26rpx;
+      text-align: center;
+      margin-top: 40rpx;
+    }
+  }

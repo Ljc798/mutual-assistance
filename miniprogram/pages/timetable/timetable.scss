@@ -140,7 +140,6 @@
     align-items: center;
 }
 
-/* 状态灯 */
 .status-light {
     width: 25rpx;
     height: 25rpx;
@@ -148,19 +147,52 @@
     position: absolute;
     right: 40rpx;
     bottom: 77rpx;
-}
-
-.ended {
-    background-color: #ccc; /* 灰色：已结束 */
-}
-
-.ongoing {
-    background-color: #4caf50; /* 绿色：正在上课 */
-}
-
-.upcoming {
-    background-color: #2196f3; /* 蓝色：即将上课 */
-}
+    box-shadow: 0 0 6rpx rgba(0, 0, 0, 0.15);
+  }
+  
+  /* 已结束 - 静态灰 */
+  .ended {
+    background-color: #bdbdbd;
+    opacity: 0.6;
+  }
+  
+  /* 正在上课 - 强绿跳动 */
+  .ongoing {
+    background-color: #43a047;
+    animation: pulse-green 1.2s infinite ease-in-out;
+  }
+  
+  /* 即将上课 - 闪蓝白光 */
+  .upcoming {
+    background-color: #1e88e5;
+    animation: glow-blue 1.2s infinite ease-in-out;
+  }
+  
+  /* 绿色心跳式闪烁 */
+  @keyframes pulse-green {
+    0%, 100% {
+      transform: scale(1);
+      box-shadow: 0 0 12rpx #66bb6a;
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.3);
+      box-shadow: 0 0 18rpx #81c784;
+      opacity: 0.5;
+    }
+  }
+  
+  /* 蓝色柔和脉冲 */
+  @keyframes glow-blue {
+    0%, 100% {
+      box-shadow: 0 0 10rpx #90caf9;
+      opacity: 1;
+    }
+    50% {
+      box-shadow: 0 0 20rpx #e3f2fd;
+      opacity: 0.4;
+    }
+  }
 
 /* 让课程项支持状态灯的绝对定位 */
 .course-item {

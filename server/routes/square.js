@@ -17,6 +17,7 @@ router.get("/posts", (req, res) => {
         SELECT s.*, 
                u.username, 
                u.avatar_url, 
+               u.vip_expire_time,
                (SELECT COUNT(*) FROM square_likes WHERE square_id = s.id AND user_id = ?) AS isLiked
         FROM square s 
         LEFT JOIN users u ON s.user_id = u.id
@@ -60,11 +61,13 @@ router.get("/posts", (req, res) => {
                     });
                 }
 
-                // **组装帖子数据**
+                const now = new Date();
+
                 const postsWithImages = posts.map(post => ({
                     ...post,
                     images: images.filter(img => img.square_id === post.id).map(img => img.image_url),
                     isLiked: Boolean(post.isLiked),
+                    isVip: post.vip_expire_time && new Date(post.vip_expire_time) > now
                 }));
 
                 res.json({
@@ -329,9 +332,15 @@ router.get("/detail", (req, res) => {
 });
 
 router.get("/comments", (req, res) => {
-    const { square_id, user_id } = req.query;
+    const {
+        square_id,
+        user_id
+    } = req.query;
     if (!square_id) {
-        return res.status(400).json({ success: false, message: "缺少 square_id" });
+        return res.status(400).json({
+            success: false,
+            message: "缺少 square_id"
+        });
     }
 
     db.query(
@@ -351,7 +360,10 @@ router.get("/comments", (req, res) => {
         (err, comments) => {
             if (err) {
                 console.error("❌ 获取评论失败:", err.sqlMessage, err);
-                return res.status(500).json({ success: false, message: "获取评论失败" });
+                return res.status(500).json({
+                    success: false,
+                    message: "获取评论失败"
+                });
             }
 
             let rootComments = [];
@@ -379,17 +391,29 @@ router.get("/comments", (req, res) => {
                 rootComment.children = subCommentsMap[rootComment.id] || [];
             });
 
-            res.json({ success: true, comments: rootComments });
+            res.json({
+                success: true,
+                comments: rootComments
+            });
         }
     );
 });
 
 // **✅ 发表评论**
 router.post("/comments/create", (req, res) => {
-    const { user_id, square_id, content, parent_id, root_parent_id } = req.body;
+    const {
+        user_id,
+        square_id,
+        content,
+        parent_id,
+        root_parent_id
+    } = req.body;
 
     if (!user_id || !square_id || !content) {
-        return res.status(400).json({ success: false, message: "缺少必要参数" });
+        return res.status(400).json({
+            success: false,
+            message: "缺少必要参数"
+        });
     }
 
     if (!parent_id) {
@@ -398,7 +422,10 @@ router.post("/comments/create", (req, res) => {
             `INSERT INTO square_comments (user_id, square_id, content, parent_id, root_parent_id) VALUES (?, ?, ?, NULL, NULL)`,
             [user_id, square_id, content],
             (err, result) => {
-                if (err) return res.status(500).json({ success: false, message: "发表评论失败" });
+                if (err) return res.status(500).json({
+                    success: false,
+                    message: "发表评论失败"
+                });
 
                 const newCommentId = result.insertId;
 
@@ -407,8 +434,15 @@ router.post("/comments/create", (req, res) => {
                     `UPDATE square_comments SET root_parent_id = ? WHERE id = ?`,
                     [newCommentId, newCommentId],
                     (err) => {
-                        if (err) return res.status(500).json({ success: false, message: "更新 root_parent_id 失败" });
-                        res.json({ success: true, message: "评论成功", comment_id: newCommentId });
+                        if (err) return res.status(500).json({
+                            success: false,
+                            message: "更新 root_parent_id 失败"
+                        });
+                        res.json({
+                            success: true,
+                            message: "评论成功",
+                            comment_id: newCommentId
+                        });
                     }
                 );
             }
@@ -419,9 +453,16 @@ router.post("/comments/create", (req, res) => {
             `INSERT INTO square_comments (user_id, square_id, content, parent_id, root_parent_id) VALUES (?, ?, ?, ?, ?)`,
             [user_id, square_id, content, parent_id, root_parent_id],
             (err, result) => {
-                if (err) return res.status(500).json({ success: false, message: "发表评论失败" });
+                if (err) return res.status(500).json({
+                    success: false,
+                    message: "发表评论失败"
+                });
 
-                res.json({ success: true, message: "评论成功", comment_id: result.insertId });
+                res.json({
+                    success: true,
+                    message: "评论成功",
+                    comment_id: result.insertId
+                });
             }
         );
     }

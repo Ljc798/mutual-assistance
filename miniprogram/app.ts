@@ -69,5 +69,24 @@ App<IAppOption>({
 
         wx.setStorageSync("user", user);
         wx.setStorageSync("token", token);
+    },
+
+    // 在 app.ts 中定义
+    refreshUserInfo(callback?: Function) {
+        const token = wx.getStorageSync("token");
+        if (!token) return;
+
+        wx.request({
+            url: "http://localhost:3000/api/user/info",
+            method: "GET",
+            header: { Authorization: `Bearer ${token}` },
+            success: (res: any) => {
+                if (res.data.success) {
+                    this.globalData.userInfo = res.data.user;
+                    wx.setStorageSync("user", res.data.user);
+                    callback?.(res.data.user);
+                }
+            }
+        });
     }
 }); 

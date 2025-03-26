@@ -33,30 +33,44 @@
         </view>
     </view>
 
-    <!-- 出价区部分 -->
-    <view class="task-bidding">
-        <view class="bidding-container">
-            <!-- 如果没有出价，则显示暂无人出价 -->
-            <view wx:if="{{!biddingAmount}}" class="no-bidding">暂无人出价</view>
-            <view wx:else class="bidding-amount">当前出价：¥{{biddingAmount}}</view>
-        </view>
+    <view class="comment-section">
+        <view class="section-title">留言区</view>
+
+        <block wx:if="{{bids.length > 0}}">
+            <block wx:for="{{bids}}" wx:key="id">
+                <view class="comment-card">
+                    <view class="comment-header">
+                        <image class="comment-avatar" src="{{item.avatar_url}}" mode="aspectFill" />
+                        <view class="comment-user">
+                            <text class="username">{{item.username}}</text>
+                            <text class="price">¥{{item.price}}</text>
+                        </view>
+                    </view>
+                    <view class="comment-content">
+                        {{item.advantage}}
+                    </view>
+                </view>
+            </block>
+        </block>
+        <view wx:else class="empty-comment">暂无留言，快来抢单吧！</view>
     </view>
 
-
+    <!-- 留言弹窗 -->
+    <view class="popup-mask" wx:if="{{showPopup}}">
+        <view class="popup-box">
+            <view class="popup-title">我要留言 / 出价</view>
+            <textarea class="popup-textarea" placeholder="请输入你的优势、备注、可以完成的时间等信息" bindinput="handleCommentInput" />
+            <input class="popup-price" type="number" placeholder="出价（元）" bindinput="handlePriceInput" />
+            <view class="popup-buttons">
+                <button size="mini" class="popup-btn cancel" bindtap="cancelPopup">取消</button>
+                <button size="mini" class="popup-btn confirm" bindtap="submitMessage">提交</button>
+            </view>
+        </view>
+    </view>
 
     <!-- 出价和接单按钮 -->
     <view class="button-container">
-        <button class="bidding-button" bindtap="showBiddingDialog">出价</button>
+        <button class="bidding-button" bindtap="openPopup">出价</button>
         <button class="accept-button" bindtap="handleAccept">接单</button>
-    </view>
-
-    <!-- 出价输入框弹窗 -->
-    <view wx:if="{{showBiddingModal}}" class="bidding-modal">
-        <view class="modal-content">
-            <text>请输入您的出价：</text>
-            <input type="number" class="bidding-input" placeholder="输入金额" bindinput="handleBiddingInput" />
-            <button class="bidding-confirm" bindtap="submitBidding">确定</button>
-            <button class="bidding-cancel" bindtap="hideBiddingModal">取消</button>
-        </view>
     </view>
 </view>

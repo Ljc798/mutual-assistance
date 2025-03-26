@@ -38,7 +38,7 @@
     </view>
 
     <!-- 课程列表 -->
-    <view class="course-list" wx:if="{{selectedTab === 'daily'}}">
+    <view class="course-list" wx:if="{{selectedTab === 'daily'}}" bindtouchstart="handleTouchStart" bindtouchend="handleTouchEnd">
         <!-- 日期选择 & 编辑菜单 -->
         <view class="date-selector">
             <text class="day-of-week">{{dayOfWeek}}</text>
