@@ -1,8 +1,8 @@
 from fastapi import FastAPI
-from database import engine
-from models.test_user import TestUser
+from app.core.database import engine
+from app.models.users_model import Base
 
 app = FastAPI()
 
 # 创建表
-TestUser.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine)

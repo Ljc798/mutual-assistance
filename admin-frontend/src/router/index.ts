@@ -23,6 +23,14 @@ const routes = [
       {
         path: 'users',
         component: () => import('@/pages/users.vue')
+      },
+      {
+        path: 'tasks',
+        component: () => import('@/pages/tasks.vue')
+      },
+      {
+        path: 'posts',
+        component: () => import('@/pages/posts.vue')
       }
     ]
   },

@@ -1,7 +1,6 @@
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
-    DATABASE_URL: str
     SECRET_KEY: str
     ALGORITHM: str
     DB_USERNAME: str
@@ -15,6 +14,4 @@ class Settings(BaseSettings):
     @property
     def database_url(self) -> str:
         return f"mysql+pymysql://{self.DB_USERNAME}:{self.DB_PASSWORD}@{self.DB_HOST}/{self.DB_NAME}"
-
-
 settings = Settings()

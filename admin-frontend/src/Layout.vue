@@ -65,8 +65,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, h } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+
 import {
   NLayout,
   NLayoutHeader,
@@ -79,10 +80,14 @@ import {
 import { HomeOutline, ClipboardOutline, PeopleOutline, SettingsOutline, ChatboxOutline, CalendarOutline } from '@vicons/ionicons5'
 
 const router = useRouter()
-const activeKey = ref('/dashboard')
+const route = useRoute()
+const activeKey = ref(route.path)
+
+watch(() => route.path, (newPath) => {
+  activeKey.value = newPath
+})
 
 function navigate(path: string) {
-  activeKey.value = path
   router.push(path)
 }
 
@@ -92,3 +97,9 @@ function logout() {
   router.push('/login')
 }
 </script>
+
+<style>
+::-webkit-scrollbar {
+  display: none; /* Chrome Safari */
+}
+</style>
