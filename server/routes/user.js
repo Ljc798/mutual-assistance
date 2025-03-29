@@ -1,8 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../config/db");
-const axios = require("axios");
-const https = require("https"); // ✅ 新增
+const wechatAxios = require("../config/wechatAxios"); // ✅ 封装微信请求 axios
 const {
     v4: uuidv4
 } = require("uuid");
@@ -11,35 +10,35 @@ require("dotenv").config();
 const APP_ID = process.env.WX_APPID;
 const APP_SECRET = process.env.WX_SECRET;
 
-// ✅ 创建 https agent
-const httpsAgent = new https.Agent({
-    rejectUnauthorized: true
-});
-
-// 📌 手机号登录 API
 router.post("/phone-login", async (req, res) => {
     const {
         code
     } = req.body;
-    console.log("🔥 收到 :", code);
+    console.log("🔥 收到 code:", code);
 
     if (!code) {
         return res.status(400).json({
             success: false,
             message: "缺少 code"
-        }); 
+        });
     }
 
     try {
-        const tokenRes = await axios.get(
-            `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${APP_ID}&secret=${APP_SECRET}`, {
-                httpsAgent
+        // 1️⃣ 获取 access_token（用封装的 wechatAxios）
+        const tokenRes = await wechatAxios.get(
+            `https://api.weixin.qq.com/cgi-bin/token`, {
+                params: {
+                    grant_type: "client_credential",
+                    appid: APP_ID,
+                    secret: APP_SECRET
+                }
             }
         );
 
-        console.log("📡 获取 access_token 响应:", tokenRes.data);
+        console.log("📡 access_token 响应:", tokenRes.data);
 
-        if (!tokenRes.data.access_token) {
+        const access_token = tokenRes.data.access_token;
+        if (!access_token) {
             return res.status(500).json({
                 success: false,
                 message: "获取 access_token 失败",
@@ -47,22 +46,16 @@ router.post("/phone-login", async (req, res) => {
             });
         }
 
-        const access_token = tokenRes.data.access_token;
-
-        const wxRes = await axios.post(
+        // 2️⃣ 请求微信手机号
+        const wxRes = await wechatAxios.post(
             `https://api.weixin.qq.com/wxa/business/getuserphonenumber?access_token=${access_token}`, {
                 code
-            }, {
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                httpsAgent
             }
         );
 
         console.log("📞 获取手机号响应:", wxRes.data);
 
-        if (!wxRes.data || !wxRes.data.phone_info) {
+        if (!wxRes.data?.phone_info?.phoneNumber) {
             return res.status(400).json({
                 success: false,
                 message: "获取手机号失败",
@@ -73,9 +66,10 @@ router.post("/phone-login", async (req, res) => {
         const phoneNumber = wxRes.data.phone_info.phoneNumber;
         console.log("📲 手机号为:", phoneNumber);
 
+        // 3️⃣ 查找或注册用户
         const [results] = await db.query("SELECT * FROM users WHERE phone_number = ?", [phoneNumber]);
-
         let user;
+
         if (results.length > 0) {
             user = results[0];
             console.log("✅ 已有用户:", user);
@@ -89,12 +83,15 @@ router.post("/phone-login", async (req, res) => {
                 points: 10,
                 created_time: new Date()
             };
+
             const [insertResult] = await db.query("INSERT INTO users SET ?", [newUser]);
             newUser.id = insertResult.insertId;
             user = newUser;
+
             console.log("✨ 新增用户:", user);
         }
 
+        // 4️⃣ 模拟生成 Token（实际项目应改为 JWT）
         const token = `mock_token_${user.id}`;
         return res.json({
             success: true,
@@ -103,7 +100,7 @@ router.post("/phone-login", async (req, res) => {
         });
 
     } catch (error) {
-        console.error("❌ 登录流程中发生错误:", {
+        console.error("❌ 登录流程中异常:", {
             message: error?.message,
             responseData: error?.response?.data,
             stack: error?.stack
