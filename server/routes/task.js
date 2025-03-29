@@ -1,5 +1,5 @@
 const express = require("express");
-const db = require("../config/db");
+const db = require("../config/db").promise();
 const dayjs = require("dayjs");
 
 const router = express.Router();
