@@ -31,7 +31,7 @@ App<IAppOption>({
     // ✅ 服务器校验用户是否存在（仅在用户信息丢失时调用）
     verifyUserFromServer(token: string) {
         wx.request({
-            url: "http://localhost:3000/api/user/info",
+            url: "https://mutualcampus.top/api/user/info",
             method: "GET",
             header: { Authorization: `Bearer ${token}` },
             success: (res: any) => {
@@ -77,7 +77,7 @@ App<IAppOption>({
         if (!token) return;
 
         wx.request({
-            url: "http://localhost:3000/api/user/info",
+            url: "https://mutualcampus.top/api/user/info",
             method: "GET",
             header: { Authorization: `Bearer ${token}` },
             success: (res: any) => {

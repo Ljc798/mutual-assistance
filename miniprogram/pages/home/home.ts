@@ -31,10 +31,11 @@ Page({
         wx.showLoading({ title: "加载中...", mask: true });
 
         wx.request({
-            url: "http://localhost:3000/api/task/tasks", // 本地 API 地址
+            url: "https://mutualcampus.top/api/task/tasks", // 本地 API 地址
             method: "GET",
             success: (res: any) => {
-
+                console.log(res);
+                
                 const formattedTasks = res.data.map((task: Task) => ({
                     ...task,
                     formattedDDL: this.formatTime(task.DDL), // 格式化时间

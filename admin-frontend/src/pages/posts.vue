@@ -39,21 +39,33 @@ import { ref, computed, onMounted, h } from 'vue'
 import axios from 'axios'
 import { NPageHeader, NInput, NButton, NDataTable, NModal, NImage, NImageGroup } from 'naive-ui'
 
+interface Post {
+  id: number
+  title: string
+  content: string
+  images?: string[]
+  created_time: string
+  category?: string
+  user_id?: string
+  likes_count?: number
+  comments_count?: number
+  school_id?: string
+}
+
+const selectedPost = ref<Partial<Post>>({})
+
 const searchKeyword = ref('')
-const posts = ref([])
+interface Post {
+  id: number
+  title: string
+  content: string
+  created_time: string
+  images?: string[]
+}
+
+const posts = ref<Post[]>([])
 const showModal = ref(false)
 
-const selectedPost = ref({
-    id: '',
-    content: '',
-    category: '',
-    user_id: '',
-    likes_count: 0,
-    comments_count: 0,
-    school_id: '',
-    created_time: '',
-    images: null,
-})
 
 const columns = [
     { title: '帖子ID', key: 'id' },

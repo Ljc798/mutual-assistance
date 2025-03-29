@@ -24,10 +24,10 @@
           <n-input v-model:value="currentUser.wxid" />
         </n-form-item>
         <n-form-item label="免广告次数">
-          <n-input v-model:value="currentUser.free_counts" type="number" />
+          <n-input v-model:value="currentUser.free_counts"/>
         </n-form-item>
         <n-form-item label="积分余额">
-          <n-input v-model:value="currentUser.points" type="number" />
+          <n-input v-model:value="currentUser.points"/>
         </n-form-item>
         <n-form-item label="VIP到期时间">
           <n-input v-model:value="currentUser.vip_expire_time" />

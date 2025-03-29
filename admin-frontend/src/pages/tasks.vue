@@ -33,8 +33,24 @@ import axios from 'axios'
 import { NPageHeader, NInput, NButton, NDataTable, NModal } from 'naive-ui'
 
 const searchKeyword = ref('')
-const tasks = ref([])  // 改为一个空数组，待后端数据填充
 const showDialog = ref(false)  // 控制弹窗显示
+
+interface Task {
+    id: string
+    title: string
+    category: string
+    employer_id: string
+    employee_id: string
+    status: TaskStatus  // 👈 修改这里！
+    DDL: string
+    offer: string
+    detail: string
+    takeaway_code: string
+    takeaway_name: string
+    takeaway_tel: string
+}
+
+const tasks = ref<Task[]>([])  // 👈 指定类型
 
 const selectedTask = ref({
     id: '',
@@ -51,11 +67,12 @@ const selectedTask = ref({
     takeaway_tel: ''
 })
 
-// 定义状态映射，后端传入的 0、1、2 转换为具体的文字
-const statusMap = {
-    0: '待接单',
-    1: '进行中',
-    2: '已完成'
+type TaskStatus = 0 | 1 | 2
+
+const statusMap: Record<TaskStatus, string> = {
+  0: '待接单',
+  1: '进行中',
+  2: '已完成'
 }
 
 const columns = [
@@ -128,9 +145,13 @@ function handleSearch() {
 }
 
 // 打开弹窗并展示选中的任务详情
-function handleShowTaskDetails(task: any) {
-    selectedTask.value = { ...task, status: statusMap[task.status] || '未知状态', DDL: formatDate(task.DDL) }
-    showDialog.value = true
+function handleShowTaskDetails(task: Task) {
+  selectedTask.value = {
+    ...task,
+    status: statusMap[task.status] || '未知状态',
+    DDL: formatDate(task.DDL)
+  }
+  showDialog.value = true
 }
 
 // 页面加载时请求数据

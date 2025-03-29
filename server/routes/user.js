@@ -68,7 +68,8 @@ router.post("/phone-login", async (req, res) => {
                     username: "微信用户" + phoneNumber.slice(-4),
                     avatar_url: "https://default-avatar.com/avatar.png",
                     free_counts: 5,
-                    points: 10
+                    points: 10,
+                    created_time: new Date() // ✅ 添加当前时间
                 };
 
                 try {

@@ -438,11 +438,22 @@ router.post("/comments/create", (req, res) => {
                             success: false,
                             message: "更新 root_parent_id 失败"
                         });
-                        res.json({
-                            success: true,
-                            message: "评论成功",
-                            comment_id: newCommentId
-                        });
+                        db.query(
+                            `UPDATE square SET comments_count = comments_count + 1 WHERE id = ?`,
+                            [square_id],
+                            (err) => {
+                                if (err) return res.status(500).json({
+                                    success: false,
+                                    message: "更新评论数失败"
+                                });
+
+                                res.json({
+                                    success: true,
+                                    message: "评论成功",
+                                    comment_id: newCommentId
+                                });
+                            }
+                        );
                     }
                 );
             }
@@ -458,11 +469,23 @@ router.post("/comments/create", (req, res) => {
                     message: "发表评论失败"
                 });
 
-                res.json({
-                    success: true,
-                    message: "评论成功",
-                    comment_id: result.insertId
-                });
+                // ✅ 评论成功后，更新 square 的评论数 +1
+                db.query(
+                    `UPDATE square SET comments_count = comments_count + 1 WHERE id = ?`,
+                    [square_id],
+                    (err) => {
+                        if (err) return res.status(500).json({
+                            success: false,
+                            message: "更新评论数失败"
+                        });
+
+                        res.json({
+                            success: true,
+                            message: "评论成功",
+                            comment_id: newCommentId
+                        });
+                    }
+                );
             }
         );
     }
