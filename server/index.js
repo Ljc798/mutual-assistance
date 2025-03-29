@@ -26,7 +26,7 @@ app.use("/api/timetable", timetableRouter);
 app.use("/api/timetableConfig", timetableConfigRouter);
 
 // 监听端口
-const PORT = 3000;
+const PORT = process.env.PORT || 80;
 app.listen(PORT, () => {
     console.log(`✅ 服务器运行在 http://localhost:${PORT}`);
 });

@@ -27,7 +27,7 @@ router.post("/phone-login", async (req, res) => {
         return res.status(400).json({
             success: false,
             message: "缺少 code"
-        });
+        }); 
     }
 
     try {

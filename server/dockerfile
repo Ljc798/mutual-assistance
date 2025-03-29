@@ -20,13 +20,14 @@ RUN npm install --omit=dev
 COPY . .
 
 # ✅ 拷贝证书到指定路径（避免被 .dockerignore 忽略）
-COPY server/cert /app/server/cert
+COPY cert /app/server/cert
 
 # ✅ 设置环境变量
 ENV NODE_ENV=production
 
 # ✅ 开放服务端口（可根据项目修改）
-EXPOSE 3000
+ENV PORT=80
+EXPOSE 80
 
 # ✅ 健康检查（可选）
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s CMD curl -f http://localhost:3000/ || exit 1
