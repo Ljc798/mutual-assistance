@@ -1,11 +1,8 @@
-# 使用 Node.js 官方镜像（基于 Debian）
+# 使用 Node.js 官方镜像
 FROM node:20.18.0
 
-# 安装 CA 根证书（修复 axios 报 self-signed certificate 的问题）
-RUN apt-get update && \
-    apt-get install -y ca-certificates && \
-    update-ca-certificates && \
-    rm -rf /var/lib/apt/lists/*
+# 安装根证书
+RUN apt-get update && apt-get install -y ca-certificates
 
 # 设置工作目录
 WORKDIR /app
@@ -16,17 +13,17 @@ COPY package*.json ./
 # 安装依赖
 RUN npm install --omit=dev
 
-# 拷贝项目所有文件
+# 拷贝所有后端项目代码（在 server/ 目录下）
 COPY . .
 
-# ✅ 单独复制证书文件夹（根据你目录结构）
-COPY cert /app/server/cert
+# ✅ 证书已经包含在上面的 COPY . . 中，其实下面这句可以省略
+# COPY cert ./cert
 
 # 设置生产环境变量
 ENV NODE_ENV=production
 
-# 启用端口（推荐用 80，云托管默认用）
+# 启用端口
 EXPOSE 80
 
-# 启动服务（端口 80）
+# 启动服务
 CMD ["node", "index.js"]
