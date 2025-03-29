@@ -18,12 +18,11 @@ router.post("/checkin", async (req, res) => {
     const { user_id } = req.body;
     if (!user_id) return res.status(400).json({ success: false, message: "缺少用户 ID" });
 
-    const connection = await db.promise().getConnection();
     try {
         const today = moment().format("YYYY-MM-DD");
 
         // 1️⃣ 查询最后一次签到记录
-        const [rows] = await connection.query(
+        const [rows] = await db.query(
             `SELECT checkin_date, consecutive_days, total_days 
              FROM checkins WHERE user_id = ? 
              ORDER BY checkin_date DESC LIMIT 1`,
@@ -53,20 +52,20 @@ router.post("/checkin", async (req, res) => {
         }
 
         // 3️⃣ 开始事务
-        await connection.beginTransaction();
+        await db.beginTransaction();
 
-        await connection.query(
+        await db.query(
             `INSERT INTO checkins (user_id, checkin_date, consecutive_days, total_days)
              VALUES (?, CURDATE(), ?, ?)`,
             [user_id, consecutive_days, total_days]
         );
 
-        await connection.query(
+        await db.query(
             `UPDATE users SET points = points + ? WHERE id = ?`,
             [totalPoints, user_id]
         );
 
-        await connection.commit();
+        await db.commit();
 
         res.json({
             success: true,
@@ -76,11 +75,11 @@ router.post("/checkin", async (req, res) => {
             earned_points: totalPoints,
         });
     } catch (err) {
-        await connection.rollback();
+        await db.rollback();
         console.error("❌ 签到失败:", err);
         res.status(500).json({ success: false, message: "签到失败", error: err });
     } finally {
-        connection.release();
+        db.release();
     }
 });
 

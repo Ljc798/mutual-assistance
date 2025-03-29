@@ -7,7 +7,6 @@ dotenv.config();
 // ✅ 获取广场帖子列表
 router.get("/posts", async (req, res) => {
     const { category, user_id } = req.query;
-    const connection = db.promise();
 
     try {
         let queryParams = [user_id || null];
@@ -27,12 +26,12 @@ router.get("/posts", async (req, res) => {
         }
 
         query += " ORDER BY s.created_time DESC";
-        const [posts] = await connection.query(query, queryParams);
+        const [posts] = await db.query(query, queryParams);
 
         if (posts.length === 0) return res.json({ success: true, posts: [] });
 
         const postIds = posts.map(p => p.id);
-        const [images] = await connection.query(
+        const [images] = await db.query(
             `SELECT square_id, image_url FROM square_images WHERE square_id IN (?)`,
             [postIds]
         );
@@ -56,10 +55,10 @@ router.get("/posts", async (req, res) => {
 router.post("/like", async (req, res) => {
     const { user_id, square_id } = req.body;
     if (!user_id) return res.status(400).json({ success: false, message: "缺少 user_id" });
-    const connection = db.promise();
+    const db = db.promise();
 
     try {
-        const [existing] = await connection.query(
+        const [existing] = await db.query(
             `SELECT * FROM square_likes WHERE user_id = ? AND square_id = ?`,
             [user_id, square_id]
         );
@@ -68,8 +67,8 @@ router.post("/like", async (req, res) => {
             return res.status(400).json({ success: false, message: "已经点赞过了" });
         }
 
-        await connection.query(`INSERT INTO square_likes (user_id, square_id) VALUES (?, ?)`, [user_id, square_id]);
-        await connection.query(`UPDATE square SET likes_count = likes_count + 1 WHERE id = ?`, [square_id]);
+        await db.query(`INSERT INTO square_likes (user_id, square_id) VALUES (?, ?)`, [user_id, square_id]);
+        await db.query(`UPDATE square SET likes_count = likes_count + 1 WHERE id = ?`, [square_id]);
 
         res.json({ success: true, message: "点赞成功" });
     } catch (err) {
@@ -82,10 +81,10 @@ router.post("/like", async (req, res) => {
 router.post("/unlike", async (req, res) => {
     const { user_id, square_id } = req.body;
     if (!user_id) return res.status(400).json({ success: false, message: "缺少 user_id" });
-    const connection = db.promise();
+    const db = db.promise();
 
     try {
-        const [result] = await connection.query(
+        const [result] = await db.query(
             `DELETE FROM square_likes WHERE user_id = ? AND square_id = ?`,
             [user_id, square_id]
         );
@@ -94,7 +93,7 @@ router.post("/unlike", async (req, res) => {
             return res.status(400).json({ success: false, message: "未点赞，无法取消" });
         }
 
-        await connection.query(
+        await db.query(
             `UPDATE square SET likes_count = likes_count - 1 WHERE id = ? AND likes_count > 0`,
             [square_id]
         );
@@ -112,10 +111,10 @@ router.post("/create", async (req, res) => {
     if (!user_id || !category || !content) {
         return res.status(400).json({ success: false, message: "缺少必要参数" });
     }
-    const connection = db.promise();
+    const db = db.promise();
 
     try {
-        const [result] = await connection.query(
+        const [result] = await db.query(
             `INSERT INTO square (user_id, category, content, likes_count, comments_count, created_time, school_id)
              VALUES (?, ?, ?, 0, 0, NOW(), 1)`,
             [user_id, category, content]
@@ -134,11 +133,11 @@ router.post("/update-images", async (req, res) => {
     if (!square_id || !images || images.length === 0) {
         return res.status(400).json({ success: false, message: "缺少必要参数" });
     }
-    const connection = db.promise();
+    const db = db.promise();
 
     try {
         const imageInserts = images.map(url => [square_id, url]);
-        await connection.query(`INSERT INTO square_images (square_id, image_url) VALUES ?`, [imageInserts]);
+        await db.query(`INSERT INTO square_images (square_id, image_url) VALUES ?`, [imageInserts]);
         res.json({ success: true });
     } catch (err) {
         console.error("❌ 存储图片失败:", err);
@@ -247,32 +246,32 @@ router.post("/comments/create", async (req, res) => {
     }
 
     try {
-        const connection = db.promise();
+        const db = db.promise();
 
         if (!parent_id) {
-            const [result] = await connection.query(
+            const [result] = await db.query(
                 `INSERT INTO square_comments (user_id, square_id, content, parent_id, root_parent_id) VALUES (?, ?, ?, NULL, NULL)`,
                 [user_id, square_id, content]
             );
             const newCommentId = result.insertId;
 
-            await connection.query(
+            await db.query(
                 `UPDATE square_comments SET root_parent_id = ? WHERE id = ?`,
                 [newCommentId, newCommentId]
             );
-            await connection.query(
+            await db.query(
                 `UPDATE square SET comments_count = comments_count + 1 WHERE id = ?`,
                 [square_id]
             );
 
             res.json({ success: true, message: "评论成功", comment_id: newCommentId });
         } else {
-            const [result] = await connection.query(
+            const [result] = await db.query(
                 `INSERT INTO square_comments (user_id, square_id, content, parent_id, root_parent_id) VALUES (?, ?, ?, ?, ?)`,
                 [user_id, square_id, content, parent_id, root_parent_id]
             );
 
-            await connection.query(
+            await db.query(
                 `UPDATE square SET comments_count = comments_count + 1 WHERE id = ?`,
                 [square_id]
             );
@@ -292,10 +291,10 @@ router.post("/comments/like", async (req, res) => {
     }
 
     try {
-        const connection = db.promise();
+        const db = db.promise();
 
         // 1. 查询是否已经点赞
-        const [existingLike] = await connection.query(
+        const [existingLike] = await db.query(
             "SELECT * FROM comment_likes WHERE user_id = ? AND comment_id = ?",
             [user_id, comment_id]
         );
@@ -305,13 +304,13 @@ router.post("/comments/like", async (req, res) => {
         }
 
         // 2. 插入点赞记录
-        await connection.query(
+        await db.query(
             "INSERT INTO comment_likes (user_id, comment_id) VALUES (?, ?)",
             [user_id, comment_id]
         );
 
         // 3. 更新评论点赞数
-        await connection.query(
+        await db.query(
             "UPDATE square_comments SET likes_count = likes_count + 1 WHERE id = ?",
             [comment_id]
         );
@@ -332,10 +331,10 @@ router.post("/comments/unlike", async (req, res) => {
     }
 
     try {
-        const connection = db.promise();
+        const db = db.promise();
 
         // 1. 确认是否已点赞
-        const [results] = await connection.query(
+        const [results] = await db.query(
             "SELECT * FROM comment_likes WHERE user_id = ? AND comment_id = ?",
             [user_id, comment_id]
         );
@@ -345,13 +344,13 @@ router.post("/comments/unlike", async (req, res) => {
         }
 
         // 2. 删除点赞记录
-        await connection.query(
+        await db.query(
             "DELETE FROM comment_likes WHERE user_id = ? AND comment_id = ?",
             [user_id, comment_id]
         );
 
         // 3. 更新点赞数（防止小于0）
-        await connection.query(
+        await db.query(
             "UPDATE square_comments SET likes_count = likes_count - 1 WHERE id = ? AND likes_count > 0",
             [comment_id]
         );

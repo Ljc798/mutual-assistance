@@ -12,7 +12,7 @@ router.get("/daily", async (req, res) => {
 
     try {
         // 获取所有可能包含该用户的课程
-        const [courses] = await db.promise().query(
+        const [courses] = await db.query(
             `SELECT id, course_name, teacher_name, class_period, location, weeks
              FROM timetable_theory
              WHERE user_id = ? AND weekday = ?`,
@@ -49,7 +49,7 @@ router.get("/get-timetable-config", async (req, res) => {
     }
 
     try {
-        const [rows] = await db.promise().query(
+        const [rows] = await db.query(
             "SELECT total_weeks, start_date, class_duration, period_1, period_2, period_3, period_4, period_5, period_6, period_7, period_8, period_9, period_10 FROM timetable_config WHERE user_id = ?",
             [user_id]
         );
@@ -76,7 +76,7 @@ router.get("/practice", async (req, res) => {
 
     try {
         // 查询该用户的所有实践课
-        const [practiceCourses] = await db.promise().query(
+        const [practiceCourses] = await db.query(
             `SELECT course_name, teacher_name, weeks, location
              FROM timetable_practice
              WHERE user_id = ?`,
@@ -118,7 +118,7 @@ router.get("/course-detail", async (req, res) => {
     }
 
     try {
-        const [rows] = await db.promise().query(
+        const [rows] = await db.query(
             "SELECT * FROM timetable_theory WHERE id = ? AND user_id = ?",
             [course_id, user_id]
         );
@@ -143,7 +143,7 @@ router.post("/update-course", async (req, res) => {
     }
 
     try {
-        await db.promise().query(
+        await db.query(
             "UPDATE timetable_theory SET course_name = ?, teacher_name = ?, time_start = ?, time_end = ?, location = ?, weeks = ? WHERE id = ? AND user_id = ?",
             [course_name, teacher_name, time_start, time_end, location, weeks, course_id, user_id]
         );
@@ -176,7 +176,7 @@ router.get("/weekly", async (req, res) => {
         };
 
         // 获取该用户本周所有理论课（包含所有 weekday）
-        const [theoryCourses] = await db.promise().query(
+        const [theoryCourses] = await db.query(
             `SELECT id, course_name, teacher_name, class_period, location, weeks, weekday
              FROM timetable_theory
              WHERE user_id = ?`,
@@ -205,7 +205,7 @@ router.get("/weekly", async (req, res) => {
         });
 
         // 获取本周实践课（整周作为一门课）
-        const [practiceCourses] = await db.promise().query(
+        const [practiceCourses] = await db.query(
             `SELECT id, course_name, teacher_name, location, weeks
              FROM timetable_practice
              WHERE user_id = ?`,

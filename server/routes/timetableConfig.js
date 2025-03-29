@@ -15,7 +15,7 @@ router.get("/get-timetable-config", async (req, res) => {
   }
 
   try {
-    const [rows] = await db.promise().query("SELECT * FROM timetable_config WHERE user_id = ?", [user_id]);
+    const [rows] = await db.query("SELECT * FROM timetable_config WHERE user_id = ?", [user_id]);
 
     if (rows.length === 0) {
       return res.status(404).json({ success: false, message: "未找到用户设置" });
@@ -50,7 +50,7 @@ router.post("/save-timetable-config", async (req, res) => {
   }
 
   try {
-    const conn = db.promise();
+    const conn = db;
     const formattedDate = moment(start_date).format("YYYY-MM-DD");
 
     await conn.query("DELETE FROM timetable_config WHERE user_id = ?", [user_id]);

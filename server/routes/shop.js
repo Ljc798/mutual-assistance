@@ -5,7 +5,7 @@ const db = require("../config/db");
 // 📌 获取所有上架的商品
 router.get("/items", async (req, res) => {
     try {
-        const [items] = await db.promise().query(
+        const [items] = await db.query(
             `SELECT id, name, type, cost, description, total, remaining, price, exchange_type 
              FROM shop_items WHERE available = 1`
         );
@@ -23,7 +23,7 @@ router.post("/redeem-point", async (req, res) => {
         return res.status(400).json({ success: false, message: "缺少参数" });
     }
 
-    const connection = await db.promise().getConnection();
+    const connection = await db.getConnection();
     try {
         await connection.beginTransaction();
 
