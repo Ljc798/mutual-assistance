@@ -1,23 +1,26 @@
-# 使用 Node.js 20 作为基础镜像
+# 使用 Node.js 官方镜像（基于 Debian）
 FROM node:20.18.0
+
+# 安装 CA 根证书（修复 axios 报 self-signed certificate 的问题）
+RUN apt-get update && apt-get install -y ca-certificates && update-ca-certificates
 
 # 设置工作目录
 WORKDIR /app
 
-# 复制 package.json 和 package-lock.json，优先安装依赖，减少构建时间
+# 拷贝依赖文件
 COPY package*.json ./
 
 # 安装依赖
 RUN npm install
 
-# 复制项目所有文件到容器
+# 拷贝项目所有文件
 COPY . .
 
-# 指定运行端口
-EXPOSE 3000
-
-# 设置环境变量（可选，部署时也可以通过云环境变量注入）
+# 启用生产模式
 ENV NODE_ENV=production
 
-# 启动服务器
+# 开放端口
+EXPOSE 3000
+
+# 启动服务
 CMD ["node", "index.js"]
