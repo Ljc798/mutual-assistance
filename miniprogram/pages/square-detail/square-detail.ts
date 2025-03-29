@@ -29,7 +29,7 @@ Page({
 
 
         wx.request({
-            url: `http://localhost:3000/api/square/detail`,
+            url: `https://mutualcampus.top/api/square/detail`,
             method: "GET",
             data: { post_id: postId, user_id }, // ✅ 传递 user_id
             success: (res: any) => {
@@ -81,7 +81,7 @@ Page({
         const user_id = app.globalData.userInfo?.id;
 
         wx.request({
-            url: "http://localhost:3000/api/square/comments",
+            url: "https://mutualcampus.top/api/square/comments",
             method: "GET",
             data: { square_id: postId, user_id },
             success: (res: any) => {
@@ -175,7 +175,7 @@ Page({
         console.log("📤 最终提交评论数据：", commentData);
 
         wx.request({
-            url: "http://localhost:3000/api/square/comments/create",
+            url: "https://mutualcampus.top/api/square/comments/create",
             method: "POST",
             data: commentData,
             success: (res: any) => {
@@ -224,7 +224,7 @@ Page({
             return;
         }
 
-        const url = isliked ? "http://localhost:3000/api/square/comments/unlike" : "http://localhost:3000/api/square/comments/like";
+        const url = isliked ? "https://mutualcampus.top/api/square/comments/unlike" : "https://mutualcampus.top/api/square/comments/like";
 
         wx.request({
             url,

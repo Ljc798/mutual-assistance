@@ -26,7 +26,7 @@ Page({
             wx.showLoading({ title: "登录中..." });
 
             wx.request({
-                url: "http://localhost:3000/api/user/phone-login",
+                url: "https://mutualcampus.top/api/user/phone-login",
                 method: "POST",
                 data: { code: e.detail.code },
                 success: (res: any) => {
@@ -74,7 +74,7 @@ Page({
         }
 
         wx.request({
-            url: "http://localhost:3000/api/user/info",
+            url: "https://mutualcampus.top/api/user/info",
             method: "GET",
             header: { Authorization: `Bearer ${token}` },
             success: (res: any) => {

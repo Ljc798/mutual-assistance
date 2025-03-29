@@ -39,7 +39,7 @@ Page({
         const user_id = app.globalData.userInfo?.id;
 
         wx.request({
-            url: "http://localhost:3000/api/checkins/status",
+            url: "https://mutualcampus.top/api/checkins/status",
             method: "GET",
             data: { user_id },
             success: (res: any) => {
@@ -65,7 +65,7 @@ Page({
         }
 
         wx.request({
-            url: "http://localhost:3000/api/checkins/checkin",
+            url: "https://mutualcampus.top/api/checkins/checkin",
             method: "POST",
             data: { user_id },
             success: (res: any) => {
@@ -131,7 +131,7 @@ Page({
 
 
         wx.request({
-            url: "http://localhost:3000/api/square/posts",
+            url: "https://mutualcampus.top/api/square/posts",
             method: "GET",
             data: { category, user_id },
             success: (res: any) => {
@@ -192,8 +192,8 @@ Page({
         }
 
         const url = post.isLiked
-            ? "http://localhost:3000/api/square/unlike"
-            : "http://localhost:3000/api/square/like";
+            ? "https://mutualcampus.top/api/square/unlike"
+            : "https://mutualcampus.top/api/square/like";
 
         wx.request({
             url,
@@ -271,7 +271,7 @@ Page({
     uploadImageToCOS(filePath: string, square_id: number): Promise<string | null> {
         return new Promise((resolve) => {
             wx.uploadFile({
-                url: "http://localhost:3000/api/uploads/upload-image",
+                url: "https://mutualcampus.top/api/uploads/upload-image",
                 filePath,
                 name: "image",
                 formData: {
@@ -318,7 +318,7 @@ Page({
 
         // 🚀 先创建帖子（无图片）
         wx.request({
-            url: "http://localhost:3000/api/square/create",
+            url: "https://mutualcampus.top/api/square/create",
             method: "POST",
             header: { Authorization: `Bearer ${app.globalData.token}` },
             data: {
@@ -352,7 +352,7 @@ Page({
 
                     // 🚀 更新帖子，添加图片
                     wx.request({
-                        url: "http://localhost:3000/api/square/update-images",
+                        url: "https://mutualcampus.top/api/square/update-images",
                         method: "POST",
                         data: {
                             square_id,  // 只需要更新已有的帖子

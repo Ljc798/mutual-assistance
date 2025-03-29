@@ -13,7 +13,7 @@ Page({
   
     fetchItems() {
       wx.request({
-        url: 'http://localhost:3000/api/shop/items',
+        url: 'https://mutualcampus.top/api/shop/items',
         method: 'GET',
         success: (res) => {
           if (res.data.success) {
@@ -32,7 +32,7 @@ Page({
       const token = wx.getStorageSync("token");
   
       wx.request({
-        url: 'http://localhost:3000/api/shop/redeem-point',
+        url: 'https://mutualcampus.top/api/shop/redeem-point',
         method: 'POST',
         header: {
           Authorization: `Bearer ${token}`,
@@ -68,7 +68,7 @@ Page({
         const user = app.globalData.userInfo;
       
         wx.request({
-          url: "http://localhost:3000/api/pay/create",
+          url: "https://mutualcampus.top/api/pay/create",
           method: "POST",
           data: {
             openid: user.openid,

@@ -26,30 +26,38 @@ Page({
         this.loadTasks(); // 加载任务数据
     },
 
-    // 从本地 API 获取任务数据
     loadTasks() {
         wx.showLoading({ title: "加载中...", mask: true });
 
         wx.request({
-            url: "https://mutualcampus.top/api/task/tasks", // 本地 API 地址
+            url: "https://mutualcampus.top/api/task/tasks",
             method: "GET",
+            header: {
+                "Accept": "application/json" // ✅ 加上这句
+              },
             success: (res: any) => {
-                console.log(res);
-                
-                const formattedTasks = res.data.map((task: Task) => ({
-                    ...task,
-                    formattedDDL: this.formatTime(task.DDL), // 格式化时间
-                    formattedStatus: this.formatStatus(task.status), // 格式化状态
-                }));
-
-                this.setData({ 
-                    tasks: formattedTasks, 
-                    filteredTasks: formattedTasks 
-                });
+                console.log("✅ 接口返回结果:", res);
+        
+                // ✅ 确保是数组才进行 map 处理
+                if (Array.isArray(res.data)) {
+                    const formattedTasks = res.data.map((task: Task) => ({
+                        ...task,
+                        formattedDDL: this.formatTime(task.DDL),
+                        formattedStatus: this.formatStatus(task.status),
+                    }));
+        
+                    this.setData({
+                        tasks: formattedTasks,
+                        filteredTasks: formattedTasks
+                    });
+                } else {
+                    wx.showToast({ title: "任务数据异常", icon: "none" });
+                    console.error("❌ 返回的数据不是数组：", res.data);
+                }
             },
             fail: (err: any) => {
-                console.error("❌ 任务数据加载失败:", err);
-                wx.showToast({ title: "任务加载失败", icon: "none" });
+                console.error("❌ 请求失败:", err);
+                wx.showToast({ title: "请求失败", icon: "none" });
             },
             complete: () => {
                 wx.hideLoading();

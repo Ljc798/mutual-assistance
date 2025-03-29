@@ -38,7 +38,7 @@ Page({
         }
 
         wx.request({
-            url: "http://localhost:3000/api/user/info",
+            url: "https://mutualcampus.top/api/user/info",
             method: "GET",
             header: { Authorization: `Bearer ${token}` },
             success: (res: any) => {

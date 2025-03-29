@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:3000/api/timetableConfig"; // 本地调试模式
+const API_BASE_URL = "https://mutualcampus.top/api/timetableConfig"; // 本地调试模式
 
 Page({
     data: {

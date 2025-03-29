@@ -30,3 +30,11 @@ const PORT = 3000;
 app.listen(PORT, () => {
     console.log(`✅ 服务器运行在 http://localhost:${PORT}`);
 });
+
+// 配置静态文件托管（如部署了前端页面）
+const path = require("path");
+app.use(express.static(path.join(__dirname, "public"))); // 假设前端打包目录为 public
+
+app.get(/^\/(?!api).*/, (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "index.html"));
+  });

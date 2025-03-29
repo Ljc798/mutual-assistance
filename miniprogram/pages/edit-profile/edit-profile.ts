@@ -105,7 +105,7 @@ Page({
 
         // **保存用户信息**
         wx.request({
-            url: "http://localhost:3000/api/user/update",
+            url: "https://mutualcampus.top/api/user/update",
             method: "POST",
             header: { Authorization: `Bearer ${token}` },
             data: {
@@ -138,7 +138,7 @@ Page({
     uploadAvatarToCOS(filePath: string, username: string): Promise<string | null> {
         return new Promise((resolve) => {
             wx.uploadFile({
-                url: "http://localhost:3000/api/uploads/upload-image",
+                url: "https://mutualcampus.top/api/uploads/upload-image",
                 filePath,
                 name: "image",
                 formData: {

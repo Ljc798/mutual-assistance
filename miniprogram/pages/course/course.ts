@@ -1,6 +1,6 @@
 import { getCourseTime } from '../../utils/courseTimeUtil';
 
-const API_BASE_URL = "http://localhost:3000/api/timetable";
+const API_BASE_URL = "https://mutualcampus.top/api/timetable";
 
 Page({
     data: {

@@ -24,7 +24,7 @@ Page({
         wx.showLoading({ title: "加载任务..." });
 
         wx.request({
-            url: `http://localhost:3000/api/task/${taskId}`, // 确保 API 端点正确
+            url: `https://mutualcampus.top/api/task/${taskId}`, // 确保 API 端点正确
             method: "GET",
             success: (res: any) => {
                 if (!res.data || !res.data.id) {
@@ -65,7 +65,7 @@ Page({
 
         try {
             const res = await wx.request({
-                url: `http://localhost:3000/api/task/${task.id}/accept`, // API 更新任务状态
+                url: `https://mutualcampus.top/api/task/${task.id}/accept`, // API 更新任务状态
                 method: "POST",
                 success: (res: any) => {
                     console.log("✅ 接单成功:", res.data);
@@ -116,7 +116,7 @@ Page({
 
     loadBids(taskId: string) {
         wx.request({
-          url: `http://localhost:3000/api/task/${taskId}/bids`,
+          url: `https://mutualcampus.top/api/task/${taskId}/bids`,
           method: 'GET',
           success: (res) => {
             if (res.data.success) {
@@ -161,7 +161,7 @@ Page({
 
         // ❗调用的是 /bid 接口
         wx.request({
-            url: 'http://localhost:3000/api/task/bid',
+            url: 'https://mutualcampus.top/api/task/bid',
             method: 'POST',
             data: {
                 task_id: task.id,

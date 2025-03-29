@@ -207,7 +207,7 @@ handlePublish() {
     console.log("📤 正在提交任务发布请求:", payload);
   
     wx.request({
-      url: 'http://localhost:3000/api/task/create', // ✅ 修改为你线上接口时记得更新
+      url: 'https://mutualcampus.top/api/task/create', // ✅ 修改为你线上接口时记得更新
       method: 'POST',
       data: payload,
       success: (res: any) => {
