@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const dotenv = require("dotenv");
-const db = require("../config/db").promise();
+const db = require("../config/db");
 const moment = require("moment");
 
 dotenv.config();

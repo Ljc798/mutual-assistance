@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const db = require("../config/db").promise();
+const db = require("../config/db");
 
 // 获取某天的理论课程表
 router.get("/daily", async (req, res) => {

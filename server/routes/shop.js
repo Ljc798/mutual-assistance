@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const db = require("../config/db").promise();
+const db = require("../config/db");
 
 // 📌 获取所有上架的商品
 router.get("/items", async (req, res) => {

@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const db = require("../config/db").promise();
+const db = require("../config/db");
 const axios = require("axios");
 const { v4: uuidv4 } = require("uuid");
 require("dotenv").config();
