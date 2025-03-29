@@ -1,36 +1,32 @@
-# ✅ 使用 Node.js 官方稳定版镜像（基于 Debian）
+# 使用 Node.js 官方镜像（基于 Debian）
 FROM node:20.18.0
 
-# ✅ 安装根证书（解决 axios "self-signed certificate" 问题）
+# 安装 CA 根证书（修复 axios 报 self-signed certificate 的问题）
 RUN apt-get update && \
     apt-get install -y ca-certificates && \
     update-ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
-# ✅ 设置容器工作目录
+# 设置工作目录
 WORKDIR /app
 
-# ✅ 拷贝 package 文件以加快缓存利用
+# 拷贝依赖文件
 COPY package*.json ./
 
-# ✅ 安装生产依赖（不安装 devDependencies）
+# 安装依赖
 RUN npm install --omit=dev
 
-# ✅ 拷贝整个项目文件
+# 拷贝项目所有文件
 COPY . .
 
-# ✅ 拷贝证书到指定路径（避免被 .dockerignore 忽略）
+# ✅ 单独复制证书文件夹（根据你目录结构）
 COPY cert /app/server/cert
 
-# ✅ 设置环境变量
+# 设置生产环境变量
 ENV NODE_ENV=production
 
-# ✅ 开放服务端口（可根据项目修改）
-ENV PORT=80
+# 启用端口（推荐用 80，云托管默认用）
 EXPOSE 80
 
-# ✅ 健康检查（可选）
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s CMD curl -f http://localhost:3000/ || exit 1
-
-# ✅ 启动应用
+# 启动服务（端口 80）
 CMD ["node", "index.js"]
