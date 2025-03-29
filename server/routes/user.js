@@ -21,7 +21,7 @@ router.post("/phone-login", async (req, res) => {
     const {
         code
     } = req.body;
-    console.log("🔥 收到 code？？？？:", code);
+    console.log("🔥 收到 code:", code);
 
     if (!code) {
         return res.status(400).json({
