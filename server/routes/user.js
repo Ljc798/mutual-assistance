@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const db = require("../config/db");
 const axios = require("axios");
+const https = require("https"); // ✅ 新增
 const {
     v4: uuidv4
 } = require("uuid");
@@ -10,22 +11,33 @@ require("dotenv").config();
 const APP_ID = process.env.WX_APPID;
 const APP_SECRET = process.env.WX_SECRET;
 
+// ✅ 创建 https agent
+const httpsAgent = new https.Agent({
+    rejectUnauthorized: true
+});
+
 // 📌 手机号登录 API
 router.post("/phone-login", async (req, res) => {
     const {
         code
     } = req.body;
+    console.log("🔥 收到 code:", code);
 
-    console.log("🔥 收到 code:", code); // ✅ 打印前端发来的 code
-
-    if (!code) return res.status(400).json({
-        success: false,
-        message: "缺少 code"
-    });
+    if (!code) {
+        return res.status(400).json({
+            success: false,
+            message: "缺少 code"
+        });
+    }
 
     try {
-        const tokenRes = await axios.get(`https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${APP_ID}&secret=${APP_SECRET}`);
-        console.log("📡 获取 access_token 响应:", tokenRes.data); // ✅ 打印 token 响应
+        const tokenRes = await axios.get(
+            `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${APP_ID}&secret=${APP_SECRET}`, {
+                httpsAgent
+            }
+        );
+
+        console.log("📡 获取 access_token 响应:", tokenRes.data);
 
         if (!tokenRes.data.access_token) {
             return res.status(500).json({
@@ -43,11 +55,12 @@ router.post("/phone-login", async (req, res) => {
             }, {
                 headers: {
                     "Content-Type": "application/json"
-                }
+                },
+                httpsAgent
             }
         );
 
-        console.log("📞 获取手机号响应:", wxRes.data); // ✅ 打印手机号响应
+        console.log("📞 获取手机号响应:", wxRes.data);
 
         if (!wxRes.data || !wxRes.data.phone_info) {
             return res.status(400).json({
@@ -58,7 +71,7 @@ router.post("/phone-login", async (req, res) => {
         }
 
         const phoneNumber = wxRes.data.phone_info.phoneNumber;
-        console.log("📲 手机号为:", phoneNumber); // ✅ 打印最终手机号
+        console.log("📲 手机号为:", phoneNumber);
 
         const [results] = await db.query("SELECT * FROM users WHERE phone_number = ?", [phoneNumber]);
 
