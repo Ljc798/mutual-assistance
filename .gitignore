@@ -14,4 +14,3 @@ $RECYCLE.BIN/
 node_modules/
 server/.env
 
-server/cert
