@@ -19,8 +19,20 @@ Page({
     },
 
     onShow() {
-        this.fetchPosts("全部");
-    },
+        const app = getApp();
+        const userInfo = app.globalData.userInfo;
+      
+        if (!userInfo?.id) {
+          wx.showToast({ title: "请先登录", icon: "none" });
+          wx.redirectTo({ url: "/pages/login/login" });
+          return;
+        }
+      
+        this.setData({ userInfo }, () => {
+          this.fetchPosts("全部");
+          this.getCheckinStatus();
+        });
+      },
 
     // ✅ 监听下拉刷新
     onPullDownRefresh() {
@@ -127,8 +139,6 @@ Page({
             wx.showToast({ title: "请先登录", icon: "none" });
             return;
         }
-
-
 
         wx.request({
             url: "https://mutualcampus.top/api/square/posts",
