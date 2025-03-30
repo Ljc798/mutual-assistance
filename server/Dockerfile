@@ -16,9 +16,6 @@ RUN npm install --omit=dev
 # 拷贝所有后端项目代码（在 server/ 目录下）
 COPY . .
 
-# ✅ 证书已经包含在上面的 COPY . . 中，其实下面这句可以省略
-# COPY cert /app/cert
-
 # 设置生产环境变量
 ENV NODE_ENV=production
 

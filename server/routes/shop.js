@@ -9,44 +9,85 @@ router.get("/items", async (req, res) => {
             `SELECT id, name, type, cost, description, total, remaining, price, exchange_type 
              FROM shop_items WHERE available = 1`
         );
-        res.json({ success: true, items });
+        res.json({
+            success: true,
+            items
+        });
     } catch (err) {
         console.error("❌ 获取商城商品失败:", err);
-        res.status(500).json({ success: false, message: "服务器错误" });
+        res.status(500).json({
+            success: false,
+            message: "服务器错误"
+        });
     }
 });
 
 // 📌 积分兑换商品
 router.post("/redeem-point", async (req, res) => {
-    const { user_id, item_id } = req.body;
+    const {
+        user_id,
+        item_id
+    } = req.body;
     if (!user_id || !item_id) {
-        return res.status(400).json({ success: false, message: "缺少参数" });
+        return res.status(400).json({
+            success: false,
+            message: "缺少参数"
+        });
     }
 
     const connection = await db.getConnection();
+
     try {
         await connection.beginTransaction();
 
-        const [[item]] = await connection.query(
+        const [
+            [item]
+        ] = await connection.query(
             `SELECT * FROM shop_items WHERE id = ? FOR UPDATE`, [item_id]
         );
-        if (!item) return res.status(404).json({ success: false, message: "商品不存在" });
+        if (!item) {
+            await connection.rollback();
+            return res.status(404).json({
+                success: false,
+                message: "商品不存在"
+            });
+        }
         if (item.exchange_type !== "point" && item.exchange_type !== "both") {
-            return res.status(400).json({ success: false, message: "该商品不支持积分兑换" });
+            await connection.rollback();
+            return res.status(400).json({
+                success: false,
+                message: "该商品不支持积分兑换"
+            });
         }
         if (item.remaining <= 0) {
-            return res.status(400).json({ success: false, message: "商品库存不足" });
+            await connection.rollback();
+            return res.status(400).json({
+                success: false,
+                message: "商品库存不足"
+            });
         }
 
-        const [[user]] = await connection.query(
+        const [
+            [user]
+        ] = await connection.query(
             `SELECT * FROM users WHERE id = ? FOR UPDATE`, [user_id]
         );
-        if (!user) return res.status(404).json({ success: false, message: "用户不存在" });
+        if (!user) {
+            await connection.rollback();
+            return res.status(404).json({
+                success: false,
+                message: "用户不存在"
+            });
+        }
         if (user.points < item.cost) {
-            return res.status(400).json({ success: false, message: "积分不足" });
+            await connection.rollback();
+            return res.status(400).json({
+                success: false,
+                message: "积分不足"
+            });
         }
 
-        // 👇 事务中的操作
+        // 👇 执行扣除积分、减少库存、写入订单
         await connection.query(
             `UPDATE users SET points = points - ? WHERE id = ?`, [item.cost, user_id]
         );
@@ -76,12 +117,20 @@ router.post("/redeem-point", async (req, res) => {
         }
 
         await connection.commit();
-        res.json({ success: true, message: "兑换成功" });
+        res.json({
+            success: true,
+            message: "兑换成功"
+        });
 
     } catch (err) {
         await connection.rollback();
         console.error("❌ 积分兑换失败:", err);
-        res.status(500).json({ success: false, message: "服务器错误" });
+        res.status(500).json({
+            success: false,
+            message: "服务器错误"
+        });
+    } finally {
+        connection.release(); // ✅ 无论成功或失败都要释放连接
     }
 });
 
