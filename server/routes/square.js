@@ -55,7 +55,6 @@ router.get("/posts", async (req, res) => {
 router.post("/like", async (req, res) => {
     const { user_id, square_id } = req.body;
     if (!user_id) return res.status(400).json({ success: false, message: "缺少 user_id" });
-    const db = db.promise();
 
     try {
         const [existing] = await db.query(
@@ -81,7 +80,6 @@ router.post("/like", async (req, res) => {
 router.post("/unlike", async (req, res) => {
     const { user_id, square_id } = req.body;
     if (!user_id) return res.status(400).json({ success: false, message: "缺少 user_id" });
-    const db = db.promise();
 
     try {
         const [result] = await db.query(
@@ -111,7 +109,6 @@ router.post("/create", async (req, res) => {
     if (!user_id || !category || !content) {
         return res.status(400).json({ success: false, message: "缺少必要参数" });
     }
-    const db = db.promise();
 
     try {
         const [result] = await db.query(
@@ -133,7 +130,6 @@ router.post("/update-images", async (req, res) => {
     if (!square_id || !images || images.length === 0) {
         return res.status(400).json({ success: false, message: "缺少必要参数" });
     }
-    const db = db.promise();
 
     try {
         const imageInserts = images.map(url => [square_id, url]);
@@ -154,7 +150,7 @@ router.get("/detail", async (req, res) => {
     }
 
     try {
-        const [posts] = await db.promise().query(`
+        const [posts] = await db.query(`
             SELECT s.*, 
                    u.username, 
                    u.avatar_url, 
@@ -171,7 +167,7 @@ router.get("/detail", async (req, res) => {
         const post = posts[0];
         post.isLiked = Boolean(post.isLiked);
 
-        const [images] = await db.promise().query(
+        const [images] = await db.query(
             "SELECT image_url FROM square_images WHERE square_id = ?",
             [post_id]
         );
@@ -193,7 +189,7 @@ router.get("/comments", async (req, res) => {
     }
 
     try {
-        const [comments] = await db.promise().query(
+        const [comments] = await db.query(
             `SELECT 
                 c.*, 
                 u.username, 
@@ -246,7 +242,6 @@ router.post("/comments/create", async (req, res) => {
     }
 
     try {
-        const db = db.promise();
 
         if (!parent_id) {
             const [result] = await db.query(
@@ -291,7 +286,6 @@ router.post("/comments/like", async (req, res) => {
     }
 
     try {
-        const db = db.promise();
 
         // 1. 查询是否已经点赞
         const [existingLike] = await db.query(
@@ -331,7 +325,6 @@ router.post("/comments/unlike", async (req, res) => {
     }
 
     try {
-        const db = db.promise();
 
         // 1. 确认是否已点赞
         const [results] = await db.query(

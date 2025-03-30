@@ -89,7 +89,7 @@ router.get("/status", async (req, res) => {
     if (!user_id) return res.status(400).json({ success: false, message: "缺少用户 ID" });
 
     try {
-        const [rows] = await db.promise().query(
+        const [rows] = await db.query(
             `SELECT checkin_date, consecutive_days, total_days 
              FROM checkins WHERE user_id = ? 
              ORDER BY checkin_date DESC LIMIT 1`,
