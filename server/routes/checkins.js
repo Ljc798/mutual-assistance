@@ -13,9 +13,6 @@ const BONUS_REWARDS = {
     360: 2000,
 };
 
-// ✅ 用户签到 API
-const db = require('../config/db');
-
 router.post("/checkin", async (req, res) => {
   const { user_id } = req.body;
   if (!user_id) {
