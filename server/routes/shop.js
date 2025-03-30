@@ -82,8 +82,6 @@ router.post("/redeem-point", async (req, res) => {
         await connection.rollback();
         console.error("❌ 积分兑换失败:", err);
         res.status(500).json({ success: false, message: "服务器错误" });
-    } finally {
-        connection.release();
     }
 });
 

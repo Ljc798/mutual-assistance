@@ -78,8 +78,6 @@ router.post("/checkin", async (req, res) => {
         await db.rollback();
         console.error("❌ 签到失败:", err);
         res.status(500).json({ success: false, message: "签到失败", error: err });
-    } finally {
-        db.release();
     }
 });
 
