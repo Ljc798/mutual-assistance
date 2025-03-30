@@ -5,33 +5,34 @@ const axios = require("axios");
 const { v4: uuidv4 } = require("uuid");
 require("dotenv").config();
 
-const APP_ID = process.env.WX_APPID;
-const APP_SECRET = process.env.WX_SECRET;
-
-// 📌 手机号登录 API
+// 📌 手机号登录 API（使用微信云托管的容器内调用）
 router.post("/phone-login", async (req, res) => {
     const { code } = req.body;
-    if (!code) return res.status(400).json({ success: false, message: "缺少 code" });
+    if (!code) {
+        return res.status(400).json({ success: false, message: "缺少 code" });
+    }
 
     try {
-        const tokenRes = await axios.get(`https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${APP_ID}&secret=${APP_SECRET}`);
-        if (!tokenRes.data.access_token) {
-            return res.status(500).json({ success: false, message: "获取 access_token 失败", error: tokenRes.data });
-        }
-        const access_token = tokenRes.data.access_token;
-
+        // ✅ 使用容器内云调用，不需要 access_token，使用 http
         const wxRes = await axios.post(
-            `https://api.weixin.qq.com/wxa/business/getuserphonenumber?access_token=${access_token}`,
+            "http://api.weixin.qq.com/wxa/business/getuserphonenumber",
             { code },
             { headers: { "Content-Type": "application/json" } }
         );
 
         if (!wxRes.data || !wxRes.data.phone_info) {
-            return res.status(400).json({ success: false, message: "获取手机号失败", error: wxRes.data });
+            return res.status(400).json({
+                success: false,
+                message: "获取手机号失败",
+                error: wxRes.data
+            });
         }
 
         const phoneNumber = wxRes.data.phone_info.phoneNumber;
-        const [results] = await db.query("SELECT * FROM users WHERE phone_number = ?", [phoneNumber]);
+        const [results] = await db.query(
+            "SELECT * FROM users WHERE phone_number = ?",
+            [phoneNumber]
+        );
 
         let user;
         if (results.length > 0) {
@@ -53,8 +54,14 @@ router.post("/phone-login", async (req, res) => {
 
         const token = `mock_token_${user.id}`;
         return res.json({ success: true, token, user });
+
     } catch (error) {
-        return res.status(500).json({ success: false, message: "服务器错误", error });
+        console.error("❌ 获取手机号失败:", error);
+        return res.status(500).json({
+            success: false,
+            message: "服务器错误",
+            error: error?.message || "未知错误"
+        });
     }
 });
 
