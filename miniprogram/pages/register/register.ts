@@ -1,8 +1,8 @@
 Page({
     data: {
-        phoneNumber: "",  
-        isLoggedIn: false, 
-        userInfo: null 
+        phoneNumber: "",
+        isLoggedIn: false,
+        userInfo: null
     },
 
     onLoad() {
@@ -34,12 +34,17 @@ Page({
 
                     if (res.data.success) {
                         wx.setStorageSync("token", res.data.token);
-                        wx.setStorageSync("user", res.data.user);  
+                        wx.setStorageSync("user", res.data.user);
                         wx.showToast({ title: "登录成功", icon: "success" });
 
-                        this.setData({ 
+                        // ✅ 同步到全局变量（这是关键！）
+                        const app = getApp();
+                        app.setGlobalUserInfo(res.data.user, res.data.token);
+
+
+                        this.setData({
                             isLoggedIn: true,
-                            userInfo: res.data.user 
+                            userInfo: res.data.user
                         });
 
                         wx.redirectTo({

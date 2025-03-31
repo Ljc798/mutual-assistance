@@ -93,6 +93,7 @@ Page({
     // 时间格式化
     formatTime(DDL: string) {
         const date = new Date(DDL);
+        date.setHours(date.getHours() - 8);
         const month = date.getMonth() + 1; // 获取月份（从 0 开始）
         const day = date.getDate(); // 获取日期
         const hours = date.getHours(); // 获取小时

@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../config/db");
+const authMiddleware = require("./authMiddleware"); // 引入身份认证中间件
 
 // 📌 获取所有上架的商品
 router.get("/items", async (req, res) => {
@@ -22,8 +23,8 @@ router.get("/items", async (req, res) => {
     }
 });
 
-// 📌 积分兑换商品
-router.post("/redeem-point", async (req, res) => {
+// 📌 积分兑换商品，添加 authMiddleware
+router.post("/redeem-point", authMiddleware, async (req, res) => { // 添加了身份验证中间件
     const {
         user_id,
         item_id
@@ -87,7 +88,7 @@ router.post("/redeem-point", async (req, res) => {
             });
         }
 
-        // 👇 执行扣除积分、减少库存、写入订单
+        // 执行扣除积分、减少库存、写入订单
         await connection.query(
             `UPDATE users SET points = points - ? WHERE id = ?`, [item.cost, user_id]
         );
@@ -98,7 +99,7 @@ router.post("/redeem-point", async (req, res) => {
             `INSERT INTO shop_orders (user_id, item_id) VALUES (?, ?)`, [user_id, item_id]
         );
 
-        // 🎯 特殊逻辑处理
+        // 特殊逻辑处理
         if (item.effect === "remove_ad") {
             await connection.query(
                 `UPDATE users SET free_counts = free_counts + 1 WHERE id = ?`, [user_id]

@@ -111,7 +111,7 @@ const pagination = { pageSize: 10 }
 
 async function fetchPosts() {
     try {
-        const res = await axios.get('http://127.0.0.1:8000/posts')
+        const res = await axios.get('https://adminmutualcampus.top/api/posts')
         posts.value = res.data
     } catch (err) {
         console.error('获取帖子失败', err)
@@ -122,7 +122,7 @@ function handleSearch() { }
 
 async function handleShowPostDetail(postId: number) {
     try {
-        const res = await axios.get(`http://127.0.0.1:8000/posts/${postId}`)
+        const res = await axios.get(`https://adminmutualcampus.top/api/posts/${postId}`)
         selectedPost.value = res.data
         selectedPost.value.created_time = formatDate(res.data.created_time)
         showModal.value = true

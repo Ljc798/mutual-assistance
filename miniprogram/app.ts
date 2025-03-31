@@ -6,26 +6,24 @@ App<IAppOption>({
 
     async onLaunch() {
         console.log("✅ 小程序启动中...");
-
-        // ✅ 1. 获取本地存储的 token
+    
         const token = wx.getStorageSync("token") || null;
-
+    
         if (!token) {
-            console.warn("⚠️ 未找到 token，跳转到注册页面...");
+            console.warn("⚠️ 未找到 token，跳转注册页...");
             wx.redirectTo({ url: "/pages/register/register" });
             return;
         }
-
-        // ✅ 2. 获取本地存储的用户信息
+    
         const user = wx.getStorageSync("user") || null;
+    
         if (user) {
-            console.log("✅ 直接使用本地缓存的用户信息:", user);
             this.globalData.userInfo = user;
             this.globalData.token = token;
-        } else {
-            console.warn("⚠️ 本地用户信息丢失，重新向服务器验证...");
-            this.verifyUserFromServer(token);
         }
+    
+        // ✅ 无论是否有 user，都要验证 token 的有效性
+        this.verifyUserFromServer(token);
     },
 
     // ✅ 服务器校验用户是否存在（仅在用户信息丢失时调用）
@@ -40,7 +38,7 @@ App<IAppOption>({
                     this.globalData.userInfo = res.data.user;
                     wx.setStorageSync("user", res.data.user);
                 } else {
-                    console.warn("⚠️ 用户已被删除，清除本地数据...");
+                    console.warn("⚠️ token 无效或用户不存在，清除数据并跳转注册页");
                     this.clearUserData();
                 }
             },

@@ -133,7 +133,7 @@ const pagination = {
 // 获取任务数据的函数
 async function fetchTasks() {
     try {
-        const response = await axios.get('http://127.0.0.1:8000/tasks')  // 使用你的后端API地址
+        const response = await axios.get('https://admin.mutualcampus.top/api/tasks')  // 使用你的后端API地址
         tasks.value = response.data
     } catch (error) {
         console.error('获取任务数据失败', error)

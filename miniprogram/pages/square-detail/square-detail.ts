@@ -9,6 +9,7 @@ Page({
         replyPlaceholder: "发布你的评论...",  // 输入框 placeholder
         inputFocus: false,  // 控制输入框 focus
         rootParentId: null, // 🔹 记录 root_parent_id
+        keyboardHeight: 0,
     },
 
     onLoad(options: any) {
@@ -26,19 +27,19 @@ Page({
     fetchPostDetail(postId: string) {
         const app = getApp();
         const user_id = app.globalData.userInfo?.id;
-
+        const token = wx.getStorageSync("token");
 
         wx.request({
             url: `https://mutualcampus.top/api/square/detail`,
             method: "GET",
-            data: { post_id: postId, user_id }, // ✅ 传递 user_id
+            header: { Authorization: `Bearer ${token}` }, // 加入 token 认证
+            data: { post_id: postId, user_id }, // 传递 user_id
             success: (res: any) => {
                 wx.hideLoading();
                 if (res.data.success) {
                     let post = res.data.post;
-
-                    post.created_time = this.formatTime(post.created_time); // ✅ 格式化时间
-                    post.isLiked = Boolean(post.isLiked); // ✅ 确保 `isLiked` 是布尔值
+                    post.created_time = this.formatTime(post.created_time); // 格式化时间
+                    post.isLiked = Boolean(post.isLiked); // 确保 `isLiked` 是布尔值
                     this.setData({ post, isLoading: false });
                 } else {
                     wx.showToast({ title: "获取帖子失败", icon: "none" });
@@ -52,15 +53,60 @@ Page({
         });
     },
 
+    toggleLike() {
+        const app = getApp();
+        const user_id = app.globalData.userInfo?.id;
+        const post = this.data.post;
+        const token = wx.getStorageSync("token");
+
+        if (!user_id) {
+            wx.showToast({ title: "请先登录", icon: "none" });
+            return;
+        }
+
+        const url = post.isLiked
+            ? "https://mutualcampus.top/api/square/unlike"
+            : "https://mutualcampus.top/api/square/like";
+
+        wx.request({
+            url,
+            method: "POST",
+            header: {
+                Authorization: `Bearer ${token}` // 加入 token 认证
+            },
+            data: {
+                user_id,
+                square_id: post.id
+            },
+            success: (res: any) => {
+                if (res.data.success) {
+                    // 本地更新 UI 状态
+                    const updatedPost = {
+                        ...post,
+                        isLiked: !post.isLiked,
+                        likes_count: post.likes_count + (post.isLiked ? -1 : 1)
+                    };
+                    this.setData({ post: updatedPost });
+                }
+            },
+            fail: (err) => {
+                console.error("❌ 点赞/取消点赞失败:", err);
+                wx.showToast({ title: "网络错误", icon: "none" });
+            }
+        });
+    },
+
     // ✅ 格式化时间（YYYY-MM-DD HH:mm）
     formatTime(timeStr: string): string {
         const date = new Date(timeStr);
+        date.setHours(date.getHours() - 8);
         return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, "0")}-${date.getDate().toString().padStart(2, "0")} ${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
     },
 
     // ✅ 格式化时间（MM-DD HH:mm）
     formatTime2(timeStr: string): string {
         const date = new Date(timeStr);
+        date.setHours(date.getHours() - 8);
         return `${(date.getMonth() + 1).toString().padStart(2, "0")}-${date.getDate().toString().padStart(2, "0")} ${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
     },
 
@@ -79,10 +125,12 @@ Page({
     fetchComments(postId: string) {
         const app = getApp();
         const user_id = app.globalData.userInfo?.id;
+        const token = wx.getStorageSync("token");
 
         wx.request({
             url: "https://mutualcampus.top/api/square/comments",
             method: "GET",
+            header: { Authorization: `Bearer ${token}` }, // 加入 token 认证
             data: { square_id: postId, user_id },
             success: (res: any) => {
                 if (res.data.success) {
@@ -111,30 +159,32 @@ Page({
     // ✅ 点击评论进行回复
     handleReply(e) {
         const { commentid, username, parentid, rootid } = e.currentTarget.dataset;
+        const isFirstLevel = parentid == null;
 
-        console.log(`📝 处理回复: comment_id=${commentid}, parent_id=${parentid}, root_parent_id=${rootid}`);
-
-        const isFirstLevel = parentid == null; // null 或 undefined 都算一级
-
+        // 设置回复状态
         this.setData({
             replyTo: commentid,
             rootParentId: isFirstLevel ? commentid : rootid,
-            replyPlaceholder: `回复 @${username}...`,
-            inputFocus: true
+            replyPlaceholder: `回复 @${username}...`
+        }, () => {
+            // 设置输入框 focus 为 true 以弹出键盘
+            setTimeout(() => {
+                this.setData({ inputFocus: true });
+            }, 100); // 100ms 延迟，确保页面渲染完
         });
     },
 
-    // ✅ 输入框失焦恢复
-    blurComment() {
-        // ❌ 不要清空 replyTo，这会导致评论变一级！
-        // this.setData({
-        //     replyTo: null,
-        //     replyPlaceholder: "发布你的评论..."
-        // });
+    focusComment(e: any) {
+        this.setData({ keyboardHeight: e.detail.height || 0 });
+    },
 
-        // ✅ 你可以只做 focus 状态控制
+    // ✅ 输入框失焦（取消回复状态）
+    blurComment() {
         this.setData({
-            inputFocus: false
+            inputFocus: false,  // 取消焦点，收起键盘
+            replyTo: null,      // 清除回复评论状态
+            rootParentId: null, // 清除根评论 ID
+            replyPlaceholder: "发布你的评论..." // 重置 placeholder
         });
     },
 
@@ -160,7 +210,7 @@ Page({
 
         const isReply = !!this.data.replyTo;
 
-        // ✅ 构建评论对象，避免传 null
+        // 构建评论对象
         const commentData = {
             user_id,
             square_id: this.data.postId,
@@ -171,8 +221,6 @@ Page({
             commentData.parent_id = this.data.replyTo;
             commentData.root_parent_id = this.data.rootParentId ?? this.data.replyTo;
         }
-
-        console.log("📤 最终提交评论数据：", commentData);
 
         wx.request({
             url: "https://mutualcampus.top/api/square/comments/create",
@@ -188,6 +236,12 @@ Page({
                         rootParentId: null,
                         replyPlaceholder: "发布你的评论...",
                         inputFocus: false
+                    }, () => {
+                        // 自动滚动到底部
+                        wx.pageScrollTo({
+                            scrollTop: 999999,
+                            duration: 300
+                        });
                     });
                 } else {
                     wx.showToast({ title: "发布失败", icon: "none" });

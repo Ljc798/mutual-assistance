@@ -14,25 +14,35 @@ Page({
     },
 
     onLoad() {
-        this.fetchPosts("全部");
-        this.getCheckinStatus();
+        const app = getApp();
+        const userInfo = app.globalData.userInfo;
+
+        if (!userInfo?.id) {
+            wx.showToast({ title: "请先登录", icon: "none" });
+            wx.redirectTo({ url: "/pages/register/register" });
+            return;
+        }
+
+        this.setData({ userInfo }, () => {
+            this.fetchPosts("全部");
+            this.getCheckinStatus();
+        });
     },
 
     onShow() {
+        // 防止用户在其他页面退出登录后返回广场页，此处再校验一次
         const app = getApp();
         const userInfo = app.globalData.userInfo;
-      
+
         if (!userInfo?.id) {
-          wx.showToast({ title: "请先登录", icon: "none" });
-          wx.redirectTo({ url: "/pages/login/login" });
-          return;
+            wx.showToast({ title: "请先登录", icon: "none" });
+            wx.redirectTo({ url: "/pages/register/register" });
+            return;
         }
-      
-        this.setData({ userInfo }, () => {
-          this.fetchPosts("全部");
-          this.getCheckinStatus();
-        });
-      },
+
+        // ✅ 已登录，确保 userInfo 已同步
+        this.setData({ userInfo });
+    },
 
     // ✅ 监听下拉刷新
     onPullDownRefresh() {
@@ -49,15 +59,17 @@ Page({
     getCheckinStatus() {
         const app = getApp();
         const user_id = app.globalData.userInfo?.id;
+        const token = wx.getStorageSync("token");
 
         wx.request({
             url: "https://mutualcampus.top/api/checkins/status",
             method: "GET",
+            header: { Authorization: `Bearer ${token}` }, // 添加 token
             data: { user_id },
-            success: (res: any) => {
+            success: (res) => {
                 if (res.data.success) {
                     this.setData({
-                        userInfo: app.globalData.userInfo, // **同步全局数据**
+                        userInfo: app.globalData.userInfo,
                         checkedIn: res.data.checked_in,
                         checkinIcon: res.data.checked_in ? "../../assets/icons/daka.svg" : "../../assets/icons/rili-2.svg"
                     });
@@ -70,6 +82,7 @@ Page({
     handleCheckIn() {
         const app = getApp();
         const user_id = app.globalData.userInfo?.id;
+        const token = wx.getStorageSync("token");
 
         if (!user_id) {
             wx.showToast({ title: "请先登录", icon: "none" });
@@ -79,18 +92,16 @@ Page({
         wx.request({
             url: "https://mutualcampus.top/api/checkins/checkin",
             method: "POST",
+            header: { Authorization: `Bearer ${token}` }, // 添加 token
             data: { user_id },
-            success: (res: any) => {
+            success: (res) => {
                 if (res.data.success) {
                     const { message, earned_points, consecutive_days } = res.data;
-
-                    // ✅ 生成提示信息
                     let content = message;
                     if (consecutive_days > 1) {
                         content += `\n已连续签到${consecutive_days} 天！`;
                     }
 
-                    // ✅ 弹出签到成功提示框
                     wx.showModal({
                         title: "签到成功",
                         content: content,
@@ -98,13 +109,9 @@ Page({
                         confirmText: "知道了"
                     });
 
-                    // ✅ 更新全局积分
                     app.globalData.userInfo.points += earned_points;
                     wx.setStorageSync("user", app.globalData.userInfo);
-
-                    // ✅ 刷新签到状态
                     this.getCheckinStatus();
-
                 } else {
                     wx.showModal({
                         title: "签到失败",
@@ -131,9 +138,11 @@ Page({
     },
 
     // ✅ 获取帖子数据
+    // ✅ 获取帖子数据
     fetchPosts(category: string, callback?: Function) {
         const app = getApp();
         const user_id = app.globalData.userInfo?.id || null;
+        const token = wx.getStorageSync("token");
 
         if (!user_id) {
             wx.showToast({ title: "请先登录", icon: "none" });
@@ -143,16 +152,13 @@ Page({
         wx.request({
             url: "https://mutualcampus.top/api/square/posts",
             method: "GET",
+            header: { Authorization: `Bearer ${token}` }, // 添加 token
             data: { category, user_id },
             success: (res: any) => {
-
                 if (res.data.success) {
                     let posts = res.data.posts || [];
                     posts = posts.map(post => {
-                        const isVip =
-                            post.vip_expire_time &&
-                            new Date(post.vip_expire_time).getTime() > Date.now();
-                    
+                        const isVip = post.vip_expire_time && new Date(post.vip_expire_time).getTime() > Date.now();
                         return {
                             ...post,
                             isLiked: post.isLiked || false,
@@ -161,8 +167,7 @@ Page({
                         };
                     });
 
-                    this.setData({ posts }, () => {
-                    });
+                    this.setData({ posts });
                 } else {
                     console.error("❌ API 返回错误:", res.data.message);
                 }
@@ -173,7 +178,7 @@ Page({
             },
             complete: () => {
                 wx.hideLoading();
-                if (callback) callback(); // **停止下拉刷新动画**
+                if (callback) callback();
             }
         });
     },
@@ -181,6 +186,7 @@ Page({
     // ✅ 时间格式化
     formatTime(timeStr: string): string {
         const date = new Date(timeStr);
+        date.setHours(date.getHours() - 8);
         const month = (date.getMonth() + 1).toString().padStart(2, "0");
         const day = date.getDate().toString().padStart(2, "0");
         const hours = date.getHours().toString().padStart(2, "0");
@@ -309,6 +315,8 @@ Page({
     async submitPost() {
         const app = getApp();
         const user_id = app.globalData.userInfo?.id;
+        const token = wx.getStorageSync("token");
+
         if (!user_id) {
             wx.showToast({ title: "请先登录", icon: "none" });
             return;
@@ -330,7 +338,7 @@ Page({
         wx.request({
             url: "https://mutualcampus.top/api/square/create",
             method: "POST",
-            header: { Authorization: `Bearer ${app.globalData.token}` },
+            header: { Authorization: `Bearer ${token}` }, // 添加 token
             data: {
                 user_id,
                 category: this.data.selectedPostCategory,
@@ -346,7 +354,7 @@ Page({
                     if (this.data.tempImageList.length === 0) {
                         wx.hideLoading();
                         wx.showToast({ title: "发布成功", icon: "success" });
-                        this.fetchPosts("全部");  // ✅ 重新拉取帖子
+                        this.fetchPosts("全部");
                         this.resetPostForm();
                         return;
                     }
@@ -364,15 +372,15 @@ Page({
                     wx.request({
                         url: "https://mutualcampus.top/api/square/update-images",
                         method: "POST",
+                        header: { Authorization: `Bearer ${token}` }, // 添加 token
                         data: {
-                            square_id,  // 只需要更新已有的帖子
+                            square_id,
                             images: uploadedImageUrls
                         },
                         success: () => {
                             wx.hideLoading();
                             wx.showToast({ title: "发布成功", icon: "success" });
-
-                            this.fetchPosts("全部");  // ✅ 重新拉取帖子
+                            this.fetchPosts("全部");
                             this.resetPostForm();
                         },
                         fail: (err) => {

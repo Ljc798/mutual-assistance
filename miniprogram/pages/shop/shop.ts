@@ -73,8 +73,8 @@ Page({
           data: {
             openid: user.openid,
             description: "兑换商品",
-            order_no: `ORDER_${Date.now()}`, // 一般会生成有时间戳的唯一订单号
-            total_fee: 100, // 单位是分（比如 1 元就填 100）
+            order_no: `ORDER_${Date.now()}`,
+            total_fee: 100, // 单位是分
           },
           success: (res: any) => {
             if (res.data.success) {

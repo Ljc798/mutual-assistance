@@ -86,7 +86,7 @@ const message = useMessage()
 
 async function fetchUsers() {
   try {
-    const res = await axios.get('http://127.0.0.1:8000/users')
+    const res = await axios.get('https://admin.mutualcampus.top/api/users')
     console.log(res)
     userList.value = res.data
   } catch (err) {
@@ -146,7 +146,7 @@ function openEditModal(row: any) {
 
 async function saveUserEdit() {
   try {
-    await axios.put(`http://127.0.0.1:8000/users/${currentUser.value.id}`, currentUser.value)
+    await axios.put(`https://admin.mutualcampus.top/api/users/${currentUser.value.id}`, currentUser.value)
     showEditModal.value = false
     fetchUsers()
     message.success('用户信息已成功更新')

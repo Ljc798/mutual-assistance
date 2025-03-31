@@ -167,62 +167,70 @@ Page({
     },
 
     // 处理发布操作
-    // 处理发布操作
-handlePublish() {
-    const app = getApp();
-    const user_id = app.globalData?.userInfo?.id;
-  
-    if (!user_id) {
-      wx.showToast({ title: '请先登录', icon: 'none' });
-      return;
-    }
-  
-    const {
-      selectedCategory,
-      position,
-      address,
-      DDL,
-      title,
-      reward,
-      detail,
-      takeCode,
-      takeTel,
-      takeName
-    } = this.data;
-  
-    const payload = {
-      employer_id: user_id,
-      category: selectedCategory,
-      position,
-      address,
-      DDL,
-      title,
-      offer: parseFloat(reward),
-      detail,
-      takeaway_code: takeCode || '',
-      takeaway_tel: takeTel || null,
-      takeaway_name: takeName || ''
-    };
-  
-    console.log("📤 正在提交任务发布请求:", payload);
-  
-    wx.request({
-      url: 'https://mutualcampus.top/api/task/create', // ✅ 修改为你线上接口时记得更新
-      method: 'POST',
-      data: payload,
-      success: (res: any) => {
-        if (res.data.success) {
-          wx.showToast({ title: '发布成功', icon: 'success' });
-          // ✅ 成功后返回上一页或跳转任务列表页
-          wx.navigateBack();
-        } else {
-          wx.showToast({ title: '发布失败', icon: 'none' });
+    handlePublish() {
+        const app = getApp();
+        const user_id = app.globalData?.userInfo?.id;
+
+        if (!user_id) {
+            wx.showToast({ title: '请先登录', icon: 'none' });
+            return;
         }
-      },
-      fail: (err) => {
-        console.error('❌ 发布失败:', err);
-        wx.showToast({ title: '网络错误', icon: 'none' });
-      }
-    });
-  }
+
+        const token = wx.getStorageSync("token");
+        if (!token) {
+            wx.showToast({ title: '请先登录', icon: 'none' });
+            return;
+        }
+
+        const {
+            selectedCategory,
+            position,
+            address,
+            DDL,
+            title,
+            reward,
+            detail,
+            takeCode,
+            takeTel,
+            takeName
+        } = this.data;
+
+        const payload = {
+            employer_id: user_id,
+            category: selectedCategory,
+            position,
+            address,
+            DDL,
+            title,
+            offer: parseFloat(reward),
+            detail,
+            takeaway_code: takeCode || '',
+            takeaway_tel: takeTel || null,
+            takeaway_name: takeName || ''
+        };
+
+        console.log("📤 正在提交任务发布请求:", payload);
+
+        wx.request({
+            url: 'https://mutualcampus.top/api/task/create',
+            method: 'POST',
+            data: payload,
+            header: {
+                Authorization: `Bearer ${token}` // 添加 token 到请求头
+            },
+            success: (res: any) => {
+                if (res.data.success) {
+                    wx.showToast({ title: '发布成功', icon: 'success' });
+                    // ✅ 成功后返回上一页或跳转任务列表页
+                    wx.navigateBack();
+                } else {
+                    wx.showToast({ title: '发布失败', icon: 'none' });
+                }
+            },
+            fail: (err) => {
+                console.error('❌ 发布失败:', err);
+                wx.showToast({ title: '网络错误', icon: 'none' });
+            }
+        });
+    }
 });

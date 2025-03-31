@@ -36,38 +36,52 @@ Page({
 
     onLoad() {
         const app = getApp();
-        this.setData({
-            userId: app.globalData.userInfo.id
-        });
+        const userId = app.globalData.userInfo.id;
+        this.setData({ userId });
 
+        
+    
+        // ✅ 获取配置后再执行逻辑
         wx.request({
             url: `${API_BASE_URL}/get-timetable-config`,
             method: "GET",
-            data: { user_id: this.data.userId },
+            data: { user_id: userId },
             success: (res) => {
                 if (res.data.success) {
-                    getApp().globalData.timetableConfig = res.data.data; // ✅ 存入全局                    
-                    const totalWeeks = res.data.data.total_weeks; // 获取总周数
+                    const config = res.data.data;
+                    getApp().globalData.timetableConfig = config;
+    
+                    const totalWeeks = config.total_weeks;
                     const weeksRange = Array.from({ length: totalWeeks }, (_, i) => `第${i + 1}周`);
-                    this.setData({
-                        weeksRange
+    
+                    this.setData({ weeksRange }, () => {
+                        // ✅ 数据准备完毕后再执行下列逻辑
+                        this.computeDateInfo(new Date(), () => {
+                            this.loadCourses();
+                            this.loadPracticeCourses();
+                        });
+                        this.getWeekDates(this.data.currentWeek);
+                        this.loadWeeklyCourses();
                     });
+                } else {
+                    console.error("❌ 获取课表配置失败", res.data);
                 }
+            },
+            fail: (err) => {
+                console.error("❌ 请求失败", err);
             }
         });
-
-        // 计算当前周数和星期几，并获取课表
-        this.computeDateInfo(new Date(), () => {
-            this.loadCourses();
-            this.loadPracticeCourses(); // ✅ 额外获取实践课信息
-        });
-        this.getWeekDates(this.data.currentWeek);
-        this.loadWeeklyCourses();
     },
+    
     onShow() {
-        this.processWeeklyCourses();
+        // 建议也做下防御，避免第一次进入的时候数据没加载就执行
+        if (getApp().globalData.timetableConfig) {
+            this.processWeeklyCourses();
+        } else {
+            console.warn("⏳ timetableConfig 尚未加载完成，暂不执行 processWeeklyCourses");
+        }
     },
-
+    
     // 计算选中日期是第几周，周几
     computeDateInfo(selectedDate, callback) {
         const weekDays = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
@@ -392,7 +406,7 @@ Page({
         wx.showLoading({ title: "导入中..." });
 
         wx.request({
-            url: `http://175.27.170.220:8000/get_schedule/`,
+            url: `https://admin.mutualcampus.top/schedule/get_schedule/`,
             method: "POST",
             data: {
                 username: this.data.username,

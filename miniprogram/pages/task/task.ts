@@ -60,6 +60,11 @@ Page({
     // 处理接单逻辑
     async handleAccept() {
         const { task } = this.data;
+        const token = wx.getStorageSync("token");  // 获取 token
+        if (!token) {
+            wx.showToast({ title: "请先登录", icon: "none" });
+            return;
+        }
 
         wx.showLoading({ title: "接单中..." });
 
@@ -67,6 +72,9 @@ Page({
             const res = await wx.request({
                 url: `https://mutualcampus.top/api/task/${task.id}/accept`, // API 更新任务状态
                 method: "POST",
+                header: {
+                    Authorization: `Bearer ${token}`  // 添加 token
+                },
                 success: (res: any) => {
                     console.log("✅ 接单成功:", res.data);
 
@@ -105,6 +113,7 @@ Page({
 
         const date = new Date(DDL);
         if (isNaN(date.getTime())) return "时间错误"; // 解析失败的处理
+        date.setHours(date.getHours() - 8);
 
         const month = date.getMonth() + 1; // 获取月份（从 0 开始）
         const day = date.getDate(); // 获取日期
@@ -115,22 +124,31 @@ Page({
     },
 
     loadBids(taskId: string) {
+        const token = wx.getStorageSync("token");  // 获取 token
+        if (!token) {
+            wx.showToast({ title: "请先登录", icon: "none" });
+            return;
+        }
+
         wx.request({
-          url: `https://mutualcampus.top/api/task/${taskId}/bids`,
-          method: 'GET',
-          success: (res) => {
-            if (res.data.success) {
-              console.log("💬 加载留言成功:", res.data.bids);
-              this.setData({ bids: res.data.bids });
-            } else {
-              wx.showToast({ title: '留言加载失败', icon: 'none' });
+            url: `https://mutualcampus.top/api/task/${taskId}/bids`,
+            method: 'GET',
+            header: {
+                Authorization: `Bearer ${token}`  // 添加 token
+            },
+            success: (res) => {
+                if (res.data.success) {
+                    console.log("💬 加载留言成功:", res.data.bids);
+                    this.setData({ bids: res.data.bids });
+                } else {
+                    wx.showToast({ title: '留言加载失败', icon: 'none' });
+                }
+            },
+            fail: () => {
+                wx.showToast({ title: '网络错误', icon: 'none' });
             }
-          },
-          fail: () => {
-            wx.showToast({ title: '网络错误', icon: 'none' });
-          }
         });
-      },
+    },
 
 
     openPopup() {
@@ -159,10 +177,19 @@ Page({
             return;
         }
 
+        const token = wx.getStorageSync("token");  // 获取 token
+        if (!token) {
+            wx.showToast({ title: "请先登录", icon: "none" });
+            return;
+        }
+
         // ❗调用的是 /bid 接口
         wx.request({
             url: 'https://mutualcampus.top/api/task/bid',
             method: 'POST',
+            header: {
+                Authorization: `Bearer ${token}`,  // 添加 token
+            },
             data: {
                 task_id: task.id,
                 user_id: userId,

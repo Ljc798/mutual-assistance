@@ -1,10 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../config/db");
-const dotenv = require("dotenv");
-dotenv.config();
+const dayjs = require("dayjs");
+const authMiddleware = require("./authMiddleware"); // 引入中间件
 
-// ✅ 获取广场帖子列表
+// ===== 1. 获取广场帖子列表 =====
 router.get("/posts", async (req, res) => {
     const { category, user_id } = req.query;
 
@@ -51,8 +51,8 @@ router.get("/posts", async (req, res) => {
     }
 });
 
-// ✅ 点赞帖子
-router.post("/like", async (req, res) => {
+// ===== 2. 点赞帖子 =====
+router.post("/like", authMiddleware, async (req, res) => { // 添加了认证中间件
     const { user_id, square_id } = req.body;
     if (!user_id) return res.status(400).json({ success: false, message: "缺少 user_id" });
 
@@ -76,8 +76,8 @@ router.post("/like", async (req, res) => {
     }
 });
 
-// ✅ 取消点赞
-router.post("/unlike", async (req, res) => {
+// ===== 3. 取消点赞 =====
+router.post("/unlike", authMiddleware, async (req, res) => { // 添加了认证中间件
     const { user_id, square_id } = req.body;
     if (!user_id) return res.status(400).json({ success: false, message: "缺少 user_id" });
 
@@ -103,8 +103,8 @@ router.post("/unlike", async (req, res) => {
     }
 });
 
-// ✅ 创建帖子
-router.post("/create", async (req, res) => {
+// ===== 4. 创建帖子 =====
+router.post("/create", authMiddleware, async (req, res) => { // 添加了认证中间件
     const { user_id, category, content } = req.body;
     if (!user_id || !category || !content) {
         return res.status(400).json({ success: false, message: "缺少必要参数" });
@@ -124,8 +124,8 @@ router.post("/create", async (req, res) => {
     }
 });
 
-// ✅ 更新图片
-router.post("/update-images", async (req, res) => {
+// ===== 5. 更新图片 =====
+router.post("/update-images", authMiddleware, async (req, res) => { // 添加了认证中间件
     const { square_id, images } = req.body;
     if (!square_id || !images || images.length === 0) {
         return res.status(400).json({ success: false, message: "缺少必要参数" });
@@ -234,7 +234,7 @@ router.get("/comments", async (req, res) => {
 });
 
 // 发布评论
-router.post("/comments/create", async (req, res) => {
+router.post("/comments/create", authMiddleware, async (req, res) => { // 添加了认证中间件
     const { user_id, square_id, content, parent_id, root_parent_id } = req.body;
 
     if (!user_id || !square_id || !content) {
@@ -278,7 +278,9 @@ router.post("/comments/create", async (req, res) => {
         res.status(500).json({ success: false, message: "发表评论失败" });
     }
 });
-router.post("/comments/like", async (req, res) => {
+
+// 点赞评论
+router.post("/comments/like", authMiddleware, async (req, res) => { // 添加了认证中间件
     const { user_id, comment_id } = req.body;
 
     if (!user_id || !comment_id) {
