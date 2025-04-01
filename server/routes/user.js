@@ -68,6 +68,7 @@ router.post("/phone-login", async (req, res) => {
             const [insertResult] = await db.query("INSERT INTO users SET ?", [newUser]);
             newUser.id = insertResult.insertId;
             user = newUser;
+            isNewUser = true; // ✅ 标记为新用户
         }
 
         // 登录成功后，签发 token：
@@ -79,7 +80,8 @@ router.post("/phone-login", async (req, res) => {
         return res.json({
             success: true,
             token,
-            user
+            user,
+            isNewUser // ✅ 返回给前端
         });
 
     } catch (error) {

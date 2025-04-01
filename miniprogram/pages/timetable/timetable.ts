@@ -10,6 +10,22 @@ const dayMap = {
     "周日": 7
 };
 
+const defaultTimetableConfig = {
+    start_date: "2024-02-17", // 例如春季开学日
+    total_weeks: 16,
+    class_duration: 45,
+    period_1: "08:00",
+    period_2: "08:50",
+    period_3: "10:15",
+    period_4: "11:05",
+    period_5: "14:00",
+    period_6: "14:50",
+    period_7: "15:55",
+    period_8: "16:45",
+    period_9: "19:00",
+    period_10: "19:50"
+};
+
 Page({
     data: {
         selectedTab: "daily", // 默认日课表
@@ -39,40 +55,60 @@ Page({
         const userId = app.globalData.userInfo.id;
         this.setData({ userId });
 
-        
-    
+
+
+        // ✅ 获取配置后再执行逻辑
         // ✅ 获取配置后再执行逻辑
         wx.request({
             url: `${API_BASE_URL}/get-timetable-config`,
             method: "GET",
             data: { user_id: userId },
             success: (res) => {
-                if (res.data.success) {
-                    const config = res.data.data;
-                    getApp().globalData.timetableConfig = config;
-    
-                    const totalWeeks = config.total_weeks;
-                    const weeksRange = Array.from({ length: totalWeeks }, (_, i) => `第${i + 1}周`);
-    
-                    this.setData({ weeksRange }, () => {
-                        // ✅ 数据准备完毕后再执行下列逻辑
-                        this.computeDateInfo(new Date(), () => {
-                            this.loadCourses();
-                            this.loadPracticeCourses();
-                        });
-                        this.getWeekDates(this.data.currentWeek);
-                        this.loadWeeklyCourses();
-                    });
+                let config;
+
+                if (res.data.success && res.data.data) {
+                    config = res.data.data;
                 } else {
-                    console.error("❌ 获取课表配置失败", res.data);
+                    console.warn("⚠️ 获取失败或用户未配置，使用默认配置");
+                    config = defaultTimetableConfig;
                 }
+
+                getApp().globalData.timetableConfig = config;
+
+                const totalWeeks = config.total_weeks;
+                const weeksRange = Array.from({ length: totalWeeks }, (_, i) => `第${i + 1}周`);
+
+                this.setData({ weeksRange }, () => {
+                    this.computeDateInfo(new Date(), () => {
+                        this.loadCourses();
+                        this.loadPracticeCourses();
+                    });
+                    this.getWeekDates(this.data.currentWeek);
+                    this.loadWeeklyCourses();
+                });
             },
             fail: (err) => {
-                console.error("❌ 请求失败", err);
+                console.error("❌ 请求失败，使用默认配置", err);
+
+                // 🚨 网络失败也要兜底配置
+                const config = defaultTimetableConfig;
+                getApp().globalData.timetableConfig = config;
+
+                const totalWeeks = config.total_weeks;
+                const weeksRange = Array.from({ length: totalWeeks }, (_, i) => `第${i + 1}周`);
+
+                this.setData({ weeksRange }, () => {
+                    this.computeDateInfo(new Date(), () => {
+                        this.loadCourses();
+                        this.loadPracticeCourses();
+                    });
+                    this.getWeekDates(this.data.currentWeek);
+                    this.loadWeeklyCourses();
+                });
             }
         });
     },
-    
+
     onShow() {
         // 建议也做下防御，避免第一次进入的时候数据没加载就执行
         if (getApp().globalData.timetableConfig) {
@@ -81,7 +117,7 @@ Page({
             console.warn("⏳ timetableConfig 尚未加载完成，暂不执行 processWeeklyCourses");
         }
     },
-    
+
     // 计算选中日期是第几周，周几
     computeDateInfo(selectedDate, callback) {
         const weekDays = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];

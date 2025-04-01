@@ -33,11 +33,12 @@ router.post("/create", authMiddleware, async (req, res) => {
         employer_id, employee_id, category, status,
         position, address, DDL, title, offer, detail,
         takeaway_code, takeaway_tel, takeaway_name
-      ) VALUES (?, NULL, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
         const values = [
             employer_id,
+            null,
             category,
             position,
             address,

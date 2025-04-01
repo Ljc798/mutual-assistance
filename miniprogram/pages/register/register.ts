@@ -47,15 +47,11 @@ Page({
                             userInfo: res.data.user
                         });
 
-                        wx.redirectTo({
-                            url: "/pages/home/home",
-                            success: () => {
-                                console.log("📌 已成功跳转到首页");
-                            },
-                            fail: (err) => {
-                                console.error("❌ 跳转失败", err);
-                            }
-                        });
+                        const targetPage = res.data.isNewUser
+                            ? "/pages/edit-profile/edit-profile"
+                            : "/pages/home/home";
+
+                        wx.redirectTo({ url: targetPage });
                     } else {
                         wx.showToast({ title: res.data.message, icon: "none" });
                     }

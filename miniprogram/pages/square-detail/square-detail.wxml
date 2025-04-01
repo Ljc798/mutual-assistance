@@ -115,7 +115,7 @@
         </view>
     </scroll-view>
     <!-- 底部固定输入框 -->
-    <view class="bottom-bar" style="bottom: {{keyboardHeight}}px;">
+    <view class="bottom-bar">
         <input class="comment-input" placeholder="{{replyPlaceholder}}" value="{{newComment}}" bindinput="handleInput" bindfocus="focusComment" bindblur="blurComment" focus="{{inputFocus}}" />
         <button class="send-button" bindtap="submitComment">发送</button>
     </view>

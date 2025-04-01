@@ -9,7 +9,6 @@ Page({
         replyPlaceholder: "发布你的评论...",  // 输入框 placeholder
         inputFocus: false,  // 控制输入框 focus
         rootParentId: null, // 🔹 记录 root_parent_id
-        keyboardHeight: 0,
     },
 
     onLoad(options: any) {
@@ -175,7 +174,6 @@ Page({
     },
 
     focusComment(e: any) {
-        this.setData({ keyboardHeight: e.detail.height || 0 });
     },
 
     // ✅ 输入框失焦（取消回复状态）
@@ -197,6 +195,7 @@ Page({
     submitComment() {
         const app = getApp();
         const user_id = app.globalData.userInfo?.id;
+        const token = wx.getStorageSync("token");
 
         if (!user_id) {
             wx.showToast({ title: "请先登录", icon: "none" });
@@ -225,6 +224,7 @@ Page({
         wx.request({
             url: "https://mutualcampus.top/api/square/comments/create",
             method: "POST",
+            header: { Authorization: `Bearer ${token}` }, // 加入 token 认证
             data: commentData,
             success: (res: any) => {
                 if (res.data.success) {

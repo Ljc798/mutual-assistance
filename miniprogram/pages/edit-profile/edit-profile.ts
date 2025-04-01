@@ -66,73 +66,66 @@ Page({
     },
 
     // 保存用户信息
-    saveChanges() {
+    async saveChanges() {
         if (!this.validateInput()) {
             wx.showToast({ title: this.data.errorMessage, icon: "none" });
             return;
         }
-
+    
         wx.showLoading({ title: "保存中..." });
-
+    
         const token = wx.getStorageSync("token");
-        if (!token) {
+        const app = getApp();
+        const userId = app.globalData.userInfo?.id;
+        const username = app.globalData.userInfo?.username;
+    
+        if (!token || !userId) {
+            wx.hideLoading();
             wx.showToast({ title: "登录状态失效，请重新登录", icon: "none" });
             wx.redirectTo({ url: "/pages/register/register" });
             return;
         }
-
-        const app = getApp();
-        const userId = app.globalData.userInfo?.id;
-        const username = app.globalData.userInfo?.username;
-
-        if (!userId) {
-            wx.showToast({ title: "用户未登录", icon: "none" });
-            wx.hideLoading();
-            return;
-        }
-
-        let avatarUrl = this.data.tempUserInfo.avatar_url; // 默认使用原头像
-
-        // 如果用户选择了新头像，则先上传
-        if (this.data.avatarFilePath) {
-            const uploadedAvatarUrl = await this.uploadAvatarToCOS(this.data.avatarFilePath, username);
-            if (uploadedAvatarUrl) {
-                avatarUrl = uploadedAvatarUrl; // 更新头像 URL
-            } else {
-                wx.showToast({ title: "头像上传失败，保持原头像", icon: "none" });
+    
+        let avatarUrl = this.data.tempUserInfo.avatar_url;
+        const filePath = this.data.avatarFilePath;
+        const isTempFile = filePath.includes("/tmp/") || filePath.startsWith("wxfile://");
+        // ✅ 仅当为本地新头像时上传
+        if (isTempFile) {
+            avatarUrl = await this.uploadAvatarToCOS(filePath, username);
+            if (!avatarUrl) {
+                console.error("❌ 头像上传失败，返回空 URL");
+                wx.showToast({ title: "头像上传失败，使用原头像", icon: "none" });
+                avatarUrl = this.data.tempUserInfo.avatar_url;
             }
         }
-
-        // 保存用户信息
+    
         wx.request({
             url: "https://mutualcampus.top/api/user/update",
             method: "POST",
             header: {
-                Authorization: `Bearer ${token}`  // 添加 token 到请求头
+                Authorization: `Bearer ${token}`
             },
             data: {
                 username: this.data.tempUserInfo.username,
-                avatar_url: avatarUrl, // 使用上传后的头像 URL
+                avatar_url: avatarUrl,
                 wxid: this.data.tempUserInfo.wxid
             },
             success: (res) => {
                 if (res.data.success) {
-                    // 同步到全局数据
                     app.globalData.userInfo = res.data.user;
                     wx.setStorageSync("user", res.data.user);
-
                     wx.showToast({ title: "修改成功", icon: "success" });
-
-                    // ✅ 返回 `user` 页面，刷新数据
                     wx.navigateBack();
                 } else {
                     wx.showToast({ title: res.data.message, icon: "none" });
                 }
             },
-            fail: (err) => {
+            fail: () => {
                 wx.showToast({ title: "网络错误", icon: "none" });
             },
-            complete: () => wx.hideLoading()
+            complete: () => {
+                wx.hideLoading();
+            }
         });
     },
 
