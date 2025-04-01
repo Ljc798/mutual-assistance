@@ -36,6 +36,52 @@
     color: #333;
 }
 
+/* ✨ VIP 用户名样式：渐变 + 动画 */
+.vip-username {
+    background: linear-gradient(90deg, #FFD700, #FF69B4, #FFD700);
+    background-size: 400%;
+    color: transparent;
+    -webkit-background-clip: text;
+    animation: shimmer 5s linear infinite;
+  }
+  
+  /* 🎖️ VIP 徽章样式 */
+  .vip-badge {
+    width: 50rpx;
+    height: 50rpx;
+    margin-left: 15rpx;
+    animation: shine 2s ease-in-out infinite;
+    filter: drop-shadow(0 0 6rpx gold);
+  }
+  
+  /* ✨ 流光动画 */
+  @keyframes shimmer {
+    0% {
+      background-position: 0% 50%;
+    }
+    100% {
+      background-position: 400% 50%;
+    }
+  }
+  
+  /* ⭐ 徽章轻微闪烁 */
+  @keyframes shine {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.1);
+      opacity: 0.85;
+    }
+  }
+  
+  /* 🧩 确保 username 和徽章横向排列 */
+  .username-area {
+    display: flex;
+    align-items: center;
+  }
+
 /* 帖子内容 */
 .post-content {
     padding-top: 20rpx;

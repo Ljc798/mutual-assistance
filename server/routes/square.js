@@ -154,6 +154,7 @@ router.get("/detail", async (req, res) => {
             SELECT s.*, 
                    u.username, 
                    u.avatar_url, 
+                   u.vip_expire_time,
                    (SELECT COUNT(*) FROM square_likes WHERE square_id = s.id AND user_id = ?) AS isLiked
             FROM square s
             LEFT JOIN users u ON s.user_id = u.id
@@ -194,7 +195,9 @@ router.get("/comments", async (req, res) => {
                 c.*, 
                 u.username, 
                 u.avatar_url,
+                u.vip_expire_time,
                 COALESCE(pu.username, '') AS reply_to_username, 
+                pu.vip_expire_time AS reply_to_vip_expire_time,
                 (SELECT COUNT(*) FROM comment_likes WHERE comment_id = c.id AND user_id = ?) AS isLiked
              FROM square_comments c 
              LEFT JOIN users u ON c.user_id = u.id 

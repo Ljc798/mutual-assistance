@@ -138,7 +138,6 @@ Page({
     },
 
     // ✅ 获取帖子数据
-    // ✅ 获取帖子数据
     fetchPosts(category: string, callback?: Function) {
         const app = getApp();
         const user_id = app.globalData.userInfo?.id || null;

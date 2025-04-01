@@ -27,18 +27,25 @@ Page({
         const app = getApp();
         const user_id = app.globalData.userInfo?.id;
         const token = wx.getStorageSync("token");
-
+    
         wx.request({
             url: `https://mutualcampus.top/api/square/detail`,
             method: "GET",
-            header: { Authorization: `Bearer ${token}` }, // 加入 token 认证
-            data: { post_id: postId, user_id }, // 传递 user_id
+            header: { Authorization: `Bearer ${token}` },
+            data: { post_id: postId, user_id },
             success: (res: any) => {
                 wx.hideLoading();
                 if (res.data.success) {
                     let post = res.data.post;
-                    post.created_time = this.formatTime(post.created_time); // 格式化时间
-                    post.isLiked = Boolean(post.isLiked); // 确保 `isLiked` 是布尔值
+                    const isVip = post.vip_expire_time && new Date(post.vip_expire_time).getTime() > Date.now();
+    
+                    post = {
+                        ...post,
+                        isLiked: Boolean(post.isLiked),
+                        isVip,
+                        created_time: this.formatTime(post.created_time)
+                    };
+    
                     this.setData({ post, isLoading: false });
                 } else {
                     wx.showToast({ title: "获取帖子失败", icon: "none" });
@@ -125,26 +132,34 @@ Page({
         const app = getApp();
         const user_id = app.globalData.userInfo?.id;
         const token = wx.getStorageSync("token");
-
+    
         wx.request({
             url: "https://mutualcampus.top/api/square/comments",
             method: "GET",
-            header: { Authorization: `Bearer ${token}` }, // 加入 token 认证
+            header: { Authorization: `Bearer ${token}` },
             data: { square_id: postId, user_id },
             success: (res: any) => {
                 if (res.data.success) {
-                    let comments = res.data.comments.map(comment => {
-                        comment.created_time = this.formatTime2(comment.created_time);
-                        if (comment.children && comment.children.length > 0) {
-                            comment.children = comment.children.map(child => {
-                                child.created_time = this.formatTime2(child.created_time);
-                                return child;
-                            });
-                        }
+                    const comments = res.data.comments.map(comment => {
+                        const isVip = comment.vip_expire_time && new Date(comment.vip_expire_time).getTime() > Date.now();
+    
+                        comment = {
+                            ...comment,
+                            isVip,
+                            created_time: this.formatTime2(comment.created_time),
+                            children: comment.children?.map(child => {
+                                const isVip = child.vip_expire_time && new Date(child.vip_expire_time).getTime() > Date.now();
+                                return {
+                                    ...child,
+                                    isVip,
+                                    created_time: this.formatTime2(child.created_time)
+                                };
+                            }) || []
+                        };
+    
                         return comment;
                     });
-                    console.log(comments);
-
+    
                     this.setData({ comments });
                 }
             },

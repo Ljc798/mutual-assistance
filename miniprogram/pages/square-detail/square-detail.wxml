@@ -2,8 +2,11 @@
     <!-- 顶部导航栏 -->
     <view class="post-header">
         <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="goBack" />
-        <image class="user-avatar" src="{{post.avatar_url}}"  mode="aspectFill" />
-        <text class="username">{{post.username}}</text>
+        <image class="user-avatar" src="{{post.avatar_url}}" mode="aspectFill" />
+        <view class="username-area">
+            <text class="username {{post.isVip ? 'vip-username' : ''}}">{{post.username}}</text>
+            <image wx:if="{{post.isVip}}" src="/assets/icons/vip-2.svg" class="vip-badge" />
+        </view>
     </view>
 
     <!-- 主要内容区 -->
@@ -69,10 +72,13 @@
 
             <block wx:for="{{comments}}" wx:key="id">
                 <view class="comment-item" bindtap="handleReply" data-commentid="{{item.id}}" data-username="{{item.username}}" data-parentid="{{item.parent_id}}" data-rootid="{{item.root_parent_id}}">
-                    <image class="comment-avatar" src="{{item.avatar_url}}"  mode="aspectFill" />
+                    <image class="comment-avatar" src="{{item.avatar_url}}" mode="aspectFill" />
                     <view class="comment-content">
                         <view class="comment-main">
-                            <text class="comment-username">{{item.username}}</text>
+                            <view class="username-area">
+                                <text class="comment-username {{item.isVip ? 'vip-username' : ''}}">{{item.username}}</text>
+                                <image wx:if="{{item.isVip}}" src="/assets/icons/vip-2.svg" class="vip-badge" />
+                            </view>
                             <text class="comment-text">{{item.content}}</text>
                             <view class="comment-row">
                                 <text class="comment-time">{{item.created_time}}</text>
@@ -91,11 +97,16 @@
                     <view class="sub-comments">
                         <block wx:for="{{item.children}}" wx:key="id">
                             <view class="sub-comment-item" bindtap="handleReply" data-commentid="{{item.id}}" data-username="{{item.username}}" data-parentid="{{item.parent_id}}" data-rootid="{{item.root_parent_id}}">
-                                <image class="sub-comment-avatar" src="{{item.avatar_url}}"  mode="aspectFill" />
+                                <image class="sub-comment-avatar" src="{{item.avatar_url}}" mode="aspectFill" />
                                 <view class="sub-comment-content">
                                     <view class="comment-main">
                                         <view class="comment-header">
-                                            <text class="comment-username">{{item.username}} 回复 {{item.reply_to_username}}</text>
+                                            <view class="username-area">
+                                                <text class="comment-username {{item.isVip ? 'vip-username' : ''}}">
+                                                    {{item.username}} 回复 {{item.reply_to_username}}
+                                                </text>
+                                                <image wx:if="{{item.isVip}}" src="/assets/icons/vip-2.svg" class="vip-badge" />
+                                            </view>
                                         </view>
                                         <text class="comment-text">{{item.content}}</text>
                                         <view class="comment-row">
