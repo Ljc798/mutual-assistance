@@ -2,7 +2,7 @@
     <!-- 顶部导航栏 -->
     <view class="post-header">
         <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="goBack" />
-        <image class="user-avatar" src="{{post.avatar_url}}" />
+        <image class="user-avatar" src="{{post.avatar_url}}"  mode="aspectFill" />
         <text class="username">{{post.username}}</text>
     </view>
 
@@ -69,7 +69,7 @@
 
             <block wx:for="{{comments}}" wx:key="id">
                 <view class="comment-item" bindtap="handleReply" data-commentid="{{item.id}}" data-username="{{item.username}}" data-parentid="{{item.parent_id}}" data-rootid="{{item.root_parent_id}}">
-                    <image class="comment-avatar" src="{{item.avatar_url}}" />
+                    <image class="comment-avatar" src="{{item.avatar_url}}"  mode="aspectFill" />
                     <view class="comment-content">
                         <view class="comment-main">
                             <text class="comment-username">{{item.username}}</text>
@@ -91,7 +91,7 @@
                     <view class="sub-comments">
                         <block wx:for="{{item.children}}" wx:key="id">
                             <view class="sub-comment-item" bindtap="handleReply" data-commentid="{{item.id}}" data-username="{{item.username}}" data-parentid="{{item.parent_id}}" data-rootid="{{item.root_parent_id}}">
-                                <image class="sub-comment-avatar" src="{{item.avatar_url}}" />
+                                <image class="sub-comment-avatar" src="{{item.avatar_url}}"  mode="aspectFill" />
                                 <view class="sub-comment-content">
                                     <view class="comment-main">
                                         <view class="comment-header">

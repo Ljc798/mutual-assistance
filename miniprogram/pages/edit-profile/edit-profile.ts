@@ -6,8 +6,15 @@ Page({
         avatarFilePath: "", // 临时存储头像路径（未上传）
     },
 
-    onLoad() {
+    onLoad(options: any) {
         this.loadUserData();
+        if (options.new === "1") {
+            wx.showToast({
+                title: "欢迎新用户！请完善你的信息",
+                icon: "none",
+                duration: 3000
+            });
+        }
     },
 
     // 加载全局用户数据，复制一份到 tempUserInfo
@@ -46,6 +53,54 @@ Page({
         });
     },
 
+    // 检查用户名是否重复
+    checkUsername() {
+        const newUsername = this.data.tempUserInfo.username;
+        const oldUsername = this.data.userInfo.username;
+
+        // 如果没改，就不检查
+        if (!newUsername || newUsername === oldUsername) return;
+
+        wx.request({
+            url: "https://mutualcampus.top/api/user/check-username",
+            method: "POST",
+            data: { username: newUsername },
+            success: (res: any) => {
+                console.log(res.data);
+                
+                if (!res.data.available) {
+                    wx.showToast({
+                        title: "用户名已存在，请更换",
+                        icon: "none"
+                    });
+                }
+            }
+        });
+    },
+
+    // 检查用户ID（wxid）是否重复
+    checkWxid() {
+        const newWxid = this.data.tempUserInfo.wxid;
+        const oldWxid = this.data.userInfo.wxid;
+
+        if (!newWxid || newWxid === oldWxid) return;
+
+
+        wx.request({
+            url: "https://mutualcampus.top/api/user/check-wxid",
+            method: "POST",
+            data: { wxid: newWxid },
+            success: (res: any) => {
+                if (!res.data.available) {
+                    wx.showToast({
+                        title: "用户ID已存在，请更换",
+                        icon: "none"
+                    });
+                }
+            }
+        });
+    },
+
     // 校验输入
     validateInput() {
         const { username, wxid } = this.data.tempUserInfo;
@@ -71,21 +126,21 @@ Page({
             wx.showToast({ title: this.data.errorMessage, icon: "none" });
             return;
         }
-    
+
         wx.showLoading({ title: "保存中..." });
-    
+
         const token = wx.getStorageSync("token");
         const app = getApp();
         const userId = app.globalData.userInfo?.id;
         const username = app.globalData.userInfo?.username;
-    
+
         if (!token || !userId) {
             wx.hideLoading();
             wx.showToast({ title: "登录状态失效，请重新登录", icon: "none" });
             wx.redirectTo({ url: "/pages/register/register" });
             return;
         }
-    
+
         let avatarUrl = this.data.tempUserInfo.avatar_url;
         const filePath = this.data.avatarFilePath;
         const isTempFile = filePath.includes("/tmp/") || filePath.startsWith("wxfile://");
@@ -98,7 +153,7 @@ Page({
                 avatarUrl = this.data.tempUserInfo.avatar_url;
             }
         }
-    
+
         wx.request({
             url: "https://mutualcampus.top/api/user/update",
             method: "POST",
@@ -115,7 +170,7 @@ Page({
                     app.globalData.userInfo = res.data.user;
                     wx.setStorageSync("user", res.data.user);
                     wx.showToast({ title: "修改成功", icon: "success" });
-                    wx.navigateBack();
+                    wx.redirectTo({ url: "/pages/user/user" })
                 } else {
                     wx.showToast({ title: res.data.message, icon: "none" });
                 }
@@ -175,4 +230,10 @@ Page({
             delta: 1  // 返回上一级页面
         });
     },
+
+    clearWxidInput() {
+        this.setData({
+            "tempUserInfo.wxid": ""
+        });
+    }
 });

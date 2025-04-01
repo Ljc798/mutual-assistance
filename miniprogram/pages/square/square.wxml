@@ -26,7 +26,7 @@
             <view class="post-card" bindtap="goToDetail" data-postid="{{item.id}}">
                 <!-- 用户信息 -->
                 <view class="post-header">
-                    <image class="user-avatar" src="{{item.avatar_url}}" />
+                    <image class="user-avatar" src="{{item.avatar_url}}" mode="aspectFill" />
                     <view class="username-area">
                         <text class="username {{item.isVip ? 'vip-username' : ''}}">{{item.username}}</text>
                         <image wx:if="{{item.isVip}}" src="/assets/icons/vip-2.svg" class="vip-badge" />

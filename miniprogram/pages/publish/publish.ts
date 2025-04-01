@@ -223,8 +223,7 @@ Page({
             success: (res: any) => {
                 if (res.data.success) {
                     wx.showToast({ title: '发布成功', icon: 'success' });
-                    // ✅ 成功后返回上一页或跳转任务列表页
-                    wx.navigateBack();
+                    wx.redirectTo({ url: "/pages/home/home" });
                 } else {
                     wx.showToast({ title: '发布失败', icon: 'none' });
                 }

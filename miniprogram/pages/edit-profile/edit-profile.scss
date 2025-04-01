@@ -56,11 +56,32 @@
 }
 
 .input-field {
-    width: 100%;
     padding: 10px;
     border: 1px solid #ddd;
     border-radius: 5px;
     font-size: 16px;
+}
+
+.input-with-clear {
+    position: relative;
+
+    .input-wrapper {
+        position: relative;
+
+        .input-field {
+            padding-right: 60rpx; // 给右边留空间放按钮
+        }
+
+        .clear-icon {
+            position: absolute;
+            right: 20rpx;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 30rpx;
+            height: 30rpx;
+            opacity: 0.6;
+        }
+    }
 }
 
 // **按钮样式**

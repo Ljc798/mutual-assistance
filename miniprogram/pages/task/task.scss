@@ -3,6 +3,7 @@
     padding: 20rpx;
     margin-top: 160rpx;
 }
+
 .back-btn {
     position: absolute;
     top: 110rpx;
@@ -18,71 +19,74 @@
     margin-bottom: 20rpx;
     border: 1rpx solid #e4e4e4;
     border-radius: 10rpx;
-  }
-  
-  .task-header {
+}
+
+.task-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-  }
-  
-  .task-title {
+}
+
+.task-title {
     font-size: 18px;
     font-weight: bold;
     color: #333;
-  }
-  
-  .task-reward {
+}
+
+.task-reward {
     font-size: 16px;
     color: red;
-  }
-  
-  .task-info {
+}
+
+.task-info {
     margin-top: 10rpx;
     font-size: 14px;
     color: #666;
-  }
-  
-  .task-info view {
+}
+
+.task-info view {
     margin-bottom: 8rpx;
-  }
-  
-  .task-details {
+}
+
+.task-details {
     background-color: #fff;
     padding: 20rpx;
     margin-bottom: 20rpx;
     border: 1rpx solid #e4e4e4;
     border-radius: 10rpx;
-  }
-  
-  .task-description {
+}
+
+.task-description {
     font-size: 14px;
     color: #333;
     margin-bottom: 12rpx;
-  }
-  
-  .task-detail-item {
+}
+
+.task-detail-item {
     display: flex;
     margin-bottom: 12rpx;
-  }
-  
-  .label {
+}
+
+.label {
     font-weight: bold;
     color: #333;
     margin-right: 10rpx;
-  }
+}
 
 /* 按钮容器 */
 .button-container {
     position: fixed;
-    bottom: 40rpx;  /* 距离底部的距离 */
-    right: 20rpx;  /* 距离右侧的距离 */
+    bottom: 40rpx;
+    /* 距离底部的距离 */
+    right: 20rpx;
+    /* 距离右侧的距离 */
     display: flex;
-    gap: 10rpx;  /* 按钮之间的间距 */
-  }
-  
-  /* 出价按钮 */
-  .bidding-button {
+    gap: 10rpx;
+    /* 按钮之间的间距 */
+}
+
+/* 出价按钮 */
+.bidding-button {
     max-width: 240rpx;
     height: 80rpx;
     background-color: skyblue;
@@ -90,10 +94,10 @@
     border-radius: 20rpx;
     font-size: 18px;
     transition: background-color 0.3s ease;
-  }
-  
-  /* 接单按钮 */
-  .accept-button {
+}
+
+/* 接单按钮 */
+.accept-button {
     max-width: 240rpx;
     height: 80rpx;
     background-color: #FF416C;
@@ -101,18 +105,18 @@
     border-radius: 20rpx;
     font-size: 18px;
     transition: background-color 0.3s ease;
-  }
-  
-  
+}
 
-  /* 任务详情页面 */
+
+
+/* 任务详情页面 */
 .task-detail-container {
     padding: 20rpx;
-  }
-  
-  
+}
 
-  .popup-mask {
+
+
+.popup-mask {
     position: fixed;
     left: 0;
     top: 0;
@@ -123,82 +127,83 @@
     display: flex;
     justify-content: center;
     align-items: center;
-  }
-  
-  .popup-box {
+}
+
+.popup-box {
     width: 600rpx;
     background-color: #fff;
     border-radius: 20rpx;
     padding: 30rpx;
     box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.2);
-  }
-  
-  .popup-title {
+}
+
+.popup-title {
     font-size: 32rpx;
     font-weight: bold;
     margin-bottom: 20rpx;
     color: #333;
-  }
-  
-  .popup-textarea {
+}
+
+.popup-textarea {
+    width: 90%;
     height: 160rpx;
     border: 1rpx solid #ccc;
     padding: 20rpx;
     border-radius: 10rpx;
     margin-bottom: 20rpx;
-  }
-  
-  .popup-price {
-    width: 100%;
+}
+
+.popup-price {
+    width: 90%;
     border: 1rpx solid #ccc;
     padding: 20rpx;
     border-radius: 10rpx;
     margin-bottom: 20rpx;
-  }
-  
-  .popup-buttons {
+}
+
+.popup-buttons {
     display: flex;
     justify-content: space-between;
-  }
-  
-  .popup-btn {
+}
+
+.popup-btn {
     width: 45%;
-  }
-  
-  .cancel {
+}
+
+.cancel {
     background-color: #ccc;
     color: white;
-  }
-  
-  .confirm {
+}
+
+.confirm {
     background-color: #07c160;
     color: white;
-  }
+}
 
-  .comment-section {
+.comment-section {
     padding: 20rpx;
-  
+
     .section-title {
-      font-size: 32rpx;
-      font-weight: bold;
-      margin-bottom: 20rpx;
-      color: #333;
+        font-size: 32rpx;
+        font-weight: bold;
+        margin-bottom: 20rpx;
+        color: #333;
     }
-  
+
     .comment-card {
-      background: #fff;
-      padding: 20rpx;
-      border-radius: 12rpx;
-      box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.05);
-      margin-bottom: 20rpx;
+        background: #fff;
+        padding: 20rpx;
+        border-radius: 12rpx;
+        box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.05);
+        margin-bottom: 20rpx;
     }
-  
+
     .comment-header {
-      display: flex;
-      align-items: center;
-      margin-bottom: 10rpx;
+        display: flex;
+        align-items: center;
+        margin-bottom: 10rpx;
     }
-  
+
     .comment-avatar {
         width: 80rpx;
         height: 80rpx;
@@ -206,39 +211,39 @@
         margin-right: 20rpx;
         overflow: hidden;
     }
-  
+
     .comment-user {
-      display: flex;
-      justify-content: space-between;
-      width: 100%;
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
     }
-  
+
     .username {
-      font-size: 28rpx;
-      font-weight: 600;
+        font-size: 28rpx;
+        font-weight: 600;
     }
-  
+
     .price {
-      font-size: 26rpx;
-      color: #e91e63;
+        font-size: 26rpx;
+        color: #e91e63;
     }
-  
+
     .comment-content {
-      font-size: 28rpx;
-      color: #444;
-      margin-top: 10rpx;
+        font-size: 28rpx;
+        color: #444;
+        margin-top: 10rpx;
     }
-  
+
     .comment-time {
-      font-size: 24rpx;
-      color: #999;
-      margin-top: 6rpx;
+        font-size: 24rpx;
+        color: #999;
+        margin-top: 6rpx;
     }
-  
+
     .empty-comment {
-      color: #aaa;
-      font-size: 26rpx;
-      text-align: center;
-      margin-top: 40rpx;
+        color: #aaa;
+        font-size: 26rpx;
+        text-align: center;
+        margin-top: 40rpx;
     }
-  }
+}

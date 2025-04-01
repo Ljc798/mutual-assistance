@@ -3,18 +3,21 @@
     <view class="section">
         <text class="label">头像</text>
         <view class="avatar-picker" bindtap="chooseAvatar">
-            <image class="avatar-img" src="{{avatarFilePath}}" />
+            <image class="avatar-img" src="{{avatarFilePath}}" mode="aspectFill" />
         </view>
     </view>
 
     <view class="section">
-        <text class="label">姓名</text>
-        <input class="input-field" placeholder="请输入您的姓名(3-10个字符)" value="{{tempUserInfo.username}}" bindinput="updateUsername"/>
+        <text class="label">姓名<text style="color: #333; font-weight: 400;"> (3-10字符)</text></text>
+        <input class="input-field" placeholder="请输入您的姓名(3-10个字符)" value="{{tempUserInfo.username}}" bindinput="updateUsername" bindblur="checkUsername" />
     </view>
 
-    <view class="section">
-        <text class="label">用户 ID</text>
-        <input class="input-field" placeholder="请输入您的id(8-15个字符)" value="{{tempUserInfo.wxid}}" bindinput="updateWxid"/>
+    <view class="section input-with-clear">
+        <text class="label">用户 ID<text style="color: #333; font-weight: 400;"> (8-15字符)</text></text>
+        <view class="input-wrapper">
+            <input class="input-field" placeholder="请输入您的id(8-15个字符)" value="{{tempUserInfo.wxid}}" bindinput="updateWxid" bindblur="checkWxid" />
+            <image src="/assets/icons/clear-circle-svgrepo-com.svg" class="clear-icon" wx:if="{{tempUserInfo.wxid}}" bindtap="clearWxidInput" />
+        </view>
     </view>
 
     <button class="save-btn" bindtap="saveChanges">保存修改</button>

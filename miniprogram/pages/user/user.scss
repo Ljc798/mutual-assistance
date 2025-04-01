@@ -28,6 +28,7 @@
     height: 120rpx;
     border-radius: 50%;
     border: 2rpx solid #ffb6c1;
+    object-fit: cover; /* 关键：按比例裁剪居中 */
   }
   
   .avatar-text {

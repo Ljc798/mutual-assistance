@@ -6,7 +6,7 @@
     <!-- 个人信息区域 -->
     <view class="user-info" bindtap="goToEditProfile">
         <view class="avatar">
-            <image src="{{userInfo.avatar_url}}" class="avatar-img" />
+            <image src="{{userInfo.avatar_url}}" class="avatar-img" mode="aspectFill" />
         </view>
         <view class="info">
             <text class="user-name">{{userInfo.username}}</text>
@@ -30,22 +30,22 @@
     </view>
 
     <view class="vip-card" wx:if="{{isVip}}">
-  <image class="vip-badge" src="/assets/icons/huiyuanVIP.svg" />
-  <view class="vip-info">
-    <text class="vip-label">VIP 用户</text>
-    <text class="vip-expire">到期时间：{{vip_expire_time}}</text>
-  </view>
-  <button class="vip-renew-btn" size="mini" bindtap="goToVipPage">续 费</button>
-</view>
+        <image class="vip-badge" src="/assets/icons/huiyuanVIP.svg" />
+        <view class="vip-info">
+            <text class="vip-label">VIP 用户</text>
+            <text class="vip-expire">到期时间：{{vip_expire_time}}</text>
+        </view>
+        <button class="vip-renew-btn" size="mini" bindtap="goToVipPage">续 费</button>
+    </view>
 
-<!-- 非 VIP 展示普通盒子 -->
-<view class="vip-box" wx:else>
-  <view class="vip-status">
-    <image src="/assets/icons/huiyuanVIP-2.svg" class="vip-icon" />
-    <text>当前不是 VIP 用户</text>
-  </view>
-  <button class="vip-btn" size="mini" bindtap="goToVipPage">立即开通</button>
-</view>
+    <!-- 非 VIP 展示普通盒子 -->
+    <view class="vip-box" wx:else>
+        <view class="vip-status">
+            <image src="/assets/icons/huiyuanVIP-2.svg" class="vip-icon" />
+            <text>当前不是 VIP 用户</text>
+        </view>
+        <button class="vip-btn" size="mini" bindtap="goToVipPage">立即开通</button>
+    </view>
     <!-- 我的订单，我的空间，意见反馈 -->
     <view class="action-box">
         <view class="action-item" bindtap="handleOrderClick">

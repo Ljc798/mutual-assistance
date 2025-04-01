@@ -48,7 +48,7 @@ Page({
                         });
 
                         const targetPage = res.data.isNewUser
-                            ? "/pages/edit-profile/edit-profile"
+                            ? "/pages/edit-profile/edit-profile?new=1"
                             : "/pages/home/home";
 
                         wx.redirectTo({ url: targetPage });
