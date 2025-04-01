@@ -75,10 +75,7 @@
                     <image class="comment-avatar" src="{{item.avatar_url}}" mode="aspectFill" />
                     <view class="comment-content">
                         <view class="comment-main">
-                            <view class="username-area">
-                                <text class="comment-username {{item.isVip ? 'vip-username' : ''}}">{{item.username}}</text>
-                                <image wx:if="{{item.isVip}}" src="/assets/icons/vip-2.svg" class="vip-badge" />
-                            </view>
+                            <text class="comment-username {{item.isVip ? 'vip-username' : ''}}">{{item.username}}</text>
                             <text class="comment-text">{{item.content}}</text>
                             <view class="comment-row">
                                 <text class="comment-time">{{item.created_time}}</text>
@@ -101,12 +98,7 @@
                                 <view class="sub-comment-content">
                                     <view class="comment-main">
                                         <view class="comment-header">
-                                            <view class="username-area">
-                                                <text class="comment-username {{item.isVip ? 'vip-username' : ''}}">
-                                                    {{item.username}} 回复 {{item.reply_to_username}}
-                                                </text>
-                                                <image wx:if="{{item.isVip}}" src="/assets/icons/vip-2.svg" class="vip-badge" />
-                                            </view>
+                                            <text class="comment-username {{item.isVip ? 'vip-username' : ''}}">{{item.username}} 回复 {{item.reply_to_username}}</text>
                                         </view>
                                         <text class="comment-text">{{item.content}}</text>
                                         <view class="comment-row">
