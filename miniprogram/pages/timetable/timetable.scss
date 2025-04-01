@@ -400,3 +400,9 @@
     font-size: 20rpx;
     color: #999;
   }
+
+  .swipe-wrapper {
+    height: 80vh;
+    position: relative;
+    z-index: 1;
+  }

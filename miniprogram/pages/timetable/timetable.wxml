@@ -38,55 +38,61 @@
     </view>
 
     <!-- 课程列表 -->
-    <view class="course-list" wx:if="{{selectedTab === 'daily'}}" bindtouchstart="handleTouchStart" bindtouchend="handleTouchEnd">
-        <!-- 日期选择 & 编辑菜单 -->
-        <view class="date-selector">
-            <text class="day-of-week">{{dayOfWeek}}</text>
-            <picker mode="date" value="{{selectedDate}}" bindchange="onDateChange">
-                <text class="selected-date">{{selectedDate}}</text>
-            </picker>
-            <image class="menu-icon" src="/assets/icons/menu-dots-svgrepo-com.svg" bindtap="openMenu" />
-        </view>
+    <view class="course-list" wx:if="{{selectedTab === 'daily'}}">
+        <view class="swipe-wrapper" bindtouchstart="handleTouchStart" bindtouchend="handleTouchEnd">
+            <!-- 日期选择 & 编辑菜单 -->
+            <view class="date-selector">
+                <text class="day-of-week">{{dayOfWeek}}</text>
+                <picker mode="date" value="{{selectedDate}}" bindchange="onDateChange">
+                    <text class="selected-date">{{selectedDate}}</text>
+                </picker>
+                <image class="menu-icon" src="/assets/icons/menu-dots-svgrepo-com.svg" bindtap="openMenu" />
+            </view>
 
-        <!-- 如果今天没课，显示休息提示 -->
-        <view wx:if="{{noClassesToday}}" class="no-class-box">
-            🎉 今天没课，快去玩吧 😎
-        </view>
-        <view wx:if="{{hasPractice}}" class="practice-alert">
-            🔔 本周有实践课
-            <text class="practice-detail" bindtap="viewPracticeDetails">查看详情</text>
-        </view>
+            <view wx:if="{{!timetableConfigLoaded}}" class="config-tip">
+                📌 请先点击右上角菜单进行课表配置，再点击导入课表
+            </view>
+
+            <!-- 如果今天没课，显示休息提示 -->
+            <view wx:if="{{noClassesToday}}" class="no-class-box">
+                🎉 今天没课，快去玩吧 😎
+            </view>
+            <view wx:if="{{hasPractice}}" class="practice-alert">
+                🔔 本周有实践课
+                <text class="practice-detail" bindtap="viewPracticeDetails">查看详情</text>
+            </view>
 
 
-        <!-- 课程列表 -->
-        <view wx:if="{{!noClassesToday}}" class="course-list">
-            <block wx:for="{{courses}}" wx:key="index">
-                <view class="course-item" bindtap="goToCourseDetail" data-course-id="{{item.id}}">
-                    <!-- 左侧时间 -->
-                    <view class="course-time">
-                        <text class="start-time">{{item.time_start}}</text>
-                        <text class="time-separator">~</text>
-                        <text class="end-time">{{item.time_end}}</text>
-                    </view>
-
-                    <!-- 课程信息 -->
-                    <view class="course-info">
-                        <text class="course-name">{{item.course_name}}</text>
-                        <view class="course-details">
-                            <text class="course-location">{{item.location}}</text>
-                            <text class="course-teacher">{{item.teacher}}</text>
+            <!-- 课程列表 -->
+            <view wx:if="{{!noClassesToday}}" class="course-list">
+                <block wx:for="{{courses}}" wx:key="index">
+                    <view class="course-item" bindtap="goToCourseDetail" data-course-id="{{item.id}}">
+                        <!-- 左侧时间 -->
+                        <view class="course-time">
+                            <text class="start-time">{{item.time_start}}</text>
+                            <text class="time-separator">~</text>
+                            <text class="end-time">{{item.time_end}}</text>
                         </view>
-                    </view>
 
-                    <!-- 右侧状态灯 -->
-                    <view class="status-light {{item.status}}"></view>
-                </view>
-            </block>
+                        <!-- 课程信息 -->
+                        <view class="course-info">
+                            <text class="course-name">{{item.course_name}}</text>
+                            <view class="course-details">
+                                <text class="course-location">{{item.location}}</text>
+                                <text class="course-teacher">{{item.teacher}}</text>
+                            </view>
+                        </view>
+
+                        <!-- 右侧状态灯 -->
+                        <view class="status-light {{item.status}}"></view>
+                    </view>
+                </block>
+            </view>
         </view>
     </view>
 
     <!-- 周课表 -->
-    <view wx:if="{{selectedTab === 'weekly'}}" class="weekly-container">
+    <view wx:if="{{selectedTab === 'weekly'}}" class="weekly-container" bindtouchstart="handleTouchStart" bindtouchend="handleTouchEnd">
 
         <!-- 顶部日期栏 -->
         <view class="week-header">

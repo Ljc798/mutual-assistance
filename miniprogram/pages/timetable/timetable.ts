@@ -10,22 +10,6 @@ const dayMap = {
     "周日": 7
 };
 
-const defaultTimetableConfig = {
-    start_date: "2024-02-17", // 例如春季开学日
-    total_weeks: 16,
-    class_duration: 45,
-    period_1: "08:00",
-    period_2: "08:50",
-    period_3: "10:15",
-    period_4: "11:05",
-    period_5: "14:00",
-    period_6: "14:50",
-    period_7: "15:55",
-    period_8: "16:45",
-    period_9: "19:00",
-    period_10: "19:50"
-};
-
 Page({
     data: {
         selectedTab: "daily", // 默认日课表
@@ -55,55 +39,43 @@ Page({
         const userId = app.globalData.userInfo.id;
         this.setData({ userId });
 
-
-
-        // ✅ 获取配置后再执行逻辑
-        // ✅ 获取配置后再执行逻辑
         wx.request({
             url: `${API_BASE_URL}/get-timetable-config`,
             method: "GET",
             data: { user_id: userId },
             success: (res) => {
-                let config;
-
                 if (res.data.success && res.data.data) {
-                    config = res.data.data;
-                } else {
-                    console.warn("⚠️ 获取失败或用户未配置，使用默认配置");
-                    config = defaultTimetableConfig;
-                }
+                    const config = res.data.data;
+                    getApp().globalData.timetableConfig = config;
 
-                getApp().globalData.timetableConfig = config;
+                    const totalWeeks = config.total_weeks;
+                    const weeksRange = Array.from({ length: totalWeeks }, (_, i) => `第${i + 1}周`);
 
-                const totalWeeks = config.total_weeks;
-                const weeksRange = Array.from({ length: totalWeeks }, (_, i) => `第${i + 1}周`);
-
-                this.setData({ weeksRange }, () => {
-                    this.computeDateInfo(new Date(), () => {
-                        this.loadCourses();
-                        this.loadPracticeCourses();
+                    this.setData({ weeksRange }, () => {
+                        this.computeDateInfo(new Date(), () => {
+                            this.loadCourses();
+                            this.loadPracticeCourses();
+                        });
+                        this.getWeekDates(this.data.currentWeek);
+                        this.loadWeeklyCourses();
                     });
-                    this.getWeekDates(this.data.currentWeek);
-                    this.loadWeeklyCourses();
-                });
+
+                } else {
+                    // ✅ 用户未配置，弹窗提示
+                    wx.showModal({
+                        title: "首次使用提醒",
+                        content: "请先点击右上角三个点中的【设置】进行课表配置，再点击【导入课表】进行导入哦～",
+                        showCancel: false
+                    });
+                }
+                this.setData({ timetableConfigLoaded: true });
             },
             fail: (err) => {
-                console.error("❌ 请求失败，使用默认配置", err);
-
-                // 🚨 网络失败也要兜底配置
-                const config = defaultTimetableConfig;
-                getApp().globalData.timetableConfig = config;
-
-                const totalWeeks = config.total_weeks;
-                const weeksRange = Array.from({ length: totalWeeks }, (_, i) => `第${i + 1}周`);
-
-                this.setData({ weeksRange }, () => {
-                    this.computeDateInfo(new Date(), () => {
-                        this.loadCourses();
-                        this.loadPracticeCourses();
-                    });
-                    this.getWeekDates(this.data.currentWeek);
-                    this.loadWeeklyCourses();
+                console.error("❌ 网络请求失败", err);
+                wx.showModal({
+                    title: "网络错误",
+                    content: "获取课表配置失败，请检查网络连接",
+                    showCancel: false
                 });
             }
         });
@@ -363,16 +335,23 @@ Page({
     // 切换到日课表
     switchToDaily() {
         this.setData({ selectedTab: "daily" });
-        // 重新加载日课表数据（必要时）
-        this.loadCourses();
-        this.loadPracticeCourses();
+
+        // 重新计算今天是第几周、周几，再加载对应课程
+        this.computeDateInfo(new Date(), () => {
+            this.loadCourses();
+            this.loadPracticeCourses();
+        });
     },
 
     // 切换到周课表
     switchToWeekly() {
         this.setData({ selectedTab: "weekly" });
-        this.getWeekDates(this.data.currentWeek);  // 计算这周日期
-        this.loadWeeklyCourses();                  // 加载这周所有课程
+
+        // 重新计算当前是第几周，刷新周课表数据
+        this.computeDateInfo(new Date(), () => {
+            this.getWeekDates(this.data.currentWeek);  // 计算这周的 7 天
+            this.loadWeeklyCourses();                  // 拉取这周课程
+        });
     },
 
 
@@ -607,14 +586,12 @@ Page({
         this.setData({ weeklyTimetable });
     },
 
-    // 记录手指按下的位置
     handleTouchStart(e: any) {
         this.setData({
             touchStartX: e.touches[0].clientX,
         });
     },
 
-    // 手指离开时计算滑动方向
     handleTouchEnd(e: any) {
         const touchEndX = e.changedTouches[0].clientX;
         const deltaX = touchEndX - this.data.touchStartX;
@@ -623,27 +600,56 @@ Page({
         if (Math.abs(deltaX) < 50) return;
 
         if (deltaX > 0) {
-            // 👉 右滑，切换到前一天
-            this.changeDateByOffset(-1);
+            // 👉 右滑
+            if (this.data.selectedTab === "daily") {
+                this.changeDateByOffset(-1);
+            } else if (this.data.selectedTab === "weekly") {
+                this.changeWeekByOffset(-1);
+            }
         } else {
-            // 👈 左滑，切换到后一天
-            this.changeDateByOffset(1);
+            // 👈 左滑
+            if (this.data.selectedTab === "daily") {
+                this.changeDateByOffset(1);
+            } else if (this.data.selectedTab === "weekly") {
+                this.changeWeekByOffset(1);
+            }
         }
     },
 
-    // 根据偏移量切换日期
     changeDateByOffset(offset: number) {
         const currentDate = new Date(this.data.selectedDate);
         currentDate.setDate(currentDate.getDate() + offset);
 
         const nextDateStr = currentDate.toISOString().split("T")[0];
 
-        this.setData({
-            selectedDate: nextDateStr,
+        // ✅ 计算日期对应的周次和周几
+        this.computeDateInfo(nextDateStr, () => {
+            this.loadCourses();
+            this.loadPracticeCourses();
         });
-
-        // 重新拉取当天课程（你原来的方法）
-        this.loadDailyCourses(nextDateStr);
     },
 
+    changeWeekByOffset(offset: number) {
+        let newWeek = this.data.currentWeek + offset;
+
+        const maxWeeks = getApp().globalData.timetableConfig?.total_weeks || 20;
+
+        // 防御，限制范围
+        if (newWeek < 1) newWeek = 1;
+        if (newWeek > maxWeeks) newWeek = maxWeeks;
+
+        if (newWeek === 1 && offset < 0) {
+            wx.showToast({ title: "已经是第一周啦", icon: "none" });
+        }
+        if (newWeek === maxWeeks && offset > 0) {
+            wx.showToast({ title: "已经是最后一周啦", icon: "none" });
+        }
+
+        this.setData({
+            currentWeek: newWeek
+        }, () => {
+            this.getWeekDates(newWeek);
+            this.loadWeeklyCourses();
+        });
+    }
 });
