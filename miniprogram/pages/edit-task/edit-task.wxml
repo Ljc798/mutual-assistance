@@ -1,0 +1,43 @@
+<view class="edit-task-container">
+    <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack" />
+    <view class="form-group">
+        <text class="label">标题</text>
+        <input class="input" value="{{form.title}}" data-field="title" bindinput="handleInputChange" placeholder="请输入任务标题" />
+    </view>
+
+    <view class="form-group">
+        <text class="label">酬金</text>
+        <input class="input" value="{{form.offer}}" data-field="offer" bindinput="handleInputChange" placeholder="请输入金额（元）" />
+    </view>
+
+    <view class="form-group">
+        <text class="label">截止日期</text>
+        <picker mode="date" value="{{form.DDL_date}}" bindchange="handleDateChange">
+            <view class="picker">{{form.DDL_date || "选择日期"}}</view>
+        </picker>
+    </view>
+
+    <view class="form-group">
+        <text class="label">截止时间</text>
+        <picker mode="time" value="{{form.DDL_time}}" bindchange="handleTimeChange">
+            <view class="picker">{{form.DDL_time || "选择时间"}}</view>
+        </picker>
+    </view>
+
+    <view class="form-group">
+        <text class="label">任务地址</text>
+        <input class="input" value="{{form.address}}" data-field="address" bindinput="handleInputChange" placeholder="请输入地址" />
+    </view>
+
+    <view class="form-group">
+        <text class="label">任务位置</text>
+        <input class="input" value="{{form.position}}" data-field="position" bindinput="handleInputChange" placeholder="请输入位置描述" />
+    </view>
+    
+    <view class="form-group">
+        <text class="label">任务详情</text>
+        <textarea class="textarea" value="{{form.detail}}" data-field="detail" bindinput="handleInputChange" placeholder="请输入任务描述" />
+    </view>
+
+    <button class="submit-btn" bindtap="submitEdit">保存修改</button>
+</view>

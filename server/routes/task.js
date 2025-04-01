@@ -218,70 +218,73 @@ router.get("/:taskId/bids", async (req, res) => {
     }
 });
 
-// ===== 7. 雇主指派接单人 =====
-router.post("/assign", authMiddleware, async (req, res) => {
+// ===== 7. 编辑任务 =====
+router.post("/update", authMiddleware, async (req, res) => {
     const {
-        task_id,
-        employee_id,
-        employer_id
+        id,
+        title,
+        offer,
+        detail,
+        DDL,
+        address,
+        position,
+        takeaway_name = '',
+        takeaway_tel = null,
+        takeaway_code = ''
     } = req.body;
 
-    if (!task_id || !employee_id || !employer_id) {
+    if (!id || !title || !offer || !detail || !DDL || !address || !position) {
         return res.status(400).json({
             success: false,
-            message: "缺少参数"
+            message: "缺少必要参数"
         });
     }
 
     try {
-        const [
-            [task]
-        ] = await db.query("SELECT * FROM tasks WHERE id = ?", [task_id]);
+        const sql = `
+            UPDATE tasks
+            SET 
+                title = ?,
+                offer = ?,
+                detail = ?,
+                DDL = ?,
+                address = ?,
+                position = ?,
+                takeaway_name = ?,
+                takeaway_tel = ?,
+                takeaway_code = ?
+            WHERE id = ?
+        `;
 
-        if (!task) {
+        const values = [
+            title,
+            offer,
+            detail,
+            dayjs(DDL).format("YYYY-MM-DD HH:mm:ss"),
+            address,
+            position,
+            takeaway_name,
+            takeaway_tel,
+            takeaway_code,
+            id
+        ];
+
+        const [result] = await db.query(sql, values);
+
+        if (result.affectedRows === 0) {
             return res.status(404).json({
                 success: false,
-                message: "任务不存在"
+                message: "任务不存在或未修改"
             });
         }
-
-        if (task.employer_id !== employer_id) {
-            return res.status(403).json({
-                success: false,
-                message: "无权操作该任务"
-            });
-        }
-
-        if (task.status !== 0) {
-            return res.status(400).json({
-                success: false,
-                message: "任务已被接单，无法修改"
-            });
-        }
-
-        const [bids] = await db.query(
-            "SELECT * FROM task_bids WHERE task_id = ? AND user_id = ?",
-            [task_id, employee_id]
-        );
-
-        if (bids.length === 0) {
-            return res.status(400).json({
-                success: false,
-                message: "该用户未留言，无法指派"
-            });
-        }
-
-        await db.query(
-            "UPDATE tasks SET employee_id = ?, status = 1 WHERE id = ?",
-            [employee_id, task_id]
-        );
 
         res.json({
             success: true,
-            message: "接单人指派成功"
+            message: "任务修改成功"
         });
+
     } catch (err) {
-        console.error("❌ 指派接单人失败:", err);
+        console.error("❌ 编辑任务失败:", err);
         res.status(500).json({
             success: false,
             message: "服务器错误"

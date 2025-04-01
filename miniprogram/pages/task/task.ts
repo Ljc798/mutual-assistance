@@ -7,6 +7,7 @@ Page({
         commentContent: '',
         commentPrice: '',
         bids: [],
+        isOwner: false,
     },
 
     onLoad(options: any) {
@@ -15,7 +16,6 @@ Page({
             return;
         }
 
-        console.log("✅ 详情页任务 ID:", options.taskId);
         this.loadTaskDetail(options.taskId);
         this.loadBids(options.taskId);
     },
@@ -36,11 +36,15 @@ Page({
                 const formattedDDL = this.formatTime(res.data.DDL); // 格式化DDL时间
                 const statusText = this.getStatusText(res.data.status); // 格式化状态
 
+                const app = getApp();
+            const currentUserId = app.globalData.userInfo?.id;
+            const isOwner = currentUserId === res.data.employer_id;
 
                 this.setData({
                     task: res.data,
                     formattedDDL, // 存储格式化时间
                     statusText,
+                    isOwner,
                 });
             },
             fail: (err: any) => {
@@ -55,46 +59,6 @@ Page({
     // 返回上一级
     handleBack() {
         wx.navigateBack({ delta: 1 });
-    },
-
-    // 处理接单逻辑
-    async handleAccept() {
-        const { task } = this.data;
-        const token = wx.getStorageSync("token");  // 获取 token
-        if (!token) {
-            wx.showToast({ title: "请先登录", icon: "none" });
-            return;
-        }
-
-        wx.showLoading({ title: "接单中..." });
-
-        try {
-            const res = await wx.request({
-                url: `https://mutualcampus.top/api/task/${task.id}/accept`, // API 更新任务状态
-                method: "POST",
-                header: {
-                    Authorization: `Bearer ${token}`  // 添加 token
-                },
-                success: (res: any) => {
-                    console.log("✅ 接单成功:", res.data);
-
-                    this.setData({
-                        "task.status": 1,  // 更新任务状态
-                        statusText: this.getStatusText(1), // 更新状态文本
-                    });
-
-                    wx.showToast({ title: '接单成功', icon: 'success' });
-                },
-                fail: (err: any) => {
-                    console.error("❌ 接单失败:", err);
-                    wx.showToast({ title: "接单失败", icon: "none" });
-                },
-                complete: () => wx.hideLoading(),
-            });
-        } catch (error) {
-            console.error("❌ API 请求异常:", error);
-            wx.showToast({ title: "网络异常", icon: "none" });
-        }
     },
 
     // 根据任务状态返回对应文本
@@ -138,7 +102,6 @@ Page({
             },
             success: (res) => {
                 if (res.data.success) {
-                    console.log("💬 加载留言成功:", res.data.bids);
                     this.setData({ bids: res.data.bids });
                 } else {
                     wx.showToast({ title: '留言加载失败', icon: 'none' });
@@ -183,7 +146,6 @@ Page({
             return;
         }
 
-        // ❗调用的是 /bid 接口
         wx.request({
             url: 'https://mutualcampus.top/api/task/bid',
             method: 'POST',
@@ -211,4 +173,20 @@ Page({
             }
         });
     },
+
+    goToChat(e: any) {
+        const receiverId = e.currentTarget.dataset.targetid;
+        const taskId = this.data.task.id;
+    
+        wx.navigateTo({
+            url: `/pages/chat/chat?receiver_id=${receiverId}&task_id=${taskId}`
+        });
+    },
+
+    editTask() {
+        const { task } = this.data;
+        wx.navigateTo({
+          url: `/pages/edit-task/edit-task?taskId=${task.id}`,
+        });
+      }
 });

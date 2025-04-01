@@ -182,68 +182,85 @@
 
 .comment-section {
     padding: 20rpx;
+}
 
-    .section-title {
-        font-size: 32rpx;
-        font-weight: bold;
-        margin-bottom: 20rpx;
-        color: #333;
-    }
+.section-title {
+    font-size: 32rpx;
+    font-weight: bold;
+    margin-bottom: 20rpx;
+    color: #333;
+}
 
-    .comment-card {
-        background: #fff;
-        padding: 20rpx;
-        border-radius: 12rpx;
-        box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.05);
-        margin-bottom: 20rpx;
-    }
+.comment-card {
+    background: #fff;
+    padding: 20rpx;
+    border-radius: 12rpx;
+    box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.05);
+    margin-bottom: 20rpx;
+}
 
-    .comment-header {
-        display: flex;
-        align-items: center;
-        margin-bottom: 10rpx;
-    }
+.comment-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10rpx;
+}
 
-    .comment-avatar {
-        width: 80rpx;
-        height: 80rpx;
-        border-radius: 50%;
-        margin-right: 20rpx;
-        overflow: hidden;
-    }
+.comment-avatar {
+    width: 80rpx;
+    height: 80rpx;
+    border-radius: 50%;
+    margin-right: 20rpx;
+    overflow: hidden;
+}
 
-    .comment-user {
-        display: flex;
-        justify-content: space-between;
-        width: 100%;
-    }
+.comment-user {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
 
-    .username {
-        font-size: 28rpx;
-        font-weight: 600;
-    }
+.username {
+    font-size: 28rpx;
+    font-weight: 600;
+}
 
-    .price {
-        font-size: 26rpx;
-        color: #e91e63;
-    }
+.price {
+    font-size: 26rpx;
+    color: #e91e63;
+}
 
-    .comment-content {
-        font-size: 28rpx;
-        color: #444;
-        margin-top: 10rpx;
-    }
+.comment-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 28rpx;
+    color: #444;
+    margin-top: 10rpx;
+}
 
-    .comment-time {
-        font-size: 24rpx;
-        color: #999;
-        margin-top: 6rpx;
-    }
+.comment-content text {
+    flex: 1;
+    margin-right: 20rpx;
+    word-break: break-word;
+}
 
-    .empty-comment {
-        color: #aaa;
-        font-size: 26rpx;
-        text-align: center;
-        margin-top: 40rpx;
-    }
+.chat-button {
+    font-size: 26rpx;
+    max-width: 180rpx;
+    background-color: #4fc3f7;
+    color: white;
+    border-radius: 30rpx;
+}
+
+.comment-time {
+    font-size: 24rpx;
+    color: #999;
+    margin-top: 6rpx;
+}
+
+.empty-comment {
+    color: #aaa;
+    font-size: 26rpx;
+    text-align: center;
+    margin-top: 40rpx;
 }

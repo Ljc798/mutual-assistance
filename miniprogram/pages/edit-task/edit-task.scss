@@ -1,0 +1,57 @@
+.edit-task-container {
+  padding: 180rpx 30rpx 130rpx 30rpx;
+  background: #f9f9f9;
+}
+
+.form-group {
+  margin-bottom: 30rpx;
+  width: 80%;
+}
+
+.label {
+  font-size: 28rpx;
+  color: #333;
+  margin-bottom: 10rpx;
+  display: block;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  padding: 20rpx;
+  font-size: 28rpx;
+  background: #fff;
+  border: 1rpx solid #ddd;
+  border-radius: 12rpx;
+}
+
+.textarea {
+  height: 160rpx;
+  resize: none;
+}
+
+.picker {
+  padding: 20rpx;
+  background: #fff;
+  border: 1rpx solid #ddd;
+  border-radius: 12rpx;
+}
+
+.submit-btn {
+  width: 100%;
+  background-color: #ff69b4;
+  color: white;
+  padding: 20rpx 0;
+  font-size: 30rpx;
+  border-radius: 16rpx;
+  margin-top: 40rpx;
+}
+
+.back-btn {
+    position: absolute;
+    top: 110rpx;
+    left: 20rpx;
+    width: 50rpx;
+    height: 50rpx;
+    margin-right: 20rpx;
+}
