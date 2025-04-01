@@ -33,13 +33,14 @@ router.post("/create", authMiddleware, async (req, res) => {
         employer_id, employee_id, category, status,
         position, address, DDL, title, offer, detail,
         takeaway_code, takeaway_tel, takeaway_name
-      ) VALUES (?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
         const values = [
             employer_id,
             null,
             category,
+            0,
             position,
             address,
             dayjs(DDL).format("YYYY-MM-DD HH:mm:ss"),
