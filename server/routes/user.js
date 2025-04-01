@@ -51,6 +51,7 @@ router.post("/phone-login", async (req, res) => {
         );
 
         let user;
+        let isNewUser = false;
         if (results.length > 0) {
             user = results[0];
         } else {

@@ -8,6 +8,7 @@ Page({
         commentPrice: '',
         bids: [],
         isOwner: false,
+        isAuthorizedUser: false,
     },
 
     onLoad(options: any) {
@@ -18,6 +19,9 @@ Page({
 
         this.loadTaskDetail(options.taskId);
         this.loadBids(options.taskId);
+    },
+    onshow(options: any) {
+        this.loadTaskDetail(options.taskId);
     },
 
     async loadTaskDetail(taskId: string) {
@@ -37,14 +41,19 @@ Page({
                 const statusText = this.getStatusText(res.data.status); // 格式化状态
 
                 const app = getApp();
-            const currentUserId = app.globalData.userInfo?.id;
-            const isOwner = currentUserId === res.data.employer_id;
+                const currentUserId = app.globalData.userInfo?.id;
+                const isOwner = currentUserId === res.data.employer_id;
+                const isAuthorizedUser = (
+                    currentUserId === res.data.employer_id ||
+                    currentUserId === res.data.employee_id
+                );
 
                 this.setData({
                     task: res.data,
                     formattedDDL, // 存储格式化时间
                     statusText,
                     isOwner,
+                    isAuthorizedUser,
                 });
             },
             fail: (err: any) => {
@@ -177,7 +186,7 @@ Page({
     goToChat(e: any) {
         const receiverId = e.currentTarget.dataset.targetid;
         const taskId = this.data.task.id;
-    
+
         wx.navigateTo({
             url: `/pages/chat/chat?receiver_id=${receiverId}&task_id=${taskId}`
         });
@@ -186,7 +195,7 @@ Page({
     editTask() {
         const { task } = this.data;
         wx.navigateTo({
-          url: `/pages/edit-task/edit-task?taskId=${task.id}`,
+            url: `/pages/edit-task/edit-task?taskId=${task.id}`,
         });
-      }
+    }
 });

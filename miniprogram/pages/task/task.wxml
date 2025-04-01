@@ -21,15 +21,17 @@
         <!-- 根据任务类型显示不同的内容 -->
         <view wx:if="{{task.category === '代拿快递'}}" class="task-detail-item">
             <text class="label">快递单号：</text>
-            <text>{{task.takeaway_code}}</text>
+            <text>{{isAuthorizedUser ? task.takeaway_code : 'xxxx(仅对接单人可见)'}}</text>
         </view>
+
         <view wx:if="{{task.category === '代拿外卖'}}" class="task-detail-item">
             <text class="label">外卖姓名：</text>
-            <text>{{task.takeaway_name}}</text>
+            <text>{{isAuthorizedUser ? task.takeaway_name : 'xxxx(仅对接单人可见)'}}</text>
         </view>
+
         <view wx:if="{{task.category === '代拿外卖'}}" class="task-detail-item">
             <text class="label">手机尾号：</text>
-            <text>{{task.takeaway_tel}}</text>
+            <text>{{isAuthorizedUser ? task.takeaway_tel : 'xxxx(仅对接单人可见)'}}</text>
         </view>
     </view>
 
