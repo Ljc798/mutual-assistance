@@ -197,6 +197,8 @@ Page({
 
         const payload = {
             employer_id: user_id,
+            employee_id: null,
+            status: 0,
             category: selectedCategory,
             position,
             address,
