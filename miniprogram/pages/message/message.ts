@@ -1,67 +1,81 @@
-interface Message {
-    from_id: number;
-    to_id: number;
-    content: string;
-    timestamp: string;
-    is_read: boolean;
-  }
-  
-  interface ChatHistory {
-    [targetUserId: string]: Message[]; // 每个聊天对象一组消息
-  }
+interface ChatItem {
+    target_id: number;
+    username: string;
+    avatar_url: string;
+    last_msg: string;
+    last_time: string;
+    unread: number;
+}
 
-  Page({
+Page({
     data: {
-      chatList: [],
-      userId: null,
+        chatList: [],
+        userId: null,
     },
-  
+
     onLoad() {
-      const app = getApp();
-      const userId = app.globalData.userInfo?.id;
-  
-      if (!userId) {
-        wx.showToast({ title: "请先登录", icon: "none" });
-        return;
-      }
-  
-      this.setData({ userId });
-      this.loadChatList();
-    },
-  
-    onShow() {
-      this.loadChatList();
-    },
-  
-    loadChatList() {
-      const chatHistory = wx.getStorageSync("chatHistory") || {};
-      const chatList = [];
-  
-      for (const targetId in chatHistory) {
-        const messages = chatHistory[targetId];
-        if (messages && messages.length > 0) {
-          const lastMsg = messages[messages.length - 1];
-          const unreadCount = messages.filter(msg => !msg.is_read && msg.to_id === this.data.userId).length;
-  
-          chatList.push({
-            target_id: parseInt(targetId),
-            last_message: lastMsg.content,
-            timestamp: lastMsg.timestamp,
-            unread: unreadCount,
-          });
+        const app = getApp();
+        const userId = app.globalData.userInfo?.id;
+
+        if (!userId) {
+            wx.showToast({ title: "请先登录", icon: "none" });
+            return;
         }
-      }
-  
-      // 按时间倒序排列
-      chatList.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-  
-      this.setData({ chatList });
+
+        this.setData({ userId });
+        this.loadChatList();
     },
-  
+
+    onShow() {
+        this.loadChatList(); // 返回时刷新
+    },
+
+    loadChatList() {
+        const token = wx.getStorageSync("token");
+        if (!token) {
+            wx.showToast({ title: "未登录", icon: "none" });
+            return;
+        }
+
+        wx.request({
+            url: `https://mutualcampus.top/api/messages/list?userId=${this.data.userId}`,
+            method: "GET",
+            header: {
+                Authorization: `Bearer ${token}`
+            },
+            success: (res) => {
+                if (res.data.success) {
+                    const raw = res.data.chats;
+
+                    // 提取目标用户 id（不是自己的那一方）
+                    const chatList = raw.map(msg => {
+                        const isSender = msg.sender_id === this.data.userId;
+                        const target_id = isSender ? msg.receiver_id : msg.sender_id;
+                        return {
+                            target_id,
+                            username: msg.sender_name,
+                            avatar_url: msg.sender_avatar,
+                            last_message: msg.content,
+                            timestamp: msg.created_time,
+                            unread: msg.is_read ? 0 : 1 // 暂时不做累计未读数
+                        };
+                    });
+
+                    this.setData({ chatList });
+                } else {
+                    wx.showToast({ title: res.data.message || "加载失败", icon: "none" });
+                }
+            },
+            fail: () => {
+                wx.showToast({ title: "网络错误", icon: "none" });
+            }
+        });
+    },
+
     goToChat(e) {
-      const targetId = e.currentTarget.dataset.targetid;
-      wx.navigateTo({
-        url: `/pages/chat/chat?target_id=${targetId}`
-      });
-    },
-  });
+        const targetId = e.currentTarget.dataset.targetid;
+        wx.navigateTo({
+            url: `/pages/chat/chat?targetId=${targetId}`
+        });
+    }
+});

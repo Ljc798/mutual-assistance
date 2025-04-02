@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const http = require("http");
 const WebSocket = require("ws");
+const dayjs = require("dayjs");
 
 const taskRouter = require("./routes/task");
 const userRouter = require("./routes/user");
@@ -11,6 +12,7 @@ const checkinsRouter = require("./routes/checkins");
 const shopRouter = require("./routes/shop");
 const timetableRouter = require("./routes/timetable");
 const timetableConfigRouter = require("./routes/timetableConfig");
+const messagesRouter = require("./routes/messages");
 
 const app = express();
 const server = http.createServer(app);
@@ -33,6 +35,7 @@ app.use("/api/checkins", checkinsRouter);
 app.use("/api/shop", shopRouter);
 app.use("/api/timetable", timetableRouter);
 app.use("/api/timetableConfig", timetableConfigRouter);
+app.use("/api/messages", messagesRouter);
 
 // =======================
 // 🌐 启动 HTTP 服务
@@ -80,7 +83,7 @@ wss.on("connection", (ws) => {
   
       // 💬 处理私聊消息
       if (type === "chat") {
-        const timestamp = new Date();
+        const timestamp = dayjs().add(8, 'hour').format("YYYY-MM-DD HH:mm:ss");
   
         // ✅ 存入数据库
         const [result] = await db.query(
@@ -104,9 +107,6 @@ wss.on("connection", (ws) => {
         if (targetSocket && targetSocket.readyState === WebSocket.OPEN) {
           targetSocket.send(JSON.stringify(messagePayload));
         }
-  
-        // ✅ 回显给自己
-        ws.send(JSON.stringify({ ...messagePayload, selfEcho: true }));
       }
     } catch (err) {
       console.error("❌ 消息处理失败:", err);

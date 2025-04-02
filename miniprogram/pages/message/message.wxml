@@ -2,16 +2,17 @@
     <view class="header">
         <view class="app-name">消息列表</view>
     </view>
-    <view class="message-list">
+    <view class="chat-list">
         <block wx:for="{{chatList}}" wx:key="target_id">
-            <view class="message-item" bindtap="goToChat" data-targetid="{{item.target_id}}">
-                <view class="message-info">
-                    <text class="user-id">用户 {{item.target_id}}</text>
-                    <text class="last-message">{{item.last_message}}</text>
+            <view class="chat-item" bindtap="goToChat" data-targetid="{{item.target_id}}">
+                <image class="avatar" src="{{item.avatar_url}}" mode="aspectFill" />
+                <view class="chat-info">
+                    <text class="username">{{item.username}}</text>
+                    <text class="last-msg">{{item.last_message}}</text>
                 </view>
-                <view class="message-meta">
+                <view class="right-info">
                     <text class="time">{{item.timestamp}}</text>
-                    <view wx:if="{{item.unread > 0}}" class="unread-badge">{{item.unread}}</view>
+                    <view wx:if="{{item.unread > 0}}" class="unread-dot">{{item.unread}}</view>
                 </view>
             </view>
         </block>
