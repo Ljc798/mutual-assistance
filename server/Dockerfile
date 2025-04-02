@@ -1,9 +1,6 @@
 # 使用 Node.js 官方镜像
 FROM node:20.18.0
 
-# 安装根证书
-RUN apt-get update && apt-get install -y ca-certificates
-
 # 设置工作目录
 WORKDIR /app
 

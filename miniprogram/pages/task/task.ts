@@ -183,14 +183,16 @@ Page({
         });
     },
 
-    goToChat(e: any) {
-        const receiverId = e.currentTarget.dataset.targetid;
-        const taskId = this.data.task.id;
-
+    goToChat(e) {
+        const targetUserId = e.currentTarget.dataset.targetid;
+        if (!targetUserId) {
+          wx.showToast({ title: "对方信息缺失", icon: "none" });
+          return;
+        }
         wx.navigateTo({
-            url: `/pages/chat/chat?receiver_id=${receiverId}&task_id=${taskId}`
+          url: `/pages/chat/chat?targetId=${targetUserId}`
         });
-    },
+      },
 
     editTask() {
         const { task } = this.data;

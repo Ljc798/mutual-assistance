@@ -13,3 +13,50 @@
     font-size: 40rpx;
     color: #222;
 }
+
+.message-list {
+    padding: 30rpx;
+  }
+  
+  .message-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1rpx solid #eee;
+    padding: 20rpx 0;
+  }
+  
+  .message-info {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .user-id {
+    font-weight: bold;
+    font-size: 30rpx;
+  }
+  
+  .last-message {
+    font-size: 26rpx;
+    color: #666;
+  }
+  
+  .message-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+  
+  .time {
+    font-size: 24rpx;
+    color: #aaa;
+  }
+  
+  .unread-badge {
+    background-color: red;
+    color: white;
+    font-size: 24rpx;
+    padding: 6rpx 14rpx;
+    border-radius: 30rpx;
+    margin-top: 8rpx;
+  }

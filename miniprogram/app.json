@@ -15,7 +15,8 @@
     "pages/timetable-config/timetable-config",
     "pages/course/course",
     "pages/shop/shop",
-    "pages/edit-task/edit-task"
+    "pages/edit-task/edit-task",
+    "pages/chat/chat"
   ],
   "window": {
     "navigationBarTextStyle": "black",
