@@ -44,48 +44,76 @@ server.listen(PORT, "0.0.0.0", () => {
 // =======================
 // 📡 WebSocket 服务逻辑
 // =======================
+const db = require("./config/db");
+
 const wss = new WebSocket.Server({ server });
 const clients = new Map(); // userId => ws
 
-wss.on("connection", (ws, req) => {
+wss.on("connection", (ws) => {
   console.log("📡 新客户端连接");
 
-  ws.on("message", (msg) => {
+  ws.on("message", async (msg) => {
     try {
       const data = JSON.parse(msg);
-      const { type, userId, targetId, content } = data;
-
-      // ✅ 初始化连接（绑定 userId）
+      const { type, sender_id, receiver_id, content } = data;
+  
+      // 🟢 初始化连接
       if (type === "init") {
-        clients.set(userId, ws);
-        ws.userId = userId;
-        console.log(`🔐 用户 ${userId} 上线`);
+        clients.set(sender_id, ws);
+        ws.userId = sender_id;
+        console.log(`✅ 用户 ${sender_id} 上线`);
+  
+        // 拉取历史记录（optional）
+        if (receiver_id) {
+          const [messages] = await db.query(
+            `SELECT * FROM messages
+             WHERE (sender_id = ? AND receiver_id = ?)
+                OR (sender_id = ? AND receiver_id = ?)
+             ORDER BY created_time ASC`,
+            [sender_id, receiver_id, receiver_id, sender_id]
+          );
+          ws.send(JSON.stringify({ type: "history", messages }));
+        }
+  
         return;
       }
-
-      // ✅ 处理私聊消息
+  
+      // 💬 处理私聊消息
       if (type === "chat") {
-        const targetSocket = clients.get(targetId);
+        const timestamp = new Date();
+  
+        // ✅ 存入数据库
+        const [result] = await db.query(
+          `INSERT INTO messages (sender_id, receiver_id, content, type, created_time, is_read) 
+           VALUES (?, ?, ?, ?, ?, 0)`,
+          [sender_id, receiver_id, content, 'text', timestamp]
+        );
+  
         const messagePayload = {
-          from: userId,
+          type: "chat",
+          id: result.insertId,
+          sender_id,
+          receiver_id,
           content,
-          time: new Date().toISOString()
+          message_type: 'text',
+          created_time: timestamp,
         };
-
-        // 如果目标在线，转发消息
+  
+        // ✅ 转发给对方
+        const targetSocket = clients.get(receiver_id);
         if (targetSocket && targetSocket.readyState === WebSocket.OPEN) {
           targetSocket.send(JSON.stringify(messagePayload));
         }
-
-        // 👉 TODO：写入数据库记录（你可以封装一个 insertChatMessage(data) 函数）
-        return;
+  
+        // ✅ 回显给自己
+        ws.send(JSON.stringify({ ...messagePayload, selfEcho: true }));
       }
-
     } catch (err) {
-      console.error("❌ 消息解析失败:", err);
+      console.error("❌ 消息处理失败:", err);
     }
   });
 
+  // 🔌 断开连接
   ws.on("close", () => {
     if (ws.userId) {
       clients.delete(ws.userId);

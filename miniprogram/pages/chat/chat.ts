@@ -8,10 +8,15 @@ Page({
       socketUrl: '',
     },
   
-    onLoad(options) {
+    onLoad(options: any) {
       const app = getApp();
       const userId = app.globalData.userInfo?.id;
       const targetId = options.targetId;
+  
+      if (!userId || !targetId) {
+        wx.showToast({ title: '聊天对象缺失', icon: 'none' });
+        return;
+      }
   
       this.setData({
         userId,
@@ -33,17 +38,30 @@ Page({
       wx.onSocketOpen(() => {
         this.setData({ socketOpen: true });
         console.log("✅ WebSocket 连接成功");
+  
+        // 主动发送身份初始化
+        wx.sendSocketMessage({
+          data: JSON.stringify({
+            type: "init",
+            userId: this.data.userId,
+            targetId: this.data.targetId,
+          })
+        });
       });
   
       wx.onSocketMessage((res) => {
         const msg = JSON.parse(res.data);
   
-        if (msg.from !== this.data.targetId && msg.from !== this.data.userId) return;
+        // 接收到的消息不属于当前会话，忽略
+        if (
+          msg.sender_id !== this.data.targetId &&
+          msg.sender_id !== this.data.userId
+        ) return;
   
         const newMessage = {
           ...msg,
-          isSelf: msg.from === this.data.userId,
-          is_read: true,
+          isSelf: msg.sender_id === this.data.userId,
+          is_read: true
         };
   
         this.setData({
@@ -58,7 +76,7 @@ Page({
       });
     },
   
-    onInput(e) {
+    onInput(e: any) {
       this.setData({ inputText: e.detail.value });
     },
   
@@ -68,10 +86,10 @@ Page({
   
       const msg = {
         type: "chat",
-        from: userId,
-        to: targetId,
+        sender_id: userId,
+        receiver_id: targetId,
         content: inputText,
-        timestamp: new Date().toISOString(),
+        created_time: new Date().toISOString(),
         is_read: false
       };
   
@@ -79,12 +97,12 @@ Page({
         wx.sendSocketMessage({
           data: JSON.stringify(msg),
           success: () => {
-            const newMsg = { ...msg, isSelf: true, is_read: true };
+            const selfMsg = { ...msg, isSelf: true, is_read: true };
             this.setData({
-              messages: [...this.data.messages, newMsg],
+              messages: [...this.data.messages, selfMsg],
               inputText: ''
             }, () => {
-              this.saveToLocalCache(newMsg);
+              this.saveToLocalCache(selfMsg);
             });
           },
           fail: (err) => {
@@ -95,20 +113,21 @@ Page({
       }
     },
   
-    loadLocalMessages(userId, targetId) {
-      const history = wx.getStorageSync("chatHistory") || {};
-      const messages = history[targetId] || [];
-      const updatedMessages = messages.map(m => ({
-        ...m,
-        isSelf: m.from === userId
+    loadLocalMessages(userId: string, targetId: string) {
+      const allHistory = wx.getStorageSync("chatHistory") || {};
+      const messages = allHistory[targetId] || [];
+  
+      const mappedMessages = messages.map((msg: any) => ({
+        ...msg,
+        isSelf: msg.sender_id === userId
       }));
   
-      this.setData({ messages: updatedMessages });
+      this.setData({ messages: mappedMessages });
     },
   
-    saveToLocalCache(message) {
+    saveToLocalCache(message: any) {
       const history = wx.getStorageSync("chatHistory") || {};
-      const key = message.to === this.data.userId ? message.from : message.to;
+      const key = message.receiver_id === this.data.userId ? message.sender_id : message.receiver_id;
   
       if (!history[key]) history[key] = [];
       history[key].push(message);
@@ -117,5 +136,9 @@ Page({
   
     onUnload() {
       wx.closeSocket();
+    },
+  
+    handleBack() {
+      wx.navigateBack({ delta: 1 });
     }
   });

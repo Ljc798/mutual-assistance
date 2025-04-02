@@ -1,22 +1,22 @@
 <view class="page">
     <view class="header">
         <view class="app-name">消息列表</view>
-        <view class="message-list">
-  <block wx:for="{{chatList}}" wx:key="target_id">
-    <view class="message-item" bindtap="goToChat" data-targetid="{{item.target_id}}">
-      <view class="message-info">
-        <text class="user-id">用户 {{item.target_id}}</text>
-        <text class="last-message">{{item.last_message}}</text>
-      </view>
-      <view class="message-meta">
-        <text class="time">{{item.timestamp}}</text>
-        <view wx:if="{{item.unread > 0}}" class="unread-badge">{{item.unread}}</view>
-      </view>
     </view>
-  </block>
-</view>
+    <view class="message-list">
+        <block wx:for="{{chatList}}" wx:key="target_id">
+            <view class="message-item" bindtap="goToChat" data-targetid="{{item.target_id}}">
+                <view class="message-info">
+                    <text class="user-id">用户 {{item.target_id}}</text>
+                    <text class="last-message">{{item.last_message}}</text>
+                </view>
+                <view class="message-meta">
+                    <text class="time">{{item.timestamp}}</text>
+                    <view wx:if="{{item.unread > 0}}" class="unread-badge">{{item.unread}}</view>
+                </view>
+            </view>
+        </block>
     </view>
 
-  <!-- 底部导航栏 -->
-  <bottom-nav></bottom-nav>
+    <!-- 底部导航栏 -->
+    <bottom-nav></bottom-nav>
 </view>

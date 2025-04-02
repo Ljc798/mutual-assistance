@@ -185,6 +185,8 @@ Page({
 
     goToChat(e) {
         const targetUserId = e.currentTarget.dataset.targetid;
+        console.log(e);
+        
         if (!targetUserId) {
           wx.showToast({ title: "对方信息缺失", icon: "none" });
           return;

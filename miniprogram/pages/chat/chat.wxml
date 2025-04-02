@@ -1,26 +1,21 @@
 <view class="chat-container">
-  <scroll-view
-    class="message-list"
-    scroll-y="true"
-    scroll-with-animation
-    scroll-top="{{scrollTop}}"
-    scroll-into-view="{{scrollIntoView}}"
-  >
-    <block wx:for="{{messages}}" wx:key="id">
-      <view class="message-item {{item.isSelf ? 'self' : 'other'}}">
-        <!-- 如果你有头像可以放开 -->
-        <!-- <image class="avatar" src="{{item.isSelf ? selfAvatar : targetAvatar}}" mode="aspectFill" /> -->
+    <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack" />
+    <scroll-view class="message-list" scroll-y="true" scroll-with-animation scroll-top="{{scrollTop}}" scroll-into-view="{{scrollIntoView}}">
+        <block wx:for="{{messages}}" wx:key="id">
+            <view class="message-item {{item.isSelf ? 'self' : 'other'}}">
+                <!-- 如果你有头像可以放开 -->
+                <!-- <image class="avatar" src="{{item.isSelf ? selfAvatar : targetAvatar}}" mode="aspectFill" /> -->
 
-        <view class="bubble">
-          <text class="msg-content">{{item.content}}</text>
-        </view>
-      </view>
-    </block>
-    <view id="bottom-anchor"></view>
-  </scroll-view>
+                <view class="bubble">
+                    <text class="msg-content">{{item.content}}</text>
+                </view>
+            </view>
+        </block>
+        <view id="bottom-anchor"></view>
+    </scroll-view>
 
-  <view class="input-bar">
-    <input class="text-input" placeholder="请输入消息" value="{{inputText}}" bindinput="onInput" />
-    <button class="send-button" bindtap="sendMessage">发送</button>
-  </view>
+    <view class="input-bar">
+        <input class="text-input" placeholder="请输入消息" value="{{inputText}}" bindinput="onInput" />
+        <button class="send-button" bindtap="sendMessage">发送</button>
+    </view>
 </view>

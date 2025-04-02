@@ -74,7 +74,7 @@
     <!-- 出价和接单按钮 -->
     <view wx:if="{{!isOwner}}" class="button-container">
         <button class="bidding-button" bindtap="openPopup">出价</button>
-        <button class="accept-button" bindtap="goToChat" data-targetid="{{item.user_id}}">聊一聊</button>
+        <button class="accept-button" bindtap="goToChat" data-targetid="{{task.employer_id}}">聊一聊</button>
     </view>
 
     <!-- ✅ 如果是自己的任务 -->
