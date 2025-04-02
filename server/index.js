@@ -58,62 +58,74 @@ wss.on("connection", (ws) => {
   ws.on("message", async (msg) => {
     try {
       const data = JSON.parse(msg);
-      const { type, sender_id, receiver_id, content } = data;
-  
-      // 🟢 初始化连接
+      const { type, userId, targetId, content } = data;
+
+      // 🟢 初始化连接：绑定当前 userId 和 ws
       if (type === "init") {
-        clients.set(sender_id, ws);
-        ws.userId = sender_id;
-        console.log(`✅ 用户 ${sender_id} 上线`);
-  
-        // 拉取历史记录（optional）
-        if (receiver_id) {
+        clients.set(userId, ws);
+        ws.userId = userId;
+        console.log(`✅ 用户 ${userId} 上线`);
+
+        // 可选：初次连接加载聊天历史
+        if (targetId) {
           const [messages] = await db.query(
             `SELECT * FROM messages
              WHERE (sender_id = ? AND receiver_id = ?)
                 OR (sender_id = ? AND receiver_id = ?)
              ORDER BY created_time ASC`,
-            [sender_id, receiver_id, receiver_id, sender_id]
+            [userId, targetId, targetId, userId]
           );
           ws.send(JSON.stringify({ type: "history", messages }));
         }
-  
+
         return;
       }
-  
-      // 💬 处理私聊消息
+
+      // 💬 接收到聊天消息
       if (type === "chat") {
         const timestamp = dayjs().add(8, 'hour').format("YYYY-MM-DD HH:mm:ss");
-  
-        // ✅ 存入数据库
+
+        // 写入数据库
         const [result] = await db.query(
-          `INSERT INTO messages (sender_id, receiver_id, content, type, created_time, is_read) 
+          `INSERT INTO messages (sender_id, receiver_id, content, type, created_time, is_read)
            VALUES (?, ?, ?, ?, ?, 0)`,
-          [sender_id, receiver_id, content, 'text', timestamp]
+          [userId, targetId, content, 'text', timestamp]
         );
-  
+
         const messagePayload = {
           type: "chat",
           id: result.insertId,
-          sender_id,
-          receiver_id,
+          sender_id: userId,
+          receiver_id: targetId,
           content,
           message_type: 'text',
-          created_time: timestamp,
+          created_time: timestamp
         };
-  
-        // ✅ 转发给对方
-        const targetSocket = clients.get(receiver_id);
+
+        // ✅ 发送给目标用户（如果在线）
+        const targetSocket = clients.get(targetId);
         if (targetSocket && targetSocket.readyState === WebSocket.OPEN) {
+          console.log(`📤 向 ${targetId} 推送消息`);
           targetSocket.send(JSON.stringify(messagePayload));
+        } else {
+          console.warn(`⚠️ 用户 ${targetId} 不在线，消息未推送`);
         }
+
+        // ✅ 回显给自己
+        ws.send(JSON.stringify({ ...messagePayload, selfEcho: true }));
       }
+
     } catch (err) {
-      console.error("❌ 消息处理失败:", err);
+      console.error("❗ 消息处理异常:", err);
+      try {
+        ws.send(JSON.stringify({ type: "error", message: "服务器处理消息失败" }));
+      } catch (e) {
+        console.error("⚠️ 无法向客户端发送错误提示", e);
+      }
     }
   });
 
-  // 🔌 断开连接
+  // 🔌 客户端断开
   ws.on("close", () => {
     if (ws.userId) {
       clients.delete(ws.userId);

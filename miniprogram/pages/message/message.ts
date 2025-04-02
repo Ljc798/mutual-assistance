@@ -44,6 +44,8 @@ Page({
                 Authorization: `Bearer ${token}`
             },
             success: (res) => {
+                console.log(res);
+
                 if (res.data.success) {
                     const raw = res.data.chats;
 
@@ -53,8 +55,8 @@ Page({
                         const target_id = isSender ? msg.receiver_id : msg.sender_id;
                         return {
                             target_id,
-                            username: msg.sender_name,
-                            avatar_url: msg.sender_avatar,
+                            username: msg.username,
+                            avatar_url: msg.avatar_url,
                             last_message: msg.content,
                             timestamp: msg.created_time,
                             unread: msg.is_read ? 0 : 1 // 暂时不做累计未读数
@@ -74,8 +76,11 @@ Page({
 
     goToChat(e) {
         const targetId = e.currentTarget.dataset.targetid;
+        const targetName = e.currentTarget.dataset.username;
+        console.log(e);
+        
         wx.navigateTo({
-            url: `/pages/chat/chat?targetId=${targetId}`
+            url: `/pages/chat/chat?targetId=${targetId}&targetName=${targetName}`
         });
     }
 });

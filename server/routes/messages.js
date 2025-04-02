@@ -35,4 +35,37 @@ router.get("/list", async (req, res) => {
       res.status(500).json({ success: false, message: "服务器异常" });
     }
   });
+
+  // 获取与某个用户的历史聊天记录
+router.get("/history", async (req, res) => {
+    const { userId, targetId } = req.query;
+  
+    if (!userId || !targetId) {
+      return res.status(400).json({
+        success: false,
+        message: "缺少 userId 或 targetId"
+      });
+    }
+  
+    try {
+      const [messages] = await db.query(
+        `SELECT *
+         FROM messages
+         WHERE (sender_id = ? AND receiver_id = ?)
+            OR (sender_id = ? AND receiver_id = ?)
+         ORDER BY created_time ASC`,
+        [userId, targetId, targetId, userId]
+      );
+  
+      res.json({ success: true, messages });
+    } catch (err) {
+      console.error("❌ 获取聊天历史失败:", err);
+      res.status(500).json({
+        success: false,
+        message: "服务器内部错误"
+      });
+    }
+  });
+
+  
 module.exports = router;

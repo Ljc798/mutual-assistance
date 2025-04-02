@@ -4,7 +4,7 @@
     </view>
     <view class="chat-list">
         <block wx:for="{{chatList}}" wx:key="target_id">
-            <view class="chat-item" bindtap="goToChat" data-targetid="{{item.target_id}}">
+            <view class="chat-item" bindtap="goToChat" data-targetid="{{item.target_id}}" data-username="{{item.username}}">
                 <image class="avatar" src="{{item.avatar_url}}" mode="aspectFill" />
                 <view class="chat-info">
                     <text class="username">{{item.username}}</text>

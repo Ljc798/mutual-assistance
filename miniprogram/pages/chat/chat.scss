@@ -1,76 +1,90 @@
-.chat-container {
+.chat-page {
     display: flex;
     flex-direction: column;
     height: 100vh;
-    background: #f5f5f5;
+    background: #f9f9f9;
   }
   
+  .chat-header {
+    height: 170rpx;
+    padding: 0 20rpx;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f55;
+    color: white;
+    font-weight: bold;
+    font-size: 34rpx;
+    box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.1);
+  }
+  
+  .chat-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 10rpx 20rpx 20rpx 20rpx;
+  }
+  
+  .chat-title {
+      margin-top: 90rpx;
+  }
+
   .message-list {
     flex: 1;
-    padding: 30rpx;
-    overflow: hidden;
   }
   
   .message-item {
     display: flex;
     margin-bottom: 20rpx;
+  }
   
-    .bubble {
-      max-width: 70%;
-      padding: 20rpx;
-      border-radius: 24rpx;
-      font-size: 30rpx;
-      line-height: 1.4;
-      word-break: break-word;
-    }
+  .message-item.other {
+    justify-content: flex-start;
+  }
   
-    &.self {
-      justify-content: flex-end;
+  .message-item.self {
+    justify-content: flex-end;
+  }
   
-      .bubble {
-        background-color: #95ec69;
-        color: #000;
-        border-bottom-right-radius: 0;
-      }
-    }
+  .bubble {
+    max-width: 60%;
+    padding: 20rpx;
+    border-radius: 24rpx;
+    font-size: 28rpx;
+    line-height: 1.5;
+    background-color: #f0f0f0;
+    word-wrap: break-word;
+  }
   
-    &.other {
-      justify-content: flex-start;
-  
-      .bubble {
-        background-color: #ffffff;
-        color: #333;
-        border-bottom-left-radius: 0;
-        box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
-      }
-    }
+  .message-item.self .bubble {
+    background-color: #a0e75a;
   }
   
   .input-bar {
     display: flex;
-    padding: 20rpx;
+    padding: 20rpx 0;
     border-top: 1rpx solid #ddd;
     background-color: #fff;
-  
-    .text-input {
-      flex: 1;
-      border: 1rpx solid #ccc;
-      border-radius: 30rpx;
-      padding: 20rpx;
-      font-size: 28rpx;
-      background-color: #fefefe;
-    }
-  
-    .send-button {
-      margin-left: 20rpx;
-      background-color: #4fc3f7;
-      color: white;
-      border-radius: 30rpx;
-      padding: 0 30rpx;
-      font-size: 28rpx;
-    }
   }
-
+  
+  .text-input {
+    flex: 1;
+    border: 1rpx solid #ccc;
+    border-radius: 20rpx;
+    padding: 12rpx 20rpx;
+    margin-right: 10rpx;
+    font-size: 28rpx;
+  }
+  
+  .send-button {
+    background-color: #1aad19;
+    color: white;
+    border: none;
+    padding: 0 30rpx;
+    border-radius: 20rpx;
+    font-size: 28rpx;
+  }
   .back-btn {
     position: absolute;
     top: 110rpx;

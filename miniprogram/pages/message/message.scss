@@ -14,49 +14,58 @@
     color: #222;
 }
 
-.message-list {
-    margin-top: 200rpx;
+.chat-list {
+    padding: 180rpx 20rpx 20rpx 20rpx;
   }
   
-  .message-item {
+  .chat-item {
+    display: flex;
+    align-items: center;
+    padding: 20rpx 0;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .avatar {
+    width: 80rpx;
+    height: 80rpx;
+    border-radius: 50%;
+    margin-right: 20rpx;
+    background-color: #f2f2f2;
+  }
+  
+  .chat-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  
+  .chat-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    border-bottom: 1rpx solid #eee;
-    padding: 20rpx 0;
+    font-size: 28rpx;
+    color: #333;
   }
   
-  .message-info {
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .user-id {
+  .name {
     font-weight: bold;
-    font-size: 30rpx;
-  }
-  
-  .last-message {
-    font-size: 26rpx;
-    color: #666;
-  }
-  
-  .message-meta {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
+    max-width: 400rpx;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   
   .time {
     font-size: 24rpx;
-    color: #aaa;
+    color: #999;
+    white-space: nowrap;
   }
   
-  .unread-badge {
-    background-color: red;
-    color: white;
-    font-size: 24rpx;
-    padding: 6rpx 14rpx;
-    border-radius: 30rpx;
-    margin-top: 8rpx;
+  .last-msg {
+    font-size: 26rpx;
+    color: #666;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-top: 6rpx;
   }
