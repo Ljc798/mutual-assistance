@@ -181,7 +181,7 @@
 }
 
 .comment-section {
-    padding: 20rpx;
+    padding: 20rpx 20rpx 120rpx 20rpx;
 }
 
 .section-title {
@@ -264,3 +264,11 @@
     text-align: center;
     margin-top: 40rpx;
 }
+
+.select-button {
+    background-color: #4caf50;
+    max-width: 180rpx;
+    font-size: 26rpx;
+    color: white;
+    border-radius: 30rpx;
+  }

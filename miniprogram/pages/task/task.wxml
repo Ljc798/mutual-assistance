@@ -42,7 +42,7 @@
             <block wx:for="{{bids}}" wx:key="id">
                 <view class="comment-card">
                     <view class="comment-header">
-                        <image class="comment-avatar" src="{{item.avatar_url}}" mode="aspectFill"/>
+                        <image class="comment-avatar" src="{{item.avatar_url}}" mode="aspectFill" />
                         <view class="comment-user">
                             <text class="username">{{item.username}}</text>
                             <text class="price">¥{{item.price}}</text>
@@ -50,7 +50,10 @@
                     </view>
                     <view class="comment-content">
                         <text>{{item.advantage}}</text>
-                        <button wx:if="{{isOwner}}" class="chat-button" bindtap="goToChat" data-targetid="{{item.user_id}}">聊一聊</button>
+                        <button wx:if="{{isOwner}}" class="chat-button" bindtap="goToChat" data-targetid="{{item.target_id}}" data-username="{{item.username}}">聊一聊</button>
+                        <button wx:if="{{isOwner}}" class="select-button" bindtap="confirmAssign" data-userid="{{item.target_id}}" data-username="{{item.username}}">
+                            选择TA
+                        </button>
                     </view>
                 </view>
             </block>

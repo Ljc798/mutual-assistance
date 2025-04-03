@@ -184,22 +184,58 @@ Page({
     },
 
     goToChat(e) {
-        const targetUserId = e.currentTarget.dataset.targetid;
-        console.log(e);
-        
-        if (!targetUserId) {
-          wx.showToast({ title: "对方信息缺失", icon: "none" });
-          return;
-        }
+        const targetId = e.currentTarget.dataset.targetid;
+        const targetName = e.currentTarget.dataset.username;
         wx.navigateTo({
-          url: `/pages/chat/chat?targetId=${targetUserId}`
+            url: `/pages/chat/chat?targetId=${targetId}&targetName=${targetName}`
         });
-      },
+    },
 
     editTask() {
         const { task } = this.data;
         wx.navigateTo({
             url: `/pages/edit-task/edit-task?taskId=${task.id}`,
         });
-    }
+    },
+
+    confirmAssign(e: any) {
+        const targetId = e.currentTarget.dataset.targetid;
+        const username = e.currentTarget.dataset.username;
+      
+        wx.showModal({
+          title: '确认指派',
+          content: `确定将该任务指派给「${username}」吗？`,
+          success: (res) => {
+            if (res.confirm) {
+              this.assignTask(targetId);
+            }
+          }
+        });
+      },
+      
+      assignTask(receiverId: number) {
+        wx.request({
+          url: 'https://mutualcampus.top/api/task/assign',
+          method: 'POST',
+          data: {
+            taskId: this.data.task.id,
+            receiverId
+          },
+          success: (res) => {
+            if (res.data.success) {
+              wx.showToast({ title: '指派成功', icon: 'success' });
+              // ✅ 更新任务状态，触发界面刷新
+              this.setData({
+                task: { ...this.data.task, employee_id: receiverId, status: 1 },
+                statusText: "进行中"
+              });
+            } else {
+              wx.showToast({ title: res.data.message || '指派失败', icon: 'none' });
+            }
+          },
+          fail: () => {
+            wx.showToast({ title: '网络错误', icon: 'none' });
+          }
+        });
+      }
 });

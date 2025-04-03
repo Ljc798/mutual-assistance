@@ -77,8 +77,6 @@ Page({
     goToChat(e) {
         const targetId = e.currentTarget.dataset.targetid;
         const targetName = e.currentTarget.dataset.username;
-        console.log(e);
-        
         wx.navigateTo({
             url: `/pages/chat/chat?targetId=${targetId}&targetName=${targetName}`
         });

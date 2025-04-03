@@ -62,6 +62,8 @@
   }
   
   .input-bar {
+    position: fixed;
+    bottom: 10rpx;
     display: flex;
     padding: 20rpx 0;
     border-top: 1rpx solid #ddd;

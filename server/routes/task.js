@@ -292,4 +292,39 @@ router.post("/update", authMiddleware, async (req, res) => {
     }
 });
 
+// ===== 8. 指派任务接口 =====
+router.post("/assign", async (req, res) => {
+    const { taskId, receiverId } = req.body;
+  
+    if (!taskId || !receiverId) {
+      return res.status(400).json({ success: false, message: "缺少参数" });
+    }
+  
+    try {
+      const [task] = await db.query(`SELECT * FROM tasks WHERE id = ?`, [taskId]);
+  
+      if (task.length === 0) {
+        return res.status(404).json({ success: false, message: "任务不存在" });
+      }
+  
+      if (task[0].status !== 0) {
+        return res.status(400).json({ success: false, message: "任务已被指派或已完成" });
+      }
+  
+      const [result] = await db.query(
+        `UPDATE tasks SET employee_id = ?, status = 1 WHERE id = ?`,
+        [receiverId, taskId]
+      );
+  
+      if (result.affectedRows > 0) {
+        res.json({ success: true, message: "任务已成功指派" });
+      } else {
+        res.json({ success: false, message: "更新失败" });
+      }
+    } catch (err) {
+      console.error("❌ 指派任务失败:", err);
+      res.status(500).json({ success: false, message: "服务器内部错误" });
+    }
+  });
+
 module.exports = router;
