@@ -271,4 +271,15 @@
     font-size: 26rpx;
     color: white;
     border-radius: 30rpx;
-  }
+}
+
+.comment-disabled {
+    margin: 30rpx 20rpx;
+    padding: 20rpx;
+    background-color: #fdf2f2;
+    border: 1rpx solid #f5c2c7;
+    border-radius: 12rpx;
+    color: #c53030;
+    font-size: 28rpx;
+    text-align: center;
+}

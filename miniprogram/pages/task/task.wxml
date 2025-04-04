@@ -35,7 +35,11 @@
         </view>
     </view>
 
-    <view class="comment-section">
+    <view wx:if="{{task.status !== 0}}" class="comment-disabled">
+        当前任务已进入{{task.status === 1 ? '进行中' : '已完成'}}状态，留言区已关闭。
+    </view>
+
+    <view class="comment-section" wx:if="{{canLeaveMessage}}">
         <view class="section-title">留言区</view>
 
         <block wx:if="{{bids.length > 0}}">
@@ -50,10 +54,8 @@
                     </view>
                     <view class="comment-content">
                         <text>{{item.advantage}}</text>
-                        <button wx:if="{{isOwner}}" class="chat-button" bindtap="goToChat" data-targetid="{{item.target_id}}" data-username="{{item.username}}">聊一聊</button>
-                        <button wx:if="{{isOwner}}" class="select-button" bindtap="confirmAssign" data-userid="{{item.target_id}}" data-username="{{item.username}}">
-                            选择TA
-                        </button>
+                        <button wx:if="{{isOwner}}" class="chat-button" bindtap="goToChat" data-targetid="{{item.user_id}}" data-username="{{item.username}}">聊一聊</button>
+                        <button wx:if="{{isOwner}}" class="select-button" bindtap="confirmAssign" data-userid="{{item.user_id}}" data-username="{{item.username}}" data-price="{{item.price}}">选择TA</button>
                     </view>
                 </view>
             </block>
@@ -76,8 +78,8 @@
 
     <!-- 出价和接单按钮 -->
     <view wx:if="{{!isOwner}}" class="button-container">
-        <button class="bidding-button" bindtap="openPopup">出价</button>
-        <button class="accept-button" bindtap="goToChat" data-targetid="{{task.employer_id}}">聊一聊</button>
+        <button class="bidding-button" bindtap="openPopup" wx:if="{{canLeaveMessage}}">出价</button>
+        <button class="accept-button" bindtap="goToChat" data-targetid="{{task.employer_id}}" wx:if="{{canLeaveMessage}}">聊一聊</button>
     </view>
 
     <!-- ✅ 如果是自己的任务 -->

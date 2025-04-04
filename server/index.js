@@ -37,6 +37,10 @@ app.use("/api/timetable", timetableRouter);
 app.use("/api/timetableConfig", timetableConfigRouter);
 app.use("/api/messages", messagesRouter);
 
+app.get("/", (req, res) => {
+    res.redirect("https://admin.mutualcampus.top");
+  });
+
 // =======================
 // 🌐 启动 HTTP 服务
 // =======================

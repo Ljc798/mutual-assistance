@@ -9,6 +9,7 @@ Page({
         bids: [],
         isOwner: false,
         isAuthorizedUser: false,
+        canLeaveMessage: false,
     },
 
     onLoad(options: any) {
@@ -16,7 +17,6 @@ Page({
             wx.showToast({ title: "任务 ID 不存在", icon: "none" });
             return;
         }
-
         this.loadTaskDetail(options.taskId);
         this.loadBids(options.taskId);
     },
@@ -55,6 +55,10 @@ Page({
                     isOwner,
                     isAuthorizedUser,
                 });
+                this.setData({
+                    canLeaveMessage: this.data.task.status === 0
+                })
+                
             },
             fail: (err: any) => {
                 console.error("❌ 任务详情加载失败:", err);
@@ -199,8 +203,10 @@ Page({
     },
 
     confirmAssign(e: any) {
-        const targetId = e.currentTarget.dataset.targetid;
+        const targetId = e.currentTarget.dataset.userid;
         const username = e.currentTarget.dataset.username;
+        console.log(e);
+        
       
         wx.showModal({
           title: '确认指派',
