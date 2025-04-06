@@ -294,37 +294,111 @@ router.post("/update", authMiddleware, async (req, res) => {
 
 // ===== 8. 指派任务接口 =====
 router.post("/assign", async (req, res) => {
-    const { taskId, receiverId } = req.body;
-  
+    const {
+        taskId,
+        receiverId
+    } = req.body;
+
     if (!taskId || !receiverId) {
-      return res.status(400).json({ success: false, message: "缺少参数" });
+        return res.status(400).json({
+            success: false,
+            message: "缺少参数"
+        });
     }
-  
+
     try {
-      const [task] = await db.query(`SELECT * FROM tasks WHERE id = ?`, [taskId]);
-  
-      if (task.length === 0) {
-        return res.status(404).json({ success: false, message: "任务不存在" });
-      }
-  
-      if (task[0].status !== 0) {
-        return res.status(400).json({ success: false, message: "任务已被指派或已完成" });
-      }
-  
-      const [result] = await db.query(
-        `UPDATE tasks SET employee_id = ?, status = 1 WHERE id = ?`,
-        [receiverId, taskId]
-      );
-  
-      if (result.affectedRows > 0) {
-        res.json({ success: true, message: "任务已成功指派" });
-      } else {
-        res.json({ success: false, message: "更新失败" });
-      }
+        const [task] = await db.query(`SELECT * FROM tasks WHERE id = ?`, [taskId]);
+
+        if (task.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "任务不存在"
+            });
+        }
+
+        if (task[0].status !== 0) {
+            return res.status(400).json({
+                success: false,
+                message: "任务已被指派或已完成"
+            });
+        }
+
+        const [result] = await db.query(
+            `UPDATE tasks SET employee_id = ?, status = 1 WHERE id = ?`,
+            [receiverId, taskId]
+        );
+
+        if (result.affectedRows > 0) {
+            res.json({
+                success: true,
+                message: "任务已成功指派"
+            });
+        } else {
+            res.json({
+                success: false,
+                message: "更新失败"
+            });
+        }
     } catch (err) {
-      console.error("❌ 指派任务失败:", err);
-      res.status(500).json({ success: false, message: "服务器内部错误" });
+        console.error("❌ 指派任务失败:", err);
+        res.status(500).json({
+            success: false,
+            message: "服务器内部错误"
+        });
     }
-  });
+});
+
+// ===== 9. 获得任务订单接口 =====
+router.get("/my", async (req, res) => {
+    const {
+        userId,
+        role,
+        status
+    } = req.query;
+
+    if (!userId) {
+        return res.status(400).json({
+            success: false,
+            message: "缺少 userId 参数"
+        });
+    }
+
+    try {
+        let baseSQL = `
+        SELECT id, employer_id, employee_id, status, title, offer, DDL
+        FROM tasks
+        WHERE (employer_id = ? OR employee_id = ?)
+      `;
+        const params = [userId, userId];
+
+        if (role === "employer") {
+            baseSQL += " AND employer_id = ?";
+            params.push(userId);
+        } else if (role === "employee") {
+            baseSQL += " AND employee_id = ?";
+            params.push(userId);
+        }
+
+        if (status !== undefined) {
+            baseSQL += " AND status = ?";
+            params.push(Number(status));
+        }
+
+        baseSQL += " ORDER BY DDL DESC";
+
+        const [rows] = await db.query(baseSQL, params);
+        res.json({
+            success: true,
+            tasks: rows
+        });
+
+    } catch (err) {
+        console.error("❌ 获取任务失败:", err);
+        res.status(500).json({
+            success: false,
+            message: "服务器错误"
+        });
+    }
+});
 
 module.exports = router;

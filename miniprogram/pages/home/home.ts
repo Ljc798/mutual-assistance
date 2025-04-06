@@ -34,10 +34,10 @@ Page({
             method: "GET",
             header: {
                 "Accept": "application/json" // ✅ 加上这句
-              },
+            },
             success: (res: any) => {
                 console.log("✅ 接口返回结果:", res);
-        
+
                 // ✅ 确保是数组才进行 map 处理
                 if (Array.isArray(res.data)) {
                     const formattedTasks = res.data.map((task: Task) => ({
@@ -45,7 +45,7 @@ Page({
                         formattedDDL: this.formatTime(task.DDL),
                         formattedStatus: this.formatStatus(task.status),
                     }));
-        
+
                     this.setData({
                         tasks: formattedTasks,
                         filteredTasks: formattedTasks
@@ -69,7 +69,7 @@ Page({
     handleCategoryClick(e: any) {
         const category = e.currentTarget.dataset.category;  // 获取点击的分类
         console.log(category);
-        
+
         wx.navigateTo({
             url: `/pages/task-list/task-list?category=${encodeURIComponent(category)}`,  // 传递分类信息
         });
@@ -115,4 +115,8 @@ Page({
                 return "未知状态";
         }
     },
+
+    handleOrderClick() {
+        wx.navigateTo({ url: "/pages/order/order" })
+    }
 });

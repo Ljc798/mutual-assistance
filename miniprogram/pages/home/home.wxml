@@ -54,9 +54,9 @@
             <image src="/assets/icons/fuwu.svg" class="category-icon" />
             <text class="category-text">万能服务</text>
         </view>
-        <view class="category-item">
-            <image src="/assets/icons/ditu_line.svg" class="category-icon" />
-            <text class="category-text">校园地图</text>
+        <view class="category-item" bindtap="handleOrderClick">
+            <image src="/assets/icons/dingdanrizhi-.svg" class="category-icon" />
+            <text class="category-text">我的订单</text>
         </view>
     </view>
 
