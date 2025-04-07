@@ -81,7 +81,9 @@ router.post('/create', async (req, res) => {
                 openid
             }
         });
-
+        console.log('🧪 当前私钥前 5 行:\n', privateKey.split('\n').slice(0, 5).join('\n'));
+        console.log('📏 私钥长度:', privateKey.length);
+        console.log('🔑 私钥首字符 ASCII:', privateKey.charCodeAt(0)); // 应该是 45，即 "-"
         const signature = generateSignature(method, url, timestamp, nonceStr, body);
         const authorization = `WECHATPAY2-SHA256-RSA2048 mchid="${mchid}",serial_no="${serial_no}",nonce_str="${nonceStr}",timestamp="${timestamp}",signature="${signature}"`;
 

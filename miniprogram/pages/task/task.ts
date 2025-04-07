@@ -58,7 +58,7 @@ Page({
                 this.setData({
                     canLeaveMessage: this.data.task.status === 0
                 })
-                
+
             },
             fail: (err: any) => {
                 console.error("❌ 任务详情加载失败:", err);
@@ -207,48 +207,48 @@ Page({
         const username = e.currentTarget.dataset.username;
         const taskId = this.data.task.id;
         const openid = getApp().globalData.userInfo?.openid;
-      
+
         wx.showModal({
-          title: '确认指派',
-          content: `确定将该任务指派给「${username}」吗？`,
-          success: (res) => {
-            if (!res.confirm) return;
-      
-            wx.request({
-              url: 'https://mutualcampus.top/api/payment/create',
-              method: 'POST',
-              data: {
-                openid,
-                taskId,
-                receiverId,
-                description: `支付任务 #${taskId}`,
-              },
-              success: (res) => {
-                if (res.data.success) {
-                    console.log(res.data);
-                    
-                  const { timeStamp, nonceStr, paySign, prepay_id } = res.data;
-                  console.log(timeStamp);
-                  
-                  wx.requestPayment({
-                    timeStamp,
-                    nonceStr,
-                    package: `prepay_id=${prepay_id}`,
-                    signType: 'RSA',
-                    paySign,
-                    success: () => {
-                      wx.showToast({ title: '支付成功', icon: 'success' });
+            title: '确认指派',
+            content: `确定将该任务指派给「${username}」吗？`,
+            success: (res) => {
+                if (!res.confirm) return;
+
+                wx.request({
+                    url: 'https://mutualcampus.top/api/payment/create',
+                    method: 'POST',
+                    data: {
+                        openid,
+                        taskId,
+                        receiverId,
+                        description: `支付任务 #${taskId}`,
                     },
-                    fail: () => {
-                      wx.showToast({ title: '支付取消', icon: 'none' });
+                    success: (res) => {
+                        if (res.data.success) {
+                            console.log(res.data);
+
+                            const { timeStamp, nonceStr, paySign, package: pkg } = res.data.paymentParams;
+                            console.log(nonceStr);
+
+                            wx.requestPayment({
+                                timeStamp,
+                                nonceStr,
+                                package: pkg, // 注意不是关键字“package”！
+                                signType: 'RSA',
+                                paySign,
+                                success: () => {
+                                    wx.showToast({ title: '支付成功', icon: 'success' });
+                                },
+                                fail: () => {
+                                    wx.showToast({ title: '支付取消', icon: 'none' });
+                                }
+                            });
+                        } else {
+                            wx.showToast({ title: res.data.message || '发起支付失败', icon: 'none' });
+                        }
                     }
-                  });
-                } else {
-                  wx.showToast({ title: res.data.message || '发起支付失败', icon: 'none' });
-                }
-              }
-            });
-          }
+                });
+            }
         });
-      },
+    },
 });
