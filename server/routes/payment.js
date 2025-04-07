@@ -141,48 +141,48 @@ function decryptResource(resource, key) {
 
 // ✅ 支付成功回调
 router.post('/notify', express.raw({
-    type: 'application/json'
+    type: '*/*'
 }), async (req, res) => {
     try {
-        const rawBody = req.body; // 是 Buffer 类型
-        const bodyStr = rawBody.toString('utf8'); // 👈 转成字符串
-        const notifyData = JSON.parse(bodyStr); // 👈 然后再解析
+        const rawBody = req.body;
+
+        // 🧪 Buffer 判断：确保只有在是 Buffer 时才转字符串
+        const bodyStr = Buffer.isBuffer(rawBody) ? rawBody.toString('utf8') : rawBody;
+        const notifyData = typeof bodyStr === 'string' ? JSON.parse(bodyStr) : bodyStr;
+
         const {
             resource
         } = notifyData;
 
         if (!resource || !apiV3Key) {
-            throw new Error('无资源或缺少 APIv3 密钥');
+            throw new Error('缺少 resource 或 apiV3Key');
         }
 
+        // ✅ 解密、更新数据库、响应微信
         const decryptedData = decryptResource(resource, apiV3Key);
         const outTradeNo = decryptedData.out_trade_no;
         const transactionId = decryptedData.transaction_id;
 
-        // ✅ 更新 task_payments
-        await db.query(`
-        UPDATE task_payments 
-        SET status = 'paid', paid_at = NOW(), transaction_id = ?
-        WHERE out_trade_no = ?
-      `, [transactionId, outTradeNo]);
+        await db.query(
+            `UPDATE task_payments SET status = 'paid', paid_at = NOW(), transaction_id = ? WHERE out_trade_no = ?`,
+            [transactionId, outTradeNo]
+        );
 
-        // ✅ 指派任务
         const match = outTradeNo.match(/^TASK_(\d+)_EMP_(\d+)_/);
         if (match) {
             const taskId = parseInt(match[1]);
             const employeeId = parseInt(match[2]);
 
-            await db.query(`
-          UPDATE tasks 
-          SET employee_id = ?, status = 1 
-          WHERE id = ?
-        `, [employeeId, taskId]);
+            await db.query(
+                `UPDATE tasks SET employee_id = ?, status = 1 WHERE id = ?`,
+                [employeeId, taskId]
+            );
         }
 
-        console.log(`💰 任务 ${outTradeNo} 支付成功并已更新数据库`);
+        console.log('✅ 支付成功并已更新任务');
         res.status(200).json({
             code: 'SUCCESS',
-            message: '处理成功'
+            message: 'OK'
         });
 
     } catch (err) {
