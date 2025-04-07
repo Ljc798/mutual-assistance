@@ -26,84 +26,97 @@ router.post("/phone-login", async (req, res) => {
         });
     }
 
-    // 获取 openid
-    const wxAppid = process.env.WX_APPID;
-    const wxSecret = process.env.WX_SECRET;
-    const openidURL = `https://api.weixin.qq.com/sns/jscode2session?appid=${wxAppid}&secret=${wxSecret}&js_code=${loginCode}&grant_type=authorization_code`;
-    const openidRes = await axios.get(openidURL);
-    console.log("📬 微信 jscode2session 响应:", openidRes.data);
-    const {
-        openid
-    } = openidRes.data;
-    if (!openid) {
-        return res.status(400).json({
-            success: false,
-            message: "获取 openid 失败",
-            raw: openidRes.data
+    try {
+        // ✅ 使用云调用的方式获取 openid，不再需要 HTTPS！
+        const openidRes = await axios.get("http://api.weixin.qq.com/sns/jscode2session", {
+            params: {
+                appid: process.env.WX_APPID,
+                secret: process.env.WX_SECRET,
+                js_code: loginCode,
+                grant_type: "authorization_code"
+            }
         });
-    }
 
-    // 获取手机号
-    const wxRes = await axios.post("http://api.weixin.qq.com/wxa/business/getuserphonenumber", {
-        code: phoneCode
-    }, {
-        headers: {
-            "Content-Type": "application/json"
+        console.log("📬 云调用获取 openid 响应:", openidRes.data);
+        const {
+            openid
+        } = openidRes.data;
+        if (!openid) {
+            return res.status(400).json({
+                success: false,
+                message: "获取 openid 失败",
+                raw: openidRes.data
+            });
         }
-    });
 
-    if (!wxRes.data?.phone_info?.phoneNumber) {
-        return res.status(400).json({
+        // ✅ 获取手机号（用云调用）
+        const wxRes = await axios.post("http://api.weixin.qq.com/wxa/business/getuserphonenumber", {
+            code: phoneCode
+        }, {
+            headers: {
+                "Content-Type": "application/json"
+            }
+        });
+
+        if (!wxRes.data?.phone_info?.phoneNumber) {
+            return res.status(400).json({
+                success: false,
+                message: "获取手机号失败",
+                error: wxRes.data
+            });
+        }
+
+        const phoneNumber = wxRes.data.phone_info.phoneNumber;
+
+        // ✅ 查或建用户，并保存 openid
+        const [results] = await db.query("SELECT * FROM users WHERE phone_number = ?", [phoneNumber]);
+        let user;
+        let isNewUser = false;
+
+        if (results.length > 0) {
+            user = results[0];
+            await db.query("UPDATE users SET openid = ? WHERE id = ?", [openid, user.id]);
+            user.openid = openid;
+        } else {
+            const now = new Date();
+            now.setHours(now.getHours() + 8); // 补时区
+            const newUser = {
+                wxid: uuidv4(),
+                phone_number: phoneNumber,
+                username: "微信用户" + phoneNumber.slice(-4),
+                avatar_url: "https://default-avatar.com/avatar.png",
+                free_counts: 5,
+                points: 10,
+                created_time: now,
+                openid
+            };
+            const [insertResult] = await db.query("INSERT INTO users SET ?", [newUser]);
+            newUser.id = insertResult.insertId;
+            user = newUser;
+            isNewUser = true;
+        }
+
+        const token = jwt.sign({
+            user_id: user.id
+        }, SECRET_KEY, {
+            expiresIn: "7d"
+        });
+
+        res.json({
+            success: true,
+            token,
+            user,
+            isNewUser
+        });
+
+    } catch (error) {
+        console.error("❌ 登录失败:", error.response?.data || error.message);
+        return res.status(500).json({
             success: false,
-            message: "获取手机号失败",
-            error: wxRes.data
+            message: "登录失败",
+            error: error.response?.data || error.message
         });
     }
-
-    const phoneNumber = wxRes.data.phone_info.phoneNumber;
-
-    // 查或建用户 + 存 openid
-    const [results] = await db.query("SELECT * FROM users WHERE phone_number = ?", [phoneNumber]);
-    let user;
-    let isNewUser = false;
-
-    if (results.length > 0) {
-        user = results[0];
-
-        // ✅ 更新 openid
-        await db.query("UPDATE users SET openid = ? WHERE id = ?", [openid, user.id]);
-        user.openid = openid;
-    } else {
-        const now = new Date();
-        now.setHours(now.getHours() + 8);
-        const newUser = {
-            wxid: uuidv4(),
-            phone_number: phoneNumber,
-            username: "微信用户" + phoneNumber.slice(-4),
-            avatar_url: "https://default-avatar.com/avatar.png",
-            free_counts: 5,
-            points: 10,
-            created_time: now,
-            openid // ✅ 存进去
-        };
-        const [insertResult] = await db.query("INSERT INTO users SET ?", [newUser]);
-        newUser.id = insertResult.insertId;
-        user = newUser;
-        isNewUser = true;
-    }
-
-    const token = jwt.sign({
-        user_id: user.id
-    }, SECRET_KEY, {
-        expiresIn: "7d"
-    });
-
-    res.json({
-        success: true,
-        token,
-        user,
-        isNewUser
-    });
 });
 
 // 📌 修改用户信息（使用 authMiddleware 来验证 token）
