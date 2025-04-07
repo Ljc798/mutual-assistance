@@ -203,45 +203,46 @@ Page({
     },
 
     confirmAssign(e: any) {
-        const targetId = e.currentTarget.dataset.userid;
+        const receiverId = e.currentTarget.dataset.userid;
         const username = e.currentTarget.dataset.username;
-        console.log(e);
-        
+        const taskId = this.data.task.id;
+        const price = this.data.task.offer;
+        const openid = getApp().globalData.userInfo.openid;
       
         wx.showModal({
           title: '确认指派',
           content: `确定将该任务指派给「${username}」吗？`,
           success: (res) => {
             if (res.confirm) {
-              this.assignTask(targetId);
+              // ✅ 发起支付请求
+              wx.request({
+                url: 'https://mutualcampus.top/api/payment/create',
+                method: 'POST',
+                data: {
+                  openid,
+                  out_trade_no: `TASK_${taskId}_EMP_${receiverId}`,
+                  description: `支付任务 #${taskId}`,
+                  amount: parseInt(price * 100)
+                },
+                success: (res) => {
+                  if (res.data.success) {
+                    // ✅ 拉起支付（省略签名细节）
+                    wx.requestPayment({
+                      ...res.data.paymentParams, // timeStamp, nonceStr, package, signType, paySign
+                      success: () => {
+                        wx.showToast({ title: "支付成功", icon: "success" });
+                      },
+                      fail: () => {
+                        wx.showToast({ title: "支付取消", icon: "none" });
+                      }
+                    });
+                  } else {
+                    wx.showToast({ title: res.data.message, icon: "none" });
+                  }
+                }
+              });
             }
           }
         });
       },
-      
-      assignTask(receiverId: number) {
-        wx.request({
-          url: 'https://mutualcampus.top/api/task/assign',
-          method: 'POST',
-          data: {
-            taskId: this.data.task.id,
-            receiverId
-          },
-          success: (res) => {
-            if (res.data.success) {
-              wx.showToast({ title: '指派成功', icon: 'success' });
-              // ✅ 更新任务状态，触发界面刷新
-              this.setData({
-                task: { ...this.data.task, employee_id: receiverId, status: 1 },
-                statusText: "进行中"
-              });
-            } else {
-              wx.showToast({ title: res.data.message || '指派失败', icon: 'none' });
-            }
-          },
-          fail: () => {
-            wx.showToast({ title: '网络错误', icon: 'none' });
-          }
-        });
-      }
 });

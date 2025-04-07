@@ -41,7 +41,7 @@ Page({
         const { userId, activeFilter1, activeFilter2 } = this.data;
 
         wx.request({
-            url: `http://localhost/api/task/my`,
+            url: `https://mutualcampus.top/api/task/my`,
             method: "GET",
             data: { userId },
             success: (res) => {
@@ -64,31 +64,31 @@ Page({
 
                         // 自动判断身份
                         if (task.employer_id === userId) {
-                          role = 'employer';
+                            role = 'employer';
                         } else if (task.employee_id === userId) {
-                          role = 'employee';
+                            role = 'employee';
                         }
                         if (task.status === 0) {
-                          actionText = '等待接单中…';
+                            actionText = '等待接单中…';
                         } else if (task.status === 1) {
-                          actionText = '请确认完成任务';
-                          showDoneButton = true;
+                            actionText = '请确认完成任务';
+                            showDoneButton = true;
                         } else if (task.status === 2) {
-                          actionText = '订单已完成';
+                            actionText = '订单已完成';
                         }
-                      
+
                         return {
-                          orderId: task.id,
-                          statusCode: task.status,
-                          status: this.translateStatus(task.status),
-                          title: task.title,
-                          salary: `¥${task.offer}`,
-                          time: this.formatTime(task.DDL),
-                          actionText,
-                          showDoneButton,
-                          role
+                            orderId: task.id,
+                            statusCode: task.status,
+                            status: this.translateStatus(task.status),
+                            title: task.title,
+                            salary: `¥${task.offer}`,
+                            time: this.formatTime(task.DDL),
+                            actionText,
+                            showDoneButton,
+                            role
                         };
-                      });
+                    });
 
                     this.setData({ orders: mapped });
                 } else {
@@ -128,33 +128,33 @@ Page({
 
 
         if (!userId || !role) {
-          wx.showToast({ title: "请先登录", icon: "none" });
-          return;
+            wx.showToast({ title: "请先登录", icon: "none" });
+            return;
         }
-      
+
         wx.request({
-          url: "http://localhost/api/task/done",
-          method: "POST",
-          header: {
-            Authorization: `Bearer ${token}`
-          },
-          data: {
-            taskId: orderId,
-            userId,
-            role
-          },
-          success: (res) => {
-            if (res.data.success) {
-              wx.showToast({ title: "标记完成成功", icon: "success" });
-              // 重新拉订单
-              this.fetchOrders();
-            } else {
-              wx.showToast({ title: res.data.message || "操作失败", icon: "none" });
+            url: "https://mutualcampus.top/api/task/done",
+            method: "POST",
+            header: {
+                Authorization: `Bearer ${token}`
+            },
+            data: {
+                taskId: orderId,
+                userId,
+                role
+            },
+            success: (res) => {
+                if (res.data.success) {
+                    wx.showToast({ title: "标记完成成功", icon: "success" });
+                    // 重新拉订单
+                    this.fetchOrders();
+                } else {
+                    wx.showToast({ title: res.data.message || "操作失败", icon: "none" });
+                }
+            },
+            fail: () => {
+                wx.showToast({ title: "网络错误", icon: "none" });
             }
-          },
-          fail: () => {
-            wx.showToast({ title: "网络错误", icon: "none" });
-          }
         });
-      },
+    },
 });
