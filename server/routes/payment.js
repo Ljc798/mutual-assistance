@@ -81,9 +81,6 @@ router.post('/create', async (req, res) => {
                 openid
             }
         });
-        console.log('🧪 当前私钥前 5 行:\n', privateKey.split('\n').slice(0, 5).join('\n'));
-        console.log('📏 私钥长度:', privateKey.length);
-        console.log('🔑 私钥首字符 ASCII:', privateKey.charCodeAt(0)); // 应该是 45，即 "-"
         const signature = generateSignature(method, url, timestamp, nonceStr, body);
         const authorization = `WECHATPAY2-SHA256-RSA2048 mchid="${mchid}",serial_no="${serial_no}",nonce_str="${nonceStr}",timestamp="${timestamp}",signature="${signature}"`;
 
@@ -94,8 +91,11 @@ router.post('/create', async (req, res) => {
             }
         });
 
-        const timeStamp = Math.floor(Date.now() / 1000).toString(); // 别用上面的那个 timestamp
-        const payMessage = `${timeStamp}\n${nonceStr}\nprepay_id=${response.data.prepay_id}\n`;
+        const timeStamp = Math.floor(Date.now() / 1000).toString();
+        const payNonceStr = crypto.randomBytes(16).toString("hex");
+        const pkg = `prepay_id=${response.data.prepay_id}`;
+
+        const payMessage = `${appid}\n${timeStamp}\n${payNonceStr}\n${pkg}\n`;
         const paySign = crypto
             .createSign("RSA-SHA256")
             .update(payMessage)
@@ -105,8 +105,8 @@ router.post('/create', async (req, res) => {
             success: true,
             paymentParams: {
                 timeStamp,
-                nonceStr,
-                package: `prepay_id=${response.data.prepay_id}`,
+                nonceStr: payNonceStr,
+                package: pkg,
                 signType: "RSA",
                 paySign
             }
@@ -139,53 +139,57 @@ function decryptResource(resource, key) {
     return JSON.parse(decrypted.toString('utf8'));
 }
 
+// ✅ 支付成功回调
 router.post('/notify', express.raw({
     type: 'application/json'
 }), async (req, res) => {
     try {
-        const notifyData = JSON.parse(req.body.toString());
+        const rawBody = req.body; // 是 Buffer 类型
+        const bodyStr = rawBody.toString('utf8'); // 👈 转成字符串
+        const notifyData = JSON.parse(bodyStr); // 👈 然后再解析
         const {
             resource
         } = notifyData;
 
-        if (!resource || !apiV3Key) throw new Error('无资源或缺少 APIv3 密钥');
+        if (!resource || !apiV3Key) {
+            throw new Error('无资源或缺少 APIv3 密钥');
+        }
 
         const decryptedData = decryptResource(resource, apiV3Key);
         const outTradeNo = decryptedData.out_trade_no;
         const transactionId = decryptedData.transaction_id;
-        const amount = decryptedData.amount.total;
-        const payer = decryptedData.payer.openid;
 
-        const [paymentRow] = await db.query(
-            'SELECT * FROM task_payments WHERE out_trade_no = ? AND status = "pending"',
-            [outTradeNo]
-        );
+        // ✅ 更新 task_payments
+        await db.query(`
+        UPDATE task_payments 
+        SET status = 'paid', paid_at = NOW(), transaction_id = ?
+        WHERE out_trade_no = ?
+      `, [transactionId, outTradeNo]);
 
-        if (!paymentRow.length) {
-            console.warn('❌ 没找到匹配订单');
-            return res.status(400).json({
-                code: 'FAIL',
-                message: '订单不存在或已处理'
-            });
+        // ✅ 指派任务
+        const match = outTradeNo.match(/^TASK_(\d+)_EMP_(\d+)_/);
+        if (match) {
+            const taskId = parseInt(match[1]);
+            const employeeId = parseInt(match[2]);
+
+            await db.query(`
+          UPDATE tasks 
+          SET employee_id = ?, status = 1 
+          WHERE id = ?
+        `, [employeeId, taskId]);
         }
 
-        const payment = paymentRow[0];
-
-        await db.query('UPDATE tasks SET employee_id = ?, status = 1 WHERE id = ?', [payment.receiver_id, payment.task_id]);
-
-        await db.query('UPDATE task_payments SET status = "paid", paid_at = NOW() WHERE id = ?', [payment.id]);
-
-        console.log(`✅ 任务 ${payment.task_id} 已支付并指派给雇员 ${payment.receiver_id}`);
-
+        console.log(`💰 任务 ${outTradeNo} 支付成功并已更新数据库`);
         res.status(200).json({
             code: 'SUCCESS',
-            message: '处理完成'
+            message: '处理成功'
         });
+
     } catch (err) {
         console.error('❌ 微信支付回调处理失败:', err);
         res.status(500).json({
             code: 'FAIL',
-            message: '回调处理失败'
+            message: '处理失败'
         });
     }
 });
