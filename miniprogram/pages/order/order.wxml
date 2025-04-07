@@ -18,22 +18,34 @@
     <!-- 订单列表 -->
     <view class="order-list">
         <block wx:for="{{orders}}" wx:key="orderId">
-            <view class="order-item">
-                <!-- 订单号和状态 -->
+            <view class="order-item {{item.statusCode === 0 ? 'waiting' : item.statusCode === 1 ? 'active' : 'completed'}}">
+
+                <!-- 订单头 -->
                 <view class="order-header">
                     <text class="order-id">订单号：{{item.orderId}}</text>
                     <text class="order-status">{{item.status}}</text>
                 </view>
 
-                <!-- 任务信息 -->
+                <!-- 内容主体 -->
                 <view class="order-body">
                     <text class="order-title">{{item.title}}</text>
                 </view>
 
-                <!-- 接受订单时间 -->
+                <!-- 截止时间与价格 -->
                 <view class="order-footer">
-                    <text class="order-title">{{item.time}}</text>
+                    <text class="order-title">截止日期：{{item.time}}</text>
                     <text class="order-salary">{{item.salary}}</text>
+                </view>
+
+                <!-- 新增的任务动作区 -->
+                <view class="order-action">
+                    <text class="action-text">{{item.actionText}}</text>
+
+                    <view wx:if="{{item.showDoneButton}}">
+                        <view class="action-button" bindtap="handleMarkDone" data-order-id="{{item.orderId}}" data-role="{{item.role}}">
+                            我已完成
+                        </view>
+                    </view>
                 </view>
             </view>
         </block>

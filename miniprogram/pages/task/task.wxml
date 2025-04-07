@@ -68,7 +68,7 @@
         <view class="popup-box">
             <view class="popup-title">我要留言 / 出价</view>
             <textarea class="popup-textarea" placeholder="请输入你的优势、备注、可以完成的时间等信息" bindinput="handleCommentInput" />
-            <input class="popup-price" type="number" placeholder="出价（元）" bindinput="handlePriceInput" />
+            <input class="popup-price" type="digit" placeholder="出价（元）" bindinput="handlePriceInput" />
             <view class="popup-buttons">
                 <button size="mini" class="popup-btn cancel" bindtap="cancelPopup">取消</button>
                 <button size="mini" class="popup-btn confirm" bindtap="submitMessage">提交</button>

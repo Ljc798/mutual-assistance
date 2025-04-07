@@ -97,84 +97,52 @@ router.get("/tasks", async (req, res) => {
     }
 });
 
-// ===== 3. 获取任务详情 =====
-router.get("/:id", async (req, res) => {
-    const taskId = req.params.id;
-
-    try {
-        const [results] = await db.query("SELECT * FROM tasks WHERE id = ?", [taskId]);
-
-        if (results.length === 0) {
-            return res.status(404).json({
-                error: "任务不存在"
-            });
-        }
-
-        const task = results[0];
-        res.json({
-            ...task,
-            status: parseInt(task.status),
-            offer: parseFloat(task.offer).toFixed(2),
-        });
-    } catch (err) {
-        console.error("❌ 任务详情查询失败:", err);
-        res.status(500).json({
-            error: "数据库查询失败"
-        });
-    }
-});
-
-// ===== 4. 接单：更新状态为进行中 =====
-router.post("/:id/accept", authMiddleware, async (req, res) => {
-    const taskId = req.params.id;
-
-    try {
-        const [result] = await db.query("UPDATE tasks SET status = 1 WHERE id = ?", [taskId]);
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({
-                error: "任务不存在"
-            });
-        }
-
-        res.json({
-            message: "任务已被接单",
-            status: 1
-        });
-    } catch (err) {
-        console.error("❌ 接单失败:", err);
-        res.status(500).json({
-            error: "接单失败"
-        });
-    }
-});
-
-// ===== 5. 投标 =====
-router.post("/bid", authMiddleware, async (req, res) => {
+// ===== 3. 获得任务订单接口 =====
+router.get("/my", async (req, res) => {
     const {
-        task_id,
-        user_id,
-        price,
-        advantage,
-        can_finish_time
-    } = req.body;
+        userId,
+        role,
+        status
+    } = req.query;
 
-    if (!task_id || !user_id || !price) {
+    if (!userId) {
         return res.status(400).json({
             success: false,
-            message: "缺少必要参数"
+            message: "缺少 userId 参数"
         });
     }
 
     try {
-        const sql = `INSERT INTO task_bids (task_id, user_id, price, advantage, status) VALUES (?, ?, ?, ?, 0)`;
-        await db.query(sql, [task_id, user_id, price, advantage || '', can_finish_time]);
+        let baseSQL = `
+        SELECT id, employer_id, employee_id, status, title, offer, DDL
+        FROM tasks
+        WHERE (employer_id = ? OR employee_id = ?)
+      `;
+        const params = [userId, userId];
+
+        if (role === "employer") {
+            baseSQL += " AND employer_id = ?";
+            params.push(userId);
+        } else if (role === "employee") {
+            baseSQL += " AND employee_id = ?";
+            params.push(userId);
+        }
+
+        if (status !== undefined) {
+            baseSQL += " AND status = ?";
+            params.push(Number(status));
+        }
+
+        baseSQL += " ORDER BY DDL DESC";
+
+        const [rows] = await db.query(baseSQL, params);
         res.json({
             success: true,
-            message: "投标成功，等待雇主选择"
+            tasks: rows
         });
+
     } catch (err) {
-        console.error("❌ 投标失败:", err);
+        console.error("❌ 获取任务失败:", err);
         res.status(500).json({
             success: false,
             message: "服务器错误"
@@ -182,43 +150,38 @@ router.post("/bid", authMiddleware, async (req, res) => {
     }
 });
 
-// ===== 6. 获取投标记录 =====
-router.get("/:taskId/bids", async (req, res) => {
-    const {
-        taskId
-    } = req.params;
 
-    if (!taskId) {
-        return res.status(400).json({
-            success: false,
-            message: "缺少 taskId 参数"
-        });
+router.post("/done", async (req, res) => {
+    const { taskId, userId, role } = req.body;
+  
+    if (!taskId || !userId || !role) {
+      return res.status(400).json({ success: false, message: "参数不完整" });
     }
-
+  
+    let fieldToUpdate = role === "employer" ? "employer_done" : "employee_done";
+  
     try {
-        const sql = `
-      SELECT tb.id, tb.user_id, u.username, u.avatar_url, tb.price, tb.advantage
-      FROM task_bids tb
-      JOIN users u ON tb.user_id = u.id
-      WHERE tb.task_id = ?
-      ORDER BY tb.price ASC
-    `;
-
-        const [rows] = await db.query(sql, [taskId]);
-        res.json({
-            success: true,
-            bids: rows
-        });
+      // 更新当前角色完成状态
+      await db.query(`UPDATE tasks SET ${fieldToUpdate} = 1 WHERE id = ?`, [taskId]);
+  
+      // 查询双方完成状态
+      const [rows] = await db.query(`SELECT employer_done, employee_done FROM tasks WHERE id = ?`, [taskId]);
+      const task = rows[0];
+  
+      if (task.employer_done && task.employee_done) {
+        // 双方都完成，设置任务为已完成
+        await db.query(`UPDATE tasks SET status = 2, completed_time = NOW() WHERE id = ?`, [taskId]);
+        // 你可以顺带调用微信打款 API 逻辑
+      }
+  
+      res.json({ success: true, message: "已确认完成" });
     } catch (err) {
-        console.error("❌ 获取投标记录失败:", err);
-        res.status(500).json({
-            success: false,
-            message: "服务器错误"
-        });
+      console.error("❌ 确认完成失败:", err);
+      res.status(500).json({ success: false, message: "服务器错误" });
     }
-});
+  });
 
-// ===== 7. 编辑任务 =====
+// ===== 4. 编辑任务 =====
 router.post("/update", authMiddleware, async (req, res) => {
     const {
         id,
@@ -292,7 +255,7 @@ router.post("/update", authMiddleware, async (req, res) => {
     }
 });
 
-// ===== 8. 指派任务接口 =====
+// ===== 5. 指派任务接口 =====
 router.post("/assign", async (req, res) => {
     const {
         taskId,
@@ -348,55 +311,123 @@ router.post("/assign", async (req, res) => {
     }
 });
 
-// ===== 9. 获得任务订单接口 =====
-router.get("/my", async (req, res) => {
+// ===== 6. 投标 =====
+router.post("/bid", authMiddleware, async (req, res) => {
     const {
-        userId,
-        role,
-        status
-    } = req.query;
+        task_id,
+        user_id,
+        price,
+        advantage,
+        can_finish_time
+    } = req.body;
 
-    if (!userId) {
+    if (!task_id || !user_id || !price) {
         return res.status(400).json({
             success: false,
-            message: "缺少 userId 参数"
+            message: "缺少必要参数"
         });
     }
 
     try {
-        let baseSQL = `
-        SELECT id, employer_id, employee_id, status, title, offer, DDL
-        FROM tasks
-        WHERE (employer_id = ? OR employee_id = ?)
-      `;
-        const params = [userId, userId];
-
-        if (role === "employer") {
-            baseSQL += " AND employer_id = ?";
-            params.push(userId);
-        } else if (role === "employee") {
-            baseSQL += " AND employee_id = ?";
-            params.push(userId);
-        }
-
-        if (status !== undefined) {
-            baseSQL += " AND status = ?";
-            params.push(Number(status));
-        }
-
-        baseSQL += " ORDER BY DDL DESC";
-
-        const [rows] = await db.query(baseSQL, params);
+        const sql = `INSERT INTO task_bids (task_id, user_id, price, advantage, status) VALUES (?, ?, ?, ?, 0)`;
+        await db.query(sql, [task_id, user_id, price, advantage || '', can_finish_time]);
         res.json({
             success: true,
-            tasks: rows
+            message: "投标成功，等待雇主选择"
         });
-
     } catch (err) {
-        console.error("❌ 获取任务失败:", err);
+        console.error("❌ 投标失败:", err);
         res.status(500).json({
             success: false,
             message: "服务器错误"
+        });
+    }
+});
+
+// ===== 7. 获取投标记录 =====
+router.get("/:taskId/bids", async (req, res) => {
+    const {
+        taskId
+    } = req.params;
+
+    if (!taskId) {
+        return res.status(400).json({
+            success: false,
+            message: "缺少 taskId 参数"
+        });
+    }
+
+    try {
+        const sql = `
+      SELECT tb.id, tb.user_id, u.username, u.avatar_url, tb.price, tb.advantage
+      FROM task_bids tb
+      JOIN users u ON tb.user_id = u.id
+      WHERE tb.task_id = ?
+      ORDER BY tb.price ASC
+    `;
+
+        const [rows] = await db.query(sql, [taskId]);
+        res.json({
+            success: true,
+            bids: rows
+        });
+    } catch (err) {
+        console.error("❌ 获取投标记录失败:", err);
+        res.status(500).json({
+            success: false,
+            message: "服务器错误"
+        });
+    }
+});
+
+// ===== 8. 接单：更新状态为进行中 =====
+router.post("/:id/accept", authMiddleware, async (req, res) => {
+    const taskId = req.params.id;
+
+    try {
+        const [result] = await db.query("UPDATE tasks SET status = 1 WHERE id = ?", [taskId]);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                error: "任务不存在"
+            });
+        }
+
+        res.json({
+            message: "任务已被接单",
+            status: 1
+        });
+    } catch (err) {
+        console.error("❌ 接单失败:", err);
+        res.status(500).json({
+            error: "接单失败"
+        });
+    }
+});
+
+// ===== 9. 获取任务详情 =====
+router.get("/:id", async (req, res) => {
+    const taskId = req.params.id;
+
+    try {
+        const [results] = await db.query("SELECT * FROM tasks WHERE id = ?", [taskId]);
+
+        if (results.length === 0) {
+            return res.status(404).json({
+                error: "任务不存在"
+            });
+        }
+
+        const task = results[0];
+        res.json({
+            ...task,
+            status: parseInt(task.status),
+            offer: parseFloat(task.offer).toFixed(2),
+        });
+    } catch (err) {
+        console.error("❌ 任务详情查询失败:", err);
+        res.status(500).json({
+            error: "数据库查询失败"
         });
     }
 });
