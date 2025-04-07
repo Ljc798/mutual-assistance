@@ -30,8 +30,8 @@ router.post("/phone-login", async (req, res) => {
     const wxAppid = process.env.WX_APPID;
     const wxSecret = process.env.WX_SECRET;
     const openidURL = `https://api.weixin.qq.com/sns/jscode2session?appid=${wxAppid}&secret=${wxSecret}&js_code=${loginCode}&grant_type=authorization_code`;
-
     const openidRes = await axios.get(openidURL);
+    console.log("📬 微信 jscode2session 响应:", openidRes.data);
     const {
         openid
     } = openidRes.data;
