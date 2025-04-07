@@ -37,7 +37,6 @@ router.post("/phone-login", async (req, res) => {
             }
         });
 
-        console.log("📬 云调用获取 openid 响应:", openidRes.data);
         const {
             openid
         } = openidRes.data;

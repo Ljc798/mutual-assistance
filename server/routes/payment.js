@@ -21,56 +21,79 @@ function generateSignature(method, url, timestamp, nonceStr, body) {
 }
 
 router.post('/create', async (req, res) => {
-  const { openid, taskId, receiverId, description, amount } = req.body;
-
-  if (!openid || !taskId || !receiverId || !description || !amount) {
-    return res.status(400).json({ success: false, message: '参数不完整' });
-  }
-
-  const out_trade_no = `TASK_${taskId}_EMP_${receiverId}`;
-
-  try {
-    await db.query(
-      `INSERT INTO task_payments (task_id, payer_openid, receiver_id, out_trade_no, amount, status) VALUES (?, ?, ?, ?, ?, 'pending')`,
-      [taskId, openid, receiverId, out_trade_no, amount]
-    );
-
-    const url = '/v3/pay/transactions/jsapi';
-    const method = 'POST';
-    const fullUrl = `https://api.mch.weixin.qq.com${url}`;
-    const timestamp = Math.floor(Date.now() / 1000).toString();
-    const nonceStr = crypto.randomBytes(16).toString('hex');
-
-    const body = JSON.stringify({
-      appid,
-      mchid,
-      description,
-      out_trade_no,
-      notify_url,
-      amount: {
-        total: amount,
-        currency: 'CNY'
-      },
-      payer: { openid }
-    });
-
-    const signature = generateSignature(method, url, timestamp, nonceStr, body);
-
-    const authorization = `WECHATPAY2-SHA256-RSA2048 mchid="${mchid}",serial_no="${serial_no}",nonce_str="${nonceStr}",timestamp="${timestamp}",signature="${signature}"`;
-
-    const response = await axios.post(fullUrl, body, {
-      headers: {
-        Authorization: authorization,
-        'Content-Type': 'application/json'
+    const { openid, taskId, receiverId, description } = req.body;
+  
+    if (!openid || !taskId || !receiverId || !description) {
+      return res.status(400).json({ success: false, message: '参数不完整' });
+    }
+  
+    try {
+      // ✅ 1. 从 task_bids 获取真实报价
+      const [[bid]] = await db.query(
+        'SELECT price FROM task_bids WHERE task_id = ? AND user_id = ?',
+        [taskId, receiverId]
+      );
+  
+      if (!bid) {
+        return res.status(404).json({ success: false, message: '未找到该接单人的出价记录' });
       }
-    });
-
-    res.json({ success: true, prepay_id: response.data.prepay_id });
-  } catch (err) {
-    console.error('❌ 微信支付失败:', err.response?.data || err.message);
-    res.status(500).json({ success: false, message: '微信支付请求失败' });
-  }
-});
+  
+      const amount = parseInt(bid.price * 100); // 单位：分
+      const out_trade_no = `TASK_${taskId}_EMP_${receiverId}_${Date.now()}`;
+  
+      // ✅ 2. 插入支付记录（预下单，pending）
+      await db.query(
+        `INSERT INTO task_payments (task_id, payer_openid, receiver_id, out_trade_no, amount, status) VALUES (?, ?, ?, ?, ?, 'pending')`,
+        [taskId, openid, receiverId, out_trade_no, amount]
+      );
+  
+      // ✅ 3. 构造微信支付请求
+      const url = '/v3/pay/transactions/jsapi';
+      const method = 'POST';
+      const fullUrl = `https://api.mch.weixin.qq.com${url}`;
+      const timestamp = Math.floor(Date.now() / 1000).toString();
+      const nonceStr = crypto.randomBytes(16).toString('hex');
+  
+      const body = JSON.stringify({
+        appid,
+        mchid,
+        description,
+        out_trade_no,
+        notify_url,
+        amount: {
+          total: amount,
+          currency: 'CNY'
+        },
+        payer: { openid }
+      });
+  
+      const signature = generateSignature(method, url, timestamp, nonceStr, body);
+      const authorization = `WECHATPAY2-SHA256-RSA2048 mchid="${mchid}",serial_no="${serial_no}",nonce_str="${nonceStr}",timestamp="${timestamp}",signature="${signature}"`;
+  
+      const response = await axios.post(fullUrl, body, {
+        headers: {
+          Authorization: authorization,
+          'Content-Type': 'application/json'
+        }
+      });
+  
+      // ✅ 4. 返回 prepay_id
+      res.json({
+        success: true,
+        paymentParams: {
+          timeStamp,
+          nonceStr,
+          package: `prepay_id=${response.data.prepay_id}`,
+          signType: "RSA",
+          paySign
+        }
+      });
+  
+    } catch (err) {
+      console.error('❌ 微信支付失败:', err.response?.data || err.message);
+      res.status(500).json({ success: false, message: '微信支付请求失败' });
+    }
+  });
 
 function decryptResource(resource, key) {
   const { ciphertext, nonce, associated_data } = resource;

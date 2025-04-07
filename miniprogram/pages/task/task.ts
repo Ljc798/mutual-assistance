@@ -206,7 +206,6 @@ Page({
         const receiverId = e.currentTarget.dataset.userid;
         const username = e.currentTarget.dataset.username;
         const taskId = this.data.task.id;
-        const price = this.data.task.offer;
         const openid = getApp().globalData.userInfo?.openid;
       
         wx.showModal({
@@ -223,11 +222,14 @@ Page({
                 taskId,
                 receiverId,
                 description: `支付任务 #${taskId}`,
-                amount: parseInt(price * 100)
               },
               success: (res) => {
                 if (res.data.success) {
+                    console.log(res.data);
+                    
                   const { timeStamp, nonceStr, paySign, prepay_id } = res.data;
+                  console.log(timeStamp);
+                  
                   wx.requestPayment({
                     timeStamp,
                     nonceStr,
