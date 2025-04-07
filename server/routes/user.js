@@ -15,90 +15,105 @@ const authMiddleware = require("./authMiddleware");
 // 🧩 手机号登录 API（使用微信云托管的容器内调用）
 router.post("/phone-login", async (req, res) => {
     const {
-        code
+        phoneCode,
+        loginCode
     } = req.body;
-    if (!code) {
+
+    if (!phoneCode || !loginCode) {
         return res.status(400).json({
             success: false,
-            message: "缺少 code"
+            message: "缺少参数"
         });
     }
 
-    try {
-        // ✅ 使用容器内云调用，不需要 access_token，使用 http
-        const wxRes = await axios.post(
-            "http://api.weixin.qq.com/wxa/business/getuserphonenumber", {
-                code
-            }, {
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            }
-        );
+    // 获取 openid
+    const wxAppid = process.env.WX_APPID;
+    const wxSecret = process.env.WX_SECRET;
+    const openidURL = `https://api.weixin.qq.com/sns/jscode2session?appid=${wxAppid}&secret=${wxSecret}&js_code=${loginCode}&grant_type=authorization_code`;
 
-        if (!wxRes.data || !wxRes.data.phone_info) {
-            return res.status(400).json({
-                success: false,
-                message: "获取手机号失败",
-                error: wxRes.data
-            });
-        }
-
-        const phoneNumber = wxRes.data.phone_info.phoneNumber;
-        const [results] = await db.query(
-            "SELECT * FROM users WHERE phone_number = ?",
-            [phoneNumber]
-        );
-
-        let user;
-        let isNewUser = false;
-        if (results.length > 0) {
-            user = results[0];
-        } else {
-            const now = new Date();
-            now.setHours(now.getHours() + 8); // 手动加 8 小时
-            const newUser = {
-                wxid: uuidv4(),
-                phone_number: phoneNumber,
-                username: "微信用户" + phoneNumber.slice(-4),
-                avatar_url: "https://default-avatar.com/avatar.png",
-                free_counts: 5,
-                points: 10,
-                created_time: now
-            };
-            const [insertResult] = await db.query("INSERT INTO users SET ?", [newUser]);
-            newUser.id = insertResult.insertId;
-            user = newUser;
-            isNewUser = true; // ✅ 标记为新用户
-        }
-
-        // 登录成功后，签发 token：
-        const token = jwt.sign({
-            user_id: user.id
-        }, SECRET_KEY, {
-            expiresIn: "7d"
-        });
-        return res.json({
-            success: true,
-            token,
-            user,
-            isNewUser // ✅ 返回给前端
-        });
-
-    } catch (error) {
-        console.error("❌ 获取手机号失败:", error);
-        return res.status(500).json({
+    const openidRes = await axios.get(openidURL);
+    const {
+        openid
+    } = openidRes.data;
+    if (!openid) {
+        return res.status(400).json({
             success: false,
-            message: "服务器错误",
-            error: error?.message || "未知错误"
+            message: "获取 openid 失败",
+            raw: openidRes.data
         });
     }
+
+    // 获取手机号
+    const wxRes = await axios.post("http://api.weixin.qq.com/wxa/business/getuserphonenumber", {
+        code: phoneCode
+    }, {
+        headers: {
+            "Content-Type": "application/json"
+        }
+    });
+
+    if (!wxRes.data?.phone_info?.phoneNumber) {
+        return res.status(400).json({
+            success: false,
+            message: "获取手机号失败",
+            error: wxRes.data
+        });
+    }
+
+    const phoneNumber = wxRes.data.phone_info.phoneNumber;
+
+    // 查或建用户 + 存 openid
+    const [results] = await db.query("SELECT * FROM users WHERE phone_number = ?", [phoneNumber]);
+    let user;
+    let isNewUser = false;
+
+    if (results.length > 0) {
+        user = results[0];
+
+        // ✅ 更新 openid
+        await db.query("UPDATE users SET openid = ? WHERE id = ?", [openid, user.id]);
+        user.openid = openid;
+    } else {
+        const now = new Date();
+        now.setHours(now.getHours() + 8);
+        const newUser = {
+            wxid: uuidv4(),
+            phone_number: phoneNumber,
+            username: "微信用户" + phoneNumber.slice(-4),
+            avatar_url: "https://default-avatar.com/avatar.png",
+            free_counts: 5,
+            points: 10,
+            created_time: now,
+            openid // ✅ 存进去
+        };
+        const [insertResult] = await db.query("INSERT INTO users SET ?", [newUser]);
+        newUser.id = insertResult.insertId;
+        user = newUser;
+        isNewUser = true;
+    }
+
+    const token = jwt.sign({
+        user_id: user.id
+    }, SECRET_KEY, {
+        expiresIn: "7d"
+    });
+
+    res.json({
+        success: true,
+        token,
+        user,
+        isNewUser
+    });
 });
 
 // 📌 修改用户信息（使用 authMiddleware 来验证 token）
 router.post("/update", authMiddleware, async (req, res) => {
     const userId = req.user.user_id;
-    const { username, avatar_url, wxid } = req.body;
+    const {
+        username,
+        avatar_url,
+        wxid
+    } = req.body;
 
     try {
         const [userRows] = await db.query("SELECT * FROM users WHERE id = ?", [userId]);
@@ -181,10 +196,16 @@ router.get("/info", authMiddleware, async (req, res) => {
 });
 
 router.post("/check-username", async (req, res) => {
-    const { username, user_id } = req.query;
+    const {
+        username,
+        user_id
+    } = req.query;
 
     if (!username) {
-        return res.status(400).json({ success: false, message: "缺少 username 参数" });
+        return res.status(400).json({
+            success: false,
+            message: "缺少 username 参数"
+        });
     }
 
     try {
@@ -201,15 +222,24 @@ router.post("/check-username", async (req, res) => {
         });
     } catch (err) {
         console.error("❌ 检查用户名失败:", err);
-        res.status(500).json({ success: false, message: "服务器错误" });
+        res.status(500).json({
+            success: false,
+            message: "服务器错误"
+        });
     }
 });
 
 router.post("/check-wxid", async (req, res) => {
-    const { wxid, user_id } = req.query;
+    const {
+        wxid,
+        user_id
+    } = req.query;
 
     if (!wxid) {
-        return res.status(400).json({ success: false, message: "缺少 wxid 参数" });
+        return res.status(400).json({
+            success: false,
+            message: "缺少 wxid 参数"
+        });
     }
 
     try {
@@ -226,7 +256,10 @@ router.post("/check-wxid", async (req, res) => {
         });
     } catch (err) {
         console.error("❌ 检查用户ID失败:", err);
-        res.status(500).json({ success: false, message: "服务器错误" });
+        res.status(500).json({
+            success: false,
+            message: "服务器错误"
+        });
     }
 });
 

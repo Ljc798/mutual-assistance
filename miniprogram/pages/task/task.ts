@@ -202,46 +202,50 @@ Page({
         });
     },
 
-    confirmAssign(e: any) {
+    confirmAssign(e) {
         const receiverId = e.currentTarget.dataset.userid;
         const username = e.currentTarget.dataset.username;
         const taskId = this.data.task.id;
         const price = this.data.task.offer;
-        const openid = getApp().globalData.userInfo.openid;
+        const openid = getApp().globalData.userInfo?.openid;
       
         wx.showModal({
           title: '确认指派',
           content: `确定将该任务指派给「${username}」吗？`,
           success: (res) => {
-            if (res.confirm) {
-              // ✅ 发起支付请求
-              wx.request({
-                url: 'https://mutualcampus.top/api/payment/create',
-                method: 'POST',
-                data: {
-                  openid,
-                  out_trade_no: `TASK_${taskId}_EMP_${receiverId}`,
-                  description: `支付任务 #${taskId}`,
-                  amount: parseInt(price * 100)
-                },
-                success: (res) => {
-                  if (res.data.success) {
-                    // ✅ 拉起支付（省略签名细节）
-                    wx.requestPayment({
-                      ...res.data.paymentParams, // timeStamp, nonceStr, package, signType, paySign
-                      success: () => {
-                        wx.showToast({ title: "支付成功", icon: "success" });
-                      },
-                      fail: () => {
-                        wx.showToast({ title: "支付取消", icon: "none" });
-                      }
-                    });
-                  } else {
-                    wx.showToast({ title: res.data.message, icon: "none" });
-                  }
+            if (!res.confirm) return;
+      
+            wx.request({
+              url: 'https://mutualcampus.top/api/payment/create',
+              method: 'POST',
+              data: {
+                openid,
+                taskId,
+                receiverId,
+                description: `支付任务 #${taskId}`,
+                amount: parseInt(price * 100)
+              },
+              success: (res) => {
+                if (res.data.success) {
+                  const { timeStamp, nonceStr, paySign, prepay_id } = res.data;
+                  wx.requestPayment({
+                    timeStamp,
+                    nonceStr,
+                    package: `prepay_id=${prepay_id}`,
+                    signType: 'RSA',
+                    paySign,
+                    success: () => {
+                      wx.showToast({ title: '支付成功', icon: 'success' });
+                    },
+                    fail: () => {
+                      wx.showToast({ title: '支付取消', icon: 'none' });
+                    }
+                  });
+                } else {
+                  wx.showToast({ title: res.data.message || '发起支付失败', icon: 'none' });
                 }
-              });
-            }
+              }
+            });
           }
         });
       },

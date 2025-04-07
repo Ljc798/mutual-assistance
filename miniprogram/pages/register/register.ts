@@ -22,49 +22,56 @@ Page({
     },
 
     getPhoneNumber(e: any) {
-        if (e.detail.errMsg === "getPhoneNumber:ok") {
-            wx.showLoading({ title: "登录中..." });
-
-            wx.request({
-                url: "https://mutualcampus.top/api/user/phone-login",
-                method: "POST",
-                data: { code: e.detail.code },
-                success: (res: any) => {
-                    wx.hideLoading();
-
-                    if (res.data.success) {
-                        wx.setStorageSync("token", res.data.token);
-                        wx.setStorageSync("user", res.data.user);
-                        wx.showToast({ title: "登录成功", icon: "success" });
-
-                        // ✅ 同步到全局变量（这是关键！）
-                        const app = getApp();
-                        app.setGlobalUserInfo(res.data.user, res.data.token);
-
-
-                        this.setData({
-                            isLoggedIn: true,
-                            userInfo: res.data.user
-                        });
-
-                        const targetPage = res.data.isNewUser
-                            ? "/pages/edit-profile/edit-profile?new=1"
-                            : "/pages/home/home";
-
-                        wx.redirectTo({ url: targetPage });
-                    } else {
-                        wx.showToast({ title: res.data.message, icon: "none" });
-                    }
-                },
-                fail: (err) => {
-                    wx.hideLoading();
-                    console.error("❌ 手机号登录失败:", err);
-                    wx.showToast({ title: "登录失败", icon: "none" });
-                }
-            });
-        } else {
+        if (e.detail.errMsg !== "getPhoneNumber:ok") {
             wx.showToast({ title: "用户拒绝授权", icon: "none" });
+            return;
         }
+
+        wx.login({
+            success: (loginRes) => {
+                if (!loginRes.code) {
+                    wx.showToast({ title: "登录失败", icon: "none" });
+                    return;
+                }
+
+                wx.showLoading({ title: "登录中..." });
+
+                wx.request({
+                    url: "https://mutualcampus.top/api/user/phone-login",
+                    method: "POST",
+                    data: {
+                        phoneCode: e.detail.code, // 手机号授权的 code
+                        loginCode: loginRes.code  // wx.login 拿到的 code，用来换 openid
+                    },
+                    success: (res: any) => {
+                        wx.hideLoading();
+                        if (res.data.success) {
+                            wx.setStorageSync("token", res.data.token);
+                            wx.setStorageSync("user", res.data.user);
+
+                            getApp().setGlobalUserInfo(res.data.user, res.data.token);
+
+                            this.setData({
+                                isLoggedIn: true,
+                                userInfo: res.data.user
+                            });
+
+                            const targetPage = res.data.isNewUser
+                                ? "/pages/edit-profile/edit-profile?new=1"
+                                : "/pages/home/home";
+
+                            wx.redirectTo({ url: targetPage });
+                        } else {
+                            wx.showToast({ title: res.data.message, icon: "none" });
+                        }
+                    },
+                    fail: () => {
+                        wx.hideLoading();
+                        wx.showToast({ title: "登录失败", icon: "none" });
+                    }
+                });
+            }
+        });
     },
 
     getUserInfo() {
