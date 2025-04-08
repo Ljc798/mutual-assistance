@@ -6,6 +6,7 @@ const authMiddleware = require('./authMiddleware'); // 请确保你有这个登�
 // 提现申请接口
 router.post('/withdraw', authMiddleware, async (req, res) => {
     const userId = req.user.id;
+    console.log(req.user);
     const {
         amount,
         method,

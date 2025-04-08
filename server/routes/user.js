@@ -96,7 +96,7 @@ router.post("/phone-login", async (req, res) => {
         }
 
         const token = jwt.sign({
-            user_id: user.id
+            id: user.id
         }, SECRET_KEY, {
             expiresIn: "7d"
         });
@@ -120,7 +120,7 @@ router.post("/phone-login", async (req, res) => {
 
 // 📌 修改用户信息（使用 authMiddleware 来验证 token）
 router.post("/update", authMiddleware, async (req, res) => {
-    const userId = req.user.user_id;
+    const userId = req.user.id;
     const {
         username,
         avatar_url,
@@ -185,7 +185,7 @@ router.post("/update", authMiddleware, async (req, res) => {
 
 // 📌 获取用户信息（使用 authMiddleware 来验证 token）
 router.get("/info", authMiddleware, async (req, res) => {
-    const userId = req.user.user_id; // 从 token 中提取 user_id
+    const userId = req.user.id; // 从 token 中提取 id
 
     try {
         const [results] = await db.query("SELECT * FROM users WHERE id = ?", [userId]);
@@ -210,7 +210,7 @@ router.get("/info", authMiddleware, async (req, res) => {
 router.post("/check-username", async (req, res) => {
     const {
         username,
-        user_id
+        id
     } = req.query;
 
     if (!username) {
@@ -223,7 +223,7 @@ router.post("/check-username", async (req, res) => {
     try {
         const [rows] = await db.query(
             "SELECT id FROM users WHERE username = ? AND id != ?",
-            [username, user_id || 0] // 如果没传 user_id，默认传个 0
+            [username, id || 0] // 如果没传 id，默认传个 0
         );
 
         const isAvailable = rows.length === 0;
@@ -244,7 +244,7 @@ router.post("/check-username", async (req, res) => {
 router.post("/check-wxid", async (req, res) => {
     const {
         wxid,
-        user_id
+        id
     } = req.query;
 
     if (!wxid) {
@@ -257,7 +257,7 @@ router.post("/check-wxid", async (req, res) => {
     try {
         const [rows] = await db.query(
             "SELECT id FROM users WHERE wxid = ? AND id != ?",
-            [wxid, user_id || 0]
+            [wxid, id || 0]
         );
 
         const isAvailable = rows.length === 0;
