@@ -9,7 +9,7 @@ const appid = process.env.WX_APPID;
 const mchid = process.env.WX_MCHID;
 const serial_no = process.env.WX_SERIAL_NO;
 const notify_url = "https://mutualcampus.top/api/payment/notify";
-// const privateKey = process.env.WX_PRIVATE_KEY.replace(/\\n/g, '\n');
+const privateKey = process.env.WX_PRIVATE_KEY.replace(/\\n/g, '\n');
 const apiV3Key = process.env.WX_API_V3_KEY;
 
 function generateSignature(method, url, timestamp, nonceStr, body) {

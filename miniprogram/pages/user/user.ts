@@ -10,7 +10,7 @@ Page({
     },
 
     onShow() {
-        this.loadUserInfo(); // 每次页面显示时获取最新数据
+        this.getUserInfo();
     },
 
     // ✅ 加载用户信息并判断是否为 VIP

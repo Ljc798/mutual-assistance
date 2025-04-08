@@ -62,6 +62,9 @@ Page({
             success(res) {
                 if (res.data.success) {
                     wx.showToast({ title: '申请成功', icon: 'success' });
+                    setTimeout(() => {
+                        wx.redirectTo({ url: "/pages/user/user" });
+                      }, 1500); // 👈 延迟 1.5 秒
                 } else {
                     wx.showToast({ title: res.data.message || '申请失败', icon: 'none' });
                 }

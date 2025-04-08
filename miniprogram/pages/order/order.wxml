@@ -37,14 +37,20 @@
                     <text class="order-salary">{{item.salary}}</text>
                 </view>
 
-                <!-- 新增的任务动作区 -->
                 <view class="order-action">
-                    <text class="action-text">{{item.actionText}}</text>
+                    <text class="action-text">
+                        <!-- 文本提示逻辑 -->
+                        <block wx:if="{{item.employer_done && item.employee_done}}">
+                            任务已完成 ✅
+                        </block>
+                        <block wx:elif="{{item.hasConfirmed}}">
+                            待对方确认...
+                        </block>
+                    </text>
 
-                    <view wx:if="{{item.showDoneButton}}">
-                        <view class="action-button" bindtap="handleMarkDone" data-order-id="{{item.orderId}}" data-role="{{item.role}}">
-                            我已完成
-                        </view>
+                    <!-- “我已完成”按钮 -->
+                    <view wx:if="{{!item.hasConfirmed}}" class="action-button" bindtap="handleMarkDone" data-order-id="{{item.id}}">
+                        我已完成
                     </view>
                 </view>
             </view>

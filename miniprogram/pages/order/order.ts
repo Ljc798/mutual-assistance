@@ -60,19 +60,35 @@ Page({
                     const mapped = filtered.map(task => {
                         let actionText = '';
                         let showDoneButton = false;
-                        let role = ''; // 新增字段
+                        let role = '';
 
-                        // 自动判断身份
+                        // 👤 自动判断当前身份
                         if (task.employer_id === userId) {
                             role = 'employer';
                         } else if (task.employee_id === userId) {
                             role = 'employee';
                         }
+
+                        // ✅ 确认状态
+                        const employerDone = task.employer_done === 1;
+                        const employeeDone = task.employee_done === 1;
+                        const hasConfirmed = (role === 'employer') ? employerDone : employeeDone;
+                        const otherConfirmed = (role === 'employer') ? employeeDone : employerDone;
+
+                        // 🧠 状态文本和按钮显示逻辑
                         if (task.status === 0) {
                             actionText = '等待接单中…';
                         } else if (task.status === 1) {
-                            actionText = '请确认完成任务';
-                            showDoneButton = true;
+                            if (hasConfirmed && otherConfirmed) {
+                                actionText = '任务已完成 ✅';
+                                showDoneButton = false;
+                            } else if (hasConfirmed && !otherConfirmed) {
+                                actionText = '待对方确认...';
+                                showDoneButton = false;
+                            } else {
+                                actionText = '请确认完成任务';
+                                showDoneButton = true;
+                            }
                         } else if (task.status === 2) {
                             actionText = '订单已完成';
                         }
@@ -120,33 +136,24 @@ Page({
     },
 
     handleMarkDone(e) {
-        const orderId = e.currentTarget.dataset.orderId;
-        const app = getApp();
-        const userId = app.globalData.userInfo?.id;
-        const role = e.currentTarget.dataset.role;
+        const taskId = e.currentTarget.dataset.orderId;
         const token = wx.getStorageSync("token");
 
-
-        if (!userId || !role) {
+        if (!token) {
             wx.showToast({ title: "请先登录", icon: "none" });
             return;
         }
 
         wx.request({
-            url: "https://mutualcampus.top/api/task/done",
+            url: `https://mutualcampus.top/api/task/${taskId}/confirm-done`,
             method: "POST",
             header: {
                 Authorization: `Bearer ${token}`
             },
-            data: {
-                taskId: orderId,
-                userId,
-                role
-            },
             success: (res) => {
                 if (res.data.success) {
-                    wx.showToast({ title: "标记完成成功", icon: "success" });
-                    // 重新拉订单
+                    wx.showToast({ title: res.data.message || "操作成功", icon: "success" });
+                    // 重新拉订单或更新页面
                     this.fetchOrders();
                 } else {
                     wx.showToast({ title: res.data.message || "操作失败", icon: "none" });

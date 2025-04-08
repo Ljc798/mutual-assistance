@@ -97,71 +97,6 @@ router.get("/tasks", async (req, res) => {
     }
 });
 
-
-router.post('/confirm', async (req, res) => {
-    const { taskId, userId } = req.body;
-  
-    if (!taskId || !userId) {
-      return res.status(400).json({ success: false, message: '缺少参数' });
-    }
-  
-    try {
-      const [[task]] = await db.query(`SELECT * FROM tasks WHERE id = ?`, [taskId]);
-      if (!task) {
-        return res.status(404).json({ success: false, message: '任务不存在' });
-      }
-  
-      let updateField = '';
-      if (task.employer_id === userId) {
-        updateField = 'employer_done';
-      } else if (task.employee_id === userId) {
-        updateField = 'employee_done';
-      } else {
-        return res.status(403).json({ success: false, message: '你不是该任务的雇主或雇员' });
-      }
-  
-      // 更新“确认完成”字段
-      await db.query(
-        `UPDATE tasks SET ${updateField} = 1 WHERE id = ?`,
-        [taskId]
-      );
-  
-      // 重新查一遍，防止 race condition
-      const [[updatedTask]] = await db.query(`SELECT * FROM tasks WHERE id = ?`, [taskId]);
-      if (updatedTask.employer_done && updatedTask.employee_done) {
-        // ✅ 双方确认，准备打款
-        const amount = parseInt(updatedTask.pay_amount * 100); // 单位：分
-        const openid = (await db.query(`SELECT openid FROM users WHERE id = ?`, [updatedTask.employee_id]))[0][0]?.openid;
-        const out_no = `RELEASE_${taskId}_${Date.now()}`;
-  
-        // ⚠️ TODO: 使用微信企业付款到零钱接口（需要商户证书）
-        // 这里我们假设你封装了一个函数 payToUser(openid, amount, out_no)
-  
-        const payRes = await payToUser(openid, amount, out_no); // 💰 你自己封装这个
-  
-        if (payRes.success) {
-          await db.query(`
-            UPDATE tasks 
-            SET status = 2,
-                completed_time = NOW(),
-                auto_release_time = NULL
-            WHERE id = ?
-          `, [taskId]);
-  
-          return res.json({ success: true, message: '双方已确认，任务完成并打款' });
-        } else {
-          return res.status(500).json({ success: false, message: '打款失败', error: payRes.error });
-        }
-      }
-  
-      res.json({ success: true, message: '确认完成已记录' });
-  
-    } catch (err) {
-      console.error('❌ 确认完成失败:', err);
-      res.status(500).json({ success: false, message: '服务器错误' });
-    }
-  });
-
 // ===== 3. 获得任务订单接口 =====
 router.get("/my", async (req, res) => {
     const {
@@ -214,37 +149,6 @@ router.get("/my", async (req, res) => {
         });
     }
 });
-
-
-router.post("/done", async (req, res) => {
-    const { taskId, userId, role } = req.body;
-  
-    if (!taskId || !userId || !role) {
-      return res.status(400).json({ success: false, message: "参数不完整" });
-    }
-  
-    let fieldToUpdate = role === "employer" ? "employer_done" : "employee_done";
-  
-    try {
-      // 更新当前角色完成状态
-      await db.query(`UPDATE tasks SET ${fieldToUpdate} = 1 WHERE id = ?`, [taskId]);
-  
-      // 查询双方完成状态
-      const [rows] = await db.query(`SELECT employer_done, employee_done FROM tasks WHERE id = ?`, [taskId]);
-      const task = rows[0];
-  
-      if (task.employer_done && task.employee_done) {
-        // 双方都完成，设置任务为已完成
-        await db.query(`UPDATE tasks SET status = 2, completed_time = NOW() WHERE id = ?`, [taskId]);
-        // 你可以顺带调用微信打款 API 逻辑
-      }
-  
-      res.json({ success: true, message: "已确认完成" });
-    } catch (err) {
-      console.error("❌ 确认完成失败:", err);
-      res.status(500).json({ success: false, message: "服务器错误" });
-    }
-  });
 
 // ===== 4. 编辑任务 =====
 router.post("/update", authMiddleware, async (req, res) => {
@@ -493,6 +397,88 @@ router.get("/:id", async (req, res) => {
         console.error("❌ 任务详情查询失败:", err);
         res.status(500).json({
             error: "数据库查询失败"
+        });
+    }
+});
+
+// ===== 10. 双方确认完成接口 =====
+router.post("/:id/confirm-done", authMiddleware, async (req, res) => {
+    const taskId = parseInt(req.params.id);
+    const userId = req.user.id;
+
+    if (isNaN(taskId)) {
+        return res.status(400).json({
+            success: false,
+            message: "任务 ID 非法"
+        });
+    }
+
+    try {
+        const [
+            [task]
+        ] = await db.query("SELECT * FROM tasks WHERE id = ?", [taskId]);
+
+        if (!task) {
+            return res.status(404).json({
+                success: false,
+                message: "任务不存在"
+            });
+        }
+
+        if (task.status !== 1) {
+            return res.status(400).json({
+                success: false,
+                message: "任务不是进行中，无法确认完成"
+            });
+        }
+
+        let fieldToUpdate = null;
+
+        if (task.employer_id === userId) {
+            fieldToUpdate = "employer_done";
+        } else if (task.employee_id === userId) {
+            fieldToUpdate = "employee_done";
+        } else {
+            return res.status(403).json({
+                success: false,
+                message: "你不是该任务的参与者"
+            });
+        }
+
+        // ✅ 更新确认字段
+        await db.query(`UPDATE tasks SET ${fieldToUpdate} = 1 WHERE id = ?`, [taskId]);
+
+        const bothConfirmed =
+            (fieldToUpdate === "employer_done" && task.employee_done === 1) ||
+            (fieldToUpdate === "employee_done" && task.employer_done === 1);
+
+        if (bothConfirmed) {
+            // ✅ 任务完成，打款给雇员
+            await db.query(
+                `UPDATE tasks 
+           SET status = 2, completed_time = NOW() 
+           WHERE id = ?`,
+                [taskId]
+            );
+
+            await db.query(
+                `UPDATE users 
+           SET balance = balance + ? 
+           WHERE id = ?`,
+                [task.pay_amount, task.employee_id]
+            );
+        }
+
+        return res.json({
+            success: true,
+            message: bothConfirmed ? "双方确认，任务完成，余额已到账" : "已确认，等待对方确认"
+        });
+
+    } catch (err) {
+        console.error("❌ 确认完成失败:", err);
+        res.status(500).json({
+            success: false,
+            message: "服务器错误"
         });
     }
 });
