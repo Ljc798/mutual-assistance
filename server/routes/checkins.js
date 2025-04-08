@@ -68,6 +68,22 @@ router.post("/checkin", authMiddleware, async (req, res) => {
             totalPoints += BONUS_REWARDS[consecutive_days];
         }
 
+        // ✅ 判断是否 VIP，给予双倍积分
+        const [
+            [user]
+        ] = await conn.query(
+            `SELECT vip_expire_time FROM users WHERE id = ?`,
+            [user_id]
+        );
+
+        const now = new Date();
+        const isVip = user && user.vip_expire_time && new Date(user.vip_expire_time) > now;
+
+        if (isVip) {
+            totalPoints *= 2;
+            console.log(`🎖️ 用户 ${user_id} 是 VIP，积分翻倍：${totalPoints}`);
+        }
+
         // 插入签到记录
         await conn.query(
             `INSERT INTO checkins (user_id, checkin_date, consecutive_days, total_days)
@@ -90,6 +106,7 @@ router.post("/checkin", authMiddleware, async (req, res) => {
             consecutive_days,
             total_days,
             earned_points: totalPoints,
+            is_vip: isVip,
         });
     } catch (err) {
         await conn.rollback(); // ❗失败就回滚事务

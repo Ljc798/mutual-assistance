@@ -96,10 +96,14 @@ Page({
             data: { user_id },
             success: (res) => {
                 if (res.data.success) {
-                    const { message, earned_points, consecutive_days } = res.data;
+                    const { message, earned_points, consecutive_day, is_vip } = res.data;
                     let content = message;
                     if (consecutive_days > 1) {
                         content += `\n已连续签到${consecutive_days} 天！`;
+                    }
+
+                    if (is_vip) {
+                        content += "\n（VIP双倍积分）";
                     }
 
                     wx.showModal({

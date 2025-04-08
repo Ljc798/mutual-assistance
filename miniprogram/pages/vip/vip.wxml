@@ -10,6 +10,7 @@
                 <image src="/assets/icons/vip-2.svg" class="vip-badge" />
             </view>
         </view>
+        <text class="benefit">📅 签到享双倍积分</text>
         <text class="benefit">🔔 新功能抢先体验</text>
     </view>
 
