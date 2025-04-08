@@ -201,6 +201,8 @@ Page({
 
         const app = getApp();
         const user_id = app.globalData.userInfo?.id;
+        console.log(app.globalData.token);
+        
         if (!user_id) {
             wx.showToast({ title: "请先登录", icon: "none" });
             return;

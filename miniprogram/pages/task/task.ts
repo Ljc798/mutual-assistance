@@ -238,6 +238,9 @@ Page({
                                 paySign,
                                 success: () => {
                                     wx.showToast({ title: '支付成功', icon: 'success' });
+                                    // ✅ 支付成功后重新加载任务和投标列表
+                                    const taskId = this.data.task.id;
+                                    this.loadTaskDetail(taskId);
                                 },
                                 fail: () => {
                                     wx.showToast({ title: '支付取消', icon: 'none' });

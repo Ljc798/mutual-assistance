@@ -94,5 +94,11 @@ Page({
     // 跳转订单页
     handleOrderClick() {
         wx.navigateTo({ url: "/pages/order/order" });
-    }
+    },
+
+    goToWallet() {
+        wx.navigateTo({
+          url: '/pages/wallet/wallet',
+        });
+    },
 });

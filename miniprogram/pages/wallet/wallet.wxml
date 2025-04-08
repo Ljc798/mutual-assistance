@@ -1,0 +1,26 @@
+<view class="wallet-page">
+    <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack" />
+    <view class="balance-section">
+        <text class="label">可提现余额</text>
+        <text class="amount">¥{{balance}}</text>
+    </view>
+
+    <view class="input-section">
+        <input placeholder="请输入提现金额" type="digit" bindinput="onAmountInput" />
+        <picker mode="selector" range="{{methods}}" bindchange="onMethodChange">
+            <view class="picker-display">到账方式：{{selectedMethod}}</view>
+        </picker>
+        <input placeholder="请输入收款手机号" type="number" maxlength="11" bindinput="onPhoneInput" />
+    </view>
+
+    <view class="btn-section">
+        <button bindtap="submitWithdraw">申请提现</button>
+    </view>
+
+    <view class="footer-note">
+        <text>提现将在2个工作日内处理，到账方式：{{selectedMethod}}</text>
+    </view>
+    <view wx:if="{{isWeChat}}" class="footer-note-warning">
+        <text>若使用微信提现，请先前往->收付款->向银行卡或手机号转账->手机号收款设置->开启允许通过手机号向我转账</text>
+    </view>
+</view>

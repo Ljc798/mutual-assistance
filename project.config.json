@@ -34,12 +34,12 @@
     "tabIndent": "insertSpaces",
     "tabSize": 2
   },
+  "cloudfunctionTemplateRoot": "cloudfunctionTemplate/",
+  "appid": "wxc16b2296bf6c1074",
   "libVersion": "2.32.3",
   "packOptions": {
     "ignore": [],
     "include": []
   },
-  "appid": "wxc16b2296bf6c1074",
-  "cloudfunctionTemplateRoot": "cloudfunctionTemplate/",
   "projectArchitecture": "multiPlatform"
 }

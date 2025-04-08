@@ -20,12 +20,16 @@
     <!-- 免费次数和钱包余额 -->
     <view class="info-box">
         <view class="box" bindtap="goToShop">
-            <text class="label">免广告次数</text>
+            <text class="label">免佣金次数</text>
             <text class="value">{{userInfo.free_counts}}</text>
         </view>
         <view class="box" bindtap="goToShop">
             <text class="label">积分余额</text>
             <text class="value">{{userInfo.points}}</text>
+        </view>
+        <view class="box" bindtap="goToWallet">
+            <text class="label">账户余额</text>
+            <text class="value">{{userInfo.balance}}</text>
         </view>
     </view>
 

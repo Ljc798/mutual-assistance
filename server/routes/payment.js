@@ -9,7 +9,7 @@ const appid = process.env.WX_APPID;
 const mchid = process.env.WX_MCHID;
 const serial_no = process.env.WX_SERIAL_NO;
 const notify_url = "https://mutualcampus.top/api/payment/notify";
-const privateKey = process.env.WX_PRIVATE_KEY.replace(/\\n/g, '\n');
+// const privateKey = process.env.WX_PRIVATE_KEY.replace(/\\n/g, '\n');
 const apiV3Key = process.env.WX_API_V3_KEY;
 
 function generateSignature(method, url, timestamp, nonceStr, body) {
@@ -91,7 +91,6 @@ router.post('/create', async (req, res) => {
             }
         });
 
-        const timeStamp = Math.floor(Date.now() / 1000).toString();
         const payNonceStr = crypto.randomBytes(16).toString("hex");
         const pkg = `prepay_id=${response.data.prepay_id}`;
 
@@ -162,7 +161,8 @@ router.post('/notify', express.raw({
         const decryptedData = decryptResource(resource, apiV3Key);
         const outTradeNo = decryptedData.out_trade_no;
         const transactionId = decryptedData.transaction_id;
-
+        const amount = parseFloat(decryptedData.amount.total) / 100; // 💰 元，保留精度
+        
         await db.query(
             `UPDATE task_payments SET status = 'paid', paid_at = NOW(), transaction_id = ? WHERE out_trade_no = ?`,
             [transactionId, outTradeNo]
@@ -174,8 +174,8 @@ router.post('/notify', express.raw({
             const employeeId = parseInt(match[2]);
 
             await db.query(
-                `UPDATE tasks SET employee_id = ?, status = 1 WHERE id = ?`,
-                [employeeId, taskId]
+                `UPDATE tasks SET employee_id = ?, status = 1, has_paid = 1, pay_amount = ?, payment_transaction_id = ? WHERE id = ?`,
+                [employeeId, amount, transactionId, taskId]
             );
         }
 
