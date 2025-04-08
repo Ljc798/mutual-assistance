@@ -98,7 +98,7 @@ router.get("/tasks", async (req, res) => {
 });
 
 // ===== 3. 获得任务订单接口 =====
-router.get("/my", async (req, res) => {
+router.get("/my", authMiddleware, async (req, res) => {
     const {
         userId,
         role,
@@ -114,7 +114,7 @@ router.get("/my", async (req, res) => {
 
     try {
         let baseSQL = `
-        SELECT id, employer_id, employee_id, status, title, offer, DDL
+        SELECT id, employer_id, employee_id, status, title, offer, DDL, employer_done, employee_done
         FROM tasks
         WHERE (employer_id = ? OR employee_id = ?)
       `;

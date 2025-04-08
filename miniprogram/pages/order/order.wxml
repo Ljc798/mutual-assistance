@@ -49,7 +49,7 @@
                     </text>
 
                     <!-- “我已完成”按钮 -->
-                    <view wx:if="{{!item.hasConfirmed}}" class="action-button" bindtap="handleMarkDone" data-order-id="{{item.id}}">
+                    <view wx:if="{{!item.hasConfirmed}}" class="action-button" bindtap="handleMarkDone" data-order-id="{{item.orderId}}">
                         我已完成
                     </view>
                 </view>

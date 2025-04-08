@@ -7,6 +7,7 @@ Page({
         activeFilter2: 0,
         orders: [], // 真实订单数据
         userId: null,
+        hasConfirmed: false,
     },
 
     onLoad() {
@@ -56,6 +57,8 @@ Page({
                         if (activeFilter2 === 3 && task.status !== 2) return false; // 已完成
                         return true;
                     });
+    console.log(res.data);
+                        
 
                     const mapped = filtered.map(task => {
                         let actionText = '';
@@ -102,7 +105,10 @@ Page({
                             time: this.formatTime(task.DDL),
                             actionText,
                             showDoneButton,
-                            role
+                            role,
+                            employer_done: employerDone,  // 👈 加这个
+                            employee_done: employeeDone,  // 👈 还有这个
+                            hasConfirmed                // 👈 这个你已经加了，保留
                         };
                     });
 
