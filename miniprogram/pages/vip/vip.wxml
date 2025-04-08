@@ -14,11 +14,9 @@
         <text class="benefit">🔔 新功能抢先体验</text>
     </view>
 
-    <view class="vip-plans">
-        <view class="plan" wx:for="{{plans}}" wx:key="id" bindtap="selectPlan" data-id="{{item.id}}" class="plan {{item.id === selectedPlanId ? 'selected' : ''}}">
-            <text class="plan-title">{{item.name}}</text>
-            <text class="plan-price">￥{{item.price}}</text>
-        </view>
+    <view wx:for="{{plans}}" wx:key="id" bindtap="selectPlan" data-id="{{item.id}}" class="plan {{item.id === selectedPlanId ? 'selected' : ''}}">
+        <text class="plan-title">{{item.name}}</text>
+        <text class="plan-price">￥{{item.price}}</text>
     </view>
 
     <button class="pay-btn" bindtap="handlePay">立即开通</button>

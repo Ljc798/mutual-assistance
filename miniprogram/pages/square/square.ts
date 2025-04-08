@@ -11,6 +11,11 @@ Page({
         uploadedImages: [], // 已上传的图片 URL
         checkinIcon: "../../assets/icons/rili-2.svg", // 默认签到前的图标
         checkedIn: false, // 是否已签到
+        showReportModal: false,
+        selectedPostId: null,
+        reportReasons: ["骚扰辱骂", "不实信息", "违规广告", "违法内容", "色情低俗", "其他"],
+        selectedReasonIndex: -1,
+        reportDetail: '',
     },
 
     onLoad() {
@@ -96,7 +101,7 @@ Page({
             data: { user_id },
             success: (res) => {
                 if (res.data.success) {
-                    const { message, earned_points, consecutive_day, is_vip } = res.data;
+                    const { message, earned_points, consecutive_days, is_vip } = res.data;
                     let content = message;
                     if (consecutive_days > 1) {
                         content += `\n已连续签到${consecutive_days} 天！`;
@@ -206,7 +211,7 @@ Page({
         const app = getApp();
         const user_id = app.globalData.userInfo?.id;
         console.log(app.globalData.token);
-        
+
         if (!user_id) {
             wx.showToast({ title: "请先登录", icon: "none" });
             return;
@@ -411,5 +416,62 @@ Page({
             newPostContent: "",
             tempImageList: []
         });
-    }
+    },
+
+    // 点击三个点触发
+    onReportTap(e) {
+        const postId = e.currentTarget.dataset.postid;
+        this.setData({
+            selectedPostId: postId,
+            showReportModal: true,
+            selectedReasonIndex: -1,
+            reportDetail: ''
+        });
+    },
+
+    onReasonChange(e) {
+        this.setData({
+            selectedReasonIndex: e.detail.value
+        });
+    },
+
+    onReportDetailInput(e) {
+        this.setData({
+            reportDetail: e.detail.value
+        });
+    },
+
+    cancelReport() {
+        this.setData({
+            showReportModal: false
+        });
+    },
+
+    submitReport() {
+        const token = wx.getStorageSync("token");
+        const { selectedPostId, selectedReasonIndex, reportReasons, reportDetail } = this.data;
+
+        if (selectedReasonIndex === -1) {
+            return wx.showToast({ title: "请选择举报原因", icon: "none" });
+        }
+
+        wx.request({
+            url: "https://mutualcampus.top/api/square/report",
+            method: "POST",
+            header: { Authorization: `Bearer ${token}` },
+            data: {
+                post_id: selectedPostId,
+                reason: reportReasons[selectedReasonIndex],
+                description: reportDetail
+            },
+            success: (res) => {
+                if (res.data.success) {
+                    wx.showToast({ title: "举报成功", icon: "success" });
+                } else {
+                    wx.showToast({ title: res.data.message || "举报失败", icon: "none" });
+                }
+                this.setData({ showReportModal: false });
+            }
+        });
+    },
 });

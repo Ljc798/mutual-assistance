@@ -361,4 +361,24 @@ router.post("/comments/unlike", async (req, res) => {
     }
 });
 
+router.post('/report', authMiddleware, async (req, res) => {
+    const userId = req.user.id;
+    const { post_id, reason = '', description = '' } = req.body;
+  
+    if (!post_id || !reason) {
+      return res.status(400).json({ success: false, message: '缺少参数' });
+    }
+  
+    try {
+      await db.query(
+        'INSERT INTO square_reports (post_id, reporter_id, reason, description) VALUES (?, ?, ?, ?)',
+        [post_id, userId, reason, description]
+      );
+      res.json({ success: true, message: '举报成功' });
+    } catch (err) {
+      console.error('❌ 举报失败:', err);
+      res.status(500).json({ success: false, message: '服务器错误' });
+    }
+  });
+
 module.exports = router;

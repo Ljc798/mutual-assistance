@@ -31,6 +31,11 @@
                         <text class="username {{item.isVip ? 'vip-username' : ''}}">{{item.username}}</text>
                         <image wx:if="{{item.isVip}}" src="/assets/icons/vip-2.svg" class="vip-badge" />
                     </view>
+
+                    <!-- 三个点按钮 -->
+                    <view class="more-button" catchtap="onReportTap" data-postid="{{item.id}}">
+                        <image src="/assets/icons/menu-dots-svgrepo-com.svg" class="more-icon" />
+                    </view>
                 </view>
 
                 <!-- 文字内容 -->
@@ -99,6 +104,26 @@
             <text class="close-btn" bindtap="closePostModal">×</text>
         </view>
     </view>
+
+    <!-- 举报弹窗 -->
+<view wx:if="{{showReportModal}}" class="modal-overlay">
+  <view class="modal">
+    <text class="modal-title">举报该帖子</text>
+
+    <picker mode="selector" value="{{selectedReasonIndex}}" range="{{reportReasons}}" bindchange="onReasonChange">
+      <view class="picker-box">
+        <text>{{reportReasons[selectedReasonIndex] || '请选择举报原因'}}</text>
+      </view>
+    </picker>
+
+    <textarea class="report-textarea" placeholder="请补充说明" bindinput="onReportDetailInput" />
+
+    <view class="modal-actions">
+      <button class="cancel-btn" bindtap="cancelReport">取消</button>
+      <button class="submit-btn" bindtap="submitReport">提交</button>
+    </view>
+  </view>
+</view>
 
 </view>
 <bottom-nav></bottom-nav>
