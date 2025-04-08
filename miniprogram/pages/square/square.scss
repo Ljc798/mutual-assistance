@@ -413,44 +413,60 @@
   }
   
   .modal {
-    background: white;
-    padding: 24px;
-    border-radius: 12px;
-    width: 80vw;
+    background-color: #fff;
+    border-radius: 16rpx;
+    padding: 32rpx;
+    width: 600rpx;
+    box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.1);
+    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica;
   }
   
   .modal-title {
-    font-size: 18px;
+    font-size: 32rpx;
     font-weight: bold;
-    margin-bottom: 16px;
+    margin-bottom: 32rpx;
   }
   
   .picker-box {
-    padding: 12px;
     border: 1px solid #ddd;
-    border-radius: 8px;
-    margin-bottom: 16px;
+    border-radius: 12rpx;
+    padding: 20rpx;
+    margin-bottom: 24rpx;
+    color: #666;
+    background-color: #f8f8f8;
   }
   
   .report-textarea {
-    height: 80px;
+    height: 160rpx;
     border: 1px solid #ccc;
-    padding: 8px;
-    border-radius: 6px;
-    margin-bottom: 16px;
+    border-radius: 12rpx;
+    padding: 20rpx;
+    background-color: #f9f9f9;
+    font-size: 28rpx;
+    margin-bottom: 32rpx;
   }
   
   .modal-actions {
     display: flex;
     justify-content: space-between;
+    gap: 20rpx;
   }
   
-  .cancel-btn {
-    background: #ccc;
-    color: white;
+  .cancel-btn2,
+  .submit-btn2 {
+    flex: 1;
+    padding: 20rpx 0;
+    border-radius: 12rpx;
+    font-size: 30rpx;
   }
   
-  .submit-btn {
-    background: #e64340;
+  .cancel-btn2 {
+    background-color: #e0e0e0;
+    color: #333;
+  }
+  
+  .submit-btn2 {
+    background-color: #ff4d4f;
     color: white;
+    font-weight: bold;
   }

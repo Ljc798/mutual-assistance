@@ -119,8 +119,8 @@
     <textarea class="report-textarea" placeholder="请补充说明" bindinput="onReportDetailInput" />
 
     <view class="modal-actions">
-      <button class="cancel-btn" bindtap="cancelReport">取消</button>
-      <button class="submit-btn" bindtap="submitReport">提交</button>
+      <button class="cancel-btn2" bindtap="cancelReport">取消</button>
+      <button class="submit-btn2" bindtap="submitReport">提交</button>
     </view>
   </view>
 </view>

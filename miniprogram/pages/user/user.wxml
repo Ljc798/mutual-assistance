@@ -61,11 +61,25 @@
         <view class="action-item" bindtap="goToShop">
             <text>商城</text>
         </view>
-        <view class="action-item">
+        <view class="action-item" bindtap="onFeedbackClick">
             <text>意见反馈</text>
         </view>
         <view style="text-align: center; font-weight: 400; color: #333;">
             <text>您的意见真的真的对我们很重要🥺</text>
+        </view>
+    </view>
+
+    <!-- 意见反馈弹窗 -->
+    <view class="feedback-popup" wx:if="{{showFeedbackPopup}}">
+        <view class="popup-content">
+            <text class="popup-title">意见反馈</text>
+            <input class="popup-input" placeholder="标题" value="{{feedbackTitle}}" bindinput="onFeedbackTitleInput" />
+            <textarea class="popup-textarea" placeholder="请写下您的反馈..." value="{{feedbackContent}}" bindinput="onFeedbackContentInput" />
+
+            <view class="popup-actions">
+                <button class="cancel-btn" bindtap="closeFeedbackPopup">取消</button>
+                <button class="submit-btn" bindtap="submitFeedback">提交</button>
+            </view>
         </view>
     </view>
 

@@ -6,7 +6,10 @@ const authMiddleware = require("./authMiddleware"); // 引入中间件
 
 // ===== 1. 获取广场帖子列表 =====
 router.get("/posts", async (req, res) => {
-    const { category, user_id } = req.query;
+    const {
+        category,
+        user_id
+    } = req.query;
 
     try {
         let queryParams = [user_id || null];
@@ -28,7 +31,10 @@ router.get("/posts", async (req, res) => {
         query += " ORDER BY s.created_time DESC";
         const [posts] = await db.query(query, queryParams);
 
-        if (posts.length === 0) return res.json({ success: true, posts: [] });
+        if (posts.length === 0) return res.json({
+            success: true,
+            posts: []
+        });
 
         const postIds = posts.map(p => p.id);
         const [images] = await db.query(
@@ -44,17 +50,29 @@ router.get("/posts", async (req, res) => {
             isVip: post.vip_expire_time && new Date(post.vip_expire_time) > now
         }));
 
-        res.json({ success: true, posts: postsWithImages });
+        res.json({
+            success: true,
+            posts: postsWithImages
+        });
     } catch (err) {
         console.error("❌ 获取帖子失败:", err);
-        res.status(500).json({ success: false, message: "获取帖子失败" });
+        res.status(500).json({
+            success: false,
+            message: "获取帖子失败"
+        });
     }
 });
 
 // ===== 2. 点赞帖子 =====
 router.post("/like", authMiddleware, async (req, res) => { // 添加了认证中间件
-    const { user_id, square_id } = req.body;
-    if (!user_id) return res.status(400).json({ success: false, message: "缺少 user_id" });
+    const {
+        user_id,
+        square_id
+    } = req.body;
+    if (!user_id) return res.status(400).json({
+        success: false,
+        message: "缺少 user_id"
+    });
 
     try {
         const [existing] = await db.query(
@@ -63,23 +81,38 @@ router.post("/like", authMiddleware, async (req, res) => { // 添加了认证中
         );
 
         if (existing.length > 0) {
-            return res.status(400).json({ success: false, message: "已经点赞过了" });
+            return res.status(400).json({
+                success: false,
+                message: "已经点赞过了"
+            });
         }
 
         await db.query(`INSERT INTO square_likes (user_id, square_id) VALUES (?, ?)`, [user_id, square_id]);
         await db.query(`UPDATE square SET likes_count = likes_count + 1 WHERE id = ?`, [square_id]);
 
-        res.json({ success: true, message: "点赞成功" });
+        res.json({
+            success: true,
+            message: "点赞成功"
+        });
     } catch (err) {
         console.error("❌ 点赞失败:", err);
-        res.status(500).json({ success: false, message: "点赞失败" });
+        res.status(500).json({
+            success: false,
+            message: "点赞失败"
+        });
     }
 });
 
 // ===== 3. 取消点赞 =====
 router.post("/unlike", authMiddleware, async (req, res) => { // 添加了认证中间件
-    const { user_id, square_id } = req.body;
-    if (!user_id) return res.status(400).json({ success: false, message: "缺少 user_id" });
+    const {
+        user_id,
+        square_id
+    } = req.body;
+    if (!user_id) return res.status(400).json({
+        success: false,
+        message: "缺少 user_id"
+    });
 
     try {
         const [result] = await db.query(
@@ -88,7 +121,10 @@ router.post("/unlike", authMiddleware, async (req, res) => { // 添加了认证�
         );
 
         if (result.affectedRows === 0) {
-            return res.status(400).json({ success: false, message: "未点赞，无法取消" });
+            return res.status(400).json({
+                success: false,
+                message: "未点赞，无法取消"
+            });
         }
 
         await db.query(
@@ -96,18 +132,31 @@ router.post("/unlike", authMiddleware, async (req, res) => { // 添加了认证�
             [square_id]
         );
 
-        res.json({ success: true, message: "取消点赞成功" });
+        res.json({
+            success: true,
+            message: "取消点赞成功"
+        });
     } catch (err) {
         console.error("❌ 取消点赞失败:", err);
-        res.status(500).json({ success: false, message: "取消点赞失败" });
+        res.status(500).json({
+            success: false,
+            message: "取消点赞失败"
+        });
     }
 });
 
 // ===== 4. 创建帖子 =====
 router.post("/create", authMiddleware, async (req, res) => { // 添加了认证中间件
-    const { user_id, category, content } = req.body;
+    const {
+        user_id,
+        category,
+        content
+    } = req.body;
     if (!user_id || !category || !content) {
-        return res.status(400).json({ success: false, message: "缺少必要参数" });
+        return res.status(400).json({
+            success: false,
+            message: "缺少必要参数"
+        });
     }
 
     try {
@@ -117,36 +166,59 @@ router.post("/create", authMiddleware, async (req, res) => { // 添加了认证�
             [user_id, category, content]
         );
 
-        res.json({ success: true, square_id: result.insertId });
+        res.json({
+            success: true,
+            square_id: result.insertId
+        });
     } catch (err) {
         console.error("❌ 创建帖子失败:", err);
-        res.status(500).json({ success: false, message: "创建帖子失败" });
+        res.status(500).json({
+            success: false,
+            message: "创建帖子失败"
+        });
     }
 });
 
 // ===== 5. 更新图片 =====
 router.post("/update-images", authMiddleware, async (req, res) => { // 添加了认证中间件
-    const { square_id, images } = req.body;
+    const {
+        square_id,
+        images
+    } = req.body;
     if (!square_id || !images || images.length === 0) {
-        return res.status(400).json({ success: false, message: "缺少必要参数" });
+        return res.status(400).json({
+            success: false,
+            message: "缺少必要参数"
+        });
     }
 
     try {
         const imageInserts = images.map(url => [square_id, url]);
         await db.query(`INSERT INTO square_images (square_id, image_url) VALUES ?`, [imageInserts]);
-        res.json({ success: true });
+        res.json({
+            success: true
+        });
     } catch (err) {
         console.error("❌ 存储图片失败:", err);
-        res.status(500).json({ success: false, message: "存储图片失败" });
+        res.status(500).json({
+            success: false,
+            message: "存储图片失败"
+        });
     }
 });
 
 // 获取帖子详情
 router.get("/detail", async (req, res) => {
-    const { post_id, user_id } = req.query;
+    const {
+        post_id,
+        user_id
+    } = req.query;
 
     if (!post_id) {
-        return res.status(400).json({ success: false, message: "缺少 post_id" });
+        return res.status(400).json({
+            success: false,
+            message: "缺少 post_id"
+        });
     }
 
     try {
@@ -162,7 +234,10 @@ router.get("/detail", async (req, res) => {
         `, [user_id || null, post_id]);
 
         if (posts.length === 0) {
-            return res.json({ success: false, message: "帖子不存在" });
+            return res.json({
+                success: false,
+                message: "帖子不存在"
+            });
         }
 
         const post = posts[0];
@@ -174,19 +249,31 @@ router.get("/detail", async (req, res) => {
         );
 
         post.images = images.map(img => img.image_url);
-        res.json({ success: true, post });
+        res.json({
+            success: true,
+            post
+        });
 
     } catch (err) {
         console.error("❌ 获取帖子详情失败:", err);
-        res.status(500).json({ success: false, message: "获取帖子失败" });
+        res.status(500).json({
+            success: false,
+            message: "获取帖子失败"
+        });
     }
 });
 
 // 获取评论列表
 router.get("/comments", async (req, res) => {
-    const { square_id, user_id } = req.query;
+    const {
+        square_id,
+        user_id
+    } = req.query;
     if (!square_id) {
-        return res.status(400).json({ success: false, message: "缺少 square_id" });
+        return res.status(400).json({
+            success: false,
+            message: "缺少 square_id"
+        });
     }
 
     try {
@@ -228,20 +315,35 @@ router.get("/comments", async (req, res) => {
             root.children = subCommentsMap[root.id] || [];
         });
 
-        res.json({ success: true, comments: rootComments });
+        res.json({
+            success: true,
+            comments: rootComments
+        });
 
     } catch (err) {
         console.error("❌ 获取评论失败:", err);
-        res.status(500).json({ success: false, message: "获取评论失败" });
+        res.status(500).json({
+            success: false,
+            message: "获取评论失败"
+        });
     }
 });
 
 // 发布评论
 router.post("/comments/create", authMiddleware, async (req, res) => { // 添加了认证中间件
-    const { user_id, square_id, content, parent_id, root_parent_id } = req.body;
+    const {
+        user_id,
+        square_id,
+        content,
+        parent_id,
+        root_parent_id
+    } = req.body;
 
     if (!user_id || !square_id || !content) {
-        return res.status(400).json({ success: false, message: "缺少必要参数" });
+        return res.status(400).json({
+            success: false,
+            message: "缺少必要参数"
+        });
     }
 
     try {
@@ -262,7 +364,11 @@ router.post("/comments/create", authMiddleware, async (req, res) => { // 添加�
                 [square_id]
             );
 
-            res.json({ success: true, message: "评论成功", comment_id: newCommentId });
+            res.json({
+                success: true,
+                message: "评论成功",
+                comment_id: newCommentId
+            });
         } else {
             const [result] = await db.query(
                 `INSERT INTO square_comments (user_id, square_id, content, parent_id, root_parent_id) VALUES (?, ?, ?, ?, ?)`,
@@ -274,20 +380,33 @@ router.post("/comments/create", authMiddleware, async (req, res) => { // 添加�
                 [square_id]
             );
 
-            res.json({ success: true, message: "评论成功", comment_id: result.insertId });
+            res.json({
+                success: true,
+                message: "评论成功",
+                comment_id: result.insertId
+            });
         }
     } catch (err) {
         console.error("❌ 评论失败:", err);
-        res.status(500).json({ success: false, message: "发表评论失败" });
+        res.status(500).json({
+            success: false,
+            message: "发表评论失败"
+        });
     }
 });
 
 // 点赞评论
 router.post("/comments/like", authMiddleware, async (req, res) => { // 添加了认证中间件
-    const { user_id, comment_id } = req.body;
+    const {
+        user_id,
+        comment_id
+    } = req.body;
 
     if (!user_id || !comment_id) {
-        return res.status(400).json({ success: false, message: "缺少 user_id 或 comment_id" });
+        return res.status(400).json({
+            success: false,
+            message: "缺少 user_id 或 comment_id"
+        });
     }
 
     try {
@@ -299,7 +418,10 @@ router.post("/comments/like", authMiddleware, async (req, res) => { // 添加了
         );
 
         if (existingLike.length > 0) {
-            return res.status(400).json({ success: false, message: "已经点赞过" });
+            return res.status(400).json({
+                success: false,
+                message: "已经点赞过"
+            });
         }
 
         // 2. 插入点赞记录
@@ -314,19 +436,31 @@ router.post("/comments/like", authMiddleware, async (req, res) => { // 添加了
             [comment_id]
         );
 
-        return res.json({ success: true, message: "点赞成功" });
+        return res.json({
+            success: true,
+            message: "点赞成功"
+        });
 
     } catch (err) {
         console.error("❌ 点赞失败:", err);
-        return res.status(500).json({ success: false, message: "服务器错误" });
+        return res.status(500).json({
+            success: false,
+            message: "服务器错误"
+        });
     }
 });
 
 router.post("/comments/unlike", async (req, res) => {
-    const { user_id, comment_id } = req.body;
+    const {
+        user_id,
+        comment_id
+    } = req.body;
 
     if (!user_id || !comment_id) {
-        return res.status(400).json({ success: false, message: "缺少 user_id 或 comment_id" });
+        return res.status(400).json({
+            success: false,
+            message: "缺少 user_id 或 comment_id"
+        });
     }
 
     try {
@@ -338,7 +472,10 @@ router.post("/comments/unlike", async (req, res) => {
         );
 
         if (results.length === 0) {
-            return res.status(400).json({ success: false, message: "尚未点赞，无法取消" });
+            return res.status(400).json({
+                success: false,
+                message: "尚未点赞，无法取消"
+            });
         }
 
         // 2. 删除点赞记录
@@ -353,32 +490,51 @@ router.post("/comments/unlike", async (req, res) => {
             [comment_id]
         );
 
-        return res.json({ success: true, message: "取消点赞成功" });
+        return res.json({
+            success: true,
+            message: "取消点赞成功"
+        });
 
     } catch (err) {
         console.error("❌ 取消点赞失败:", err);
-        return res.status(500).json({ success: false, message: "服务器错误" });
+        return res.status(500).json({
+            success: false,
+            message: "服务器错误"
+        });
     }
 });
 
 router.post('/report', authMiddleware, async (req, res) => {
     const userId = req.user.id;
-    const { post_id, reason = '', description = '' } = req.body;
-  
+    const {
+        post_id,
+        reason = '',
+        description = ''
+    } = req.body;
+
     if (!post_id || !reason) {
-      return res.status(400).json({ success: false, message: '缺少参数' });
+        return res.status(400).json({
+            success: false,
+            message: '缺少参数'
+        });
     }
-  
+
     try {
-      await db.query(
-        'INSERT INTO square_reports (post_id, reporter_id, reason, description) VALUES (?, ?, ?, ?)',
-        [post_id, userId, reason, description]
-      );
-      res.json({ success: true, message: '举报成功' });
+        await db.query(
+            'INSERT INTO square_reports (post_id, reporter_id, reason, description) VALUES (?, ?, ?, ?)',
+            [post_id, userId, reason, description]
+        );
+        res.json({
+            success: true,
+            message: '举报成功'
+        });
     } catch (err) {
-      console.error('❌ 举报失败:', err);
-      res.status(500).json({ success: false, message: '服务器错误' });
+        console.error('❌ 举报失败:', err);
+        res.status(500).json({
+            success: false,
+            message: '服务器错误'
+        });
     }
-  });
+});
 
 module.exports = router;

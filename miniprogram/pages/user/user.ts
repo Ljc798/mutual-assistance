@@ -3,6 +3,9 @@ Page({
         userInfo: null, // 用户信息
         isVip: false,
         vip_expire_time: '', // 显示用的格式化时间
+        showFeedbackPopup: false,
+        feedbackTitle: '',
+        feedbackContent: '',
     },
 
     onLoad() {
@@ -98,13 +101,63 @@ Page({
 
     goToWallet() {
         wx.navigateTo({
-          url: '/pages/wallet/wallet',
+            url: '/pages/wallet/wallet',
         });
     },
 
     goToVipPage() {
         wx.navigateTo({
             url: '/pages/vip/vip',
-          });
-    }
+        });
+    },
+
+    // 显示反馈窗
+    openFeedbackPopup() {
+        this.setData({ showFeedbackPopup: true });
+    },
+
+    // 隐藏反馈窗
+    closeFeedbackPopup() {
+        this.setData({ showFeedbackPopup: false, feedbackTitle: '', feedbackContent: '' });
+    },
+
+    onFeedbackTitleInput(e) {
+        this.setData({ feedbackTitle: e.detail.value });
+    },
+
+    onFeedbackContentInput(e) {
+        this.setData({ feedbackContent: e.detail.value });
+    },
+
+    submitFeedback() {
+        const { feedbackTitle, feedbackContent } = this.data;
+        const token = wx.getStorageSync("token");
+
+        if (!feedbackContent || feedbackContent.length < 5) {
+            return wx.showToast({ title: "内容太短", icon: "none" });
+        }
+
+        wx.request({
+            url: "https://mutualcampus.top/api/feedback/submit",
+            method: "POST",
+            header: { Authorization: `Bearer ${token}"` },
+            data: {
+                title: feedbackTitle,
+                content: feedbackContent
+            },
+            success: (res) => {
+                if (res.data.success) {
+                    wx.showToast({ title: "感谢反馈 💌", icon: "success" });
+                    this.closeFeedbackPopup();
+                } else {
+                    wx.showToast({ title: "提交失败", icon: "none" });
+                }
+            }
+        });
+    },
+
+    // 👇 绑定这个到“意见反馈”按钮
+    onFeedbackClick() {
+        this.openFeedbackPopup();
+    },
 });

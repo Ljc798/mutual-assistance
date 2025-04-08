@@ -16,6 +16,7 @@ const timetableConfigRouter = require("./routes/timetableConfig");
 const messagesRouter = require("./routes/messages");
 const walletRouter = require("./routes/wallet");
 const vipRouter = require("./routes/vip");
+const feedbackRouter = require("./routes/feedback");
 
 const app = express();
 const server = http.createServer(app);
@@ -42,6 +43,7 @@ app.use("/api/timetableConfig", timetableConfigRouter);
 app.use("/api/messages", messagesRouter);
 app.use("/api/wallet", walletRouter);
 app.use("/api/vip", vipRouter);
+app.use("/api/feedback", feedbackRouter);
 
 app.get("/", (req, res) => {
     res.redirect("https://admin.mutualcampus.top");
