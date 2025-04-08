@@ -101,4 +101,10 @@ Page({
           url: '/pages/wallet/wallet',
         });
     },
+
+    goToVipPage() {
+        wx.navigateTo({
+            url: '/pages/vip/vip',
+          });
+    }
 });

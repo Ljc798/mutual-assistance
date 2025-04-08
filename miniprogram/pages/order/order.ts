@@ -40,10 +40,11 @@ Page({
     // ✅ 拉取数据 + 筛选
     fetchOrders() {
         const { userId, activeFilter1, activeFilter2 } = this.data;
-
+        const token = wx.getStorageSync("token");
         wx.request({
             url: `https://mutualcampus.top/api/task/my`,
             method: "GET",
+            header: { Authorization: `Bearer ${token}`, },
             data: { userId },
             success: (res) => {
                 if (res.data.success && Array.isArray(res.data.tasks)) {
@@ -57,8 +58,8 @@ Page({
                         if (activeFilter2 === 3 && task.status !== 2) return false; // 已完成
                         return true;
                     });
-    console.log(res.data);
-                        
+                    console.log(res.data);
+
 
                     const mapped = filtered.map(task => {
                         let actionText = '';

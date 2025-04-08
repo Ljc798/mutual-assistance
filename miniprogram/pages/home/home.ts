@@ -26,6 +26,10 @@ Page({
         this.loadTasks(); // 加载任务数据
     },
 
+    onShow() {
+        this.loadTasks(); // 加载任务数据
+    },
+
     loadTasks() {
         wx.showLoading({ title: "加载中...", mask: true });
 

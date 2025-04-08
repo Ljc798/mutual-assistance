@@ -1,0 +1,25 @@
+<view class="vip-page">
+    <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack" />
+
+    <view class="vip-benefits">
+        <text class="benefit">🚫 订单免佣金（不限次数）</text>
+        <view class="vip-square">
+            <text class="benefit">👑 广场尊贵 VIP 标签</text>
+            <view class="username-area">
+                <text class="username vip-username">测试用户</text>
+                <image src="/assets/icons/vip-2.svg" class="vip-badge" />
+            </view>
+        </view>
+        <text class="benefit">🔔 新功能抢先体验</text>
+    </view>
+
+    <view class="vip-plans">
+        <view class="plan" wx:for="{{plans}}" wx:key="id" bindtap="selectPlan" data-id="{{item.id}}" class="plan {{item.id === selectedPlanId ? 'selected' : ''}}">
+            <text class="plan-title">{{item.name}}</text>
+            <text class="plan-price">￥{{item.price}}</text>
+        </view>
+    </view>
+
+    <button class="pay-btn" bindtap="handlePay">立即开通</button>
+
+</view>
