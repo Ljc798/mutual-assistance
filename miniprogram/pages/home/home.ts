@@ -20,6 +20,8 @@ Page({
         tasks: [] as Task[], // 存储所有任务
         filteredTasks: [] as Task[], // 当前分类筛选后的任务
         activeCategory: "全部", // 当前选中的分类
+        keyword: "",
+        searchResults: [],
     },
 
     onLoad() {
@@ -122,5 +124,36 @@ Page({
 
     handleOrderClick() {
         wx.navigateTo({ url: "/pages/order/order" })
-    }
+    },
+
+    handleSearchInput(e) {
+        const value = e.detail.value;
+        this.setData({ keyword: value });
+    
+        clearTimeout(this._debounceTimer);
+        this._debounceTimer = setTimeout(() => {
+          this.searchTasks(value);
+        }, 300); // ❗️节流搜索请求
+      },
+    
+      searchTasks(keyword) {
+        if (!keyword.trim()) {
+          this.setData({ searchResults: [] });
+          return;
+        }
+    
+        wx.request({
+          url: "https://mutualcampus.top/api/task/search",
+          method: "GET",
+          data: { q: keyword },
+          success: (res) => {
+            if (res.data.success) {
+              this.setData({ searchResults: res.data.tasks });
+            }
+          },
+          fail: () => {
+            wx.showToast({ title: "搜索失败", icon: "none" });
+          }
+        });
+      },
 });

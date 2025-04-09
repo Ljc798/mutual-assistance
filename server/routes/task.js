@@ -234,6 +234,29 @@ router.post("/update", authMiddleware, async (req, res) => {
     }
 });
 
+router.get("/search", async (req, res) => {
+    const keyword = req.query.q;
+  
+    if (!keyword || keyword.trim() === "") {
+      return res.json({ success: true, tasks: [] }); // 没关键词就返回空
+    }
+  
+    try {
+      const [tasks] = await db.query(
+        `SELECT * FROM tasks 
+         WHERE title LIKE ? OR detail LIKE ?
+         ORDER BY created_time DESC
+         LIMIT 30`,
+        [`%${keyword}%`, `%${keyword}%`]
+      );
+  
+      res.json({ success: true, tasks });
+    } catch (err) {
+      console.error("❌ 搜索失败:", err);
+      res.status(500).json({ success: false, message: "服务器错误" });
+    }
+  });
+
 // ===== 6. 投标 =====
 router.post("/bid", authMiddleware, async (req, res) => {
     const {
