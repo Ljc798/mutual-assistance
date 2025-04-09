@@ -21,12 +21,7 @@ function generateSignature(method, url, timestamp, nonceStr, body) {
 }
 
 router.post('/create', async (req, res) => {
-    const {
-        openid,
-        taskId,
-        receiverId,
-        description
-    } = req.body;
+    const { openid, taskId, receiverId, description } = req.body;
 
     if (!openid || !taskId || !receiverId || !description) {
         return res.status(400).json({
@@ -36,10 +31,8 @@ router.post('/create', async (req, res) => {
     }
 
     try {
-        // ✅ 1. 从 task_bids 获取真实报价
-        const [
-            [bid]
-        ] = await db.query(
+        // 1. 获取报价
+        const [[bid]] = await db.query(
             'SELECT price FROM task_bids WHERE task_id = ? AND user_id = ?',
             [taskId, receiverId]
         );
@@ -54,13 +47,13 @@ router.post('/create', async (req, res) => {
         const amount = parseInt(bid.price * 100); // 单位：分
         const out_trade_no = `TASK_${taskId}_EMP_${receiverId}_${Date.now()}`;
 
-        // ✅ 2. 插入支付记录（预下单，pending）
+        // 2. 插入支付记录
         await db.query(
             `INSERT INTO task_payments (task_id, payer_openid, receiver_id, out_trade_no, amount, status) VALUES (?, ?, ?, ?, ?, 'pending')`,
             [taskId, openid, receiverId, out_trade_no, amount]
         );
 
-        // ✅ 3. 构造微信支付请求
+        // 3. 构造微信支付请求
         const url = '/v3/pay/transactions/jsapi';
         const method = 'POST';
         const fullUrl = `https://api.mch.weixin.qq.com${url}`;
@@ -81,6 +74,7 @@ router.post('/create', async (req, res) => {
                 openid
             }
         });
+
         const signature = generateSignature(method, url, timestamp, nonceStr, body);
         const authorization = `WECHATPAY2-SHA256-RSA2048 mchid="${mchid}",serial_no="${serial_no}",nonce_str="${nonceStr}",timestamp="${timestamp}",signature="${signature}"`;
 
@@ -91,10 +85,10 @@ router.post('/create', async (req, res) => {
             }
         });
 
-        const payNonceStr = crypto.randomBytes(16).toString("hex");
+        // 4. 构造小程序支付参数
         const pkg = `prepay_id=${response.data.prepay_id}`;
+        const payMessage = `${appid}\n${timestamp}\n${nonceStr}\n${pkg}\n`;
 
-        const payMessage = `${appid}\n${timeStamp}\n${payNonceStr}\n${pkg}\n`;
         const paySign = crypto
             .createSign("RSA-SHA256")
             .update(payMessage)
@@ -103,8 +97,8 @@ router.post('/create', async (req, res) => {
         res.json({
             success: true,
             paymentParams: {
-                timeStamp,
-                nonceStr: payNonceStr,
+                timeStamp: timestamp, // 这里用统一的变量
+                nonceStr,             // 统一用一个 nonceStr
                 package: pkg,
                 signType: "RSA",
                 paySign
