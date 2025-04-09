@@ -1,26 +1,31 @@
 <view class="chat-page">
 
-<view class="chat-header">
-  <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack" />
-  <text class="chat-title">{{targetName}}</text>
-</view>
-
-<view class="chat-container">
-  <scroll-view class="message-list" scroll-y="true" scroll-with-animation scroll-top="{{scrollTop}}" scroll-into-view="{{scrollIntoView}}">
-    <block wx:for="{{messages}}" wx:key="id">
-      <view class="message-item {{item.isSelf ? 'self' : 'other'}}">
-        <view class="bubble">
-          <text class="msg-content">{{item.content}}</text>
+    <view class="chat-header">
+        <view class="header-left">
+            <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack" />
         </view>
-      </view>
-    </block>
-    <view id="bottom-anchor"></view>
-  </scroll-view>
+        <view class="header-center">
+            <text class="chat-title">{{targetName}}</text>
+        </view>
+        <view class="header-right"></view> <!-- 用来平衡布局，防止偏左 -->
+    </view>
 
-  <view class="input-bar">
-    <input class="text-input" placeholder="请输入消息" value="{{inputText}}" bindinput="onInput" />
-    <button class="send-button" bindtap="sendMessage">发送</button>
-  </view>
-</view>
+    <view class="chat-container">
+        <scroll-view class="message-list" scroll-y="true" scroll-with-animation scroll-top="{{scrollTop}}" scroll-into-view="{{scrollIntoView}}">
+            <block wx:for="{{messages}}" wx:key="id">
+                <view class="message-item {{item.isSelf ? 'self' : 'other'}}">
+                    <view class="bubble">
+                        <text class="msg-content">{{item.content}}</text>
+                    </view>
+                </view>
+            </block>
+            <view id="bottom-anchor"></view>
+        </scroll-view>
+    </view>
+
+    <view class="input-bar">
+            <input class="text-input" placeholder="请输入消息" value="{{inputText}}" bindinput="onInput" />
+            <button class="send-button" bindtap="sendMessage">发送</button>
+        </view>
 
 </view>

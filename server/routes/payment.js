@@ -182,7 +182,7 @@ router.post('/notify', express.raw({
             const [
                 [task]
             ] = await db.query(
-                `SELECT title FROM tasks WHERE id = ?`,
+                `SELECT title, employer_id FROM tasks WHERE id = ?`,
                 [taskId]
             );
 
@@ -197,14 +197,16 @@ router.post('/notify', express.raw({
             );
 
             // ✅ 通知雇主：支付成功
-            await db.query(
-                `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
-                [
-                    task.employer_id,
-                    '💰 支付成功',
-                    `你已成功支付任务《${task.title}》，等待对方接单完成任务～`
-                ]
-            );
+            if (task.employer_id) {
+                await db.query(
+                    `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
+                    [
+                        task.employer_id,
+                        '💰 支付成功',
+                        `你已成功支付任务《${task.title}》，等待对方接单完成任务～`
+                    ]
+                );
+            }
         }
 
         res.status(200).json({

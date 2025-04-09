@@ -123,7 +123,6 @@
         <text class="fake-send">发表</text>
     </view>
 
-    <!-- 评论弹窗 -->
     <!-- 评论弹窗（居中版） -->
     <view class="comment-popup" wx:if="{{showCommentPopup}}">
         <view class="popup-mask" bindtap="closeCommentPopup"></view>

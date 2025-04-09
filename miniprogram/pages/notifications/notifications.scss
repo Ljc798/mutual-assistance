@@ -1,5 +1,4 @@
 .back-btn {
-    position: absolute;
     top: 110rpx;
     left: 30rpx;
     width: 50rpx;
@@ -7,22 +6,33 @@
     z-index: 10;
 }
 .notification-page {
-    padding: 110rpx 32rpx 10rpx 32rpx;
+    padding: 0 32rpx 10rpx 32rpx;
     background-color: #f9f9f9;
   }
   
   .notification-header {
+    display: flex;
+    top: 0;
+    left: 0;
+    gap: 20rpx;
+    padding: 100rpx 0 20rpx 20rpx;
+    position: fixed;
     font-size: 36rpx;
     font-weight: bold;
     margin-bottom: 24rpx;
-    text-align: center;
     color: #222;
+    background: #fff;
+    width: 100%;
+  }
+
+  .noti {
+      padding-top: 180rpx;
   }
   
   .notification-card {
-    padding: 16px;
-    margin: 12px;
-    border-radius: 10px;
+    padding: 30rpx;
+    margin: 30rpx 12rpx;
+    border-radius: 10rpx;
     box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
     transition: all 0.3s;
   }
@@ -31,26 +41,26 @@
     font-weight: bold;
     color: #444;
     display: block;
-    margin-bottom: 4px;
+    margin-bottom: 8rpx;
   }
   
   .notification-title {
-    font-size: 16px;
+    font-size: 32rpx;
     font-weight: 500;
-    margin-bottom: 4px;
+    margin-bottom: 8rpx;
     display: block;
     color: #222;
   }
   
   .notification-content {
-    font-size: 14px;
+    font-size: 30rpx;
     color: #555;
     display: block;
-    margin-bottom: 6px;
+    margin-bottom: 16rpx;
   }
   
   .notification-time {
-    font-size: 12px;
+    font-size: 24rpx;
     color: #999;
     text-align: right;
     display: block;
