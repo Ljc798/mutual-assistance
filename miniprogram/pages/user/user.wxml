@@ -55,7 +55,7 @@
         <view class="action-item" bindtap="handleOrderClick">
             <text>我的订单</text>
         </view>
-        <view class="action-item">
+        <view class="action-item" bindtap="handleSpaceClick">
             <text>我的空间</text>
         </view>
         <view class="action-item" bindtap="goToShop">

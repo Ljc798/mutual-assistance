@@ -537,4 +537,102 @@ router.post('/report', authMiddleware, async (req, res) => {
     }
 });
 
+router.get("/mine", authMiddleware, async (req, res) => {
+    const userId = req.user.id;
+
+    try {
+        const [posts] = await db.query(
+            `SELECT id, content, category, likes_count, comments_count, created_time 
+             FROM square 
+             WHERE user_id = ? 
+             ORDER BY created_time DESC`,
+            [userId]
+        );
+
+        const postIds = posts.map(p => p.id);
+        const [images] = await db.query(
+            `SELECT square_id, image_url FROM square_images WHERE square_id IN (?)`,
+            [postIds.length ? postIds : [0]]
+        );
+
+        const postsWithImages = posts.map(post => ({
+            ...post,
+            images: images.filter(img => img.square_id === post.id).map(img => img.image_url)
+        }));
+
+        res.json({ success: true, posts: postsWithImages });
+    } catch (err) {
+        console.error("❌ 获取我的帖子失败:", err);
+        res.status(500).json({ success: false, message: "服务器错误" });
+    }
+});
+
+router.post("/delete", authMiddleware, async (req, res) => {
+    const userId = req.user.id;
+    const { post_id } = req.body;
+
+    if (!post_id) {
+        return res.status(400).json({ success: false, message: "缺少 post_id" });
+    }
+
+    const conn = await db.getConnection();
+    try {
+        await conn.beginTransaction();
+
+        // ✅ 确保用户只能删自己的帖子
+        const [posts] = await conn.query(`SELECT id FROM square WHERE id = ? AND user_id = ?`, [post_id, userId]);
+        if (posts.length === 0) {
+            await conn.release();
+            return res.status(404).json({ success: false, message: "帖子不存在或无权限" });
+        }
+
+        // 🚮 删除点赞记录
+        await conn.query(`DELETE FROM square_likes WHERE square_id = ?`, [post_id]);
+
+        // 🧹 删除评论和点赞
+        await conn.query(`DELETE FROM comment_likes WHERE comment_id IN (SELECT id FROM square_comments WHERE square_id = ?)`, [post_id]);
+        await conn.query(`DELETE FROM square_comments WHERE square_id = ?`, [post_id]);
+
+        // 🖼️ 删除图片记录
+        await conn.query(`DELETE FROM square_images WHERE square_id = ?`, [post_id]);
+
+        // 🪓 最后删帖子本体
+        await conn.query(`DELETE FROM square WHERE id = ? AND user_id = ?`, [post_id, userId]);
+
+        await conn.commit();
+        res.json({ success: true, message: "删除成功" });
+    } catch (err) {
+        await conn.rollback();
+        console.error("❌ 删除帖子失败:", err);
+        res.status(500).json({ success: false, message: "服务器错误" });
+    } finally {
+        conn.release();
+    }
+});
+
+router.post("/edit", authMiddleware, async (req, res) => {
+    const userId = req.user.id;
+    const { post_id, content, category } = req.body;
+
+    if (!post_id || !content) {
+        return res.status(400).json({ success: false, message: "缺少参数" });
+    }
+
+    try {
+        const [result] = await db.query(
+            `UPDATE square SET content = ?, category = ? WHERE id = ? AND user_id = ?`,
+            [content, category || '', post_id, userId]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ success: false, message: "帖子不存在或无权限" });
+        }
+
+        res.json({ success: true, message: "更新成功" });
+    } catch (err) {
+        console.error("❌ 编辑帖子失败:", err);
+        res.status(500).json({ success: false, message: "服务器错误" });
+    }
+});
+
 module.exports = router;

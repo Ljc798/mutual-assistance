@@ -99,6 +99,10 @@ Page({
         wx.navigateTo({ url: "/pages/order/order" });
     },
 
+    handleSpaceClick() {
+        wx.navigateTo({url: "/pages/mysquare/mysquare"});
+    },
+
     goToWallet() {
         wx.navigateTo({
             url: '/pages/wallet/wallet',
@@ -133,14 +137,14 @@ Page({
         const { feedbackTitle, feedbackContent } = this.data;
         const token = wx.getStorageSync("token");
 
-        if (!feedbackContent || feedbackContent.length < 5) {
+        if (!feedbackContent || feedbackContent.length < 3) {
             return wx.showToast({ title: "内容太短", icon: "none" });
         }
 
         wx.request({
             url: "https://mutualcampus.top/api/feedback/submit",
             method: "POST",
-            header: { Authorization: `Bearer ${token}"` },
+            header: { Authorization: `Bearer ${token}` },
             data: {
                 title: feedbackTitle,
                 content: feedbackContent

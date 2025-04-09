@@ -1,0 +1,19 @@
+<view class="mysquare-container">
+  <view class="post-item" wx:for="{{posts}}" wx:key="id">
+    <view class="post-header">
+      <text class="post-category">分类：{{item.category}}</text>
+      <text class="post-time">{{item.created_time}}</text>
+    </view>
+
+    <view class="post-content">{{item.content}}</view>
+
+    <scroll-view scroll-x="true" class="post-images" wx:if="{{item.images.length > 0}}">
+      <image class="post-image" wx:for="{{item.images}}" wx:key="index" src="{{item}}" mode="aspectFill" />
+    </scroll-view>
+
+    <view class="post-actions">
+      <button class="edit-btn" size="mini" data-id="{{item.id}}" bindtap="handleEdit">编辑</button>
+      <button class="delete-btn" size="mini" data-id="{{item.id}}" bindtap="handleDelete">删除</button>
+    </view>
+  </view>
+</view>
