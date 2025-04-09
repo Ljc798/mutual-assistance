@@ -1,0 +1,62 @@
+.back-btn {
+    position: absolute;
+    top: 110rpx;
+    left: 30rpx;
+    width: 50rpx;
+    height: 50rpx;
+    z-index: 10;
+}
+.notification-page {
+    padding: 110rpx 32rpx 10rpx 32rpx;
+    background-color: #f9f9f9;
+  }
+  
+  .notification-header {
+    font-size: 36rpx;
+    font-weight: bold;
+    margin-bottom: 24rpx;
+    text-align: center;
+    color: #222;
+  }
+  
+  .notification-card {
+    background-color: #fff;
+    border-radius: 12rpx;
+    padding: 24rpx;
+    margin-bottom: 20rpx;
+    box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.05);
+  }
+  
+  .notification-card.unread {
+    border-left: 6rpx solid #ff5722;
+  }
+  
+  .notification-card.read {
+    opacity: 0.6;
+  }
+  
+  .notification-type {
+    font-weight: bold;
+    font-size: 28rpx;
+    color: #444;
+  }
+  
+  .notification-title {
+    font-size: 28rpx;
+    margin: 8rpx 0;
+    color: #111;
+  }
+  
+  .notification-content {
+    font-size: 26rpx;
+    color: #666;
+    margin: 4rpx 0;
+  }
+  
+  .notification-time {
+    font-size: 22rpx;
+    color: #999;
+    text-align: right;
+    display: block;
+    margin-top: 10rpx;
+  }

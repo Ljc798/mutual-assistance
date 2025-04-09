@@ -15,57 +15,96 @@
 }
 
 .chat-list {
-    padding: 180rpx 20rpx 20rpx 20rpx;
-  }
-  
-  .chat-item {
+    padding: 20rpx 20rpx 20rpx 20rpx;
+}
+
+.chat-item {
     display: flex;
     align-items: center;
     padding: 20rpx 0;
     border-bottom: 1px solid #eee;
-  }
-  
-  .avatar {
+}
+
+.avatar {
     width: 80rpx;
     height: 80rpx;
     border-radius: 50%;
     margin-right: 20rpx;
     background-color: #f2f2f2;
-  }
-  
-  .chat-info {
+}
+
+.chat-info {
     flex: 1;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-  }
-  
-  .chat-header {
+}
+
+.chat-header {
     display: flex;
     justify-content: space-between;
     font-size: 28rpx;
     color: #333;
-  }
-  
-  .name {
+}
+
+.name {
     font-weight: bold;
     max-width: 400rpx;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-  
-  .time {
+}
+
+.time {
     font-size: 24rpx;
     color: #999;
     white-space: nowrap;
-  }
-  
-  .last-msg {
+}
+
+.last-msg {
     font-size: 26rpx;
     color: #666;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     margin-top: 6rpx;
-  }
+}
+
+.system-notification-box {
+    background-color: #fff4ec;
+    padding: 200rpx 16rpx 14rpx 1rpx;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.system-notification-box .left {
+    display: flex;
+    align-items: center;
+}
+
+.bell-icon {
+    width: 22px;
+    height: 22px;
+    margin-right: 10px;
+}
+
+.text-area .title {
+    display: flex;
+    flex-direction: column;
+    font-weight: 600;
+    font-size: 16px;
+    color: #d9822b;
+}
+
+.text-area .preview {
+    font-size: 12px;
+    color: #999;
+    margin-top: 4px;
+}
+
+.arrow-icon {
+    width: 14px;
+    height: 14px;
+}

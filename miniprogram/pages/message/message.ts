@@ -11,6 +11,7 @@ Page({
     data: {
         chatList: [],
         userId: null,
+        latestNotification: {},
     },
 
     onLoad() {
@@ -28,6 +29,7 @@ Page({
 
     onShow() {
         this.loadChatList(); // 返回时刷新
+        this.fetchLatestNotification();
     },
 
     loadChatList() {
@@ -80,5 +82,27 @@ Page({
         wx.navigateTo({
             url: `/pages/chat/chat?targetId=${targetId}&targetName=${targetName}`
         });
-    }
+    },
+
+    fetchLatestNotification() {
+        const token = wx.getStorageSync('token');
+        wx.request({
+            url: 'https://mutualcampus.top/api/notification/latest',
+            method: 'GET',
+            header: {
+                Authorization: `Bearer ${token}`
+            },
+            success: (res) => {
+                if (res.data.success) {
+                    this.setData({ latestNotification: res.data.notification || {} });
+                }
+            }
+        });
+    },
+
+    goToSystemNotifications() {
+        wx.navigateTo({
+            url: '/pages/notifications/notifications'
+        });
+    },
 });

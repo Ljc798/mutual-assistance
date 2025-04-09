@@ -80,7 +80,7 @@
                             <view class="comment-row">
                                 <text class="comment-time">{{item.created_time}}</text>
                                 <view class="comment-actions">
-                                    <image class="like-icon" src="{{item.isLiked ? '/assets/icons/heart-fill.svg' : '/assets/icons/heart-line.svg'}}" bindtap="toggleCommentLike" data-commentid="{{item.id}}" data-isliked="{{item.isLiked}}" />
+                                    <image class="like-icon" src="{{item.isLiked ? '/assets/icons/heart-fill.svg' : '/assets/icons/heart-line.svg'}}" catchtap="toggleCommentLike" data-commentid="{{item.id}}" data-isliked="{{item.isLiked}}" />
                                     <text>{{item.likes_count}}</text>
                                 </view>
                             </view>
@@ -104,7 +104,7 @@
                                         <view class="comment-row">
                                             <text class="comment-time">{{item.created_time}}</text>
                                             <view class="comment-actions">
-                                                <image class="like-icon" src="{{item.isLiked ? '/assets/icons/heart-fill.svg' : '/assets/icons/heart-line.svg'}}" bindtap="toggleCommentLike" data-commentid="{{item.id}}" data-isliked="{{item.isLiked}}" />
+                                                <image class="like-icon" src="{{item.isLiked ? '/assets/icons/heart-fill.svg' : '/assets/icons/heart-line.svg'}}" catchtap="toggleCommentLike" data-commentid="{{item.id}}" data-isliked="{{item.isLiked}}" />
                                                 <text>{{item.likes_count}}</text>
                                             </view>
                                         </view>

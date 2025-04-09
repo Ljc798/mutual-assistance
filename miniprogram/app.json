@@ -20,7 +20,8 @@
     "pages/wallet/wallet",
     "pages/vip/vip",
     "pages/mysquare/mysquare",
-    "pages/mysquare/edit"
+    "pages/mysquare/edit",
+    "pages/notifications/notifications"
   ],
   "window": {
     "navigationBarTextStyle": "black",

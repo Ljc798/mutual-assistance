@@ -2,6 +2,20 @@
     <view class="header">
         <view class="app-name">消息列表</view>
     </view>
+
+    <!-- 系统通知入口 -->
+    <view class="system-notification-box" bindtap="goToSystemNotifications">
+        <view class="left">
+            <image src="/assets/icons/bell-fill.svg" class="bell-icon" />
+            <view class="text-area">
+                <text class="title">系统通知</text>
+                <text class="preview">{{ latestNotification.title || '暂无新通知' }}</text>
+            </view>
+        </view>
+        <image src="/assets/icons/right-chevron-svgrepo-com.svg" class="arrow-icon" />
+    </view>
+
+    
     <view class="chat-list">
         <block wx:for="{{chatList}}" wx:key="target_id">
             <view class="chat-item" bindtap="goToChat" data-targetid="{{item.target_id}}" data-username="{{item.username}}">
