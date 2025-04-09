@@ -1,17 +1,23 @@
 /* 详情页整体布局 */
 .post-detail {
-    padding: 30rpx;
+    padding: 0 30rpx;
     background-color: #fff;
     display: flex;
     flex-direction: column;
     padding-bottom: 80rpx;
+    background: #fff;
 }
 
 /* 顶部导航 */
 .post-header {
+    position: fixed;
     display: flex;
     align-items: center;
-    margin-top: 60rpx;
+    padding-top: 90rpx;
+    padding-bottom: 20rpx;
+    z-index: 999;
+    background: #fff;
+    width: 100%;
 }
 
 /* 返回按钮 */
@@ -87,7 +93,7 @@
 
 /* 帖子内容 */
 .post-content {
-    padding-top: 20rpx;
+    padding-top: 200rpx;
 }
 
 /* 标题 */
