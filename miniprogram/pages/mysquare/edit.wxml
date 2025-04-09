@@ -1,0 +1,14 @@
+<view class="edit-post-container">
+    <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack" />
+  <view class="form-group">
+    <text class="label">分类</text>
+    <input placeholder="如 校园吐槽、表白墙…" value="{{category}}" bindinput="handleCategoryChange" />
+  </view>
+
+  <view class="form-group">
+    <text class="label">内容</text>
+    <textarea placeholder="编辑你的文字…" value="{{content}}" bindinput="handleContentInput" />
+  </view>
+
+  <button class="submit-btn" bindtap="handleSubmit">提交更新</button>
+</view>

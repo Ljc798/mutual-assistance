@@ -1,4 +1,6 @@
 <view class="mysquare-container">
+    <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack" />
+
   <view class="post-item" wx:for="{{posts}}" wx:key="id">
     <view class="post-header">
       <text class="post-category">分类：{{item.category}}</text>

@@ -1,0 +1,64 @@
+.edit-post-container {
+    padding: 180rpx 24rpx 24rpx 24rpx;
+    background-color: #f9f9f9;
+    min-height: 100vh;
+}
+
+.form-group {
+    margin-bottom: 40rpx;
+}
+
+.label {
+    display: block;
+    font-size: 28rpx;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 12rpx;
+}
+
+input,
+textarea {
+    width: 100%;
+    background-color: #fff;
+    border: 1rpx solid #ddd;
+    border-radius: 12rpx;
+    padding: 20rpx;
+    font-size: 28rpx;
+    box-sizing: border-box;
+    transition: border-color 0.3s;
+}
+
+input {
+    height: 70rpx;
+}
+
+input:focus,
+textarea:focus {
+    border-color: #ffc107;
+}
+
+textarea {
+    min-height: 200rpx;
+    resize: none;
+}
+
+.submit-btn {
+    width: 100%;
+    background-color: #ffc107;
+    color: #000;
+    font-weight: bold;
+    border-radius: 12rpx;
+    padding: 20rpx 0;
+    text-align: center;
+    font-size: 32rpx;
+    box-shadow: 0 6rpx 16rpx rgba(0, 0, 0, 0.08);
+}
+
+.back-btn {
+    position: absolute;
+    top: 110rpx;
+    left: 30rpx;
+    width: 50rpx;
+    height: 50rpx;
+    z-index: 10;
+}

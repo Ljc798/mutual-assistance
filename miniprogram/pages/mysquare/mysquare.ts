@@ -54,7 +54,11 @@ Page({
     handleEdit(e) {
       const id = e.currentTarget.dataset.id;
       wx.navigateTo({
-        url: `/pages/editPost/editPost?id=${id}`
+        url: `/pages/mysquare/edit?postId=${id}`
       });
+    },
+
+    handleBack() {
+        wx.navigateBack({delta: 1});
     }
   });

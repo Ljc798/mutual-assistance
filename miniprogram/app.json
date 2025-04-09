@@ -19,7 +19,8 @@
     "pages/chat/chat",
     "pages/wallet/wallet",
     "pages/vip/vip",
-    "pages/mysquare/mysquare"
+    "pages/mysquare/mysquare",
+    "pages/mysquare/edit"
   ],
   "window": {
     "navigationBarTextStyle": "black",

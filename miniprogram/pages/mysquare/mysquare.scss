@@ -1,43 +1,60 @@
 .mysquare-container {
-    padding: 20rpx;
+    padding: 160rpx 20rpx 20rpx 20rpx;
+}
+
+.back-btn {
+    position: absolute;
+    top: 110rpx;
+    left: 30rpx;
+    width: 50rpx;
+    height: 50rpx;
+    z-index: 10;
   }
-  .post-item {
+
+.post-item {
     background-color: #ffffff;
     margin-bottom: 20rpx;
     padding: 24rpx;
     border-radius: 16rpx;
     box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
-  }
-  .post-header {
+}
+
+.post-header {
     display: flex;
     justify-content: space-between;
     color: #999;
     font-size: 24rpx;
     margin-bottom: 10rpx;
-  }
-  .post-content {
+}
+
+.post-content {
     font-size: 30rpx;
     margin-bottom: 10rpx;
-  }
-  .post-images {
+}
+
+.post-images {
     white-space: nowrap;
     margin-bottom: 10rpx;
-  }
-  .post-image {
+}
+
+.post-image {
     width: 160rpx;
     height: 160rpx;
     border-radius: 8rpx;
     margin-right: 8rpx;
-  }
-  .post-actions {
+}
+
+.post-actions {
     display: flex;
     justify-content: flex-end;
-  }
-  .edit-btn {
+}
+
+.edit-btn {
     background-color: #ffc107;
     margin-right: 20rpx;
-  }
-  .delete-btn {
+}
+
+.delete-btn {
     background-color: #f44336;
     color: white;
-  }
+}

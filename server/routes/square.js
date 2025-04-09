@@ -396,7 +396,7 @@ router.post("/comments/create", authMiddleware, async (req, res) => { // 添加�
 });
 
 // 点赞评论
-router.post("/comments/like", authMiddleware, async (req, res) => { // 添加了认证中间件
+router.post("/comments/like", async (req, res) => { // 添加了认证中间件
     const {
         user_id,
         comment_id
