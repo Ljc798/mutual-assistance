@@ -31,5 +31,26 @@ Page({
 
     handleBack() {
         wx.navigateBack({delta: 1});
+    },
+
+    handleNotificationTap(e) {
+      const id = e.currentTarget.dataset.id;
+      const token = wx.getStorageSync("token");
+  
+      // 1. 本地更新
+      const updated = this.data.notifications.map(item => {
+        return item.id === id ? { ...item, is_read: 1 } : item;
+      });
+      this.setData({ notifications: updated });
+  
+      // 2. 通知后端
+      wx.request({
+        url: "https://mutualcampus.top/api/notification/mark-read",
+        method: "POST",
+        header: {
+          Authorization: `Bearer ${token}`,
+        },
+        data: { id },
+      });
     }
   });

@@ -63,23 +63,25 @@ router.get("/posts", async (req, res) => {
     }
 });
 
-// ===== 2. 点赞帖子 =====
-router.post("/like", authMiddleware, async (req, res) => { // 添加了认证中间件
+// ===== 2. 点赞帖子 + 通知作者 =====
+router.post("/like", authMiddleware, async (req, res) => {
     const {
         user_id,
         square_id
     } = req.body;
-    if (!user_id) return res.status(400).json({
-        success: false,
-        message: "缺少 user_id"
-    });
+    if (!user_id) {
+        return res.status(400).json({
+            success: false,
+            message: "缺少 user_id"
+        });
+    }
 
     try {
+        // 1. 防止重复点赞
         const [existing] = await db.query(
             `SELECT * FROM square_likes WHERE user_id = ? AND square_id = ?`,
             [user_id, square_id]
         );
-
         if (existing.length > 0) {
             return res.status(400).json({
                 success: false,
@@ -87,8 +89,34 @@ router.post("/like", authMiddleware, async (req, res) => { // 添加了认证中
             });
         }
 
+        // 2. 点赞操作
         await db.query(`INSERT INTO square_likes (user_id, square_id) VALUES (?, ?)`, [user_id, square_id]);
         await db.query(`UPDATE square SET likes_count = likes_count + 1 WHERE id = ?`, [square_id]);
+
+        // 3. 获取作者信息 & 用户名
+        const [
+            [{
+                user_id: receiver_id
+            }]
+        ] = await db.query(
+            `SELECT user_id FROM square WHERE id = ?`, [square_id]
+        );
+
+        const [
+            [{
+                username
+            }]
+        ] = await db.query(
+            `SELECT username FROM users WHERE id = ?`, [user_id]
+        );
+
+        // 4. 插入通知（别忘了你叫 notification 表）
+        if (receiver_id && receiver_id !== user_id) {
+            await db.query(
+                `INSERT INTO notifications (user_id, type, title, content, is_read) VALUES (?, 'like', NULL, ?, 0)`,
+                [receiver_id, `${username} 赞了你的一条动态`]
+            );
+        }
 
         res.json({
             success: true,
@@ -560,19 +588,30 @@ router.get("/mine", authMiddleware, async (req, res) => {
             images: images.filter(img => img.square_id === post.id).map(img => img.image_url)
         }));
 
-        res.json({ success: true, posts: postsWithImages });
+        res.json({
+            success: true,
+            posts: postsWithImages
+        });
     } catch (err) {
         console.error("❌ 获取我的帖子失败:", err);
-        res.status(500).json({ success: false, message: "服务器错误" });
+        res.status(500).json({
+            success: false,
+            message: "服务器错误"
+        });
     }
 });
 
 router.post("/delete", authMiddleware, async (req, res) => {
     const userId = req.user.id;
-    const { post_id } = req.body;
+    const {
+        post_id
+    } = req.body;
 
     if (!post_id) {
-        return res.status(400).json({ success: false, message: "缺少 post_id" });
+        return res.status(400).json({
+            success: false,
+            message: "缺少 post_id"
+        });
     }
 
     const conn = await db.getConnection();
@@ -583,7 +622,10 @@ router.post("/delete", authMiddleware, async (req, res) => {
         const [posts] = await conn.query(`SELECT id FROM square WHERE id = ? AND user_id = ?`, [post_id, userId]);
         if (posts.length === 0) {
             await conn.release();
-            return res.status(404).json({ success: false, message: "帖子不存在或无权限" });
+            return res.status(404).json({
+                success: false,
+                message: "帖子不存在或无权限"
+            });
         }
 
         // 🚮 删除点赞记录
@@ -600,11 +642,17 @@ router.post("/delete", authMiddleware, async (req, res) => {
         await conn.query(`DELETE FROM square WHERE id = ? AND user_id = ?`, [post_id, userId]);
 
         await conn.commit();
-        res.json({ success: true, message: "删除成功" });
+        res.json({
+            success: true,
+            message: "删除成功"
+        });
     } catch (err) {
         await conn.rollback();
         console.error("❌ 删除帖子失败:", err);
-        res.status(500).json({ success: false, message: "服务器错误" });
+        res.status(500).json({
+            success: false,
+            message: "服务器错误"
+        });
     } finally {
         conn.release();
     }
@@ -612,10 +660,17 @@ router.post("/delete", authMiddleware, async (req, res) => {
 
 router.post("/edit", authMiddleware, async (req, res) => {
     const userId = req.user.id;
-    const { post_id, content, category } = req.body;
+    const {
+        post_id,
+        content,
+        category
+    } = req.body;
 
     if (!post_id || !content) {
-        return res.status(400).json({ success: false, message: "缺少参数" });
+        return res.status(400).json({
+            success: false,
+            message: "缺少参数"
+        });
     }
 
     try {
@@ -625,13 +680,22 @@ router.post("/edit", authMiddleware, async (req, res) => {
         );
 
         if (result.affectedRows === 0) {
-            return res.status(404).json({ success: false, message: "帖子不存在或无权限" });
+            return res.status(404).json({
+                success: false,
+                message: "帖子不存在或无权限"
+            });
         }
 
-        res.json({ success: true, message: "更新成功" });
+        res.json({
+            success: true,
+            message: "更新成功"
+        });
     } catch (err) {
         console.error("❌ 编辑帖子失败:", err);
-        res.status(500).json({ success: false, message: "服务器错误" });
+        res.status(500).json({
+            success: false,
+            message: "服务器错误"
+        });
     }
 });
 

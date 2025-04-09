@@ -1,10 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../config/db");
+const authMiddleware = require("./authMiddleware");
+
 
 // 获取最近一条通知
-// GET /api/notification/latest
-router.get("/latest", require("./authMiddleware"), async (req, res) => {
+router.get("/latest", authMiddleware, async (req, res) => {
     const userId = req.user.id;
 
     try {
@@ -28,7 +29,7 @@ router.get("/latest", require("./authMiddleware"), async (req, res) => {
     }
 });
 
-router.get("/all", require("./authMiddleware"), async (req, res) => {
+router.get("/all", authMiddleware, async (req, res) => {
     const userId = req.user.id;
   
     try {
@@ -45,6 +46,43 @@ router.get("/all", require("./authMiddleware"), async (req, res) => {
     } catch (err) {
       console.error("❌ 获取通知失败:", err);
       res.status(500).json({ success: false, message: "服务器错误" });
+    }
+  });
+  // 标记某条通知为已读
+router.post("/mark-read", authMiddleware, async (req, res) => {
+    const userId = req.user.id;
+    const { id } = req.body;
+  
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "缺少通知 ID",
+      });
+    }
+  
+    try {
+      const [result] = await db.query(
+        `UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?`,
+        [id, userId]
+      );
+  
+      if (result.affectedRows === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "通知不存在或无权限",
+        });
+      }
+  
+      res.json({
+        success: true,
+        message: "已标记为已读",
+      });
+    } catch (err) {
+      console.error("❌ 标记通知为已读失败:", err);
+      res.status(500).json({
+        success: false,
+        message: "服务器错误",
+      });
     }
   });
 
