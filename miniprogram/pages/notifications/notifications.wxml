@@ -9,7 +9,7 @@
                 <text class="notification-type">【{{item.type}}】</text>
                 <text class="notification-title" wx:if="{{item.title}}">{{item.title}}</text>
                 <text class="notification-content">{{item.content}}</text>
-                <text class="notification-time">{{item.created_at}}</text>
+                <text class="notification-time">{{item.display_time}}</text>
             </view>
         </block>
     </view>

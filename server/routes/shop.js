@@ -1,7 +1,26 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const db = require("../config/db");
-const authMiddleware = require("./authMiddleware"); // 引入身份认证中间件
+const crypto = require('crypto');
+const axios = require('axios');
+const jwt = require('jsonwebtoken');
+const db = require('../config/db');
+const authMiddleware = require('./authMiddleware');
+
+const appid = process.env.WX_APPID;
+const mchid = process.env.WX_MCHID;
+const serial_no = process.env.WX_SERIAL_NO;
+const notify_url = "https://mutualcampus.top/api/shop/notify";
+const privateKey = process.env.WX_PRIVATE_KEY.replace(/\\n/g, '\n');
+const apiV3Key = process.env.WX_API_V3_KEY;
+const SECRET = process.env.JWT_SECRET;
+
+function generateSignature(method, url, timestamp, nonceStr, body) {
+    const message = `${method}\n${url}\n${timestamp}\n${nonceStr}\n${body}\n`;
+    const sign = crypto.createSign('RSA-SHA256');
+    sign.update(message);
+    sign.end();
+    return sign.sign(privateKey, 'base64');
+}
 
 // 📌 获取所有上架的商品
 router.get("/items", async (req, res) => {
@@ -144,5 +163,153 @@ router.post("/redeem-point", authMiddleware, async (req, res) => { // 添加了�
         connection.release(); // ✅ 无论成功或失败都要释放连接
     }
 });
+
+// 🧾 创建微信支付订单
+router.post('/create-order', authMiddleware, async (req, res) => {
+    try {
+        const { item_id } = req.body;
+        const userId = req.user.id;
+
+        const [[item]] = await db.query(`SELECT * FROM shop_items WHERE id = ?`, [item_id]);
+        if (!item) return res.status(404).json({ success: false, message: "商品不存在" });
+
+        if (item.exchange_type !== 'money' && item.exchange_type !== 'both') {
+            return res.status(400).json({ success: false, message: '该商品不支持支付购买' });
+        }
+
+        const [[user]] = await db.query(`SELECT openid FROM users WHERE id = ?`, [userId]);
+        if (!user) return res.status(400).json({ success: false, message: '用户不存在' });
+
+        const out_trade_no = `SHOP_${userId}_${item_id}_${Date.now()}`;
+        const total_fee = Math.round(item.price * 100); // 单位：分
+
+        await db.query(
+            `INSERT INTO shop_orders (user_id, item_id, out_trade_no, status) VALUES (?, ?, ?, 'pending')`,
+            [userId, item_id, out_trade_no]
+        );
+
+        const timestamp = Math.floor(Date.now() / 1000).toString();
+        const nonceStr = crypto.randomBytes(16).toString('hex');
+        const url = '/v3/pay/transactions/jsapi';
+        const fullUrl = `https://api.mch.weixin.qq.com${url}`;
+
+        const body = JSON.stringify({
+            appid,
+            mchid,
+            description: `商城商品 - ${item.name}`,
+            out_trade_no,
+            notify_url,
+            amount: {
+                total: total_fee,
+                currency: 'CNY'
+            },
+            payer: {
+                openid: user.openid
+            }
+        });
+
+        const signature = generateSignature("POST", url, timestamp, nonceStr, body);
+        const authorization = `WECHATPAY2-SHA256-RSA2048 mchid="${mchid}",serial_no="${serial_no}",nonce_str="${nonceStr}",timestamp="${timestamp}",signature="${signature}"`;
+
+        const response = await axios.post(fullUrl, body, {
+            headers: {
+                Authorization: authorization,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const prepay_id = response.data.prepay_id;
+        const payNonceStr = crypto.randomBytes(16).toString("hex");
+        const pkg = `prepay_id=${prepay_id}`;
+        const payMessage = `${appid}\n${timestamp}\n${payNonceStr}\n${pkg}\n`;
+
+        const paySign = crypto.createSign("RSA-SHA256").update(payMessage).sign(privateKey, "base64");
+
+        res.json({
+            success: true,
+            paymentParams: {
+                timeStamp: timestamp,
+                nonceStr: payNonceStr,
+                package: pkg,
+                signType: "RSA",
+                paySign
+            }
+        });
+
+    } catch (err) {
+        console.error("❌ 创建商城订单失败:", err);
+        res.status(500).json({
+            success: false,
+            message: "创建支付订单失败"
+        });
+    }
+});
+
+router.post('/notify', express.raw({ type: '*/*' }), async (req, res) => {
+    try {
+        const bodyStr = Buffer.isBuffer(req.body) ? req.body.toString('utf8') : req.body;
+        const notifyData = typeof bodyStr === 'string' ? JSON.parse(bodyStr) : bodyStr;
+        const { resource } = notifyData;
+        if (!resource || !apiV3Key) throw new Error("缺少 resource 或 apiV3Key");
+
+        const decrypted = decryptResource(resource, apiV3Key);
+        const outTradeNo = decrypted.out_trade_no;
+        const transactionId = decrypted.transaction_id;
+
+        const [[order]] = await db.query(`SELECT * FROM shop_orders WHERE out_trade_no = ?`, [outTradeNo]);
+        if (!order) throw new Error("订单不存在");
+
+        const userId = order.user_id;
+        const [[item]] = await db.query(`SELECT * FROM shop_items WHERE id = ?`, [order.item_id]);
+        if (!item) throw new Error("商品不存在");
+
+        // ✅ 更新订单状态 + 减库存
+        await db.query(
+            `UPDATE shop_orders SET status = 'paid', paid_at = NOW(), transaction_id = ? WHERE out_trade_no = ?`,
+            [transactionId, outTradeNo]
+        );
+        await db.query(`UPDATE shop_items SET remaining = remaining - 1 WHERE id = ?`, [item.id]);
+
+        // ✅ 执行虚拟效果逻辑
+        if (item.effect === "vip") {
+            const [[user]] = await db.query(`SELECT vip_expire_time FROM users WHERE id = ?`, [userId]);
+            const now = new Date();
+            const base = user.vip_expire_time && new Date(user.vip_expire_time) > now
+                ? new Date(user.vip_expire_time)
+                : now;
+            const newExpire = new Date(base.getTime() + (item.days || 7) * 86400 * 1000);
+            const formatted = newExpire.toISOString().slice(0, 19).replace("T", " ");
+            await db.query(`UPDATE users SET vip_expire_time = ? WHERE id = ?`, [formatted, userId]);
+        } else if (item.effect === "remove_ad") {
+            await db.query(`UPDATE users SET free_counts = free_counts + 1 WHERE id = ?`, [userId]);
+        }
+
+        // ✅ 推送通知
+        await db.query(
+            `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'shop', ?, ?)`,
+            [
+                userId,
+                '🎉 商品兑换成功',
+                `你已成功购买「${item.name}」，效果已生效，感谢支持！`
+            ]
+        );
+
+        console.log("✅ 虚拟商品支付完成：", outTradeNo);
+        res.status(200).json({ code: 'SUCCESS', message: 'OK' });
+    } catch (err) {
+        console.error("❌ 支付回调处理失败（虚拟商品）:", err);
+        res.status(500).json({ code: 'FAIL', message: '处理失败' });
+    }
+});
+
+function decryptResource(resource, key) {
+    const { ciphertext, nonce, associated_data } = resource;
+    const decipher = crypto.createDecipheriv('aes-256-gcm', Buffer.from(key), Buffer.from(nonce));
+    decipher.setAuthTag(Buffer.from(ciphertext, 'base64').slice(-16));
+    decipher.setAAD(Buffer.from(associated_data));
+    const data = Buffer.from(ciphertext, 'base64').slice(0, -16);
+    const decrypted = Buffer.concat([decipher.update(data), decipher.final()]);
+    return JSON.parse(decrypted.toString('utf8'));
+}
 
 module.exports = router;

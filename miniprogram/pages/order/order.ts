@@ -8,6 +8,7 @@ Page({
         orders: [], // 真实订单数据
         userId: null,
         hasConfirmed: false,
+        showDoneButton: false,
     },
 
     onLoad() {
@@ -20,6 +21,7 @@ Page({
         this.setData({ userId });
 
         this.fetchOrders();
+        
     },
 
     // ✅ 返回上一页

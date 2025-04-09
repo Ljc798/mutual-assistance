@@ -1,20 +1,22 @@
 <view class="container">
-    <!-- 圆形返回按钮 -->
-    <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack" />
-    <!-- 一级筛选菜单 -->
-    <view class="filter-bar">
-        <view wx:for="{{filterOptions1}}" wx:key="index" bindtap="selectFilter1" data-index="{{index}}" class="filter-item {{index === activeFilter1 ? 'active' : ''}}">
-            {{item}}
+    <view class="sticky-header">
+        <!-- 圆形返回按钮 -->
+        <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack" />
+
+        <!-- 一级筛选菜单 -->
+        <view class="filter-bar">
+            <view wx:for="{{filterOptions1}}" wx:key="index" bindtap="selectFilter1" data-index="{{index}}" class="filter-item {{index === activeFilter1 ? 'active' : ''}}">
+                {{item}}
+            </view>
+        </view>
+
+        <!-- 二级筛选菜单 -->
+        <view class="filter-bar-second">
+            <view wx:for="{{filterOptions2}}" wx:key="index" bindtap="selectFilter2" data-index="{{index}}" class="filter-item-second {{index === activeFilter2 ? 'active' : ''}}">
+                {{item}}
+            </view>
         </view>
     </view>
-
-    <!-- 二级筛选菜单 -->
-    <view class="filter-bar-second">
-        <view wx:for="{{filterOptions2}}" wx:key="index" bindtap="selectFilter2" data-index="{{index}}" class="filter-item-second {{index === activeFilter2 ? 'active' : ''}}">
-            {{item}}
-        </view>
-    </view>
-
     <!-- 订单列表 -->
     <view class="order-list">
         <block wx:for="{{orders}}" wx:key="orderId">
@@ -49,7 +51,7 @@
                     </text>
 
                     <!-- “我已完成”按钮 -->
-                    <view wx:if="{{!item.hasConfirmed}}" class="action-button" bindtap="handleMarkDone" data-order-id="{{item.orderId}}">
+                    <view wx:if="{{item.statusCode === 1 && !item.hasConfirmed}}" class="action-button" bindtap="handleMarkDone" data-order-id="{{item.orderId}}">
                         我已完成
                     </view>
                 </view>

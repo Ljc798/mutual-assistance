@@ -1,3 +1,5 @@
+import { format } from "path";
+
 interface ChatItem {
     target_id: number;
     username: string;
@@ -60,7 +62,7 @@ Page({
                             username: msg.username,
                             avatar_url: msg.avatar_url,
                             last_message: msg.content,
-                            timestamp: msg.created_time,
+                            timestamp: this.formatTime(msg.created_time),
                             unread: msg.is_read ? 0 : 1 // 暂时不做累计未读数
                         };
                     });
@@ -74,6 +76,18 @@ Page({
                 wx.showToast({ title: "网络错误", icon: "none" });
             }
         });
+    },
+
+    formatTime(datetimeStr) {
+        const date = new Date(datetimeStr);
+        const pad = (n) => n.toString().padStart(2, '0');
+        date.setHours(date.getHours() - 8);
+        const month = pad(date.getMonth() + 1); // 月份从 0 开始
+        const day = pad(date.getDate());
+        const hour = pad(date.getHours());
+        const minute = pad(date.getMinutes());
+    
+        return `${month}月${day}日 ${hour}:${minute}`;
     },
 
     goToChat(e) {
@@ -94,11 +108,9 @@ Page({
                 Authorization: `Bearer ${token}`
             },
             success: (res) => {
-                console.log("🔍 latest notification response:", res.data.notification);
                 if (res.data.success) {
                     this.setData({ latestNotification: res.data.notification || "" });
                 }
-                console.log("✅ set latestNotification:", this.data.latestNotification.content);
                 
             }
         });

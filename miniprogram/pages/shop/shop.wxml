@@ -1,6 +1,8 @@
 <view class="shop-container">
-    <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="goBack" />
-    <view class="shop-header">积分商城</view>
+    <view class="sticky-shop-header">
+        <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="goBack" />
+        <view class="shop-header">积分商城</view>
+    </view>
 
     <view class="grid-container">
         <block wx:for="{{items}}" wx:key="id">
