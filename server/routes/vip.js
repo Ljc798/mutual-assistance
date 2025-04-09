@@ -163,6 +163,16 @@ router.post('/notify', express.raw({
                 `UPDATE users SET vip_expire_time = IF(vip_expire_time > NOW(), DATE_ADD(vip_expire_time, INTERVAL ? DAY), DATE_ADD(NOW(), INTERVAL ? DAY)) WHERE id = ?`,
                 [days, days, userId]
             );
+
+            // 🛎️ 发一条 VIP 购买成功通知
+            await db.query(
+                `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'vip', ?, ?)`,
+                [
+                    userId,
+                    '🎫 会员开通成功',
+                    `你已成功开通 ${order.plan}，享受尊贵特权吧！`
+                ]
+            );
         }
 
         console.log("✅ VIP支付成功并更新会员信息");

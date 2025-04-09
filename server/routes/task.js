@@ -54,6 +54,16 @@ router.post("/create", authMiddleware, async (req, res) => {
 
         const [result] = await db.query(insertSQL, values);
 
+        // 🎉 发通知给雇主
+        await db.query(
+            `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
+            [
+                employer_id,
+                '📢 任务发布成功',
+                `你发布的任务《${title}》已成功上线，等待他人接单～`
+            ]
+        );
+
         res.json({
             success: true,
             message: "任务发布成功",
@@ -224,62 +234,6 @@ router.post("/update", authMiddleware, async (req, res) => {
     }
 });
 
-// ===== 5. 指派任务接口 =====
-router.post("/assign", async (req, res) => {
-    const {
-        taskId,
-        receiverId
-    } = req.body;
-
-    if (!taskId || !receiverId) {
-        return res.status(400).json({
-            success: false,
-            message: "缺少参数"
-        });
-    }
-
-    try {
-        const [task] = await db.query(`SELECT * FROM tasks WHERE id = ?`, [taskId]);
-
-        if (task.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "任务不存在"
-            });
-        }
-
-        if (task[0].status !== 0) {
-            return res.status(400).json({
-                success: false,
-                message: "任务已被指派或已完成"
-            });
-        }
-
-        const [result] = await db.query(
-            `UPDATE tasks SET employee_id = ?, status = 1 WHERE id = ?`,
-            [receiverId, taskId]
-        );
-
-        if (result.affectedRows > 0) {
-            res.json({
-                success: true,
-                message: "任务已成功指派"
-            });
-        } else {
-            res.json({
-                success: false,
-                message: "更新失败"
-            });
-        }
-    } catch (err) {
-        console.error("❌ 指派任务失败:", err);
-        res.status(500).json({
-            success: false,
-            message: "服务器内部错误"
-        });
-    }
-});
-
 // ===== 6. 投标 =====
 router.post("/bid", authMiddleware, async (req, res) => {
     const {
@@ -300,6 +254,24 @@ router.post("/bid", authMiddleware, async (req, res) => {
     try {
         const sql = `INSERT INTO task_bids (task_id, user_id, price, advantage, status) VALUES (?, ?, ?, ?, 0)`;
         await db.query(sql, [task_id, user_id, price, advantage || '', can_finish_time]);
+
+        // 🔔 发通知给雇主
+        const [
+            [task]
+        ] = await db.query(`SELECT title, employer_id FROM tasks WHERE id = ?`, [task_id]);
+        if (task?.employer_id && task.employer_id !== user_id) {
+            const [
+                [bidder]
+            ] = await db.query(`SELECT username FROM users WHERE id = ?`, [user_id]);
+            await db.query(
+                `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
+                [
+                    task.employer_id,
+                    '📬 有人投标你的任务',
+                    `${bidder?.username || '有人'}对《${task.title}》提交了投标，请尽快查看。`
+                ]
+            );
+        }
         res.json({
             success: true,
             message: "投标成功，等待雇主选择"
@@ -345,31 +317,6 @@ router.get("/:taskId/bids", async (req, res) => {
         res.status(500).json({
             success: false,
             message: "服务器错误"
-        });
-    }
-});
-
-// ===== 8. 接单：更新状态为进行中 =====
-router.post("/:id/accept", authMiddleware, async (req, res) => {
-    const taskId = req.params.id;
-
-    try {
-        const [result] = await db.query("UPDATE tasks SET status = 1 WHERE id = ?", [taskId]);
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({
-                error: "任务不存在"
-            });
-        }
-
-        res.json({
-            message: "任务已被接单",
-            status: 1
-        });
-    } catch (err) {
-        console.error("❌ 接单失败:", err);
-        res.status(500).json({
-            error: "接单失败"
         });
     }
 });
@@ -433,11 +380,17 @@ router.post("/:id/confirm-done", authMiddleware, async (req, res) => {
         }
 
         let fieldToUpdate = null;
+        let targetId = null;
+        let role = '';
 
         if (task.employer_id === userId) {
             fieldToUpdate = "employer_done";
+            targetId = task.employee_id;
+            role = '雇主';
         } else if (task.employee_id === userId) {
             fieldToUpdate = "employee_done";
+            targetId = task.employer_id;
+            role = '接单者';
         } else {
             return res.status(403).json({
                 success: false,
@@ -445,27 +398,53 @@ router.post("/:id/confirm-done", authMiddleware, async (req, res) => {
             });
         }
 
-        // ✅ 更新确认字段
+        // ✅ 更新自己已完成状态
         await db.query(`UPDATE tasks SET ${fieldToUpdate} = 1 WHERE id = ?`, [taskId]);
 
+        // ✅ 通知对方“对方已确认”
+        await db.query(
+            `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
+            [
+                targetId,
+                `📩 ${role}已确认任务完成`,
+                `任务《${task.title}》对方已确认完成，请尽快确认。`
+            ]
+        );
+
+        // ✅ 如果双方都已确认
         const bothConfirmed =
             (fieldToUpdate === "employer_done" && task.employee_done === 1) ||
             (fieldToUpdate === "employee_done" && task.employer_done === 1);
 
         if (bothConfirmed) {
-            // ✅ 任务完成，打款给雇员
             await db.query(
-                `UPDATE tasks 
-           SET status = 2, completed_time = NOW() 
-           WHERE id = ?`,
+                `UPDATE tasks SET status = 2, completed_time = NOW() WHERE id = ?`,
                 [taskId]
             );
 
             await db.query(
-                `UPDATE users 
-           SET balance = balance + ? 
-           WHERE id = ?`,
+                `UPDATE users SET balance = balance + ? WHERE id = ?`,
                 [task.pay_amount, task.employee_id]
+            );
+
+            // ✅ 通知雇主：任务已完成
+            await db.query(
+                `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
+                [
+                    task.employer_id,
+                    `✅ 任务《${task.title}》已完成`,
+                    `雇员已完成任务并确认，任务已正式完成。`
+                ]
+            );
+
+            // ✅ 通知雇员：打款到账
+            await db.query(
+                `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
+                [
+                    task.employee_id,
+                    `💰 任务收入已到账`,
+                    `任务《${task.title}》已完成，￥${task.pay_amount} 已到账你账户余额中。`
+                ]
             );
         }
 

@@ -357,8 +357,7 @@ router.get("/comments", async (req, res) => {
     }
 });
 
-// 发布评论
-router.post("/comments/create", authMiddleware, async (req, res) => { // 添加了认证中间件
+router.post("/comments/create", authMiddleware, async (req, res) => {
     const {
         user_id,
         square_id,
@@ -375,45 +374,84 @@ router.post("/comments/create", authMiddleware, async (req, res) => { // 添加�
     }
 
     try {
+        let newCommentId;
 
         if (!parent_id) {
+            // 一级评论（直接对帖子）
             const [result] = await db.query(
-                `INSERT INTO square_comments (user_id, square_id, content, parent_id, root_parent_id) VALUES (?, ?, ?, NULL, NULL)`,
+                `INSERT INTO square_comments (user_id, square_id, content, parent_id, root_parent_id) 
+                 VALUES (?, ?, ?, NULL, NULL)`,
                 [user_id, square_id, content]
             );
-            const newCommentId = result.insertId;
 
+            newCommentId = result.insertId;
+
+            // 设置 root_parent_id 为自己（方便后续回复结构）
             await db.query(
                 `UPDATE square_comments SET root_parent_id = ? WHERE id = ?`,
                 [newCommentId, newCommentId]
             );
+
+            // 更新评论数
             await db.query(
                 `UPDATE square SET comments_count = comments_count + 1 WHERE id = ?`,
                 [square_id]
             );
 
-            res.json({
-                success: true,
-                message: "评论成功",
-                comment_id: newCommentId
-            });
+            // 给帖子作者发通知
+            const [
+                [post]
+            ] = await db.query(
+                `SELECT user_id FROM square WHERE id = ?`,
+                [square_id]
+            );
+
+            if (post && post.user_id !== user_id) {
+                await db.query(
+                    `INSERT INTO notifications (user_id, type, title, content) 
+                     VALUES (?, 'comment', '💬 有人评论了你的帖子', ?)`,
+                    [post.user_id, content.slice(0, 50)]
+                );
+            }
+
         } else {
+            // 二级评论（回复评论）
             const [result] = await db.query(
-                `INSERT INTO square_comments (user_id, square_id, content, parent_id, root_parent_id) VALUES (?, ?, ?, ?, ?)`,
+                `INSERT INTO square_comments (user_id, square_id, content, parent_id, root_parent_id) 
+                 VALUES (?, ?, ?, ?, ?)`,
                 [user_id, square_id, content, parent_id, root_parent_id]
             );
 
+            newCommentId = result.insertId;
+
             await db.query(
                 `UPDATE square SET comments_count = comments_count + 1 WHERE id = ?`,
                 [square_id]
             );
 
-            res.json({
-                success: true,
-                message: "评论成功",
-                comment_id: result.insertId
-            });
+            // 发通知给被回复的人
+            const [
+                [targetComment]
+            ] = await db.query(
+                `SELECT user_id FROM square_comments WHERE id = ?`,
+                [parent_id]
+            );
+
+            if (targetComment && targetComment.user_id !== user_id) {
+                await db.query(
+                    `INSERT INTO notifications (user_id, type, title, content) 
+                     VALUES (?, 'reply', '💬 有人回复了你', ?)`,
+                    [targetComment.user_id, content.slice(0, 50)]
+                );
+            }
         }
+
+        res.json({
+            success: true,
+            message: "评论成功",
+            comment_id: newCommentId
+        });
+
     } catch (err) {
         console.error("❌ 评论失败:", err);
         res.status(500).json({
@@ -548,13 +586,26 @@ router.post('/report', authMiddleware, async (req, res) => {
     }
 
     try {
+        // 写入举报表
         await db.query(
             'INSERT INTO square_reports (post_id, reporter_id, reason, description) VALUES (?, ?, ?, ?)',
             [post_id, userId, reason, description]
         );
+
+        // 发通知给 10 号管理员（你）
+        await db.query(
+            `INSERT INTO notifications (user_id, type, title, content) VALUES (?, ?, ?, ?)`,
+            [
+                10, // 接收人就是你
+                'report',
+                '📢 有新的举报',
+                `用户 ${userId} 举报了帖子 ${post_id}\n理由：${reason}${description ? `\n补充说明：${description}` : ''}`
+            ]
+        );
+
         res.json({
             success: true,
-            message: '举报成功'
+            message: '举报成功，正在送去星际仲裁庭 🪐'
         });
     } catch (err) {
         console.error('❌ 举报失败:', err);

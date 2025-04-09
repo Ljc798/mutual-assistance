@@ -2,16 +2,10 @@
     <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack" />
     <view class="notification-header">通知中心</view>
     <block wx:for="{{notifications}}" wx:key="id">
-        <view class="notification-card {{item.is_read ? 'read' : 'unread'}}" data-id="{{item.id}}" bindtap="handleNotificationTap">
-
+        <view class="notification-card" style="background-color: {{item.background}}" bindtap="markAsRead" data-id="{{item.id}}">
             <text class="notification-type">【{{item.type}}】</text>
-
-            <text class="notification-title" wx:if="{{item.title}}">
-                {{item.title}}
-            </text>
-
+            <text class="notification-title" wx:if="{{item.title}}">{{item.title}}</text>
             <text class="notification-content">{{item.content}}</text>
-
             <text class="notification-time">{{item.created_at}}</text>
         </view>
     </block>

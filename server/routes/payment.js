@@ -162,7 +162,7 @@ router.post('/notify', express.raw({
         const outTradeNo = decryptedData.out_trade_no;
         const transactionId = decryptedData.transaction_id;
         const amount = parseFloat(decryptedData.amount.total) / 100; // 💰 元，保留精度
-        
+
         await db.query(
             `UPDATE task_payments SET status = 'paid', paid_at = NOW(), transaction_id = ? WHERE out_trade_no = ?`,
             [transactionId, outTradeNo]
@@ -177,9 +177,24 @@ router.post('/notify', express.raw({
                 `UPDATE tasks SET employee_id = ?, status = 1, has_paid = 1, pay_amount = ?, payment_transaction_id = ? WHERE id = ?`,
                 [employeeId, amount, transactionId, taskId]
             );
+
+            const [
+                [task]
+            ] = await db.query(
+                `SELECT title FROM tasks WHERE id = ?`,
+                [taskId]
+            );
+
+            await db.query(
+                `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
+                [
+                    employeeId,
+                    '🎉 你的投标被采纳啦',
+                    `任务《${task.title}》已经指派给你，记得去查看！`
+                ]
+            );
         }
 
-        console.log('✅ 支付成功并已更新任务');
         res.status(200).json({
             code: 'SUCCESS',
             message: 'OK'

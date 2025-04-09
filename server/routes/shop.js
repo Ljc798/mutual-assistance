@@ -115,6 +115,16 @@ router.post("/redeem-point", authMiddleware, async (req, res) => { // 添加了�
             await connection.query(
                 `UPDATE users SET vip_expire_time = ? WHERE id = ?`, [formattedExpire, user_id]
             );
+
+            // 🛎️ 发一条通知
+            await connection.query(
+                `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'shop', ?, ?)`,
+                [
+                    user_id,
+                    '🎁 商品兑换成功',
+                    `你成功兑换了【${item.name}】，请尽快查看兑换记录或等待处理。`
+                ]
+            );
         }
 
         await connection.commit();

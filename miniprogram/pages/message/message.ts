@@ -11,7 +11,7 @@ Page({
     data: {
         chatList: [],
         userId: null,
-        latestNotification: {},
+        latestNotification: "",
     },
 
     onLoad() {
@@ -25,6 +25,7 @@ Page({
 
         this.setData({ userId });
         this.loadChatList();
+        this.fetchLatestNotification();
     },
 
     onShow() {
@@ -46,7 +47,6 @@ Page({
                 Authorization: `Bearer ${token}`
             },
             success: (res) => {
-                console.log(res);
 
                 if (res.data.success) {
                     const raw = res.data.chats;
@@ -86,6 +86,7 @@ Page({
 
     fetchLatestNotification() {
         const token = wx.getStorageSync('token');
+        
         wx.request({
             url: 'https://mutualcampus.top/api/notification/latest',
             method: 'GET',
@@ -93,9 +94,12 @@ Page({
                 Authorization: `Bearer ${token}`
             },
             success: (res) => {
+                console.log("🔍 latest notification response:", res.data.notification);
                 if (res.data.success) {
-                    this.setData({ latestNotification: res.data.notification || {} });
+                    this.setData({ latestNotification: res.data.notification || "" });
                 }
+                console.log("✅ set latestNotification:", this.data.latestNotification.content);
+                
             }
         });
     },

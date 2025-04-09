@@ -67,6 +67,16 @@ router.post('/withdraw', authMiddleware, async (req, res) => {
         [(amountFen / 100).toFixed(2), userId]
     );
 
+    // ✉️ 添加提现通知
+    await db.query(
+        `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'withdraw', ?, ?)`,
+        [
+            userId,
+            '💸 提现申请已提交',
+            `你申请的 ${amount} 元提现（${method}）已提交，将在 2 个工作日内到账。`
+        ]
+    );
+
     return res.json({
         success: true,
         message: '提现申请已提交，预计 2 个工作日内到账'
