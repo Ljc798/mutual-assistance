@@ -401,15 +401,29 @@ router.post("/:id/confirm-done", authMiddleware, async (req, res) => {
         // ✅ 更新自己已完成状态
         await db.query(`UPDATE tasks SET ${fieldToUpdate} = 1 WHERE id = ?`, [taskId]);
 
-        // ✅ 通知对方“对方已确认”
-        await db.query(
-            `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
-            [
-                targetId,
-                `📩 ${role}已确认任务完成`,
-                `任务《${task.title}》对方已确认完成，请尽快确认。`
-            ]
-        );
+        if (!(
+            (fieldToUpdate === "employer_done" && task.employee_done === 1) ||
+            (fieldToUpdate === "employee_done" && task.employer_done === 1)
+        )) {
+            // ✅ 第一个确认方发通知
+            await db.query(
+                `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
+                [
+                    userId,
+                    '✅ 你已确认完成任务',
+                    `你已确认任务《${task.title}》完成，等待对方确认。`
+                ]
+            );
+        
+            await db.query(
+                `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
+                [
+                    targetId,
+                    `📩 ${role}已确认任务完成`,
+                    `任务《${task.title}》对方已确认完成，请尽快确认。`
+                ]
+            );
+        }
 
         // ✅ 如果双方都已确认
         const bothConfirmed =
@@ -417,35 +431,20 @@ router.post("/:id/confirm-done", authMiddleware, async (req, res) => {
             (fieldToUpdate === "employee_done" && task.employer_done === 1);
 
         if (bothConfirmed) {
-            await db.query(
-                `UPDATE tasks SET status = 2, completed_time = NOW() WHERE id = ?`,
-                [taskId]
-            );
+            await db.query(`
+                  UPDATE tasks SET status = 2, completed_time = NOW() WHERE id = ?
+                `, [taskId]);
 
-            await db.query(
-                `UPDATE users SET balance = balance + ? WHERE id = ?`,
-                [task.pay_amount, task.employee_id]
-            );
+            await db.query(`
+                  UPDATE users SET balance = balance + ? WHERE id = ?
+                `, [task.pay_amount, task.employee_id]);
 
-            // ✅ 通知雇主：任务已完成
-            await db.query(
-                `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
-                [
-                    task.employer_id,
-                    `✅ 任务《${task.title}》已完成`,
-                    `雇员已完成任务并确认，任务已正式完成。`
-                ]
-            );
-
-            // ✅ 通知雇员：打款到账
-            await db.query(
-                `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
-                [
-                    task.employee_id,
-                    `💰 任务收入已到账`,
-                    `任务《${task.title}》已完成，￥${task.pay_amount} 已到账你账户余额中。`
-                ]
-            );
+            // 发通知：任务完成，余额到账
+            await db.query(`
+                  INSERT INTO notifications (user_id, type, title, content) VALUES 
+                  (?, 'task', '✅ 任务完成', '你参与的任务《${task.title}》已圆满完成，辛苦啦 🎉'),
+                  (?, 'task', '💰 打款通知', '任务《${task.title}》已完成，佣金 ¥${task.pay_amount} 已到账你的钱包')
+                `, [task.employer_id, task.employee_id]);
         }
 
         return res.json({

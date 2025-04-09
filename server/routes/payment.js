@@ -21,7 +21,12 @@ function generateSignature(method, url, timestamp, nonceStr, body) {
 }
 
 router.post('/create', async (req, res) => {
-    const { openid, taskId, receiverId, description } = req.body;
+    const {
+        openid,
+        taskId,
+        receiverId,
+        description
+    } = req.body;
 
     if (!openid || !taskId || !receiverId || !description) {
         return res.status(400).json({
@@ -32,7 +37,9 @@ router.post('/create', async (req, res) => {
 
     try {
         // 1. 获取报价
-        const [[bid]] = await db.query(
+        const [
+            [bid]
+        ] = await db.query(
             'SELECT price FROM task_bids WHERE task_id = ? AND user_id = ?',
             [taskId, receiverId]
         );
@@ -98,7 +105,7 @@ router.post('/create', async (req, res) => {
             success: true,
             paymentParams: {
                 timeStamp: timestamp, // 这里用统一的变量
-                nonceStr,             // 统一用一个 nonceStr
+                nonceStr, // 统一用一个 nonceStr
                 package: pkg,
                 signType: "RSA",
                 paySign
@@ -179,12 +186,23 @@ router.post('/notify', express.raw({
                 [taskId]
             );
 
+            // ✅ 通知接单人
             await db.query(
                 `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
                 [
                     employeeId,
                     '🎉 你的投标被采纳啦',
                     `任务《${task.title}》已经指派给你，记得去查看！`
+                ]
+            );
+
+            // ✅ 通知雇主：支付成功
+            await db.query(
+                `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
+                [
+                    task.employer_id,
+                    '💰 支付成功',
+                    `你已成功支付任务《${task.title}》，等待对方接单完成任务～`
                 ]
             );
         }

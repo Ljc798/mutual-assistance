@@ -117,9 +117,22 @@
             </block>
         </view>
     </scroll-view>
-    <!-- 底部固定输入框 -->
-    <view class="bottom-bar">
-        <input class="comment-input" placeholder="{{replyPlaceholder}}" value="{{newComment}}" bindinput="handleInput" bindfocus="focusComment" bindblur="blurComment" focus="{{inputFocus}}" />
-        <button class="send-button" bindtap="submitComment">发送</button>
+    <!-- 假输入框（吸底） -->
+    <view class="fake-input-bar" bindtap="openCommentPopup">
+        <text class="fake-placeholder">{{replyPlaceholder}}</text>
+        <text class="fake-send">发表</text>
+    </view>
+
+    <!-- 评论弹窗 -->
+    <!-- 评论弹窗（居中版） -->
+    <view class="comment-popup" wx:if="{{showCommentPopup}}">
+        <view class="popup-mask" bindtap="closeCommentPopup"></view>
+        <view class="popup-content centered-popup">
+            <textarea class="popup-textarea" placeholder="{{replyPlaceholder}}" value="{{newComment}}" bindinput="handleInput" focus></textarea>
+            <view class="popup-actions">
+                <button class="cancel-btn" bindtap="closeCommentPopup">取消</button>
+                <button class="submit-btn" bindtap="submitComment">发送</button>
+            </view>
+        </view>
     </view>
 </view>

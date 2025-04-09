@@ -43,43 +43,47 @@
     color: transparent;
     -webkit-background-clip: text;
     animation: shimmer 5s linear infinite;
-  }
-  
-  /* 🎖️ VIP 徽章样式 */
-  .vip-badge {
+}
+
+/* 🎖️ VIP 徽章样式 */
+.vip-badge {
     width: 50rpx;
     height: 50rpx;
     margin-left: 15rpx;
     animation: shine 2s ease-in-out infinite;
     filter: drop-shadow(0 0 6rpx gold);
-  }
-  
-  /* ✨ 流光动画 */
-  @keyframes shimmer {
+}
+
+/* ✨ 流光动画 */
+@keyframes shimmer {
     0% {
-      background-position: 0% 50%;
+        background-position: 0% 50%;
     }
+
     100% {
-      background-position: 400% 50%;
+        background-position: 400% 50%;
     }
-  }
-  
-  /* ⭐ 徽章轻微闪烁 */
-  @keyframes shine {
-    0%, 100% {
-      transform: scale(1);
-      opacity: 1;
+}
+
+/* ⭐ 徽章轻微闪烁 */
+@keyframes shine {
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 1;
     }
+
     50% {
-      transform: scale(1.1);
-      opacity: 0.85;
+        transform: scale(1.1);
+        opacity: 0.85;
     }
-  }
-  
-  /* 🧩 确保 username 和徽章横向排列 */
-  .username-area {
+}
+
+/* 🧩 确保 username 和徽章横向排列 */
+.username-area {
     display: flex;
-  }
+}
 
 /* 帖子内容 */
 .post-content {
@@ -277,44 +281,84 @@
 
 
 /* 底部输入框 */
-.bottom-bar {
+.fake-input-bar {
     position: fixed;
     bottom: 0;
     left: 0;
-    width: 100%;
-    background: #fff;
-    display: flex;
-    align-items: center;
-    padding: 10rpx 20rpx 20rpx 20rpx;
+    right: 0;
+    background-color: #fff;
     border-top: 1px solid #eee;
+    padding: 16rpx 16rpx 40rpx 16rpx;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 998;
+}
+
+.fake-placeholder {
+    color: #999;
+    font-size: 14px;
+}
+
+.fake-send {
+    color: #007aff;
+    font-size: 28rpx;
+}
+
+.comment-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 999;
+}
+
+.popup-mask {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+}
+
+/* ✅ 中间显示版本的弹窗 */
+.centered-popup {
+    position: absolute;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    background: #fff;
+    border-radius: 16rpx;
+    padding: 16px;
+    box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.2);
+}
+
+.popup-textarea {
+    width: 100%;
+    min-height: 100rpx;
+    font-size: 30rpx;
+    padding: 20rpx;
+    border: 1rpx solid #e0e0e0;
+    border-radius: 16rpx;
     box-sizing: border-box;
+    margin-bottom: 20rpx;
+}
 
-    .comment-input {
-        flex: 1;
-        height: 80rpx;
-        font-size: 28rpx;
-        padding: 0 20rpx;
-        border: 1px solid #ddd;
-        border-radius: 10rpx;
-        background: #f5f5f5;
-        outline: none;
-        min-width: 50%; // ✅ 限制最小宽度，防止输入框挤占按钮空间
-    }
+.popup-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10rpx;
+}
 
-    .send-button {
-        flex-shrink: 0; // ✅ 防止被压缩
-        min-width: 100rpx; // ✅ 设定最小宽度，防止按钮过小
-        width: auto; // ✅ 适应文字宽度
-        height: 70rpx;
-        margin-left: 15rpx;
-        padding: 0 30rpx; // ✅ 增加左右填充，适应不同屏幕
-        background-color: #0084ff;
-        color: white;
-        border-radius: 10rpx;
-        font-size: 28rpx;
-        text-align: center;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
+.cancel-btn,
+.submit-btn {
+    padding: 16rpx 20rpx;
+    font-size: 30rpx;
+    border-radius: 16rpx;
+}
+
+.submit-btn {
+    background-color: #007aff;
+    color: #fff;
 }

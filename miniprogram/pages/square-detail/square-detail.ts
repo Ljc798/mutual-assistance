@@ -9,6 +9,7 @@ Page({
         replyPlaceholder: "发布你的评论...",  // 输入框 placeholder
         inputFocus: false,  // 控制输入框 focus
         rootParentId: null, // 🔹 记录 root_parent_id
+        showCommentPopup: false,
     },
 
     onLoad(options: any) {
@@ -174,22 +175,15 @@ Page({
     handleReply(e) {
         const { commentid, username, parentid, rootid } = e.currentTarget.dataset;
         const isFirstLevel = parentid == null;
-
-        // 设置回复状态
+      
         this.setData({
-            replyTo: commentid,
-            rootParentId: isFirstLevel ? commentid : rootid,
-            replyPlaceholder: `回复 @${username}...`
-        }, () => {
-            // 设置输入框 focus 为 true 以弹出键盘
-            setTimeout(() => {
-                this.setData({ inputFocus: true });
-            }, 100); // 100ms 延迟，确保页面渲染完
+          replyTo: commentid,
+          rootParentId: isFirstLevel ? commentid : rootid,
+          replyPlaceholder: `回复 @${username}...`,
+          showCommentPopup: true
         });
-    },
+      },
 
-    focusComment(e: any) {
-    },
 
     // ✅ 输入框失焦（取消回复状态）
     blurComment() {
@@ -250,7 +244,7 @@ Page({
                         replyTo: null,
                         rootParentId: null,
                         replyPlaceholder: "发布你的评论...",
-                        inputFocus: false
+                        showCommentPopup: false
                     }, () => {
                         // 自动滚动到底部
                         wx.pageScrollTo({
@@ -313,5 +307,19 @@ Page({
 
     goBack() {
         wx.navigateBack({ delta: 1 });
-    }
+    },
+
+    openCommentPopup() {
+        this.setData({ showCommentPopup: true });
+      },
+      
+      closeCommentPopup() {
+        this.setData({
+          showCommentPopup: false,
+          replyTo: null,
+          rootParentId: null,
+          newComment: '',
+          replyPlaceholder: '发布你的评论...'
+        });
+      }
 });
