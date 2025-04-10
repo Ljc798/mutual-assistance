@@ -65,91 +65,80 @@ server.listen(PORT, "0.0.0.0", () => {
 // =======================
 const db = require("./config/db");
 
-const wss = new WebSocket.Server({
-    server
-});
+const wss = new WebSocket.Server({ server });
 const clients = new Map(); // userId => ws
 
+function getRoomId(userA, userB) {
+  const sorted = [userA, userB].sort((a, b) => a - b);
+  return `room_${sorted[0]}_${sorted[1]}`;
+}
+
 wss.on("connection", (ws) => {
-    console.log("📡 新客户端连接");
+  console.log("📡 新客户端连接");
 
-    ws.on("message", async (msg) => {
-        try {
-            const data = JSON.parse(msg);
-            const {
-                type,
-                userId,
-                targetId,
-                content
-            } = data;
+  ws.on("message", async (msg) => {
+    try {
+      const data = JSON.parse(msg);
+      const { type, userId, targetId, content } = data;
 
-            // 🟢 初始化连接：仅绑定 userId
-            if (type === "init") {
-                clients.set(userId, ws);
-                ws.userId = userId;
-                console.log(`✅ 用户 ${userId} 上线`);
-                return;
-            }
+      if (type === "init") {
+        clients.set(userId, ws);
+        ws.userId = userId;
+        console.log(`✅ 用户 ${userId} 上线`);
+        return;
+      }
 
-            // 💬 处理聊天消息
-            if (type === "chat") {
-                if (!userId || !targetId || !content) {
-                    console.warn("⚠️ 消息字段缺失");
-                    return;
-                }
-
-                const timestamp = dayjs().add(8, 'hour').format("YYYY-MM-DD HH:mm:ss");
-
-                // 📝 写入数据库
-                const [result] = await db.query(
-                    `INSERT INTO messages (sender_id, receiver_id, content, type, created_time, is_read)
-             VALUES (?, ?, ?, ?, ?, 0)`,
-                    [userId, targetId, content, 'text', timestamp]
-                );
-
-                const messagePayload = {
-                    type: "chat",
-                    id: result.insertId,
-                    sender_id: userId,
-                    receiver_id: targetId,
-                    content,
-                    message_type: 'text',
-                    created_time: timestamp,
-                };
-
-                // 📤 推送给目标用户（如果在线）
-                const targetSocket = clients.get(targetId);
-                if (targetSocket && targetSocket.readyState === WebSocket.OPEN) {
-                    console.log(`📤 向 ${targetId} 推送消息`);
-                    targetSocket.send(JSON.stringify(messagePayload));
-                } else {
-                    console.warn(`⚠️ 用户 ${targetId} 不在线`);
-                }
-
-                // 🔄 回显给发送者
-                ws.send(JSON.stringify({
-                    ...messagePayload,
-                    selfEcho: true
-                }));
-            }
-
-        } catch (err) {
-            console.error("❗ 消息处理异常:", err);
-            try {
-                ws.send(JSON.stringify({
-                    type: "error",
-                    message: "服务器处理消息失败"
-                }));
-            } catch (e) {
-                console.error("⚠️ 无法向客户端发送错误提示", e);
-            }
+      if (type === "chat") {
+        if (!userId || !targetId || !content) {
+          console.warn("⚠️ 消息字段缺失");
+          return;
         }
-    });
 
-    ws.on("close", () => {
-        if (ws.userId) {
-            clients.delete(ws.userId);
-            console.log(`🚪 用户 ${ws.userId} 下线`);
+        const timestamp = dayjs().add(8, "hour").format("YYYY-MM-DD HH:mm:ss");
+        const roomId = getRoomId(userId, targetId);
+
+        // 📝 写入数据库
+        const [result] = await db.query(
+          `INSERT INTO messages (room_id, sender_id, receiver_id, content, type, created_time, is_read)
+           VALUES (?, ?, ?, ?, 'text', ?, 0)`,
+          [roomId, userId, targetId, content, timestamp]
+        );
+
+        const messagePayload = {
+          type: "chat",
+          id: result.insertId,
+          sender_id: userId,
+          receiver_id: targetId,
+          content,
+          room_id: roomId,
+          message_type: "text",
+          created_time: timestamp,
+        };
+
+        const targetSocket = clients.get(targetId);
+        if (targetSocket && targetSocket.readyState === WebSocket.OPEN) {
+          console.log(`📤 向 ${targetId} 推送消息`);
+          targetSocket.send(JSON.stringify(messagePayload));
+        } else {
+          console.warn(`⚠️ 用户 ${targetId} 不在线`);
         }
-    });
+
+        ws.send(JSON.stringify({ ...messagePayload, selfEcho: true }));
+      }
+    } catch (err) {
+      console.error("❗ 消息处理异常:", err);
+      try {
+        ws.send(JSON.stringify({ type: "error", message: "服务器处理消息失败" }));
+      } catch (e) {
+        console.error("⚠️ 无法向客户端发送错误提示", e);
+      }
+    }
+  });
+
+  ws.on("close", () => {
+    if (ws.userId) {
+      clients.delete(ws.userId);
+      console.log(`🚪 用户 ${ws.userId} 下线`);
+    }
+  });
 });

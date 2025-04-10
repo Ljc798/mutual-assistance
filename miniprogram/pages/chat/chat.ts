@@ -21,10 +21,13 @@ Page({
             return;
         }
 
+        const room_id = this.getRoomId(userId, targetId);
+
         this.setData({
             userId,
             targetId,
             targetName,
+            room_id,
             socketUrl: `wss://mutualcampus.top/ws?userId=${userId}`,
         });
 
@@ -32,12 +35,17 @@ Page({
         this.initWebSocket();
     },
 
+    getRoomId(userA, userB) {
+        const sorted = [Number(userA), Number(userB)].sort((a, b) => a - b);
+        return `room_${sorted[0]}_${sorted[1]}`;
+    },
+
     fetchHistoryMessages() {
-        const { userId, targetId } = this.data;
+        const { room_id, userId } = this.data;
         wx.request({
             url: `https://mutualcampus.top/api/messages/history`,
             method: 'GET',
-            data: { userId, targetId },
+            data: { room_id },
             success: (res) => {
                 if (res.data.success && Array.isArray(res.data.messages)) {
                     const history = res.data.messages.map((msg) => ({
@@ -104,16 +112,17 @@ Page({
     },
 
     sendMessage() {
-        const { inputText, userId, targetId } = this.data;
+        const { inputText, userId, targetId, room_id } = this.data;
         if (!inputText.trim()) return;
-
+    
         const msg = {
             type: 'chat',
-            userId,     // ✅ 使用统一字段名
+            userId,
             targetId,
+            room_id,
             content: inputText,
         };
-
+    
         if (this.data.socketOpen) {
             wx.sendSocketMessage({
                 data: JSON.stringify(msg),
