@@ -11,14 +11,18 @@
     <!-- 搜索框 -->
     <view class="search-container">
         <view class="search-box">
-            <image src="/assets/icons/search-magnify-magnifier-glass-svgrepo-com.svg" class="search-icon" />
-            <input type="text" class="search-input" placeholder="今天想找点什么呢-_^" />
-            <view wx:if="{{searchResults.length > 0}}">
-                <view wx:for="{{searchResults}}" wx:key="id" class="task-item">
-                    <text>{{item.title}}</text>
-                    <text class="price">¥{{item.offer}}</text>
-                    <text class="desc">{{item.description}}</text>
-                </view>
+            <view class="search">
+                <image src="/assets/icons/search-magnify-magnifier-glass-svgrepo-com.svg" class="search-icon" />
+                <input type="text" class="search-input" placeholder="今天想找点什么呢-_^" bindinput="handleSearchInput" />
+            </view>
+            <!-- 搜索结果 -->
+            <view class="search-results" wx:if="{{searchResults.length > 0}}">
+                <block wx:for="{{searchResults}}" wx:key="id">
+                    <view class="search-item" bindtap="handleTaskClick" data-index="{{index}}">
+                        <text class="search-title">{{item.title}}</text>
+                        <text class="search-meta">¥{{item.offer}}</text>
+                    </view>
+                </block>
             </view>
         </view>
     </view>

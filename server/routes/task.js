@@ -18,9 +18,10 @@ router.post("/create", authMiddleware, async (req, res) => {
         takeaway_code,
         takeaway_tel,
         takeaway_name,
+        publish_method // 'pay' | 'vip' | 'free'
     } = req.body;
 
-    if (!employer_id || !category || !position || !address || !DDL || !title || !offer || !detail) {
+    if (!employer_id || !category || !position || !address || !DDL || !title || !offer || !detail || !publish_method) {
         return res.status(400).json({
             success: false,
             message: "缺少必要参数"
@@ -28,19 +29,55 @@ router.post("/create", authMiddleware, async (req, res) => {
     }
 
     try {
+        // 🧮 佣金计算：2%，最少 1 分
+        const commission = Math.max(Math.floor(offer * 0.02), 1);
+
+        const [
+            [user]
+        ] = await db.query(`SELECT * FROM users WHERE id = ?`, [employer_id]);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "用户不存在"
+            });
+        }
+        if (publish_method === "vip") {
+            const now = new Date();
+            const vipTime = user.vip_expire_time ? new Date(user.vip_expire_time) : null;
+            if (!vipTime || vipTime < now) {
+                return res.status(400).json({
+                    success: false,
+                    message: "VIP未生效，无法免费发布"
+                });
+            }
+        } else if (publish_method === "free") {
+            if (user.free_counts <= 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "免佣金次数不足"
+                });
+            }
+            await db.query(`UPDATE users SET free_counts = free_counts - 1 WHERE id = ?`, [employer_id]);
+        } else {
+            return res.status(400).json({
+                success: false,
+                message: "无效的发布方式"
+            });
+        }
+
+        // 📝 插入任务记录
         const insertSQL = `
-      INSERT INTO tasks (
-        employer_id, employee_id, category, status,
-        position, address, DDL, title, offer, detail,
-        takeaway_code, takeaway_tel, takeaway_name
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
+        INSERT INTO tasks (
+          employer_id, employee_id, category, status,
+          position, address, DDL, title, offer, detail,
+          takeaway_code, takeaway_tel, takeaway_name, commission
+        ) VALUES (?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
 
         const values = [
             employer_id,
             null,
             category,
-            0,
             position,
             address,
             dayjs(DDL).format("YYYY-MM-DD HH:mm:ss"),
@@ -49,12 +86,12 @@ router.post("/create", authMiddleware, async (req, res) => {
             detail,
             takeaway_code || '',
             takeaway_tel || null,
-            takeaway_name || ''
+            takeaway_name || '',
+            commission
         ];
 
         const [result] = await db.query(insertSQL, values);
 
-        // 🎉 发通知给雇主
         await db.query(
             `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
             [
@@ -67,8 +104,9 @@ router.post("/create", authMiddleware, async (req, res) => {
         res.json({
             success: true,
             message: "任务发布成功",
-            task_id: result.insertId,
+            task_id: result.insertId
         });
+
     } catch (err) {
         console.error("❌ 发布任务失败:", err);
         res.status(500).json({
@@ -236,26 +274,35 @@ router.post("/update", authMiddleware, async (req, res) => {
 
 router.get("/search", async (req, res) => {
     const keyword = req.query.q;
-  
+
     if (!keyword || keyword.trim() === "") {
-      return res.json({ success: true, tasks: [] }); // 没关键词就返回空
+        return res.json({
+            success: true,
+            tasks: []
+        }); // 没关键词就返回空
     }
-  
+
     try {
-      const [tasks] = await db.query(
-        `SELECT * FROM tasks 
+        const [tasks] = await db.query(
+            `SELECT * FROM tasks 
          WHERE title LIKE ? OR detail LIKE ?
          ORDER BY created_time DESC
          LIMIT 30`,
-        [`%${keyword}%`, `%${keyword}%`]
-      );
-  
-      res.json({ success: true, tasks });
+            [`%${keyword}%`, `%${keyword}%`]
+        );
+
+        res.json({
+            success: true,
+            tasks
+        });
     } catch (err) {
-      console.error("❌ 搜索失败:", err);
-      res.status(500).json({ success: false, message: "服务器错误" });
+        console.error("❌ 搜索失败:", err);
+        res.status(500).json({
+            success: false,
+            message: "服务器错误"
+        });
     }
-  });
+});
 
 // ===== 6. 投标 =====
 router.post("/bid", authMiddleware, async (req, res) => {
@@ -425,9 +472,9 @@ router.post("/:id/confirm-done", authMiddleware, async (req, res) => {
         await db.query(`UPDATE tasks SET ${fieldToUpdate} = 1 WHERE id = ?`, [taskId]);
 
         if (!(
-            (fieldToUpdate === "employer_done" && task.employee_done === 1) ||
-            (fieldToUpdate === "employee_done" && task.employer_done === 1)
-        )) {
+                (fieldToUpdate === "employer_done" && task.employee_done === 1) ||
+                (fieldToUpdate === "employee_done" && task.employer_done === 1)
+            )) {
             // ✅ 第一个确认方发通知
             await db.query(
                 `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
@@ -437,7 +484,7 @@ router.post("/:id/confirm-done", authMiddleware, async (req, res) => {
                     `你已确认任务《${task.title}》完成，等待对方确认。`
                 ]
             );
-        
+
             await db.query(
                 `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
                 [

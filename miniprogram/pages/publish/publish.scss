@@ -40,7 +40,7 @@ textarea:focus {
 }
 
 textarea {
-    width: 96.5%;  // 明确设置宽度为 100%
+    width: 96.5%; // 明确设置宽度为 100%
     height: 166rpx;
     padding: 12rpx;
     font-size: 16px;
@@ -48,7 +48,7 @@ textarea {
     border-radius: 5rpx;
     margin-top: 8rpx;
     resize: none;
-  }
+}
 
 .picker {
     display: flex;
@@ -94,4 +94,48 @@ textarea,
 
 button {
     margin-top: 30rpx; // 发布按钮与下方的间距
+}
+
+.commission-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 999;
+}
+
+.popup-mask {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.popup-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border-radius: 20rpx;
+    padding: 40rpx 30rpx;
+    width: 600rpx;
+    box-shadow: 0 10rpx 40rpx rgba(0, 0, 0, 0.1);
+}
+
+.popup-title {
+    font-weight: bold;
+    font-size: 32rpx;
+    text-align: center;
+    margin-bottom: 40rpx;
+}
+
+.popup-option {
+    background: #f9f9f9;
+    padding: 24rpx;
+    text-align: center;
+    margin-bottom: 20rpx;
+    border-radius: 12rpx;
+    font-size: 28rpx;
 }

@@ -42,7 +42,6 @@ Page({
                 "Accept": "application/json" // ✅ 加上这句
             },
             success: (res: any) => {
-                console.log("✅ 接口返回结果:", res);
 
                 // ✅ 确保是数组才进行 map 处理
                 if (Array.isArray(res.data)) {
@@ -129,31 +128,34 @@ Page({
     handleSearchInput(e) {
         const value = e.detail.value;
         this.setData({ keyword: value });
-    
+
         clearTimeout(this._debounceTimer);
         this._debounceTimer = setTimeout(() => {
-          this.searchTasks(value);
-        }, 300); // ❗️节流搜索请求
-      },
-    
-      searchTasks(keyword) {
+            this.searchTasks(value);
+        }, 800); // ❗️节流搜索请求
+    },
+
+    searchTasks(keyword) {
         if (!keyword.trim()) {
-          this.setData({ searchResults: [] });
-          return;
+            this.setData({ searchResults: [] });
+            return;
         }
-    
+        console.log(111);
+        
         wx.request({
-          url: "https://mutualcampus.top/api/task/search",
-          method: "GET",
-          data: { q: keyword },
-          success: (res) => {
-            if (res.data.success) {
-              this.setData({ searchResults: res.data.tasks });
+            url: "https://mutualcampus.top/api/task/search",
+            method: "GET",
+            data: { q: keyword },
+            success: (res) => {
+                console.log(res);
+
+                if (res.data.success) {
+                    this.setData({ searchResults: res.data.tasks });
+                }
+            },
+            fail: () => {
+                wx.showToast({ title: "搜索失败", icon: "none" });
             }
-          },
-          fail: () => {
-            wx.showToast({ title: "搜索失败", icon: "none" });
-          }
         });
-      },
+    },
 });

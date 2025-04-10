@@ -17,6 +17,8 @@ Page({
         isTakeTelValid: true,
         date: '',  // 存储选择的日期
         time: '',  // 存储选择的时间
+        showCommissionPopup: false,
+        commissionAmount: 0,
     },
 
     // 处理任务分类选择
@@ -166,6 +168,10 @@ Page({
         });
     },
 
+    calculateCommission(amount: number): number {
+        return Math.max(Math.floor(amount * 0.02), 1);
+    },
+
     // 处理发布操作
     handlePublish() {
         const app = getApp();
@@ -195,43 +201,115 @@ Page({
             takeName
         } = this.data;
 
-        const payload = {
-            employer_id: user_id,
-            employee_id: null,
-            status: 0,
-            category: selectedCategory,
-            position,
-            address,
-            DDL,
-            title,
-            offer: parseFloat(reward),
-            detail,
-            takeaway_code: takeCode || '',
-            takeaway_tel: takeTel || null,
-            takeaway_name: takeName || ''
-        };
+        if (!reward || isNaN(parseFloat(reward))) {
+            wx.showToast({ title: '请填写正确的金额', icon: 'none' });
+            return;
+        }
 
-        console.log("📤 正在提交任务发布请求:", payload);
+        const offer = parseFloat(reward);
+        const commission = this.calculateCommission(offer);
 
-        wx.request({
-            url: 'https://mutualcampus.top/api/task/create',
-            method: 'POST',
-            data: payload,
-            header: {
-                Authorization: `Bearer ${token}` // 添加 token 到请求头
-            },
-            success: (res: any) => {
-                if (res.data.success) {
-                    wx.showToast({ title: '发布成功', icon: 'success' });
-                    wx.redirectTo({ url: "/pages/home/home" });
-                } else {
-                    wx.showToast({ title: '发布失败', icon: 'none' });
-                }
-            },
-            fail: (err) => {
-                console.error('❌ 发布失败:', err);
-                wx.showToast({ title: '网络错误', icon: 'none' });
-            }
+        this.setData({
+            commissionAmount: (commission / 100).toFixed(2),
+            showCommissionPopup: true
         });
-    }
+    },
+
+    closeCommissionPopup() {
+        this.setData({ showCommissionPopup: false });
+    },
+
+    choosePublishMethod(e) {
+        const method = e.currentTarget.dataset.method;
+        this.setData({ showCommissionPopup: false });
+      
+        const app = getApp();
+        const token = wx.getStorageSync("token");
+        const userId = app.globalData?.userInfo?.id;
+      
+        const {
+          selectedCategory,
+          position,
+          address,
+          DDL,
+          title,
+          reward,
+          detail,
+          takeCode,
+          takeTel,
+          takeName
+        } = this.data;
+      
+        const offer = parseFloat(reward);
+        const payload = {
+          employer_id: userId,
+          category: selectedCategory,
+          position,
+          address,
+          DDL,
+          title,
+          offer,
+          detail,
+          takeaway_code: takeCode || '',
+          takeaway_tel: takeTel || null,
+          takeaway_name: takeName || '',
+          publish_method: method
+        };
+      
+        if (method === 'pay') {
+          // 🧾 微信支付逻辑
+          wx.request({
+            url: 'https://mutualcampus.top/api/taskPayment/prepay',
+            method: 'POST',
+            data: { task_id: null }, // 💥任务还没创建，此处需任务id，所以流程要改
+            header: { Authorization: `Bearer ${token}` },
+            success: (res: any) => {
+              if (res.data.success) {
+                const payData = res.data.paymentParams;
+      
+                wx.requestPayment({
+                  ...payData,
+                  success: () => {
+                    // 💥 支付成功后，再调创建任务接口
+                    this.publishTaskAfterPayment(payload, token);
+                  },
+                  fail: () => {
+                    wx.showToast({ title: "支付取消或失败", icon: "none" });
+                  }
+                });
+              } else {
+                wx.showToast({ title: res.data.message || "支付创建失败", icon: "none" });
+              }
+            },
+            fail: () => {
+              wx.showToast({ title: "网络错误", icon: "none" });
+            }
+          });
+      
+        } else {
+          // 其他方式直接创建任务
+          this.publishTaskAfterPayment(payload, token);
+        }
+      },
+
+      publishTaskAfterPayment(payload, token) {
+        wx.request({
+          url: 'https://mutualcampus.top/api/task/create',
+          method: 'POST',
+          data: payload,
+          header: { Authorization: `Bearer ${token}` },
+          success: (res: any) => {
+            if (res.data.success) {
+              wx.showToast({ title: '发布成功', icon: 'success' });
+              wx.redirectTo({ url: "/pages/home/home" });
+            } else {
+              wx.showToast({ title: res.data.message || '发布失败', icon: 'none' });
+            }
+          },
+          fail: (err) => {
+            console.error('❌ 发布失败:', err);
+            wx.showToast({ title: '网络错误', icon: 'none' });
+          }
+        });
+      },
 });
