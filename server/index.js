@@ -18,6 +18,7 @@ const walletRouter = require("./routes/wallet");
 const vipRouter = require("./routes/vip");
 const feedbackRouter = require("./routes/feedback");
 const notificationRouter = require("./routes/notification");
+const taskPaymentRouter = require("./routes/taskPayment");
 
 const app = express();
 const server = http.createServer(app);
@@ -46,6 +47,7 @@ app.use("/api/wallet", walletRouter);
 app.use("/api/vip", vipRouter);
 app.use("/api/feedback", feedbackRouter);
 app.use("/api/notification", notificationRouter);
+app.use("/api/taskPayment", taskPaymentRouter);
 
 app.get("/", (req, res) => {
     res.redirect("https://admin.mutualcampus.top");
