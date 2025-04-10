@@ -64,6 +64,8 @@ Page({
         wx.nextTick(() => {
             this.scrollToBottom();
         });
+
+        this.checkReadStatus();
     },
 
     startHeartbeat() {
@@ -103,34 +105,42 @@ Page({
     fetchHistoryMessages() {
         const { room_id, userId } = this.data;
         wx.request({
-            url: `https://mutualcampus.top/api/messages/history`,
-            method: 'GET',
-            data: { room_id },
-            success: (res) => {
-                if (res.data.success && Array.isArray(res.data.messages)) {
-                    const history = res.data.messages.map((msg) => {
-                        const date = new Date(msg.created_time);
-                        date.setHours(date.getHours() - 8);
-                        const hours = date.getHours().toString().padStart(2, '0');
-                        const minutes = date.getMinutes().toString().padStart(2, '0');
-                        return {
-                            ...msg,
-                            isSelf: msg.sender_id === userId,
-                            created_time_formatted: `${hours}:${minutes}`,
-                        };
-                    });
-                    this.setData({ messages: history }, () => {
-                        wx.nextTick(() => {
-                            this.scrollToBottom();
-                        });
-                    });
-                }
-            },
-            fail: () => {
-                wx.showToast({ title: '消息历史获取失败', icon: 'none' });
-            },
+          url: `https://mutualcampus.top/api/messages/history`,
+          method: 'GET',
+          data: { room_id },
+          success: (res) => {
+            if (res.data.success && Array.isArray(res.data.messages)) {
+              const history = res.data.messages.map((msg) => {
+                const date = new Date(msg.created_time);
+                date.setHours(date.getHours() - 8); // UTC ➝ 本地时间
+                const hours = date.getHours().toString().padStart(2, '0');
+                const minutes = date.getMinutes().toString().padStart(2, '0');
+                return {
+                  ...msg,
+                  isSelf: msg.sender_id === userId,
+                  created_time_formatted: `${hours}:${minutes}`,
+                };
+              });
+      
+              // ✅ 找出最后一条自己发的消息（用于显示已读状态）
+              const lastSelfMessage = [...history].reverse().find(msg => msg.isSelf);
+              const lastSelfMessageId = lastSelfMessage ? lastSelfMessage.id : null;
+      
+              this.setData({
+                messages: history,
+                lastSelfMessageId: lastSelfMessageId, // ✅ 存到 data
+              }, () => {
+                wx.nextTick(() => {
+                  this.scrollToBottom();
+                });
+              });
+            }
+          },
+          fail: () => {
+            wx.showToast({ title: '消息历史获取失败', icon: 'none' });
+          },
         });
-    },
+      },
 
 
     initWebSocket() {
@@ -194,6 +204,40 @@ Page({
             console.error('[WebSocket] ❌ 连接错误:', err);
         });
     },
+
+    checkReadStatus() {
+        const { room_id, userId } = this.data;
+        wx.request({
+          url: `https://yourapi.com/api/messages/read-status`,
+          method: 'GET',
+          data: { room_id },
+          success: (res) => {
+            const lastReadId = res.data.last_read_message_id;
+            this.setData({ lastReadMessageId: lastReadId });
+          },
+          fail: () => {
+            console.warn('获取已读状态失败');
+          }
+        });
+      },
+
+      markMessagesAsRead() {
+        const { room_id, userId } = this.data;
+        wx.request({
+          url: 'https://mutualcampus.top/api/messages/mark-read',
+          method: 'POST',
+          data: {
+            room_id,
+            user_id: userId
+          },
+          success: (res) => {
+            console.log('[已读] 标记成功', res.data);
+          },
+          fail: () => {
+            console.warn('[已读] 标记失败');
+          }
+        });
+      },
 
     onInput(e: any) {
         this.setData({ inputText: e.detail.value });
