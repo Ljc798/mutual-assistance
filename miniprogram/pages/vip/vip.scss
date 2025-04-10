@@ -122,3 +122,26 @@
     margin-right: 20rpx;
     z-index: 99;
 }
+
+.plan-price-area {
+    display: flex;
+    align-items: baseline;
+    gap: 12rpx;
+  }
+  
+  .promo-price {
+    font-size: 36rpx;
+    font-weight: bold;
+    color: #e64340; /* 大红色 */
+  }
+  
+  .original-price {
+    font-size: 26rpx;
+    text-decoration: line-through;
+    color: #999;
+  }
+  
+  .regular-price {
+    font-size: 34rpx;
+    color: #333;
+  }

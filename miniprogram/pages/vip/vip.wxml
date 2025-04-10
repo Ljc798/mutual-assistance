@@ -16,7 +16,20 @@
 
     <view wx:for="{{plans}}" wx:key="id" bindtap="selectPlan" data-id="{{item.id}}" class="plan {{item.id === selectedPlanId ? 'selected' : ''}}">
         <text class="plan-title">{{item.name}}</text>
-        <text class="plan-price">￥{{item.price}}</text>
+        <view wx:for="{{plans}}" wx:key="id" bindtap="selectPlan" data-id="{{item.id}}" class="plan {{item.id === selectedPlanId ? 'selected' : ''}}">
+            <text class="plan-title">{{item.name}}</text>
+
+            <!-- 有促销价 -->
+            <view wx:if="{{item.promo_price !== null}}" class="plan-price-area">
+                <text class="promo-price">￥{{item.promo_price}}</text>
+                <text class="original-price">￥{{item.original_price}}</text>
+            </view>
+
+            <!-- 没有促销价 -->
+            <view wx:else class="plan-price-area">
+                <text class="regular-price">￥{{item.original_price}}</text>
+            </view>
+        </view>
     </view>
 
     <button class="pay-btn" bindtap="handlePay">立即开通</button>

@@ -13,28 +13,6 @@ const privateKey = process.env.WX_PRIVATE_KEY.replace(/\\n/g, '\n');
 const apiV3Key = process.env.WX_API_V3_KEY;
 const SECRET = process.env.JWT_SECRET;
 
-const PLANS = {
-    1: {
-        name: 'VIP 月卡',
-        price: 9.9,
-        days: 30
-    },
-    2: {
-        name: 'VIP 季卡',
-        price: 24.9,
-        days: 90
-    },
-    3: {
-        name: 'VIP 年卡',
-        price: 89.9,
-        days: 365
-    },
-    4: {
-        name: 'VIP 终身卡',
-        price: 168.8,
-        days: 36500
-    }
-};
 
 function generateSignature(method, url, timestamp, nonceStr, body) {
     const message = `${method}\n${url}\n${timestamp}\n${nonceStr}\n${body}\n`;
@@ -57,18 +35,28 @@ router.post('/create-order', async (req, res) => {
 
         const decoded = jwt.verify(token, SECRET);
         const userId = decoded.id;
-        const plan = PLANS[planId];
+        const [
+            [plan]
+        ] = await db.query(`SELECT * FROM vip_plans WHERE id = ? AND is_active = 1`, [planId]);
+        if (!plan) {
+            return res.status(400).json({
+                success: false,
+                message: '无效套餐'
+            });
+        }
+
+        const usedPrice = plan.promo_price !== null ? parseFloat(plan.promo_price) : parseFloat(plan.original_price);
+        const amount = Math.round(usedPrice * 100); // 单位分
         if (!plan) return res.status(400).json({
             success: false,
             message: '无效套餐'
         });
 
         const out_trade_no = `VIP_${userId}_${Date.now()}`;
-        const amount = Math.round(plan.price * 100);
 
         await db.query(
             `INSERT INTO vip_orders (user_id, plan, price, out_trade_no, status) VALUES (?, ?, ?, ?, 'pending')`,
-            [userId, plan.name, plan.price, out_trade_no]
+            [userId, plan.name, usedPrice, out_trade_no]
         );
 
         const [
@@ -156,8 +144,8 @@ router.post('/notify', express.raw({
             const userId = parseInt(match[1]);
             const [
                 [order]
-            ] = await db.query(`SELECT plan FROM vip_orders WHERE out_trade_no = ?`, [outTradeNo]);
-            const days = order.plan.includes('年') ? 365 : order.plan.includes('季') ? 90 : 30;
+            ] = await db.query(`SELECT plan, user_id, price, days FROM vip_orders o JOIN vip_plans p ON o.plan = p.name WHERE o.out_trade_no = ?`, [outTradeNo]);
+            const days = order.days;
 
             await db.query(
                 `UPDATE users SET vip_expire_time = IF(vip_expire_time > NOW(), DATE_ADD(vip_expire_time, INTERVAL ? DAY), DATE_ADD(NOW(), INTERVAL ? DAY)) WHERE id = ?`,
@@ -202,5 +190,33 @@ function decryptResource(resource, key) {
     const decrypted = Buffer.concat([decipher.update(data), decipher.final()]);
     return JSON.parse(decrypted.toString('utf8'));
 }
+
+// ✅ 返回所有VIP套餐（含促销价）
+router.get('/plans', async (req, res) => {
+    try {
+        const [plans] = await db.query(
+            `SELECT id, name, original_price AS price, promo_price, days FROM vip_plans WHERE is_active = 1`
+        );
+
+        const formattedPlans = plans.map(plan => ({
+            id: plan.id,
+            name: plan.name,
+            price: parseFloat(plan.price), // 原价
+            promo_price: plan.promo_price !== null ? parseFloat(plan.promo_price) : null,
+            days: plan.days
+        }));
+
+        res.json({
+            success: true,
+            plans: formattedPlans
+        });
+    } catch (err) {
+        console.error("❌ 获取VIP套餐失败:", err);
+        res.status(500).json({
+            success: false,
+            message: "服务器错误"
+        });
+    }
+});
 
 module.exports = router;

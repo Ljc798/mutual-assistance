@@ -1,13 +1,33 @@
 Page({
     data: {
-        plans: [
-            { id: 1, name: 'VIP 月卡', price: 9.9 },
-            { id: 2, name: 'VIP 季卡', price: 24.9 },
-            { id: 3, name: 'VIP 年卡', price: 89.9 },
-            { id: 4, name: 'VIP 终身卡', price: 168.8 },
-        ],
         selectedPlanId: 1
     },
+
+    onLoad() {
+        const token = wx.getStorageSync("token");
+      
+        wx.request({
+          url: "https://mutualcampus.top/api/vip/plans",
+          method: "GET",
+          header: {
+            Authorization: `Bearer ${token}`
+          },
+          success: (res) => {
+            if (res.data.success) {
+              const plans = res.data.plans;
+              this.setData({
+                plans,
+                selectedPlanId: plans[0]?.id || null
+              });
+            } else {
+              wx.showToast({ title: "加载套餐失败", icon: "none" });
+            }
+          },
+          fail: () => {
+            wx.showToast({ title: "网络错误", icon: "none" });
+          }
+        });
+      },
 
     selectPlan(e) {
         const selectedId = e.currentTarget.dataset.id;

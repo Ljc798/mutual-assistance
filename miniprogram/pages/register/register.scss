@@ -4,51 +4,53 @@
     align-items: center;
     justify-content: center;
     height: 100vh;
-    background-color: #f4f4f4;
-}
-
-.phone-btn, .logout-btn, .home-btn {
-    width: 80%;
-    padding: 15px;
-    font-size: 16px;
-    border-radius: 8px;
-    text-align: center;
-    margin-top: 20px;
-    border: none;
+    background: linear-gradient(to bottom, #f9f9fb, #e6f0ff);
+    background-image: url('https://mutual-campus-1348081197.cos.ap-nanjing.myqcloud.com/image.png');
+    background-size: cover;
+    background-position: center;
 }
 
 .phone-btn {
     background-color: #07c160;
-    color: #fff;
-}
-
-.logout-btn {
-    background-color: #e64340;
-    color: #fff;
-}
-
-.home-btn {
-    background-color: #0081ff;
-    color: #fff;
+    color: white;
+    padding: 20rpx 0;
+    font-size: 30rpx;
+    border-radius: 40rpx;
+    width: 60%;
+    font-weight: bold;
+    box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.1);
+    margin-top: 1200rpx;
 }
 
 .user-info {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-top: 40px;
 }
 
 .avatar {
-    width: 100px;
-    height: 100px;
+    width: 160rpx;
+    height: 160rpx;
     border-radius: 50%;
-    margin-bottom: 10px;
+    margin-bottom: 20rpx;
+    box-shadow: 0 6rpx 16rpx rgba(0, 0, 0, 0.2);
 }
 
 .username {
-    font-size: 18px;
-    color: #333;
+    font-size: 36rpx;
     font-weight: bold;
-    margin-bottom: 20px;
+    color: #333;
+    margin-bottom: 40rpx;
+}
+
+.logout-btn,
+.home-btn {
+    background-color: white;
+    color: #333;
+    font-size: 28rpx;
+    border-radius: 40rpx;
+    width: 60%;
+    height: 80rpx;
+    margin-top: 20rpx;
+    border: 2rpx solid #ccc;
 }
