@@ -82,7 +82,7 @@ router.post("/create", authMiddleware, async (req, res) => {
             employer_id,
             null,
             category,
-            -1, // status 为 -1 表示未支付任务
+            status,
             position,
             address,
             dayjs(DDL).format("YYYY-MM-DD HH:mm:ss"),

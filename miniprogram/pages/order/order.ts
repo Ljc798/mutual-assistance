@@ -24,6 +24,20 @@ Page({
         
     },
 
+    onPullDownRefresh() {
+        const app = getApp();
+        const userId = app.globalData.userInfo?.id;
+        if (!userId) {
+            wx.showToast({ title: "请先登录", icon: "none" });
+            return;
+        }
+        this.setData({ userId });
+
+        this.fetchOrders();
+
+        wx.stopPullDownRefresh();
+    },
+
     // ✅ 返回上一页
     handleBack() {
         wx.navigateBack({ delta: 1 });

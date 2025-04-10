@@ -14,20 +14,20 @@
         <text class="benefit">🔔 新功能抢先体验</text>
     </view>
 
+    <view class="promo-banner blink">
+        🎉 试运营期间限时促销中，价格超值不容错过！
+    </view>
+
     <view wx:for="{{plans}}" wx:key="id" bindtap="selectPlan" data-id="{{item.id}}" class="plan {{item.id === selectedPlanId ? 'selected' : ''}}">
-        <text class="plan-title">{{item.name}}</text>
-        <view wx:for="{{plans}}" wx:key="id" bindtap="selectPlan" data-id="{{item.id}}" class="plan {{item.id === selectedPlanId ? 'selected' : ''}}">
+        <view class="plan-row">
             <text class="plan-title">{{item.name}}</text>
 
-            <!-- 有促销价 -->
             <view wx:if="{{item.promo_price !== null}}" class="plan-price-area">
                 <text class="promo-price">￥{{item.promo_price}}</text>
-                <text class="original-price">￥{{item.original_price}}</text>
+                <text class="original-price">￥{{item.price}}</text>
             </view>
-
-            <!-- 没有促销价 -->
             <view wx:else class="plan-price-area">
-                <text class="regular-price">￥{{item.original_price}}</text>
+                <text class="regular-price">￥{{item.price}}</text>
             </view>
         </view>
     </view>

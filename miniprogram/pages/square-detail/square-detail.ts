@@ -23,6 +23,22 @@ Page({
         }
     },
 
+    onPullDownRefresh() {
+        const postId = this.data.postId;
+        if (!postId) {
+            wx.stopPullDownRefresh(); // 别让动画转下去了
+            return;
+        }
+    
+        Promise.all([
+            this.fetchPostDetail(postId),
+            this.fetchComments(postId)
+        ])
+        .finally(() => {
+            wx.stopPullDownRefresh(); // 拉完就停，别太拼
+        });
+    },
+
     // ✅ 获取帖子详情
     fetchPostDetail(postId: string) {
         const app = getApp();

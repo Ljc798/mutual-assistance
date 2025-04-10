@@ -13,6 +13,8 @@ Page({
             Authorization: `Bearer ${token}`
           },
           success: (res) => {
+              console.log(res);
+              
             if (res.data.success) {
               const plans = res.data.plans;
               this.setData({

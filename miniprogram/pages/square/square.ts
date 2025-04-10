@@ -51,11 +51,9 @@ Page({
 
     // ✅ 监听下拉刷新
     onPullDownRefresh() {
-        console.log("用户触发下拉刷新...");
-
         const category = this.data.selectedCategory || "全部"; // **确保分类有效**
+        
         this.fetchPosts(category, () => {
-            console.log("✅ 下拉刷新完成，数据已更新");
             wx.stopPullDownRefresh(); // **停止下拉刷新动画**
         });
     },

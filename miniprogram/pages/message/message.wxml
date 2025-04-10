@@ -15,6 +15,12 @@
         <image src="/assets/icons/right-chevron-svgrepo-com.svg" class="arrow-icon" />
     </view>
 
+    <view class="chat-warning">
+  <text class="warning-icon">⚠️</text>
+  <text class="warning-text">
+    实时聊天功能仍在修复中，请退出重进以刷新内容。感谢您的耐心～
+  </text>
+</view>
 
     <view class="chat-list">
         <block wx:for="{{chatList}}" wx:key="target_id">

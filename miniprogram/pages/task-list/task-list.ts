@@ -28,6 +28,14 @@ Page({
         this.loadTasksForCategory(category);
     },
 
+    onPullDownRefresh() {
+        const category = this.data.category || "全部";
+        this.loadTasksForCategory(category)
+            .finally(() => {
+                wx.stopPullDownRefresh();
+            });
+    },
+
     // 加载任务
     loadTasksForCategory(category: string) {
         wx.showLoading({ title: "加载中...", mask: true });

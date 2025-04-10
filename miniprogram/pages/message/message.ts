@@ -35,6 +35,12 @@ Page({
         this.fetchLatestNotification();
     },
 
+    onPullDownRefresh() {
+        this.loadChatList();
+        this.fetchLatestNotification();
+        wx.stopPullDownRefresh();
+    },
+
     loadChatList() {
         const token = wx.getStorageSync("token");
         if (!token) {

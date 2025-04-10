@@ -24,6 +24,22 @@ Page({
         this.loadTaskDetail(options.taskId);
     },
 
+    onPullDownRefresh() {
+        const taskId = this.data.taskId;
+        if (!taskId) {
+            wx.stopPullDownRefresh();
+            return;
+        }
+    
+        Promise.all([
+            this.loadTaskDetail(taskId),
+            this.loadBids(taskId)
+        ])
+        .finally(() => {
+            wx.stopPullDownRefresh();
+        });
+    },
+
     async loadTaskDetail(taskId: string) {
         wx.showLoading({ title: "加载任务..." });
 

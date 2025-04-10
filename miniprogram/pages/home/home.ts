@@ -32,6 +32,11 @@ Page({
         this.loadTasks(); // 加载任务数据
     },
 
+    onPullDownRefresh() {
+        this.loadTasks();
+        wx.stopPullDownRefresh();
+    },
+
     loadTasks() {
         wx.showLoading({ title: "加载中...", mask: true });
 
