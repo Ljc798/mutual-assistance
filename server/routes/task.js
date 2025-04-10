@@ -520,8 +520,8 @@ router.post("/:id/confirm-done", authMiddleware, async (req, res) => {
             // 发通知：任务完成，余额到账
             await db.query(`
                   INSERT INTO notifications (user_id, type, title, content) VALUES 
-                  (?, 'task', '✅ 任务完成', '你参与的任务《${task.title}》已圆满完成，辛苦啦 🎉'),
-                  (?, 'task', '💰 打款通知', '任务《${task.title}》已完成，佣金 ¥${task.pay_amount} 已到账你的钱包')
+                  (?, 'task', '✅ 任务完成', '你参与的任务《${task.title}》已圆满完成，期待与您的下一次相遇 🎉'),
+                  (?, 'task', '💰 打款通知', '任务《${task.title}》已完成，报酬 ¥${task.pay_amount} 已到账你的钱包')
                 `, [task.employer_id, task.employee_id]);
         }
 
