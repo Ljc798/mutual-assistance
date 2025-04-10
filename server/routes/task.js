@@ -29,9 +29,7 @@ router.post("/create", authMiddleware, async (req, res) => {
     }
 
     try {
-        // 🧮 佣金计算：2%，最少 1 分
-        const commission = Math.max(Math.floor(offer * 0.02), 1);
-
+        const commission = Math.max(Math.floor(offer * 0.02), 1); // 🧮 2% 向下取整，单位是分
         const [
             [user]
         ] = await db.query(`SELECT * FROM users WHERE id = ?`, [employer_id]);
@@ -41,6 +39,9 @@ router.post("/create", authMiddleware, async (req, res) => {
                 message: "用户不存在"
             });
         }
+
+        let status = 0;
+
         if (publish_method === "vip") {
             const now = new Date();
             const vipTime = user.vip_expire_time ? new Date(user.vip_expire_time) : null;
@@ -58,6 +59,9 @@ router.post("/create", authMiddleware, async (req, res) => {
                 });
             }
             await db.query(`UPDATE users SET free_counts = free_counts - 1 WHERE id = ?`, [employer_id]);
+        } else if (publish_method === "pay") {
+            // 👉 需要支付，先创建任务为未支付状态
+            status = -1;
         } else {
             return res.status(400).json({
                 success: false,
@@ -65,19 +69,20 @@ router.post("/create", authMiddleware, async (req, res) => {
             });
         }
 
-        // 📝 插入任务记录
         const insertSQL = `
-        INSERT INTO tasks (
-          employer_id, employee_id, category, status,
-          position, address, DDL, title, offer, detail,
-          takeaway_code, takeaway_tel, takeaway_name, commission
-        ) VALUES (?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `;
+            INSERT INTO tasks (
+                employer_id, employee_id, category, status,
+                position, address, DDL, title, offer, detail,
+                takeaway_code, takeaway_tel, takeaway_name,
+                commission
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
 
         const values = [
             employer_id,
             null,
             category,
+            -1, // status 为 -1 表示未支付任务
             position,
             address,
             dayjs(DDL).format("YYYY-MM-DD HH:mm:ss"),
@@ -88,18 +93,21 @@ router.post("/create", authMiddleware, async (req, res) => {
             takeaway_tel || null,
             takeaway_name || '',
             commission
-        ];
+          ];
 
         const [result] = await db.query(insertSQL, values);
 
-        await db.query(
-            `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
-            [
-                employer_id,
-                '📢 任务发布成功',
-                `你发布的任务《${title}》已成功上线，等待他人接单～`
-            ]
-        );
+        // ✅ 如果是 vip / free，任务直接可见，发送通知
+        if (status === 0) {
+            await db.query(
+                `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
+                [
+                    employer_id,
+                    '📢 任务发布成功',
+                    `你发布的任务《${title}》已成功上线，等待他人接单～`
+                ]
+            );
+        }
 
         res.json({
             success: true,
@@ -119,11 +127,11 @@ router.post("/create", authMiddleware, async (req, res) => {
 // ===== 2. 获取所有任务（支持分类） =====
 router.get("/tasks", async (req, res) => {
     const category = req.query.category;
-    let query = "SELECT * FROM tasks";
+    let query = "SELECT * FROM tasks WHERE status >= 0";
     let queryParams = [];
 
     if (category && category !== "全部") {
-        query += " WHERE category = ?";
+        query += " AND category = ?";
         queryParams.push(category);
     }
 
