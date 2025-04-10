@@ -25,7 +25,9 @@
                 </view>
                 <view class="right-info">
                     <text class="time">{{item.timestamp}}</text>
-                    <view wx:if="{{item.unread > 0}}" class="unread-dot">{{item.unread}}</view>
+                    <view wx:if="{{item.unread > 0}}" class="unread-dot">
+                        {{ item.unread > 99 ? '99+' : item.unread }}
+                    </view>
                 </view>
             </view>
         </block>

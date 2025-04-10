@@ -73,7 +73,7 @@ Page({
                             avatar_url: msg.avatar_url,
                             last_message: msg.content,
                             timestamp: this.formatTime(msg.created_time),
-                            unread: msg.is_read ? 0 : 1
+                            unread: msg.unread_count || 0
                         };
                     });
 

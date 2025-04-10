@@ -61,6 +61,18 @@
     white-space: nowrap;
 }
 
+.unread-dot {
+    background-color: #f44;
+    color: white;
+    border-radius: 50%;
+    padding: 4rpx 10rpx;
+    font-size: 20rpx;
+    max-width: 20rpx;
+    text-align: center;
+    margin-left: 110rpx;
+    margin-top: 10rpx;
+  }
+
 .last-msg {
     font-size: 26rpx;
     color: #666;

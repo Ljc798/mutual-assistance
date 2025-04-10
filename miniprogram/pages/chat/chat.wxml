@@ -17,9 +17,9 @@
                     <text class="msg-time">{{item.created_time_formatted}}</text>
                     <view class="bubble">{{item.content}}</view>
                     <!-- ✅ 只给“我”发的最后一条消息加状态 -->
-                    <view wx:if="{{item.isSelf && item.id === lastSelfMessageId}}" class="msg-status">
+                    <!-- <view wx:if="{{item.isSelf && item.id === lastSelfMessageId}}" class="msg-status">
                         {{ item.id <= lastReadMessageId ? '已读' : '未读' }}
-                    </view>
+                    </view> -->
                 </view>
             </block>
             <view id="bottom-anchor" style="height: 1px;"></view>
