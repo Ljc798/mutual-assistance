@@ -11,21 +11,20 @@
     </view>
 
     <view class="chat-container">
-        <scroll-view class="message-list" scroll-y="true" scroll-with-animation scroll-top="{{scrollTop}}" scroll-into-view="{{scrollIntoView}}">
+        <scroll-view scroll-y scroll-with-animation scroll-into-view="{{scrollIntoView}}" class="message-list">
             <block wx:for="{{messages}}" wx:key="id">
-                <view class="message-item {{item.isSelf ? 'self' : 'other'}}">
-                    <view class="bubble">
-                        <text class="msg-content">{{item.content}}</text>
-                    </view>
+                <view class="message-wrapper {{item.isSelf ? 'self' : 'other'}}">
+                    <text class="msg-time">{{item.created_time_formatted}}</text>
+                    <view class="bubble">{{item.content}}</view>
                 </view>
             </block>
-            <view id="bottom-anchor"></view>
+            <view id="bottom-anchor" style="height: 1px;"></view>
         </scroll-view>
     </view>
 
     <view class="input-bar">
-            <input class="text-input" placeholder="请输入消息" value="{{inputText}}" bindinput="onInput" />
-            <button class="send-button" bindtap="sendMessage">发送</button>
-        </view>
+        <input class="text-input" placeholder="请输入消息" value="{{inputText}}" bindinput="onInput" />
+        <button class="send-button" bindtap="sendMessage">发送</button>
+    </view>
 
 </view>

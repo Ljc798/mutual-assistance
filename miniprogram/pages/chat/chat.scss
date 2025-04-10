@@ -1,6 +1,7 @@
 .chat-page {
     display: flex;
     flex-direction: column;
+    height: 100vh;
 }
 
 .chat-header {
@@ -45,11 +46,13 @@
 }
 
 .chat-container {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    padding: 180rpx 20rpx 110rpx 20rpx;
+    position: absolute;
+    top: 175rpx; // header 高度
+    bottom: 125rpx; // input-bar 高度
+    left: 0;
+    right: 0;
+    overflow: hidden;
+    padding: 0 20rpx;
 }
 
 .chat-title {
@@ -57,34 +60,7 @@
 }
 
 .message-list {
-    flex: 1;
-}
-
-.message-item {
-    display: flex;
-    margin-bottom: 20rpx;
-}
-
-.message-item.other {
-    justify-content: flex-start;
-}
-
-.message-item.self {
-    justify-content: flex-end;
-}
-
-.bubble {
-    max-width: 60%;
-    padding: 20rpx;
-    border-radius: 24rpx;
-    font-size: 28rpx;
-    line-height: 1.5;
-    background-color: #f0f0f0;
-    word-wrap: break-word;
-}
-
-.message-item.self .bubble {
-    background-color: #a0e75a;
+    height: 100%;
 }
 
 .input-bar {
@@ -94,7 +70,7 @@
     right: 0;
     width: 100%;
     display: flex;
-    padding: 20rpx 0 35rpx 0;
+    padding: 10rpx 0 35rpx 0;
     border-top: 1rpx solid #ddd;
     background-color: #fff;
 }
@@ -117,3 +93,36 @@
     max-width: 20%;
     white-space: nowrap;
 }
+
+.message-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin: 20rpx 10rpx 0 10rpx;
+  }
+  
+  .message-wrapper.self {
+    align-items: flex-end;
+  }
+
+  .msg-time {
+    font-size: 20rpx;
+    color: #999;
+    margin-bottom: 6rpx;
+  }
+
+  .bubble {
+    display: block;
+    max-width: 70%;
+    padding: 20rpx;
+    border-radius: 24rpx;
+    font-size: 28rpx;
+    line-height: 1.6;
+    background-color: #a0e75a;
+    word-break: break-word;
+    white-space: pre-wrap;
+  }
+  
+  .message-wrapper.other .bubble {
+    background-color: #f0f0f0;
+  }

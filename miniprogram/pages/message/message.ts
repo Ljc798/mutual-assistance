@@ -61,15 +61,19 @@ Page({
 
                     // 提取目标用户 id（不是自己的那一方）
                     const chatList = raw.map(msg => {
-                        const isSender = msg.sender_id === this.data.userId;
-                        const target_id = isSender ? msg.receiver_id : msg.sender_id;
+                        const parts = msg.room_id.split('_'); // ['room', '10', '21']
+                        const id1 = Number(parts[1]);
+                        const id2 = Number(parts[2]);
+                        const target_id = id1 === this.data.userId ? id2 : id1;
+
                         return {
+                            room_id: msg.room_id,
                             target_id,
-                            username: msg.username,
+                            username: msg.username, // 后端记得 JOIN 出来 target 用户信息
                             avatar_url: msg.avatar_url,
                             last_message: msg.content,
                             timestamp: this.formatTime(msg.created_time),
-                            unread: msg.is_read ? 0 : 1 // 暂时不做累计未读数
+                            unread: msg.is_read ? 0 : 1
                         };
                     });
 
@@ -92,7 +96,7 @@ Page({
         const day = pad(date.getDate());
         const hour = pad(date.getHours());
         const minute = pad(date.getMinutes());
-    
+
         return `${month}月${day}日 ${hour}:${minute}`;
     },
 
@@ -106,7 +110,7 @@ Page({
 
     fetchLatestNotification() {
         const token = wx.getStorageSync('token');
-        
+
         wx.request({
             url: 'https://mutualcampus.top/api/notification/latest',
             method: 'GET',
@@ -117,7 +121,7 @@ Page({
                 if (res.data.success) {
                     this.setData({ latestNotification: res.data.notification || "" });
                 }
-                
+
             }
         });
     },

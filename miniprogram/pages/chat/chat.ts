@@ -11,9 +11,10 @@ Page({
     },
 
     onLoad(options: any) {
+        console.log('[onLoad] options:', options);
         const app = getApp();
-        const userId = app.globalData.userInfo?.id;
-        const targetId = options.targetId;
+        const userId = Number(app.globalData.userInfo?.id);
+        const targetId = Number(options.targetId);
         const targetName = options.targetName || '对方用户';
 
         if (!userId || !targetId) {
@@ -23,16 +24,75 @@ Page({
 
         const room_id = this.getRoomId(userId, targetId);
 
+        console.log('[onLoad] userId:', userId, 'targetId:', targetId, 'room_id:', room_id);
+
         this.setData({
             userId,
             targetId,
             targetName,
-            room_id,
+            room_id: this.getRoomId(userId, targetId),
             socketUrl: `wss://mutualcampus.top/ws?userId=${userId}`,
         });
 
         this.fetchHistoryMessages();
         this.initWebSocket();
+    },
+
+    onUnload() {
+        console.log('[onUnload] 清除心跳并关闭 socket');
+        this.stopHeartbeat();
+        wx.closeSocket();
+    },
+
+    onHide() {
+        console.log('[onHide] 页面隐藏，停止心跳');
+        this.stopHeartbeat();
+    },
+
+    onShow() {
+        console.log('[onShow] 页面展示，尝试重连 WebSocket');
+        wx.getNetworkType({
+            success: (res) => {
+                console.log('[onShow] 当前网络类型:', res.networkType);
+                if (res.networkType !== 'none' && !this.data.socketOpen) {
+                    console.log('[onShow] socket 不在线，重新连接');
+                    this.reconnectWebSocket();
+                }
+            }
+        });
+
+        wx.nextTick(() => {
+            this.scrollToBottom();
+        });
+    },
+
+    startHeartbeat() {
+        this.stopHeartbeat();
+        console.log('[Heartbeat] 开始');
+        this.heartbeatTimer = setInterval(() => {
+            if (this.data.socketOpen) {
+                wx.sendSocketMessage({
+                    data: JSON.stringify({ type: 'ping' }),
+                    success: () => console.log('[Heartbeat] ping 成功'),
+                    fail: () => {
+                        console.warn('[Heartbeat] ping 失败，尝试重连');
+                        this.reconnectWebSocket();
+                    }
+                });
+            }
+        }, 30000);
+    },
+
+    stopHeartbeat() {
+        console.log('[Heartbeat] 停止');
+        if (this.heartbeatTimer) clearInterval(this.heartbeatTimer);
+    },
+
+    reconnectWebSocket() {
+        console.log('[reconnectWebSocket] 重连中...');
+        this.setData({ socketOpen: false });
+        wx.closeSocket();
+        setTimeout(() => this.initWebSocket(), 1000);
     },
 
     getRoomId(userA, userB) {
@@ -48,11 +108,22 @@ Page({
             data: { room_id },
             success: (res) => {
                 if (res.data.success && Array.isArray(res.data.messages)) {
-                    const history = res.data.messages.map((msg) => ({
-                        ...msg,
-                        isSelf: msg.sender_id === userId,
-                    }));
-                    this.setData({ messages: history }, this.scrollToBottom);
+                    const history = res.data.messages.map((msg) => {
+                        const date = new Date(msg.created_time);
+                        date.setHours(date.getHours() - 8);
+                        const hours = date.getHours().toString().padStart(2, '0');
+                        const minutes = date.getMinutes().toString().padStart(2, '0');
+                        return {
+                            ...msg,
+                            isSelf: msg.sender_id === userId,
+                            created_time_formatted: `${hours}:${minutes}`,
+                        };
+                    });
+                    this.setData({ messages: history }, () => {
+                        wx.nextTick(() => {
+                            this.scrollToBottom();
+                        });
+                    });
                 }
             },
             fail: () => {
@@ -61,49 +132,66 @@ Page({
         });
     },
 
+
     initWebSocket() {
+        console.log('[initWebSocket] 开始连接:', this.data.socketUrl);
         wx.connectSocket({
             url: this.data.socketUrl,
-            success: () => console.log('🔌 WebSocket 发起连接'),
-            fail: (err) => console.error('❌ WebSocket 连接失败', err),
+            success: () => console.log('[initWebSocket] 发起连接成功'),
+            fail: (err) => console.error('[initWebSocket] 连接失败:', err),
         });
 
         wx.onSocketOpen(() => {
+            console.log('[WebSocket] ✅ 连接成功');
             this.setData({ socketOpen: true });
-            console.log('✅ WebSocket 连接成功');
+            this.startHeartbeat();
 
-            // 👇 发送初始化
             wx.sendSocketMessage({
                 data: JSON.stringify({
                     type: 'init',
                     userId: this.data.userId,
                 }),
+                success: () => console.log('[WebSocket] 发送初始化成功'),
+                fail: (err) => console.error('[WebSocket] 发送初始化失败:', err),
             });
         });
 
         wx.onSocketMessage((res) => {
+            console.log('[WebSocket] 📩 收到消息:', res);
             const msg = JSON.parse(res.data);
-            console.log('📩 收到消息:', msg);
+
+            if (msg.selfEcho) return;
 
             const { userId, targetId } = this.data;
+            const from = Number(msg.sender_id);
+            const to = Number(msg.receiver_id);
+            const localUserId = Number(this.data.userId);
+            const localTargetId = Number(this.data.targetId);
 
-            // ✅ 判断是不是当前对话双方
-            const from = msg.sender_id;
-            const to = msg.receiver_id;
+            if (![from, to].includes(localUserId) || ![from, to].includes(localTargetId)) {
+                console.log('[WebSocket] 🚫 不属于当前会话（userId:', localUserId, 'targetId:', localTargetId, '）');
+                return;
+            }
 
-            if (![from, to].includes(Number(userId)) || ![from, to].includes(Number(targetId))) return;
+            const date = new Date(msg.created_time);
+            date.setHours(date.getHours() - 8);
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
 
             const newMsg = {
                 ...msg,
                 isSelf: from === userId,
                 is_read: true,
+                created_time_formatted: `${hours}:${minutes}`,
             };
 
-            this.setData({ messages: [...this.data.messages, newMsg] }, this.scrollToBottom);
+            const updatedMessages = [...this.data.messages, newMsg];
+            console.log('[WebSocket] 📬 更新 messages:', updatedMessages);
+            this.setData({ messages: updatedMessages }, this.scrollToBottom);
         });
 
         wx.onSocketError((err) => {
-            console.error('❌ WebSocket 错误', err);
+            console.error('[WebSocket] ❌ 连接错误:', err);
         });
     },
 
@@ -114,7 +202,7 @@ Page({
     sendMessage() {
         const { inputText, userId, targetId, room_id } = this.data;
         if (!inputText.trim()) return;
-    
+
         const msg = {
             type: 'chat',
             userId,
@@ -122,38 +210,47 @@ Page({
             room_id,
             content: inputText,
         };
-    
+
+
         if (this.data.socketOpen) {
             wx.sendSocketMessage({
                 data: JSON.stringify(msg),
                 success: () => {
+                    const now = new Date();
+                    const hours = now.getHours().toString().padStart(2, '0');
+                    const minutes = now.getMinutes().toString().padStart(2, '0');
+
                     const selfMsg = {
                         ...msg,
                         sender_id: userId,
                         receiver_id: targetId,
                         isSelf: true,
                         is_read: true,
-                        created_time: new Date().toISOString(),
+                        created_time: now.toISOString(),
+                        created_time_formatted: `${hours}:${minutes}`,
                     };
+                    const updatedMessages = [...this.data.messages, selfMsg];
+                    console.log('[sendMessage] 添加本地消息:', updatedMessages);
                     this.setData({
-                        messages: [...this.data.messages, selfMsg],
+                        messages: updatedMessages,
                         inputText: '',
-                    }, this.scrollToBottom);
+                    }, () => {
+                        wx.nextTick(() => {
+                            this.scrollToBottom();
+                        });
+                    });
                 },
                 fail: (err) => {
                     wx.showToast({ title: '发送失败', icon: 'none' });
-                    console.error('❌ 发送失败:', err);
+                    console.error('[sendMessage] ❌ 失败:', err);
                 },
             });
         }
     },
 
     scrollToBottom() {
+        console.log('[scrollToBottom] 触发滚动到底部');
         this.setData({ scrollIntoView: 'bottom-anchor' });
-    },
-
-    onUnload() {
-        wx.closeSocket();
     },
 
     handleBack() {
