@@ -65,6 +65,9 @@ Page({
                 const tasks = Array.isArray(res.data) ? res.data : [];
                 const formatted = tasks.map((task: Task) => ({
                     ...task,
+                    displayPrice: task.status >= 1 
+                        ? Number(task.pay_amount).toFixed(2) 
+                        : Number(task.offer).toFixed(2),
                     formattedDDL: this.formatTime(task.DDL),
                     formattedStatus: this.formatStatus(task.status),
                 }));

@@ -30,7 +30,7 @@
                     </view>
                     <view class="task-right">
                         <text class="task-status">{{item.formattedStatus}}</text>
-                        <text class="task-reward">¥{{item.offer}}</text>
+                        <text class="task-reward">¥{{item.displayPrice}}</text>
                     </view>
                 </view>
             </block>

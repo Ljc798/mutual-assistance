@@ -195,7 +195,7 @@ router.get("/my", authMiddleware, async (req, res) => {
 
     try {
         let baseSQL = `
-        SELECT id, employer_id, employee_id, status, title, offer, DDL, employer_done, employee_done
+        SELECT id, employer_id, employee_id, status, title, offer, DDL, employer_done, employee_done, pay_amount
         FROM tasks
         WHERE (employer_id = ? OR employee_id = ?)
       `;

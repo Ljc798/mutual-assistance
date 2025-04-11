@@ -6,7 +6,7 @@
     <view class="task-introduction">
         <view class="task-header">
             <text class="task-title">{{task.title}}</text>
-            <text class="task-reward">¥{{task.offer}}</text>
+            <text class="task-reward">¥{{task.displayPrice}}</text>
         </view>
         <view class="task-info">
             <view class="task-time">期望完成时间：{{formattedDDL}}前</view>

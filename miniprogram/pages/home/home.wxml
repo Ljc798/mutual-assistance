@@ -21,7 +21,7 @@
                 <block wx:for="{{searchResults}}" wx:key="id">
                     <view class="search-item" bindtap="handleTaskClick" data-index="{{index}}">
                         <text class="search-title">{{item.title}}</text>
-                        <text class="search-meta">¥{{item.offer}}</text>
+                        <text class="search-meta">¥{{item.displayPrice}}</text>
                     </view>
                 </block>
             </view>
@@ -86,7 +86,7 @@
                 </view>
                 <view class="task-right">
                     <text class="task-status">{{item.formattedStatus}}</text>
-                    <text class="task-reward">¥{{item.offer}}</text>
+                    <text class="task-reward">¥{{item.displayPrice}}</text>
                 </view>
             </view>
         </block>

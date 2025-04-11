@@ -30,21 +30,21 @@ Page({
             wx.stopPullDownRefresh();
             return;
         }
-    
+
         Promise.all([
             this.loadTaskDetail(taskId),
             this.loadBids(taskId)
         ])
-        .finally(() => {
-            wx.stopPullDownRefresh();
-        });
+            .finally(() => {
+                wx.stopPullDownRefresh();
+            });
     },
 
     async loadTaskDetail(taskId: string) {
         wx.showLoading({ title: "加载任务..." });
 
         wx.request({
-            url: `https://mutualcampus.top/api/task/${taskId}`, // 确保 API 端点正确
+            url: `https://mutualcampus.top/api/task/${taskId}`,
             method: "GET",
             success: (res: any) => {
                 if (!res.data || !res.data.id) {
@@ -52,29 +52,34 @@ Page({
                     return;
                 }
 
-                // 格式化数据
-                const formattedDDL = this.formatTime(res.data.DDL); // 格式化DDL时间
-                const statusText = this.getStatusText(res.data.status); // 格式化状态
+                const task = res.data;
+                const formattedDDL = this.formatTime(task.DDL);
+                const statusText = this.getStatusText(task.status);
 
                 const app = getApp();
                 const currentUserId = app.globalData.userInfo?.id;
-                const isOwner = currentUserId === res.data.employer_id;
+                const isOwner = currentUserId === task.employer_id;
                 const isAuthorizedUser = (
-                    currentUserId === res.data.employer_id ||
-                    currentUserId === res.data.employee_id
+                    currentUserId === task.employer_id ||
+                    currentUserId === task.employee_id
                 );
 
+                // ✅ 新增成交价判断逻辑
+                const displayPrice = task.status >= 1
+                    ? Number(task.pay_amount).toFixed(2)
+                    : Number(task.offer).toFixed(2);
+
                 this.setData({
-                    task: res.data,
-                    formattedDDL, // 存储格式化时间
+                    task: {
+                        ...task,
+                        displayPrice,
+                    },
+                    formattedDDL,
                     statusText,
                     isOwner,
                     isAuthorizedUser,
+                    canLeaveMessage: task.status === 0
                 });
-                this.setData({
-                    canLeaveMessage: this.data.task.status === 0
-                })
-
             },
             fail: (err: any) => {
                 console.error("❌ 任务详情加载失败:", err);
@@ -225,7 +230,7 @@ Page({
         const bidId = e.currentTarget.dataset.bidid;
         const openid = getApp().globalData.userInfo?.openid;
         console.log(bidId);
-        
+
 
         wx.showModal({
             title: '确认指派',

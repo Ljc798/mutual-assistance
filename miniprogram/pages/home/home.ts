@@ -10,9 +10,11 @@ interface Task {
     takeTel?: number;  // 手机尾号
     detail: string;  // 任务简介
     offer: number | string;  // 报酬
+    pay_amount?: number | string; // 实际成交价（新加）
     status: number;  // 任务状态（0: 待接单, 1: 进行中, 2: 已完成）
     formattedDDL?: string; // 格式化后的时间
     formattedStatus?: string; // 格式化后的状态
+    displayPrice?: string; // 显示价格字段（新增）
 }
 
 Page({
@@ -36,6 +38,7 @@ Page({
     },
 
     onPullDownRefresh() {
+        this.setData({ currentPage: 1 });
         this.loadTasks();
         wx.stopPullDownRefresh();
     },
@@ -58,10 +61,11 @@ Page({
                 if (Array.isArray(res.data)) {
                     const newTasks = res.data.map((task: Task) => ({
                         ...task,
+                        displayPrice: task.status >= 1 ? Number(task.pay_amount || 0).toFixed(2) : Number(task.offer).toFixed(2),
                         formattedDDL: this.formatTime(task.DDL),
                         formattedStatus: this.formatStatus(task.status),
                     }));
-            
+
                     this.setData({
                         tasks: isLoadMore ? [...tasks, ...newTasks] : newTasks,
                         hasMore: newTasks.length === pageSize
@@ -81,47 +85,36 @@ Page({
         });
     },
 
-    // 处理分类点击事件
     handleCategoryClick(e: any) {
-        const category = e.currentTarget.dataset.category;  // 获取点击的分类
-        console.log(category);
-
+        const category = e.currentTarget.dataset.category;
         wx.navigateTo({
-            url: `/pages/task-list/task-list?category=${encodeURIComponent(category)}`,  // 传递分类信息
+            url: `/pages/task-list/task-list?category=${encodeURIComponent(category)}`,
         });
     },
 
-    // 课表点击事件
     handleTimetableClick() {
         wx.navigateTo({ url: "/pages/timetable/timetable" });
     },
 
-    // 点击任务项，跳转到详情页（使用 taskId 传递）
     handleTaskClick(event: any) {
         const taskId = event.currentTarget.dataset.id;
         if (!taskId) {
             wx.showToast({ title: "任务 ID 缺失", icon: "none" });
             return;
         }
-    
-        wx.navigateTo({
-            url: `/pages/task/task?taskId=${taskId}`,
-        });
+        wx.navigateTo({ url: `/pages/task/task?taskId=${taskId}` });
     },
 
-    // 时间格式化
     formatTime(DDL: string) {
         const date = new Date(DDL);
         date.setHours(date.getHours() - 8);
-        const month = date.getMonth() + 1; // 获取月份（从 0 开始）
-        const day = date.getDate(); // 获取日期
-        const hours = date.getHours(); // 获取小时
-        const minutes = date.getMinutes(); // 获取分钟
-
-        return `${month}-${day} ${hours}:${minutes < 10 ? "0" + minutes : minutes}`; // 保证分钟是两位数
+        const month = date.getMonth() + 1;
+        const day = date.getDate();
+        const hours = date.getHours();
+        const minutes = date.getMinutes();
+        return `${month}-${day} ${hours}:${minutes < 10 ? "0" + minutes : minutes}`;
     },
 
-    // 任务状态格式化
     formatStatus(status: number): string {
         switch (status) {
             case 0:
@@ -136,17 +129,16 @@ Page({
     },
 
     handleOrderClick() {
-        wx.navigateTo({ url: "/pages/order/order" })
+        wx.navigateTo({ url: "/pages/order/order" });
     },
 
     handleSearchInput(e) {
         const value = e.detail.value;
         this.setData({ keyword: value });
-
         clearTimeout(this._debounceTimer);
         this._debounceTimer = setTimeout(() => {
             this.searchTasks(value);
-        }, 800); // ❗️节流搜索请求
+        }, 800);
     },
 
     searchTasks(keyword) {
@@ -154,15 +146,12 @@ Page({
             this.setData({ searchResults: [] });
             return;
         }
-        console.log(111);
 
         wx.request({
             url: "https://mutualcampus.top/api/task/search",
             method: "GET",
             data: { q: keyword },
             success: (res) => {
-                console.log(res);
-
                 if (res.data.success) {
                     this.setData({ searchResults: res.data.tasks });
                 }
