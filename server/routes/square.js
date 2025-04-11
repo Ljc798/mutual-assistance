@@ -14,18 +14,23 @@ router.get("/posts", async (req, res) => {
         pageSize = 10
     } = req.query;
 
-    const offset = (page - 1) * pageSize;
-    const queryParams = [user_id, parseInt(pageSize), parseInt(offset)];
+    const offset = (parseInt(page) - 1) * parseInt(pageSize);
+    const limit = parseInt(pageSize);
 
     let whereClause = '';
-    const values = [user_id];
+    const values = [];
 
     if (category && category !== "全部") {
         whereClause = 'WHERE s.category = ?';
-        values.unshift(category); // category 放在 user_id 前
+        values.push(category);
     }
 
-    let query = `
+    // user_id 是为了 isLiked 子查询使用的
+    values.push(user_id);
+    values.push(offset);
+    values.push(limit);
+
+    const query = `
         SELECT s.*, 
                u.username, 
                u.avatar_url, 
@@ -35,16 +40,18 @@ router.get("/posts", async (req, res) => {
         LEFT JOIN users u ON s.user_id = u.id
         ${whereClause}
         ORDER BY s.is_pinned DESC, s.created_time DESC
-        LIMIT ? OFFSET ?
+        LIMIT ?, ?
     `;
 
     try {
         const [posts] = await db.query(query, values);
 
-        if (posts.length === 0) return res.json({
-            success: true,
-            posts: []
-        });
+        if (posts.length === 0) {
+            return res.json({
+                success: true,
+                posts: []
+            });
+        }
 
         const postIds = posts.map(p => p.id);
         const [images] = await db.query(
@@ -68,7 +75,8 @@ router.get("/posts", async (req, res) => {
         console.error("❌ 获取帖子失败:", err);
         res.status(500).json({
             success: false,
-            message: "获取帖子失败"
+            message: "获取帖子失败",
+            error: err
         });
     }
 });
