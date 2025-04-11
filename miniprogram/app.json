@@ -21,7 +21,8 @@
     "pages/vip/vip",
     "pages/mysquare/mysquare",
     "pages/mysquare/edit",
-    "pages/notifications/notifications"
+    "pages/notifications/notifications",
+    "pages/order/other-orders"
   ],
   "window": {
     "navigationBarTextStyle": "black",

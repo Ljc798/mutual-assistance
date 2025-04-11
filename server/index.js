@@ -19,6 +19,7 @@ const vipRouter = require("./routes/vip");
 const feedbackRouter = require("./routes/feedback");
 const notificationRouter = require("./routes/notification");
 const taskPaymentRouter = require("./routes/taskPayment");
+const orderRouter = require("./routes/order");
 
 const { registerUser, unregisterUser, sendToUser, broadcastNotify } = require("./routes/ws-helper");
 
@@ -50,6 +51,7 @@ app.use("/api/vip", vipRouter);
 app.use("/api/feedback", feedbackRouter);
 app.use("/api/notification", notificationRouter);
 app.use("/api/taskPayment", taskPaymentRouter);
+app.use("/api/order", orderRouter);
 
 app.get("/", (req, res) => {
     res.redirect("https://admin.mutualcampus.top");

@@ -1,0 +1,67 @@
+.order-records-container {
+    padding: 20rpx;
+  }
+  
+  .filter-tabs {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20rpx;
+  
+    .filter-tab {
+      padding: 10rpx 20rpx;
+      border-radius: 20rpx;
+      background-color: #eee;
+      font-size: 28rpx;
+      color: #333;
+  
+      &.active {
+        background-color: #5cb85c;
+        color: #fff;
+      }
+    }
+  }
+  
+  .order-card {
+    background-color: #fff;
+    padding: 20rpx;
+    margin-bottom: 20rpx;
+    border-radius: 16rpx;
+    box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+  
+    .order-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 26rpx;
+      margin-bottom: 10rpx;
+  
+      .order-type {
+        font-weight: bold;
+        color: #409eff;
+      }
+  
+      .order-time {
+        color: #999;
+      }
+    }
+  
+    .order-title {
+      font-size: 30rpx;
+      font-weight: 500;
+      margin-bottom: 12rpx;
+    }
+  
+    .order-footer {
+      display: flex;
+      justify-content: space-between;
+      font-size: 26rpx;
+  
+      .order-status {
+        color: #666;
+      }
+  
+      .order-amount {
+        color: #e64340;
+        font-weight: bold;
+      }
+    }
+  }

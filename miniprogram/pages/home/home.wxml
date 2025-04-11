@@ -68,7 +68,7 @@
         </view>
         <view class="category-item" bindtap="handleOrderClick">
             <image src="/assets/icons/dingdanrizhi-.svg" class="category-icon" />
-            <text class="category-text">我的订单</text>
+            <text class="category-text">我的任务</text>
         </view>
     </view>
 

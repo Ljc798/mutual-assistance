@@ -118,7 +118,7 @@ Page({
                             statusCode: task.status,
                             status: this.translateStatus(task.status),
                             title: task.title,
-                            salary: `¥${task.offer}`,
+                            salary: `¥${task.status >= 1 ? task.pay_amount : task.offer}`,
                             time: this.formatTime(task.DDL),
                             actionText,
                             showDoneButton,
