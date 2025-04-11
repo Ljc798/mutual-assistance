@@ -55,7 +55,7 @@
                     <view class="comment-content">
                         <text>{{item.advantage}}</text>
                         <button wx:if="{{isOwner}}" class="chat-button" bindtap="goToChat" data-targetid="{{item.user_id}}" data-username="{{item.username}}">聊一聊</button>
-                        <button wx:if="{{isOwner}}" class="select-button" bindtap="confirmAssign" data-userid="{{item.user_id}}" data-username="{{item.username}}" data-price="{{item.price}}">选择TA</button>
+                        <button wx:if="{{isOwner}}" class="select-button" bindtap="confirmAssign" data-userid="{{item.user_id}}" data-username="{{item.username}}" data-price="{{item.price}}" data-bidid="{{item.id}}">选择TA</button>
                     </view>
                 </view>
             </block>

@@ -3,7 +3,9 @@ const router = express.Router();
 const crypto = require('crypto');
 const axios = require('axios');
 const db = require('../config/db'); // ⬅️ 确保你有引入数据库配置
-const { sendToUser } = require("./ws-helper");
+const {
+    sendToUser
+} = require("./ws-helper");
 
 // ==== 微信支付配置 ====
 const appid = process.env.WX_APPID;
@@ -24,12 +26,11 @@ function generateSignature(method, url, timestamp, nonceStr, body) {
 router.post('/create', async (req, res) => {
     const {
         openid,
-        taskId,
-        receiverId,
+        bid_id,
         description
     } = req.body;
 
-    if (!openid || !taskId || !receiverId || !description) {
+    if (!openid || !bid_id || !description) {
         return res.status(400).json({
             success: false,
             message: '参数不完整'
@@ -41,24 +42,28 @@ router.post('/create', async (req, res) => {
         const [
             [bid]
         ] = await db.query(
-            'SELECT price FROM task_bids WHERE task_id = ? AND user_id = ?',
-            [taskId, receiverId]
+            'SELECT task_id, user_id AS receiver_id, price FROM task_bids WHERE id = ?',
+            [bid_id]
         );
 
         if (!bid) {
             return res.status(404).json({
                 success: false,
-                message: '未找到该接单人的出价记录'
+                message: '找不到该投标记录'
             });
         }
 
-        const amount = parseInt(bid.price * 100); // 单位：分
-        const out_trade_no = `TASK_${taskId}_EMP_${receiverId}_${Date.now()}`;
+        const {
+            task_id,
+            receiver_id,
+            price
+        } = bid;
+        const amount = Math.round(price * 100); // 单位：分
+        const out_trade_no = `TASK_${task_id}_EMP_${receiver_id}_${Date.now()}`;
 
-        // 2. 插入支付记录
         await db.query(
             `INSERT INTO task_payments (task_id, payer_openid, receiver_id, out_trade_no, amount, status) VALUES (?, ?, ?, ?, ?, 'pending')`,
-            [taskId, openid, receiverId, out_trade_no, amount]
+            [task_id, openid, receiver_id, out_trade_no, amount]
         );
 
         // 3. 构造微信支付请求
@@ -201,7 +206,7 @@ router.post('/notify', express.raw({
                 type: 'notify',
                 content: `🎉 你的投标被采纳啦！任务《${task.title}》已指派给你，快去查看吧！`,
                 created_time: new Date().toISOString()
-              });
+            });
 
             // ✅ 通知雇主：支付成功
             if (task.employer_id) {
@@ -217,7 +222,7 @@ router.post('/notify', express.raw({
                     type: 'notify',
                     content: `💰 你已成功支付任务《${task.title}》，等待对方完成任务～`,
                     created_time: new Date().toISOString()
-                  });
+                });
             }
         }
 

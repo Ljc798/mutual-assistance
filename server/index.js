@@ -20,12 +20,14 @@ const feedbackRouter = require("./routes/feedback");
 const notificationRouter = require("./routes/notification");
 const taskPaymentRouter = require("./routes/taskPayment");
 
+const { registerUser, unregisterUser, sendToUser, broadcastNotify } = require("./routes/ws-helper");
+
 const app = express();
 const server = http.createServer(app);
 const PORT = process.env.PORT || 80;
 
 // =======================
-// 🧩 中间件配置
+// 🧹 中间件配置
 // =======================
 app.use(express.json());
 app.use(cors());
@@ -64,50 +66,21 @@ server.listen(PORT, "0.0.0.0", () => {
 // 📡 WebSocket 服务逻辑
 // =======================
 const db = require("./config/db");
-
-const wss = new WebSocket.Server({
-    server
-});
-const clients = new Map(); // userId => ws
+const wss = new WebSocket.Server({ server });
 
 function getRoomId(userA, userB) {
     const sorted = [userA, userB].sort((a, b) => a - b);
     return `room_${sorted[0]}_${sorted[1]}`;
 }
 
-function sendToUser(userId, payload) {
-    const targetSocket = clients.get(userId);
-    if (targetSocket && targetSocket.readyState === WebSocket.OPEN) {
-        targetSocket.send(JSON.stringify(payload));
-        return true;
-    } else {
-        console.warn(`⚠️ 用户 ${userId} 不在线`);
-        return false;
-    }
-}
-
-function broadcastNotify(userIds, notifyPayload) {
-    userIds.forEach((uid) => {
-        sendToUser(uid, notifyPayload);
-    });
-}
-
 wss.on("connection", (ws) => {
-    console.log("📡 新客户端连接");
-
     ws.on("message", async (msg) => {
         try {
             const data = JSON.parse(msg);
-            const {
-                type,
-                userId,
-                targetId,
-                content
-            } = data;
+            const { type, userId, targetId, content } = data;
 
             if (type === "init") {
-                clients.set(userId, ws);
-                ws.userId = userId;
+                registerUser(userId, ws);
                 return;
             }
 
@@ -122,7 +95,7 @@ wss.on("connection", (ws) => {
 
                 const [result] = await db.query(
                     `INSERT INTO messages (room_id, sender_id, receiver_id, content, type, created_time, is_read)
-           VALUES (?, ?, ?, ?, 'text', ?, 0)`,
+                     VALUES (?, ?, ?, ?, 'text', ?, 0)`,
                     [roomId, userId, targetId, content, timestamp]
                 );
 
@@ -138,12 +111,8 @@ wss.on("connection", (ws) => {
                 };
 
                 sendToUser(targetId, messagePayload);
-                sendToUser(userId, {
-                    ...messagePayload,
-                    selfEcho: true
-                });
+                sendToUser(userId, { ...messagePayload, selfEcho: true });
 
-                // ✅ 4. 发送一条通知（仅用于 UI 提示）
                 const notifyPayload = {
                     type: "notify",
                     content: `你收到来自用户 ${userId} 的新消息`,
@@ -154,7 +123,6 @@ wss.on("connection", (ws) => {
                 sendToUser(targetId, notifyPayload);
             }
 
-            // 新增：处理通知事件（你可以让后端管理后台来触发这些）
             if (type === "notify") {
                 const notifyPayload = {
                     type: "notify",
@@ -175,10 +143,7 @@ wss.on("connection", (ws) => {
         } catch (err) {
             console.error("❗ 消息处理异常:", err);
             try {
-                ws.send(JSON.stringify({
-                    type: "error",
-                    message: "服务器处理消息失败"
-                }));
+                ws.send(JSON.stringify({ type: "error", message: "服务器处理消息失败" }));
             } catch (e) {
                 console.error("⚠️ 无法向客户端发送错误提示", e);
             }
@@ -187,8 +152,7 @@ wss.on("connection", (ws) => {
 
     ws.on("close", () => {
         if (ws.userId) {
-            clients.delete(ws.userId);
-            console.log(`❎ 用户 ${ws.userId} 已断开`);
+            unregisterUser(ws.userId);
         }
     });
 });

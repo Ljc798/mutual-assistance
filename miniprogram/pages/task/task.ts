@@ -222,7 +222,10 @@ Page({
         const receiverId = e.currentTarget.dataset.userid;
         const username = e.currentTarget.dataset.username;
         const taskId = this.data.task.id;
+        const bidId = e.currentTarget.dataset.bidid;
         const openid = getApp().globalData.userInfo?.openid;
+        console.log(bidId);
+        
 
         wx.showModal({
             title: '确认指派',
@@ -236,6 +239,7 @@ Page({
                     data: {
                         openid,
                         taskId,
+                        bid_id: bidId,
                         receiverId,
                         description: `支付任务 #${taskId}`,
                     },

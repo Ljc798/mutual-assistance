@@ -22,6 +22,7 @@ export function initWebSocket(_userId: number) {
 
   socket.onMessage((res) => {
     const data = JSON.parse(res.data);
+    console.log('🛰️ WebSocket 收到消息:', data); // ✅ 看这条有没有打印
     const type = data.type;
 
     if (listeners[type]) {

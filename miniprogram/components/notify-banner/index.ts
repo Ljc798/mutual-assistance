@@ -23,6 +23,7 @@ Component({
 
   methods: {
     handleNotify(msg) {
+        console.log('📥 收到 notify 消息:', msg); // ✅ 加这一句
       if (!msg?.content) return;
 
       this.setData({
