@@ -5,31 +5,41 @@ const dayjs = require("dayjs");
 const authMiddleware = require("./authMiddleware"); // 引入中间件
 
 // ===== 1. 获取广场帖子列表 =====
+// router.get("/posts")
 router.get("/posts", async (req, res) => {
     const {
         category,
-        user_id
+        user_id,
+        page = 1,
+        pageSize = 10
     } = req.query;
 
+    const offset = (page - 1) * pageSize;
+    const queryParams = [user_id, parseInt(pageSize), parseInt(offset)];
+
+    let whereClause = '';
+    const values = [user_id];
+
+    if (category && category !== "全部") {
+        whereClause = 'WHERE s.category = ?';
+        values.unshift(category); // category 放在 user_id 前
+    }
+
+    let query = `
+        SELECT s.*, 
+               u.username, 
+               u.avatar_url, 
+               u.vip_expire_time,
+               (SELECT COUNT(*) FROM square_likes WHERE square_id = s.id AND user_id = ?) AS isLiked
+        FROM square s
+        LEFT JOIN users u ON s.user_id = u.id
+        ${whereClause}
+        ORDER BY s.is_pinned DESC, s.created_time DESC
+        LIMIT ? OFFSET ?
+    `;
+
     try {
-        let queryParams = [user_id || null];
-        let query = `
-            SELECT s.*, 
-                   u.username, 
-                   u.avatar_url, 
-                   u.vip_expire_time,
-                   (SELECT COUNT(*) FROM square_likes WHERE square_id = s.id AND user_id = ?) AS isLiked
-            FROM square s 
-            LEFT JOIN users u ON s.user_id = u.id
-        `;
-
-        if (category && category !== "全部") {
-            query += " WHERE s.category = ?";
-            queryParams.push(category);
-        }
-
-        query += " ORDER BY s.created_time DESC";
-        const [posts] = await db.query(query, queryParams);
+        const [posts] = await db.query(query, values);
 
         if (posts.length === 0) return res.json({
             success: true,

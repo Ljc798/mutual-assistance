@@ -16,6 +16,9 @@ Page({
         reportReasons: ["骚扰辱骂", "不实信息", "违规广告", "违法内容", "色情低俗", "其他"],
         selectedReasonIndex: -1,
         reportDetail: '',
+        currentPage: 1,
+        pageSize: 10,
+        hasMore: true,
     },
 
     onLoad() {
@@ -52,7 +55,7 @@ Page({
     // ✅ 监听下拉刷新
     onPullDownRefresh() {
         const category = this.data.selectedCategory || "全部"; // **确保分类有效**
-        
+
         this.fetchPosts(category, () => {
             wx.stopPullDownRefresh(); // **停止下拉刷新动画**
         });
@@ -139,13 +142,18 @@ Page({
     },
 
     selectCategory(e: any) {
-        const category = e.currentTarget.dataset.category;
-        this.setData({ selectedCategory: category });
-        this.fetchPosts(category);
-    },
+        const selectedCategory = e.currentTarget.dataset.category;
+        this.setData({
+          selectedCategory,
+          currentPage: 1,
+          hasMore: true
+        });
+      
+        this.fetchPosts(false); // 刷新第一页
+      },
 
     // ✅ 获取帖子数据
-    fetchPosts(category: string, callback?: Function) {
+    fetchPosts(isLoadMore = false, callback?: Function) {
         const app = getApp();
         const user_id = app.globalData.userInfo?.id || null;
         const token = wx.getStorageSync("token");
@@ -155,25 +163,35 @@ Page({
             return;
         }
 
+        const { currentPage, pageSize, selectedCategory } = this.data;
+
         wx.request({
             url: "https://mutualcampus.top/api/square/posts",
             method: "GET",
-            header: { Authorization: `Bearer ${token}` }, // 添加 token
-            data: { category, user_id },
+            header: { Authorization: `Bearer ${token}` },
+            data: {
+                category: selectedCategory,
+                user_id,
+                page: currentPage,
+                pageSize
+            },
             success: (res: any) => {
                 if (res.data.success) {
-                    let posts = res.data.posts || [];
-                    posts = posts.map(post => {
-                        const isVip = post.vip_expire_time && new Date(post.vip_expire_time).getTime() > Date.now();
-                        return {
-                            ...post,
-                            isLiked: post.isLiked || false,
-                            isVip,
-                            created_time: this.formatTime(post.created_time)
-                        };
-                    });
+                    let newPosts = res.data.posts || [];
+                    const isVip = (vipTime) =>
+                        vipTime && new Date(vipTime).getTime() > Date.now();
 
-                    this.setData({ posts });
+                    newPosts = newPosts.map(post => ({
+                        ...post,
+                        isLiked: post.isLiked || false,
+                        isVip: isVip(post.vip_expire_time),
+                        created_time: this.formatTime(post.created_time)
+                    }));
+
+                    this.setData({
+                        posts: isLoadMore ? [...this.data.posts, ...newPosts] : newPosts,
+                        hasMore: newPosts.length === pageSize
+                    });
                 } else {
                     console.error("❌ API 返回错误:", res.data.message);
                 }
@@ -187,6 +205,16 @@ Page({
                 if (callback) callback();
             }
         });
+    },
+
+    onReachBottom() {
+        if (!this.data.hasMore) return;
+
+        this.setData({
+            currentPage: this.data.currentPage + 1
+        });
+
+        this.fetchPosts(true);
     },
 
     // ✅ 时间格式化

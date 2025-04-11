@@ -2,5 +2,6 @@
     "usingComponents": {
       "bottom-nav": "/components/bottom-nav/bottom-nav"
     },
-    "enablePullDownRefresh": true
+    "enablePullDownRefresh": true,
+    "onReachBottomDistance": 50
 }

@@ -106,24 +106,24 @@
     </view>
 
     <!-- 举报弹窗 -->
-<view wx:if="{{showReportModal}}" class="modal-overlay">
-  <view class="modal">
-    <text class="modal-title">举报该帖子</text>
+    <view wx:if="{{showReportModal}}" class="modal-overlay">
+        <view class="modal">
+            <text class="modal-title">举报该帖子</text>
 
-    <picker mode="selector" value="{{selectedReasonIndex}}" range="{{reportReasons}}" bindchange="onReasonChange">
-      <view class="picker-box">
-        <text>{{reportReasons[selectedReasonIndex] || '请选择举报原因'}}</text>
-      </view>
-    </picker>
+            <picker mode="selector" value="{{selectedReasonIndex}}" range="{{reportReasons}}" bindchange="onReasonChange">
+                <view class="picker-box">
+                    <text>{{reportReasons[selectedReasonIndex] || '请选择举报原因'}}</text>
+                </view>
+            </picker>
 
-    <textarea class="report-textarea" placeholder="请补充说明" bindinput="onReportDetailInput" />
+            <textarea class="report-textarea" placeholder="请补充说明" bindinput="onReportDetailInput" />
 
-    <view class="modal-actions">
-      <button class="cancel-btn2" bindtap="cancelReport">取消</button>
-      <button class="submit-btn2" bindtap="submitReport">提交</button>
+            <view class="modal-actions">
+                <button class="cancel-btn2" bindtap="cancelReport">取消</button>
+                <button class="submit-btn2" bindtap="submitReport">提交</button>
+            </view>
+        </view>
     </view>
-  </view>
-</view>
 
 </view>
 <bottom-nav></bottom-nav>
