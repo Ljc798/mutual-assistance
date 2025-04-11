@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
-class Post(Base):
+class Square(Base):
     __tablename__ = 'square'
     id = Column(Integer, primary_key=True, index=True)
     content = Column(Text, nullable=False)

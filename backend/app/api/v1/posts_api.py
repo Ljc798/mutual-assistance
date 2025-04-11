@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from app.core.database import get_db
-from app.models.posts_model import Post, PostImage
+from app.models.posts_model import Square, PostImage
 from app.schemas.posts_schema import PostOut, PostDetailOut
 
 router = APIRouter()

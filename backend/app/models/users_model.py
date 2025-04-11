@@ -12,6 +12,7 @@ class User(Base):
     avatar_url = Column(String(50), unique=True, index=True, nullable=False)
     free_counts = Column(Integer, nullable=False)
     points = Column(Integer, nullable=False)
+    balance = Column(Integer, nullable=False)
     school_id = Column(Integer, nullable=False)
     phone_number = Column(String(50), unique=True, nullable=False)
     vip_expire_time = Column(Date, nullable=False)

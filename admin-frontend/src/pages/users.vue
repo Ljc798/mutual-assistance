@@ -23,11 +23,14 @@
         <n-form-item label="用户id">
           <n-input v-model:value="currentUser.wxid" />
         </n-form-item>
-        <n-form-item label="免广告次数">
+        <n-form-item label="免佣金次数">
           <n-input v-model:value="currentUser.free_counts"/>
         </n-form-item>
         <n-form-item label="积分余额">
           <n-input v-model:value="currentUser.points"/>
+        </n-form-item>
+        <n-form-item label="钱包余额">
+          <n-input v-model:value="currentUser.balance"/>
         </n-form-item>
         <n-form-item label="VIP到期时间">
           <n-input v-model:value="currentUser.vip_expire_time" />
@@ -86,8 +89,7 @@ const message = useMessage()
 
 async function fetchUsers() {
   try {
-    const res = await axios.get('https://admin.mutualcampus.top/api/users')
-    console.log(res)
+    const res = await axios.get('http://localhost:8000/users')
     userList.value = res.data
   } catch (err) {
     console.error('获取用户数据失败:', err)
@@ -113,8 +115,9 @@ const columns = [
   },
   { title: '用户名', key: 'username' },
   { title: '用户id', key: 'wxid' },
-  { title: '免广告次数', key: 'free_counts' },
+  { title: '免佣金次数', key: 'free_counts' },
   { title: '积分余额', key: 'points' },
+  { title: '钱包余额', key: 'balance' },
   { title: 'VIP', key: 'vip_expire_time' },
   {
     title: '注册时间',
@@ -146,7 +149,7 @@ function openEditModal(row: any) {
 
 async function saveUserEdit() {
   try {
-    await axios.put(`https://admin.mutualcampus.top/api/users/${currentUser.value.id}`, currentUser.value)
+    await axios.put(`http://localhost:8000/users/${currentUser.value.id}`, currentUser.value)
     showEditModal.value = false
     fetchUsers()
     message.success('用户信息已成功更新')

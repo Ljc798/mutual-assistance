@@ -31,6 +31,15 @@ const routes = [
       {
         path: 'posts',
         component: () => import('@/pages/posts.vue')
+      },
+      {
+        path: 'pay',
+        component: () => import('@/pages/pay.vue')
+      },
+      {
+        path: '/review',
+        name: 'ReviewCenter',
+        component: () => import('@/pages/index.vue')
       }
     ]
   },

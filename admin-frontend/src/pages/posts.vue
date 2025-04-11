@@ -111,7 +111,7 @@ const pagination = { pageSize: 10 }
 
 async function fetchPosts() {
     try {
-        const res = await axios.get('https://adminmutualcampus.top/api/posts')
+        const res = await axios.get('http://localhost:8000/posts')
         posts.value = res.data
     } catch (err) {
         console.error('获取帖子失败', err)

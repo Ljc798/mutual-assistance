@@ -9,6 +9,7 @@ class UserOut(BaseModel):
     avatar_url: str
     free_counts: int
     points: int
+    balance: float
     school_id: int
     phone_number: str
     vip_expire_time: date
@@ -19,6 +20,7 @@ class UserUpdate(BaseModel):
     wxid: Optional[str]
     free_counts: Optional[int]
     points: Optional[int]
+    balance: Optional[float]
     vip_expire_time: Optional[date]
 
     class Config:
