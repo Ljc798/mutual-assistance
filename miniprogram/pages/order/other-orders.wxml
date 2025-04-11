@@ -1,41 +1,25 @@
-<!-- pages/order-records/order-records.wxml -->
-<view class="order-records-container">
-  <!-- 顶部筛选标签 -->
-  <view class="filter-tabs">
-    <view
-      class="filter-tab {{activeFilter === 'all' ? 'active' : ''}}"
-      bindtap="onFilterChange"
-      data-type="all"
-    >全部</view>
-    <view
-      class="filter-tab {{activeFilter === 'task' ? 'active' : ''}}"
-      bindtap="onFilterChange"
-      data-type="task"
-    >佣金订单</view>
-    <view
-      class="filter-tab {{activeFilter === 'shop' ? 'active' : ''}}"
-      bindtap="onFilterChange"
-      data-type="shop"
-    >积分订单</view>
-    <view
-      class="filter-tab {{activeFilter === 'vip' ? 'active' : ''}}"
-      bindtap="onFilterChange"
-      data-type="vip"
-    >VIP订单</view>
-  </view>
-
-  <!-- 订单列表 -->
-  <block wx:for="{{filteredOrders}}" wx:key="index">
-    <view class="order-card">
-      <view class="order-header">
-        <text class="order-type">【{{item.displayType}}】</text>
-        <text class="order-time">{{item.created_at}}</text>
-      </view>
-      <view class="order-title">{{item.title}}</view>
-      <view class="order-footer">
-        <text class="order-status">状态：{{item.status}}</text>
-        <text class="order-amount">￥{{item.amount}}</text>
-      </view>
+<view class="order-header-fixed">
+    <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack" />
+    <view class="filter-tabs">
+        <view class="filter-tab {{activeFilter === 'all' ? 'active' : ''}}" bindtap="onFilterChange" data-type="all">全部</view>
+        <view class="filter-tab {{activeFilter === 'task' ? 'active' : ''}}" bindtap="onFilterChange" data-type="task">佣金订单</view>
+        <view class="filter-tab {{activeFilter === 'shop' ? 'active' : ''}}" bindtap="onFilterChange" data-type="shop">积分订单</view>
+        <view class="filter-tab {{activeFilter === 'vip' ? 'active' : ''}}" bindtap="onFilterChange" data-type="vip">VIP订单</view>
     </view>
-  </block>
+</view>
+
+<view class="order-records-container">
+    <block wx:for="{{filteredOrders}}" wx:key="id">
+        <view class="order-card">
+            <view class="order-header">
+                <text class="order-type">{{item.type}}</text>
+                <text class="order-time">{{item.paid_at}}</text>
+            </view>
+            <view class="order-title">{{item.title}}</view>
+            <view class="order-footer">
+                <text class="order-status">已支付</text>
+                <text class="order-amount">¥{{item.amount}}</text>
+            </view>
+        </view>
+    </block>
 </view>

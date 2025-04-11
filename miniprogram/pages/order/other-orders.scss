@@ -1,67 +1,94 @@
-.order-records-container {
-    padding: 20rpx;
-  }
-  
-  .filter-tabs {
+.order-header-fixed {
+    position: sticky;
+    top: 0;
+    z-index: 999;
+    background-color: #fff;
+    padding: 100rpx 20rpx 0 20rpx;
+    box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.05);
+
+}
+
+.back-btn {
+    width: 40rpx;
+    height: 40rpx;
+    margin: 20rpx 20rpx 10rpx 20rpx;
+}
+
+.filter-tabs {
     display: flex;
     justify-content: space-around;
-    margin-bottom: 20rpx;
-  
-    .filter-tab {
-      padding: 10rpx 20rpx;
-      border-radius: 20rpx;
-      background-color: #eee;
-      font-size: 28rpx;
-      color: #333;
-  
-      &.active {
-        background-color: #5cb85c;
-        color: #fff;
-      }
-    }
-  }
-  
-  .order-card {
-    background-color: #fff;
+    padding: 0 16rpx;
+    background-color: #f8f8f8;
+    border-radius: 12rpx;
+    margin: 0 20rpx;
+}
+
+.filter-tab {
+    flex: 1;
+    text-align: center;
+    padding: 20rpx 0;
+    font-size: 28rpx;
+    color: #666;
+    border-bottom: 4rpx solid transparent;
+    transition: all 0.2s ease-in-out;
+}
+
+.filter-tab.active {
+    color: #2ecc71;
+    font-weight: bold;
+    border-color: #2ecc71;
+}
+
+.order-records-container {
     padding: 20rpx;
-    margin-bottom: 20rpx;
+}
+
+.order-card {
+    background: #ffffff;
     border-radius: 16rpx;
-    box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
-  
-    .order-header {
-      display: flex;
-      justify-content: space-between;
-      font-size: 26rpx;
-      margin-bottom: 10rpx;
-  
-      .order-type {
-        font-weight: bold;
-        color: #409eff;
-      }
-  
-      .order-time {
-        color: #999;
-      }
-    }
-  
-    .order-title {
-      font-size: 30rpx;
-      font-weight: 500;
-      margin-bottom: 12rpx;
-    }
-  
-    .order-footer {
-      display: flex;
-      justify-content: space-between;
-      font-size: 26rpx;
-  
-      .order-status {
-        color: #666;
-      }
-  
-      .order-amount {
-        color: #e64340;
-        font-weight: bold;
-      }
-    }
-  }
+    padding: 24rpx;
+    margin-bottom: 20rpx;
+    box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.05);
+}
+
+.order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12rpx;
+}
+
+.order-type {
+    font-size: 28rpx;
+    font-weight: bold;
+    color: #2ecc71;
+}
+
+.order-time {
+    font-size: 24rpx;
+    color: #999;
+}
+
+.order-title {
+    font-size: 30rpx;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 20rpx;
+}
+
+.order-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.order-status {
+    font-size: 26rpx;
+    color: #999;
+}
+
+.order-amount {
+    font-size: 32rpx;
+    font-weight: bold;
+    color: #fa5151;
+}

@@ -1,8 +1,4 @@
 .register-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
     height: 100vh;
     background: linear-gradient(to bottom, #f9f9fb, #e6f0ff);
     background-image: url('https://mutual-campus-1348081197.cos.ap-nanjing.myqcloud.com/image.png');
@@ -11,6 +7,11 @@
 }
 
 .phone-btn {
+    position: fixed;
+    bottom: 100rpx; /* 靠底距离可调 */
+    left: 50%;     /* 水平中心点 */
+    transform: translateX(-50%);
+    
     background-color: #07c160;
     color: white;
     padding: 20rpx 0;
@@ -19,8 +20,8 @@
     width: 60%;
     font-weight: bold;
     box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.1);
-    margin-top: 1200rpx;
-}
+    z-index: 999; /* 确保不被其他元素遮挡 */
+  }
 
 .user-info {
     display: flex;

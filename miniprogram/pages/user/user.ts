@@ -96,7 +96,7 @@ Page({
 
     // 跳转订单页
     handleOrderClick() {
-        wx.navigateTo({ url: "/pages/order/order" });
+        wx.navigateTo({ url: "/pages/order/other-orders" });
     },
 
     handleSpaceClick() {

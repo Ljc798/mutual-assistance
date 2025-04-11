@@ -1,74 +1,81 @@
+// other-orders.ts
 Page({
     data: {
-      allOrders: [],
-      filteredOrders: [],
-      activeFilter: 'all'
+        activeFilter: 'all',
+        allOrders: [] as any[],
+        filteredOrders: [] as any[],
     },
-  
+
     onLoad() {
-      this.fetchOrders();
+        this.fetchAllOrders();
     },
-  
-    fetchOrders() {
-      const token = wx.getStorageSync('token');
-      const user = wx.getStorageSync('user');
-  
-      if (!token || !user?.id) {
-        wx.showToast({ title: "未登录", icon: "none" });
-        return;
-      }
-  
-      wx.request({
-        url: `https://mutualcampus.top/api/order/all?user_id=${user.id}`,
-        method: "GET",
-        header: { Authorization: `Bearer ${token}` },
-        success: (res) => {
-          if (res.data.success) {
-            const all = res.data.orders.map(order => {
-              let displayType = '';
-              let title = '';
-              if (order.type === 'task') {
-                displayType = '佣金订单';
-                title = `任务：${order.title}`;
-              } else if (order.type === 'shop') {
-                displayType = '积分订单';
-                title = `商品：${order.title}`;
-              } else if (order.type === 'vip') {
-                displayType = 'VIP订单';
-                title = `VIP：${order.title}`;
-              }
-  
-              return {
-                ...order,
-                displayType,
-                title,
-                amount: Number(order.amount).toFixed(2),
-              };
-            });
-  
-            this.setData({
-              allOrders: all,
-              filteredOrders: all
-            });
-          } else {
-            wx.showToast({ title: "获取订单失败", icon: "none" });
-          }
-        },
-        fail: () => {
-          wx.showToast({ title: "网络错误", icon: "none" });
-        }
-      });
+
+    fetchAllOrders() {
+        const token = wx.getStorageSync("token");
+        const user = wx.getStorageSync("user");
+        if (!user?.id) return;
+
+        wx.request({
+            url: `https://mutualcampus.top/api/order/records?userId=${user.id}`,
+            method: "GET",
+            header: {
+                Authorization: `Bearer ${token}`,
+            },
+            success: (res) => {
+                console.log(res);
+                
+                if (res.data.success) {
+                    const allOrders = [
+                        ...res.data.vipOrders.map((o: any) => ({
+                            id: o.id,
+                            title: `${o.plan} VIP`,
+                            amount: o.price,
+                            type: o.type,
+                            paid_at: this.formatTime(o.paid_at)
+                        })),
+                        ...res.data.shopOrders.map((o: any) => ({
+                            id: o.id,
+                            title: o.item_name,
+                            amount: o.amount,
+                            type: o.type,
+                            paid_at: this.formatTime(o.paid_at)
+                        })),
+                        ...res.data.taskPayments.map((o: any) => ({
+                            id: o.id,
+                            title: o.title,
+                            amount: (o.amount / 100).toFixed(2),
+                            type: o.type,
+                            paid_at: this.formatTime(o.paid_at)
+                        }))
+                    ];
+                    this.setData({ allOrders, filteredOrders: allOrders });
+                } else {
+                    wx.showToast({ title: "订单获取失败", icon: "none" });
+                }
+            },
+            fail: () => {
+                wx.showToast({ title: "请求失败", icon: "none" });
+            }
+        });
     },
-  
+    formatTime(timeStr: string): string {
+        const date = new Date(timeStr);
+        date.setHours(date.getHours() - 8);
+        return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, "0")}-${date.getDate().toString().padStart(2, "0")} ${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
+    },
+
     onFilterChange(e: any) {
-      const filter = e.currentTarget.dataset.type;
-      const all = this.data.allOrders;
-  
-      const filtered = filter === 'all' ? all : all.filter(order => order.type === filter);
-  
-      this.setData({
-        activeFilter: filter,
-        filteredOrders: filtered
-      });
-    }
-  });
+        const type = e.currentTarget.dataset.type;
+        this.setData({
+            activeFilter: type,
+            filteredOrders:
+                type === 'all'
+                    ? this.data.allOrders
+                    : this.data.allOrders.filter(order => order.type === type)
+        });
+    },
+
+    handleBack() {
+        wx.navigateBack();
+    },
+});
