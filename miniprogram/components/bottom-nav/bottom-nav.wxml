@@ -11,8 +11,9 @@
   <image src="/assets/icons/fabu.svg" class="icons"/>
     <text>发布</text>
   </view>
-  <view class="nav-item" bindtap="goToPage" data-page="message">
-  <image src="/assets/icons/home-communication-svgrepo-com.svg" class="icons"/>
+  <view class="nav-item" bindtap="goToPage" data-page="message" style="position: relative;">
+    <image src="/assets/icons/home-communication-svgrepo-com.svg" class="icons" />
+    <view wx:if="{{hasUnread}}" class="red-dot"></view>
     <text>消息</text>
   </view>
   <view class="nav-item" bindtap="goToPage" data-page="user">

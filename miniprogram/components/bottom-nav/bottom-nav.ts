@@ -25,6 +25,8 @@ Component({
       wx.redirectTo({
         url: url,  // 跳转到对应页面
       });
-    }
-  }
+    },
+  },
 });
+
+

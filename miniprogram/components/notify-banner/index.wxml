@@ -1,0 +1,3 @@
+<view class="notify-banner" wx:if="{{visible}}">
+  {{content}}
+</view>

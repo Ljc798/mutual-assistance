@@ -1,3 +1,6 @@
+// pages/chat/chat.ts
+import { on, off, sendMessage } from '../../utils/ws';
+
 Page({
     data: {
         targetId: '',
@@ -5,8 +8,6 @@ Page({
         userId: '',
         messages: [],
         inputText: '',
-        socketOpen: false,
-        socketUrl: '',
         scrollIntoView: 'bottom-anchor',
         lastSelfMessageId: null,
         lastReadMessageId: null,
@@ -29,55 +30,24 @@ Page({
             targetId,
             targetName,
             room_id,
-            socketUrl: `wss://mutualcampus.top/ws?userId=${userId}`,
         });
 
         this.fetchHistoryMessages();
-        this.initWebSocket();
+        on('chat', this.handleChatMessage);
+        on('read_ack', this.handleReadAck);
     },
 
     onUnload() {
-        this.stopHeartbeat();
-        wx.closeSocket();
-    },
-
-    onHide() {
-        this.stopHeartbeat();
+        off('chat', this.handleChatMessage);
+        off('read_ack', this.handleReadAck);
     },
 
     onShow() {
-        wx.getNetworkType({
-            success: (res) => {
-                if (res.networkType !== 'none' && !this.data.socketOpen) {
-                    this.reconnectWebSocket();
-                }
-            }
-        });
-
         wx.nextTick(() => {
             this.scrollToBottom();
         });
 
         this.checkReadStatus();
-    },
-
-    startHeartbeat() {
-        this.stopHeartbeat();
-        this.heartbeatTimer = setInterval(() => {
-            if (this.data.socketOpen) {
-                wx.sendSocketMessage({ data: JSON.stringify({ type: 'ping' }) });
-            }
-        }, 30000);
-    },
-
-    stopHeartbeat() {
-        if (this.heartbeatTimer) clearInterval(this.heartbeatTimer);
-    },
-
-    reconnectWebSocket() {
-        this.setData({ socketOpen: false });
-        wx.closeSocket();
-        setTimeout(() => this.initWebSocket(), 1000);
     },
 
     getRoomId(userA, userB) {
@@ -121,66 +91,52 @@ Page({
         });
     },
 
-    initWebSocket() {
-        wx.connectSocket({ url: this.data.socketUrl });
+    handleChatMessage(msg) {
+        if (msg.selfEcho) return;
 
-        wx.onSocketOpen(() => {
-            this.setData({ socketOpen: true });
-            this.startHeartbeat();
+        const { userId, targetId } = this.data;
+        const from = Number(msg.sender_id);
+        const to = Number(msg.receiver_id);
+        const localUserId = Number(userId);
+        const localTargetId = Number(targetId);
 
-            wx.sendSocketMessage({
-                data: JSON.stringify({ type: 'init', userId: this.data.userId })
-            });
-        });
+        if (![from, to].includes(localUserId) || ![from, to].includes(localTargetId)) return;
 
-        wx.onSocketMessage((res) => {
-            const msg = JSON.parse(res.data);
-            if (msg.type === 'read_ack') {
-                if (msg.room_id === this.data.room_id) {
-                    const updated = this.data.messages.map(m =>
-                        m.sender_id === this.data.userId ? { ...m, is_read: true } : m
-                    );
-                    this.setData({ messages: updated });
-                }
-                return;
-            }
+        const date = new Date(msg.created_time);
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
 
-            if (msg.selfEcho) return;
+        const newMsg = {
+            ...msg,
+            isSelf: from === userId,
+            is_read: true,
+            created_time_formatted: `${hours}:${minutes}`,
+        };
 
-            const { userId, targetId } = this.data;
-            const from = Number(msg.sender_id);
-            const to = Number(msg.receiver_id);
-            const localUserId = Number(userId);
-            const localTargetId = Number(targetId);
+        this.setData({
+            messages: [...this.data.messages, newMsg]
+        }, this.scrollToBottom);
 
-            if (![from, to].includes(localUserId) || ![from, to].includes(localTargetId)) return;
+        this.markMessagesAsRead();
+        this.sendReadAck();
+    },
 
-            const date = new Date(msg.created_time);
-            date.setHours(date.getHours() - 8);
-            const hours = date.getHours().toString().padStart(2, '0');
-            const minutes = date.getMinutes().toString().padStart(2, '0');
-
-            const newMsg = {
-                ...msg,
-                isSelf: from === userId,
-                is_read: true,
-                created_time_formatted: `${hours}:${minutes}`,
-            };
-
-            this.setData({
-                messages: [...this.data.messages, newMsg]
-            }, this.scrollToBottom);
-
-            this.markMessagesAsRead();
-            this.sendReadAck();
-        });
+    handleReadAck(msg) {
+        if (msg.room_id === this.data.room_id) {
+            const updated = this.data.messages.map(m =>
+                m.sender_id === this.data.userId ? { ...m, is_read: true } : m
+            );
+            this.setData({ messages: updated });
+        }
     },
 
     sendReadAck() {
-        const { userId, targetId, room_id, socketOpen } = this.data;
-        if (!socketOpen) return;
-        wx.sendSocketMessage({
-            data: JSON.stringify({ type: 'read_ack', from: userId, to: targetId, room_id })
+        const { userId, targetId, room_id } = this.data;
+        sendMessage({
+            type: 'read_ack',
+            from: userId,
+            to: targetId,
+            room_id
         });
     },
 
@@ -211,36 +167,33 @@ Page({
     },
 
     sendMessage() {
-        const { inputText, userId, targetId, room_id, socketOpen } = this.data;
-        if (!inputText.trim() || !socketOpen) return;
+        const { inputText, userId, targetId, room_id } = this.data;
+        if (!inputText.trim()) return;
 
         const msg = {
             type: 'chat', userId, targetId, room_id, content: inputText
         };
 
-        wx.sendSocketMessage({
-            data: JSON.stringify(msg),
-            success: () => {
-                const now = new Date();
-                const hours = now.getHours().toString().padStart(2, '0');
-                const minutes = now.getMinutes().toString().padStart(2, '0');
+        sendMessage(msg);
 
-                const selfMsg = {
-                    ...msg,
-                    sender_id: userId,
-                    receiver_id: targetId,
-                    isSelf: true,
-                    is_read: true,
-                    created_time: now.toISOString(),
-                    created_time_formatted: `${hours}:${minutes}`,
-                };
+        const now = new Date();
+        const hours = now.getHours().toString().padStart(2, '0');
+        const minutes = now.getMinutes().toString().padStart(2, '0');
 
-                this.setData({
-                    messages: [...this.data.messages, selfMsg],
-                    inputText: ''
-                }, this.scrollToBottom);
-            }
-        });
+        const selfMsg = {
+            ...msg,
+            sender_id: userId,
+            receiver_id: targetId,
+            isSelf: true,
+            is_read: true,
+            created_time: now.toISOString(),
+            created_time_formatted: `${hours}:${minutes}`,
+        };
+
+        this.setData({
+            messages: [...this.data.messages, selfMsg],
+            inputText: ''
+        }, this.scrollToBottom);
     },
 
     scrollToBottom() {

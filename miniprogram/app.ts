@@ -1,32 +1,36 @@
+import { initWebSocket } from './utils/ws'; // 👈 引入你的 ws 封装模块
+
 App<IAppOption>({
     globalData: {
-        userInfo: null, // 全局存储用户信息
-        token: null, // 全局存储 token
+        userInfo: null,
+        token: null,
     },
 
     async onLaunch() {
         console.log("✅ 小程序启动中...");
-    
+
         const token = wx.getStorageSync("token") || null;
-    
+        const user = wx.getStorageSync("user") || null;
+
         if (!token) {
             console.warn("⚠️ 未找到 token，跳转注册页...");
             wx.redirectTo({ url: "/pages/register/register" });
             return;
         }
-    
-        const user = wx.getStorageSync("user") || null;
-    
+
         if (user) {
             this.globalData.userInfo = user;
             this.globalData.token = token;
+
+            // ✅ 一旦 user 存在，就初始化 WebSocket 连接
+            console.log(`🌐 初始化 WebSocket for userId: ${user.id}`);
+            initWebSocket(user.id);
         }
-    
-        // ✅ 无论是否有 user，都要验证 token 的有效性
+
+        // 无论有无 user，本地 token 都要校验一次
         this.verifyUserFromServer(token);
     },
 
-    // ✅ 服务器校验用户是否存在（仅在用户信息丢失时调用）
     verifyUserFromServer(token: string) {
         wx.request({
             url: "https://mutualcampus.top/api/user/info",
@@ -37,6 +41,13 @@ App<IAppOption>({
                     console.log("✅ 服务器验证成功，用户存在:", res.data.user);
                     this.globalData.userInfo = res.data.user;
                     wx.setStorageSync("user", res.data.user);
+
+                    // 👇 防止因 onLaunch 先触发验证，user 未初始化导致 WS 没连上
+                    if (!this.wsInitialized) {
+                        initWebSocket(res.data.user.id);
+                        this.wsInitialized = true;
+                    }
+
                 } else {
                     console.warn("⚠️ token 无效或用户不存在，清除数据并跳转注册页");
                     this.clearUserData();
@@ -49,7 +60,6 @@ App<IAppOption>({
         });
     },
 
-    // ✅ 清除本地存储的用户信息（用户主动退出时调用）
     clearUserData() {
         wx.removeStorageSync("user");
         wx.removeStorageSync("token");
@@ -58,7 +68,6 @@ App<IAppOption>({
         wx.redirectTo({ url: "/pages/register/register" });
     },
 
-    // ✅ 用户登录成功后，存储 token 和用户信息
     setGlobalUserInfo(user: any, token: string) {
         console.log("📌 更新全局用户信息:", user);
 
@@ -67,9 +76,12 @@ App<IAppOption>({
 
         wx.setStorageSync("user", user);
         wx.setStorageSync("token", token);
+
+        // ✅ 确保新登录用户也能自动建立 WS 连接
+        initWebSocket(user.id);
+        this.wsInitialized = true;
     },
 
-    // 在 app.ts 中定义
     refreshUserInfo(callback?: Function) {
         const token = wx.getStorageSync("token");
         if (!token) return;
@@ -87,4 +99,4 @@ App<IAppOption>({
             }
         });
     }
-}); 
+});

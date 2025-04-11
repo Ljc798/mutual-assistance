@@ -51,7 +51,7 @@ app.use("/api/taskPayment", taskPaymentRouter);
 
 app.get("/", (req, res) => {
     res.redirect("https://admin.mutualcampus.top");
-  });
+});
 
 // =======================
 // 🌐 启动 HTTP 服务
@@ -65,80 +65,130 @@ server.listen(PORT, "0.0.0.0", () => {
 // =======================
 const db = require("./config/db");
 
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocket.Server({
+    server
+});
 const clients = new Map(); // userId => ws
 
 function getRoomId(userA, userB) {
-  const sorted = [userA, userB].sort((a, b) => a - b);
-  return `room_${sorted[0]}_${sorted[1]}`;
+    const sorted = [userA, userB].sort((a, b) => a - b);
+    return `room_${sorted[0]}_${sorted[1]}`;
+}
+
+function sendToUser(userId, payload) {
+    const targetSocket = clients.get(userId);
+    if (targetSocket && targetSocket.readyState === WebSocket.OPEN) {
+        targetSocket.send(JSON.stringify(payload));
+        return true;
+    } else {
+        console.warn(`⚠️ 用户 ${userId} 不在线`);
+        return false;
+    }
+}
+
+function broadcastNotify(userIds, notifyPayload) {
+    userIds.forEach((uid) => {
+        sendToUser(uid, notifyPayload);
+    });
 }
 
 wss.on("connection", (ws) => {
-  console.log("📡 新客户端连接");
+    console.log("📡 新客户端连接");
 
-  ws.on("message", async (msg) => {
-    try {
-      const data = JSON.parse(msg);
-      const { type, userId, targetId, content } = data;
+    ws.on("message", async (msg) => {
+        try {
+            const data = JSON.parse(msg);
+            const {
+                type,
+                userId,
+                targetId,
+                content
+            } = data;
 
-      if (type === "init") {
-        clients.set(userId, ws);
-        ws.userId = userId;
-        console.log(`✅ 用户 ${userId} 上线`);
-        return;
-      }
+            if (type === "init") {
+                clients.set(userId, ws);
+                ws.userId = userId;
+                return;
+            }
 
-      if (type === "chat") {
-        if (!userId || !targetId || !content) {
-          console.warn("⚠️ 消息字段缺失");
-          return;
-        }
+            if (type === "chat") {
+                if (!userId || !targetId || !content) {
+                    console.warn("⚠️ 消息字段缺失");
+                    return;
+                }
 
-        const timestamp = dayjs().add(8, "hour").format("YYYY-MM-DD HH:mm:ss");
-        const roomId = getRoomId(userId, targetId);
+                const timestamp = dayjs().add(8, "hour").format("YYYY-MM-DD HH:mm:ss");
+                const roomId = getRoomId(userId, targetId);
 
-        // 📝 写入数据库
-        const [result] = await db.query(
-          `INSERT INTO messages (room_id, sender_id, receiver_id, content, type, created_time, is_read)
+                const [result] = await db.query(
+                    `INSERT INTO messages (room_id, sender_id, receiver_id, content, type, created_time, is_read)
            VALUES (?, ?, ?, ?, 'text', ?, 0)`,
-          [roomId, userId, targetId, content, timestamp]
-        );
+                    [roomId, userId, targetId, content, timestamp]
+                );
 
-        const messagePayload = {
-          type: "chat",
-          id: result.insertId,
-          sender_id: userId,
-          receiver_id: targetId,
-          content,
-          room_id: roomId,
-          message_type: "text",
-          created_time: timestamp,
-        };
+                const messagePayload = {
+                    type: "chat",
+                    id: result.insertId,
+                    sender_id: userId,
+                    receiver_id: targetId,
+                    content,
+                    room_id: roomId,
+                    message_type: "text",
+                    created_time: timestamp,
+                };
 
-        const targetSocket = clients.get(targetId);
-        if (targetSocket && targetSocket.readyState === WebSocket.OPEN) {
-          console.log(`📤 向 ${targetId} 推送消息`);
-          targetSocket.send(JSON.stringify(messagePayload));
-        } else {
-          console.warn(`⚠️ 用户 ${targetId} 不在线`);
+                sendToUser(targetId, messagePayload);
+                sendToUser(userId, {
+                    ...messagePayload,
+                    selfEcho: true
+                });
+
+                // ✅ 4. 发送一条通知（仅用于 UI 提示）
+                const notifyPayload = {
+                    type: "notify",
+                    content: `你收到来自用户 ${userId} 的新消息`,
+                    created_time: timestamp
+                };
+
+                console.log("📢 推送 notify 给用户", targetId, notifyPayload);
+                sendToUser(targetId, notifyPayload);
+            }
+
+            // 新增：处理通知事件（你可以让后端管理后台来触发这些）
+            if (type === "notify") {
+                const notifyPayload = {
+                    type: "notify",
+                    title: data.title || "系统通知",
+                    content: data.content || "",
+                    created_time: dayjs().add(8, "hour").format("YYYY-MM-DD HH:mm:ss"),
+                };
+
+                if (Array.isArray(data.to)) {
+                    broadcastNotify(data.to, notifyPayload);
+                } else if (data.to) {
+                    sendToUser(data.to, notifyPayload);
+                } else {
+                    console.warn("⚠️ notify 缺少目标用户");
+                }
+            }
+
+        } catch (err) {
+            console.error("❗ 消息处理异常:", err);
+            try {
+                ws.send(JSON.stringify({
+                    type: "error",
+                    message: "服务器处理消息失败"
+                }));
+            } catch (e) {
+                console.error("⚠️ 无法向客户端发送错误提示", e);
+            }
         }
+    });
 
-        ws.send(JSON.stringify({ ...messagePayload, selfEcho: true }));
-      }
-    } catch (err) {
-      console.error("❗ 消息处理异常:", err);
-      try {
-        ws.send(JSON.stringify({ type: "error", message: "服务器处理消息失败" }));
-      } catch (e) {
-        console.error("⚠️ 无法向客户端发送错误提示", e);
-      }
-    }
-  });
-
-  ws.on("close", () => {
-    if (ws.userId) {
-      clients.delete(ws.userId);
-      console.log(`🚪 用户 ${ws.userId} 下线`);
-    }
-  });
+    ws.on("close", () => {
+        if (ws.userId) {
+            clients.delete(ws.userId);
+            console.log(`❎ 用户 ${ws.userId} 已断开`);
+        }
+    });
 });

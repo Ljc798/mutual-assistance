@@ -1,4 +1,5 @@
 <view class="page">
+    <notify-banner/>
     <!-- 上方固定部分 -->
     <view class="header">
         <view class="app-name">互助Campus</view>
