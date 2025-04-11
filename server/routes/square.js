@@ -5,7 +5,6 @@ const dayjs = require("dayjs");
 const authMiddleware = require("./authMiddleware"); // 引入中间件
 
 // ===== 1. 获取广场帖子列表 =====
-// router.get("/posts")
 router.get("/posts", async (req, res) => {
     const {
         category,
@@ -17,40 +16,33 @@ router.get("/posts", async (req, res) => {
     const offset = (parseInt(page) - 1) * parseInt(pageSize);
     const limit = parseInt(pageSize);
 
-    let whereClause = '';
-    const values = [];
+    const values = [user_id]; // 用于 isLiked 子查询
+    let whereClause = "";
 
     if (category && category !== "全部") {
-        whereClause = 'WHERE s.category = ?';
+        whereClause = "WHERE s.category = ?";
         values.push(category);
     }
 
-    // user_id 是为了 isLiked 子查询使用的
-    values.push(user_id);
-    values.push(offset);
-    values.push(limit);
+    values.push(offset, limit); // 注意顺序调整：LIMIT ?, ?
 
     const query = `
         SELECT s.*, 
-            u.username, 
-            u.avatar_url, 
-            u.vip_expire_time,
-            (SELECT COUNT(*) FROM square_likes WHERE square_id = s.id AND user_id = ?) AS isLiked
+               u.username, 
+               u.avatar_url, 
+               u.vip_expire_time,
+               (SELECT COUNT(*) FROM square_likes WHERE square_id = s.id AND user_id = ?) AS isLiked
         FROM square s
         LEFT JOIN users u ON s.user_id = u.id
         ${whereClause}
         ORDER BY s.is_pinned DESC, s.created_time DESC
-        LIMIT ? OFFSET ?
+        LIMIT ?, ?
     `;
-
     try {
         const [posts] = await db.query(query, values);
 
         if (posts.length === 0) {
-            return res.json({
-                success: true,
-                posts: []
-            });
+            return res.json({ success: true, posts: [] });
         }
 
         const postIds = posts.map(p => p.id);
@@ -67,10 +59,7 @@ router.get("/posts", async (req, res) => {
             isVip: post.vip_expire_time && new Date(post.vip_expire_time) > now
         }));
 
-        res.json({
-            success: true,
-            posts: postsWithImages
-        });
+        res.json({ success: true, posts: postsWithImages });
     } catch (err) {
         console.error("❌ 获取帖子失败:", err);
         res.status(500).json({

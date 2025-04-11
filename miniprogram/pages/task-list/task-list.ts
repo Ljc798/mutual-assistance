@@ -1,62 +1,80 @@
 interface Task {
-    id: string; // 任务 ID
+    id: string;
     title: string;
-    category: string; // 任务分类
-    DDL: string; // 期望完成时间
-    position: string; // 任务地点
-    address: string; // 交付地点
-    takeCode?: string; // 取件码（快递）
-    takeName?: string; // 外卖名字
-    takeTel?: number; // 手机尾号
-    detail: string; // 任务简介
-    offer: number | string; // 报酬
-    status: number; // 任务状态
+    category: string;
+    DDL: string;
+    position: string;
+    address: string;
+    takeCode?: string;
+    takeName?: string;
+    takeTel?: number;
+    detail: string;
+    offer: number | string;
+    status: number;
+    formattedDDL?: string;
+    formattedStatus?: string;
 }
 
 Page({
     data: {
-        category: "全部", // 任务分类，默认是 "全部"
-        taskList: [] as Task[], // 所有任务
-        filteredTaskList: [] as Task[], // 筛选后的任务列表
+        category: "全部",
+        taskList: [] as Task[],
+        filteredTaskList: [] as Task[],
         filterOptions: ["全部", "待接单", "进行中", "已完成"],
-        activeFilter: 0, // 当前筛选状态
+        activeFilter: 0,
+        page: 1,
+        pageSize: 10,
+        hasMore: true,
     },
 
     onLoad(options: any) {
-        const category = options.category ? decodeURIComponent(options.category) : "全部"; // 解析分类参数
-        this.setData({ category });
-        this.loadTasksForCategory(category);
+        const category = options.category ? decodeURIComponent(options.category) : "全部";
+        this.setData({ category, page: 1 }, () => {
+            this.loadTasksForCategory(false);
+        });
     },
 
     onPullDownRefresh() {
-        const category = this.data.category || "全部";
-        this.loadTasksForCategory(category)
-            .finally(() => {
+        this.setData({ page: 1 }, () => {
+            this.loadTasksForCategory(false).finally(() => {
                 wx.stopPullDownRefresh();
             });
+        });
     },
 
-    // 加载任务
-    loadTasksForCategory(category: string) {
+    onReachBottom() {
+        if (!this.data.hasMore) return;
+        this.setData({ page: this.data.page + 1 }, () => {
+            this.loadTasksForCategory(true);
+        });
+    },
+
+    loadTasksForCategory(isLoadMore = false) {
+        const { category, page, pageSize } = this.data;
         wx.showLoading({ title: "加载中...", mask: true });
 
         wx.request({
-            url: `https://mutualcampus.top/api/task/tasks?category=${encodeURIComponent(category)}`,
+            url: `https://mutualcampus.top/api/task/tasks`,
             method: "GET",
+            data: {
+                category: encodeURIComponent(category),
+                page,
+                pageSize,
+            },
             success: (res: any) => {
-
-                const formattedTasks = res.data.map((task: Task) => ({
+                const tasks = Array.isArray(res.data) ? res.data : [];
+                const formatted = tasks.map((task: Task) => ({
                     ...task,
-                    formattedDDL: this.formatTime(task.DDL), // 格式化时间
-                    formattedStatus: this.formatStatus(task.status), // 格式化状态
+                    formattedDDL: this.formatTime(task.DDL),
+                    formattedStatus: this.formatStatus(task.status),
                 }));
-
+            
                 this.setData({
-                    taskList: formattedTasks,
-                    filteredTaskList: formattedTasks
+                    taskList: isLoadMore ? [...this.data.taskList, ...formatted] : formatted,
+                    filteredTaskList: isLoadMore ? [...this.data.taskList, ...formatted] : formatted,
+                    hasMore: tasks.length === pageSize,
                 });
-
-                // 默认筛选任务
+            
                 this.filterTasks();
             },
             fail: (err: any) => {
@@ -69,63 +87,52 @@ Page({
         });
     },
 
-    // 选择筛选条件
     selectFilter(event: any) {
         const index = event.currentTarget.dataset.index;
         this.setData({ activeFilter: index });
         this.filterTasks();
     },
 
-    // 任务筛选（按照整数状态进行筛选）
     filterTasks() {
-        const { activeFilter, filterOptions, taskList } = this.data;
-        const selectedStatus = activeFilter; // 这里 `activeFilter` 是索引
-
-        if (selectedStatus === 0) { // 0 代表 "全部"
+        const { activeFilter, taskList } = this.data;
+        if (activeFilter === 0) {
             this.setData({ filteredTaskList: taskList });
         } else {
-            const filtered = taskList.filter(task => task.status === selectedStatus - 1);
-            // activeFilter: 1(待接单) → status: 0
-            // activeFilter: 2(进行中) → status: 1
-            // activeFilter: 3(已完成) → status: 2
+            const filtered = taskList.filter(task => task.status === activeFilter - 1);
             this.setData({ filteredTaskList: filtered });
         }
     },
 
-    // 点击任务跳转详情页
     handleTaskClick(event: any) {
         const index = event.currentTarget.dataset.index;
         const task = this.data.filteredTaskList[index];
 
-        if (!task || !task.id) {  // 确保 ID 存在
+        if (!task || !task.id) {
             console.error("❌ 任务 ID 不存在:", task);
             wx.showToast({ title: "任务 ID 不存在", icon: "none" });
             return;
         }
 
         wx.navigateTo({
-            url: `/pages/task/task?taskId=${task.id}`,  // 传递正确的 id
+            url: `/pages/task/task?taskId=${task.id}`,
         });
     },
 
-    // 返回上一页
     handleBack() {
         wx.navigateBack({ delta: 1 });
     },
 
-    // 时间格式化
     formatTime(DDL: string) {
         const date = new Date(DDL);
         date.setHours(date.getHours() - 8);
-        const month = date.getMonth() + 1; // 获取月份（从 0 开始）
-        const day = date.getDate(); // 获取日期
-        const hours = date.getHours(); // 获取小时
-        const minutes = date.getMinutes(); // 获取分钟
+        const month = date.getMonth() + 1;
+        const day = date.getDate();
+        const hours = date.getHours();
+        const minutes = date.getMinutes();
 
-        return `${month}-${day} ${hours}:${minutes < 10 ? "0" + minutes : minutes}`; // 保证分钟是两位数
+        return `${month}-${day} ${hours}:${minutes < 10 ? "0" + minutes : minutes}`;
     },
 
-    // 任务状态格式化
     formatStatus(status: number): string {
         switch (status) {
             case 0:

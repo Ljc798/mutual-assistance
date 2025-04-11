@@ -23,7 +23,7 @@
     <!-- 动态内容展示区 -->
     <view class="content">
         <block wx:for="{{posts}}" wx:key="post_id">
-            <view class="post-card" bindtap="goToDetail" data-postid="{{item.id}}">
+            <view class="post-card {{item.is_pinned ? 'pinned-post' : ''}}" bindtap="goToDetail" data-postid="{{item.id}}">
                 <!-- 用户信息 -->
                 <view class="post-header">
                     <image class="user-avatar" src="{{item.avatar_url}}" mode="aspectFill" />
@@ -31,33 +31,30 @@
                         <text class="username {{item.isVip ? 'vip-username' : ''}}">{{item.username}}</text>
                         <image wx:if="{{item.isVip}}" src="/assets/icons/vip-2.svg" class="vip-badge" />
                     </view>
-
-                    <!-- 三个点按钮 -->
                     <view class="more-button" catchtap="onReportTap" data-postid="{{item.id}}">
                         <image src="/assets/icons/menu-dots-svgrepo-com.svg" class="more-icon" />
                     </view>
                 </view>
 
-                <!-- 文字内容 -->
-                <view class="post-text">{{item.content}}</view>
+                <view class="post-text">
+                    {{item.content}}
+                </view>
 
-                <!-- 图片内容（如果有） -->
                 <block wx:if="{{item.images.length > 0}}">
                     <scroll-view class="image-scroll" scroll-x="true">
                         <image wx:for="{{item.images}}" wx:key="index" src="{{item}}" class="post-image" mode="aspectFill" />
                     </scroll-view>
                 </block>
-                <!-- 点赞 & 评论 -->
+
                 <view class="post-footer">
                     <text class="post-time">{{item.created_time}}</text>
-
                     <view class="post-footer-right">
                         <view class="likes" catchtap="toggleLike" data-index="{{index}}">
                             <image src="{{item.isLiked ? '/assets/icons/heart-fill.svg' : '/assets/icons/heart-line.svg'}}" />
                             <text>{{item.likes_count}}</text>
                         </view>
                         <view class="comments">
-                            <image src="/assets/icons/comment-3-svgrepo-com.svg " />
+                            <image src="/assets/icons/comment-3-svgrepo-com.svg" />
                             <text>{{item.comments_count}}</text>
                         </view>
                     </view>

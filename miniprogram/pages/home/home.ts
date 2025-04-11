@@ -19,9 +19,12 @@ Page({
     data: {
         tasks: [] as Task[], // 存储所有任务
         filteredTasks: [] as Task[], // 当前分类筛选后的任务
-        activeCategory: "全部", // 当前选中的分类
+        selectedCategory: "全部", // 当前选中的分类
         keyword: "",
         searchResults: [],
+        currentPage: 1,
+        pageSize: 10,
+        hasMore: true
     },
 
     onLoad() {
@@ -37,32 +40,35 @@ Page({
         wx.stopPullDownRefresh();
     },
 
-    loadTasks() {
-        wx.showLoading({ title: "加载中...", mask: true });
+    loadTasks(isLoadMore = false) {
+        const { selectedCategory, currentPage, pageSize, tasks } = this.data;
 
         wx.request({
             url: "https://mutualcampus.top/api/task/tasks",
             method: "GET",
+            data: {
+                category: selectedCategory,
+                page: currentPage,
+                pageSize
+            },
             header: {
-                "Accept": "application/json" // ✅ 加上这句
+                "Accept": "application/json"
             },
             success: (res: any) => {
-
-                // ✅ 确保是数组才进行 map 处理
                 if (Array.isArray(res.data)) {
-                    const formattedTasks = res.data.map((task: Task) => ({
+                    const newTasks = res.data.map((task: Task) => ({
                         ...task,
                         formattedDDL: this.formatTime(task.DDL),
                         formattedStatus: this.formatStatus(task.status),
                     }));
-
+            
                     this.setData({
-                        tasks: formattedTasks,
-                        filteredTasks: formattedTasks
+                        tasks: isLoadMore ? [...tasks, ...newTasks] : newTasks,
+                        hasMore: newTasks.length === pageSize
                     });
                 } else {
                     wx.showToast({ title: "任务数据异常", icon: "none" });
-                    console.error("❌ 返回的数据不是数组：", res.data);
+                    console.error("❌ 返回的数据异常：", res.data);
                 }
             },
             fail: (err: any) => {
@@ -71,7 +77,7 @@ Page({
             },
             complete: () => {
                 wx.hideLoading();
-            },
+            }
         });
     },
 
@@ -146,7 +152,7 @@ Page({
             return;
         }
         console.log(111);
-        
+
         wx.request({
             url: "https://mutualcampus.top/api/task/search",
             method: "GET",

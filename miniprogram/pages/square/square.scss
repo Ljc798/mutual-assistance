@@ -105,6 +105,12 @@
     box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.05);
 }
 
+.pinned-post {
+    background-color: #fef8e7;
+    border: 2rpx solid #f5c048;
+    box-shadow: 0 4rpx 12rpx rgba(245, 192, 72, 0.3);
+  }
+
 /* 用户信息 */
 .post-header {
     display: flex;

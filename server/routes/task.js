@@ -136,24 +136,39 @@ router.post("/create", authMiddleware, async (req, res) => {
 
 // ===== 2. 获取所有任务（支持分类） =====
 router.get("/tasks", async (req, res) => {
-    const category = req.query.category;
-    let query = "SELECT * FROM tasks WHERE status >= 0";
-    let queryParams = [];
+    let {
+        category,
+        page = 1,
+        pageSize = 10
+    } = req.query;
+
+    category = decodeURIComponent(category || "全部");
+
+
+    const offset = (parseInt(page) - 1) * parseInt(pageSize);
+    const limit = parseInt(pageSize);
+
+    let query = `SELECT * FROM tasks WHERE status >= 0`;
+    const queryParams = [];
 
     if (category && category !== "全部") {
         query += " AND category = ?";
         queryParams.push(category);
     }
 
-    query += " ORDER BY DDL DESC";
+    query += " ORDER BY DDL DESC LIMIT ? OFFSET ?";
+    queryParams.push(limit, offset);
+
 
     try {
         const [results] = await db.query(query, queryParams);
+
         const formattedTasks = results.map(task => ({
             ...task,
             status: parseInt(task.status),
             offer: parseFloat(task.offer).toFixed(2),
         }));
+
         res.json(formattedTasks);
     } catch (err) {
         console.error("❌ 任务查询失败:", err);
@@ -351,7 +366,7 @@ router.post("/bid", authMiddleware, async (req, res) => {
             const [
                 [bidder]
             ] = await db.query(`SELECT username FROM users WHERE id = ?`, [user_id]);
-            const bidderName = bidder?.username || '有人'; 
+            const bidderName = bidder?.username || '有人';
             await db.query(
                 `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
                 [
