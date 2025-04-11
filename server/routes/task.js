@@ -3,6 +3,9 @@ const router = express.Router();
 const db = require("../config/db");
 const dayjs = require("dayjs");
 const authMiddleware = require("./authMiddleware"); // 引入中间件
+const {
+    sendToUser
+} = require("./ws-helper");
 
 // ===== 1. 发布任务 =====
 router.post("/create", authMiddleware, async (req, res) => {
@@ -93,7 +96,7 @@ router.post("/create", authMiddleware, async (req, res) => {
             takeaway_tel || null,
             takeaway_name || '',
             commission
-          ];
+        ];
 
         const [result] = await db.query(insertSQL, values);
 
@@ -107,6 +110,13 @@ router.post("/create", authMiddleware, async (req, res) => {
                     `你发布的任务《${title}》已成功上线，等待他人接单～`
                 ]
             );
+
+            // ✅ WebSocket 实时推送
+            sendToUser(employer_id, {
+                type: 'notify',
+                content: `📢 任务《${title}》已发布成功，正在等待接单！`,
+                created_time: new Date().toISOString()
+            });
         }
 
         res.json({
@@ -341,6 +351,7 @@ router.post("/bid", authMiddleware, async (req, res) => {
             const [
                 [bidder]
             ] = await db.query(`SELECT username FROM users WHERE id = ?`, [user_id]);
+            const bidderName = bidder?.username || '有人'; 
             await db.query(
                 `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
                 [
@@ -349,6 +360,18 @@ router.post("/bid", authMiddleware, async (req, res) => {
                     `${bidder?.username || '有人'}对《${task.title}》提交了投标，请尽快查看。`
                 ]
             );
+
+            // ✅ 日志：即将推送 WebSocket
+            console.log(`📡 推送 WebSocket 通知给用户 ${task.employer_id}`);
+
+            const notifySent = sendToUser(task.employer_id, {
+                type: 'notify',
+                content: `📬 ${bidderName}刚刚投标了你的任务《${task.title}》，请尽快查看~`,
+                created_time: new Date().toISOString()
+            });
+
+            // ✅ 日志：推送是否成功
+            console.log(`✅ 推送状态: ${notifySent ? '成功 ✅' : '失败 ❌（用户未在线）'}`);
         }
         res.json({
             success: true,
@@ -501,6 +524,12 @@ router.post("/:id/confirm-done", authMiddleware, async (req, res) => {
                     `任务《${task.title}》对方已确认完成，请尽快确认。`
                 ]
             );
+
+            sendToUser(targetId, {
+                type: 'notify',
+                content: `📩 ${role}已确认任务《${task.title}》完成，请你也尽快确认`,
+                created_time: new Date().toISOString()
+            });
         }
 
         // ✅ 如果双方都已确认
@@ -523,6 +552,20 @@ router.post("/:id/confirm-done", authMiddleware, async (req, res) => {
                   (?, 'task', '✅ 任务完成', '你参与的任务《${task.title}》已圆满完成，期待与您的下一次相遇 🎉'),
                   (?, 'task', '💰 打款通知', '任务《${task.title}》已完成，报酬 ¥${task.pay_amount} 已到账你的钱包')
                 `, [task.employer_id, task.employee_id]);
+
+            // ✅ 通知雇主任务完成
+            sendToUser(task.employer_id, {
+                type: 'notify',
+                content: `✅ 任务《${task.title}》已圆满完成，感谢参与`,
+                created_time: new Date().toISOString()
+            });
+
+            // ✅ 通知接单人打款到账
+            sendToUser(task.employee_id, {
+                type: 'notify',
+                content: `💰 任务《${task.title}》已结单，报酬 ¥${task.pay_amount} 已到账钱包`,
+                created_time: new Date().toISOString()
+            });
         }
 
         return res.json({

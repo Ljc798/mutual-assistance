@@ -3,6 +3,7 @@ const router = express.Router();
 const crypto = require('crypto');
 const axios = require('axios');
 const db = require('../config/db'); // ⬅️ 确保你有引入数据库配置
+const { sendToUser } = require("./ws-helper");
 
 // ==== 微信支付配置 ====
 const appid = process.env.WX_APPID;
@@ -196,6 +197,12 @@ router.post('/notify', express.raw({
                 ]
             );
 
+            sendToUser(employeeId, {
+                type: 'notify',
+                content: `🎉 你的投标被采纳啦！任务《${task.title}》已指派给你，快去查看吧！`,
+                created_time: new Date().toISOString()
+              });
+
             // ✅ 通知雇主：支付成功
             if (task.employer_id) {
                 await db.query(
@@ -206,6 +213,11 @@ router.post('/notify', express.raw({
                         `你已成功支付任务《${task.title}》，等待对方接单完成任务～`
                     ]
                 );
+                sendToUser(task.employer_id, {
+                    type: 'notify',
+                    content: `💰 你已成功支付任务《${task.title}》，等待对方完成任务～`,
+                    created_time: new Date().toISOString()
+                  });
             }
         }
 

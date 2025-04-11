@@ -1,3 +1,4 @@
 <view class="notify-banner" wx:if="{{visible}}">
-  {{content}}
+    <text class="notify-text">{{ content }}</text>
+  <text class="close-btn" bindtap="closeNotify">✖</text>
 </view>
