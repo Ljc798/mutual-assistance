@@ -1,3 +1,6 @@
 {
+    "usingComponents": {
+        "notify-banner": "/components/notify-banner/index"
+    },
     "navigationBarTitleText": "我的空间"
   }

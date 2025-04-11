@@ -1,4 +1,5 @@
 <view class="post-detail">
+    <notify-banner/>
     <!-- 顶部导航栏 -->
     <view class="post-header">
         <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="goBack" />

@@ -1,4 +1,5 @@
 <view class="timetable-container">
+    <notify-banner/>
 
     <!-- 顶部信息栏 -->
     <view class="header">

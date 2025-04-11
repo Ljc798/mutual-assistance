@@ -1,4 +1,5 @@
 <view class="shop-container">
+    <notify-banner/>
     <view class="sticky-shop-header">
         <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="goBack" />
         <view class="shop-header">积分商城</view>

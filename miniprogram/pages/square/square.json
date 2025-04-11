@@ -1,7 +1,7 @@
 {
     "usingComponents": {
-      "bottom-nav": "/components/bottom-nav/bottom-nav"
+      "bottom-nav": "/components/bottom-nav/bottom-nav",
+      "notify-banner": "/components/notify-banner/index"
     },
-    "enablePullDownRefresh": true,
     "onReachBottomDistance": 50
 }

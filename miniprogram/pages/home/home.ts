@@ -97,12 +97,15 @@ Page({
     },
 
     // 点击任务项，跳转到详情页（使用 taskId 传递）
-    handleTaskClick(e: any) {
-        const taskIndex = e.currentTarget.dataset.index;
-        const task = this.data.filteredTasks[taskIndex];
-
+    handleTaskClick(event: any) {
+        const taskId = event.currentTarget.dataset.id;
+        if (!taskId) {
+            wx.showToast({ title: "任务 ID 缺失", icon: "none" });
+            return;
+        }
+    
         wx.navigateTo({
-            url: `/pages/task/task?taskId=${task.id}`, // 传递任务 ID
+            url: `/pages/task/task?taskId=${taskId}`,
         });
     },
 

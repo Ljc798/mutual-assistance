@@ -74,8 +74,8 @@
 
     <!-- 任务列表 -->
     <view class="task-list-container">
-        <block wx:for="{{tasks}}" wx:key="index">
-            <view class="task-item" bindtap="handleTaskClick" data-index="{{index}}">
+        <block wx:for="{{tasks}}" wx:key="id">
+            <view class="task-item" bindtap="handleTaskClick" data-id="{{item.id}}">
                 <view class="task-left">
                     <text class="task-title">{{item.title}}</text>
                     <view class="task-details">

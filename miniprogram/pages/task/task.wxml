@@ -1,4 +1,5 @@
 <view class="task-detail-container">
+    <notify-banner/>
     <!-- 圆形返回按钮 -->
     <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack" />
     <!-- 任务介绍部分 -->

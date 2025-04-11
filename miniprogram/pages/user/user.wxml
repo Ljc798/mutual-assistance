@@ -1,4 +1,5 @@
 <view class="user-container">
+    <notify-banner/>
     <view class="header">
         <view class="app-name">我的信息</view>
     </view>

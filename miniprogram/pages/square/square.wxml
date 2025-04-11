@@ -1,4 +1,5 @@
 <view class="square-container">
+    <notify-banner/>
     <!-- 头部 -->
     <view class="header">
         <view class="app-name">广场</view>

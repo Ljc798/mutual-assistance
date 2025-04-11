@@ -143,6 +143,7 @@ Page({
     // ✅ 格式化时间
     formatTime(datetimeStr) {
         const date = new Date(datetimeStr);
+        date.setHours(date.getHours() - 8);
         const pad = (n) => n.toString().padStart(2, '0');
 
         const month = pad(date.getMonth() + 1); // 月份是从 0 开始的

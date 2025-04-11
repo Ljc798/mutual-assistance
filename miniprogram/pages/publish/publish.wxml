@@ -1,4 +1,5 @@
 <view class="container">
+    <notify-banner/>
     <!-- 任务分类选择（下拉菜单） -->
     <view class="field">
         <text>任务分类</text>

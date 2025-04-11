@@ -32,7 +32,7 @@ Page({
         }
 
         this.setData({ userInfo }, () => {
-            this.fetchPosts("全部");
+            this.fetchPosts(false);
             this.getCheckinStatus();
         });
     },
@@ -50,15 +50,6 @@ Page({
 
         // ✅ 已登录，确保 userInfo 已同步
         this.setData({ userInfo });
-    },
-
-    // ✅ 监听下拉刷新
-    onPullDownRefresh() {
-        const category = this.data.selectedCategory || "全部"; // **确保分类有效**
-
-        this.fetchPosts(category, () => {
-            wx.stopPullDownRefresh(); // **停止下拉刷新动画**
-        });
     },
 
     // ✅ 获取签到状态
@@ -144,13 +135,13 @@ Page({
     selectCategory(e: any) {
         const selectedCategory = e.currentTarget.dataset.category;
         this.setData({
-          selectedCategory,
-          currentPage: 1,
-          hasMore: true
+            selectedCategory,
+            currentPage: 1,
+            hasMore: true
         });
-      
+
         this.fetchPosts(false); // 刷新第一页
-      },
+    },
 
     // ✅ 获取帖子数据
     fetchPosts(isLoadMore = false, callback?: Function) {
@@ -220,6 +211,7 @@ Page({
     // ✅ 时间格式化
     formatTime(timeStr: string): string {
         const date = new Date(timeStr);
+        date.setHours(date.getHours() - 8);
         const month = (date.getMonth() + 1).toString().padStart(2, "0");
         const day = date.getDate().toString().padStart(2, "0");
         const hours = date.getHours().toString().padStart(2, "0");
@@ -389,7 +381,7 @@ Page({
                     if (this.data.tempImageList.length === 0) {
                         wx.hideLoading();
                         wx.showToast({ title: "发布成功", icon: "success" });
-                        this.fetchPosts("全部");
+                        this.fetchPosts(false);
                         this.resetPostForm();
                         return;
                     }
@@ -415,7 +407,7 @@ Page({
                         success: () => {
                             wx.hideLoading();
                             wx.showToast({ title: "发布成功", icon: "success" });
-                            this.fetchPosts("全部");
+                            this.fetchPosts(false);
                             this.resetPostForm();
                         },
                         fail: (err) => {

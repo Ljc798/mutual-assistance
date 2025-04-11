@@ -1,4 +1,5 @@
 <view class="container">
+    <notify-banner/>
     <!-- 返回按钮 -->
     <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack"/>
 

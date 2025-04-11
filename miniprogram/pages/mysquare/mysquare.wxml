@@ -1,4 +1,5 @@
 <view class="mysquare-container">
+    <notify-banner/>
     <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack" />
 
   <view class="post-item" wx:for="{{posts}}" wx:key="id">

@@ -1,4 +1,5 @@
 <view class="course-detail-container">
+    <notify-banner/>
     <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack" />
 
     <!-- 标题栏 -->

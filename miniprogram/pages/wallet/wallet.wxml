@@ -1,4 +1,5 @@
 <view class="wallet-page">
+    <notify-banner/>
     <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack" />
     <view class="balance-section">
         <text class="label">可提现余额</text>
