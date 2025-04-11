@@ -39,12 +39,20 @@ text {
     /* 设置文字颜色 */
 }
 
-.red-dot {
+.red-dot-with-number {
     position: absolute;
-    top: 4rpx;
-    right: 30rpx;
-    width: 16rpx;
-    height: 16rpx;
+    top: 8rpx;
+    right: 8rpx;
+    width: 30rpx;
+    height: 40rpx;
     background-color: red;
+    color: white;
+    font-size: 20rpx;
     border-radius: 50%;
-}
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 6rpx;
+    box-shadow: 0 0 4rpx rgba(0,0,0,0.2);
+    z-index: 10;
+  }

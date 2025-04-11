@@ -4,6 +4,9 @@
         <text>通知中心</text>
     </view>
     <view class="noti">
+        <view class="notification-tip">
+            <text class="tip-text">📌 点击通知卡片可标记为已读</text>
+        </view>
         <block wx:for="{{notifications}}" wx:key="id">
             <view class="notification-card" style="background-color: {{item.background}}" bindtap="markAsRead" data-id="{{item.id}}">
                 <text class="notification-type">【{{item.type}}】</text>
