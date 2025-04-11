@@ -32,15 +32,15 @@ router.get("/posts", async (req, res) => {
 
     const query = `
         SELECT s.*, 
-               u.username, 
-               u.avatar_url, 
-               u.vip_expire_time,
-               (SELECT COUNT(*) FROM square_likes WHERE square_id = s.id AND user_id = ?) AS isLiked
+            u.username, 
+            u.avatar_url, 
+            u.vip_expire_time,
+            (SELECT COUNT(*) FROM square_likes WHERE square_id = s.id AND user_id = ?) AS isLiked
         FROM square s
         LEFT JOIN users u ON s.user_id = u.id
         ${whereClause}
         ORDER BY s.is_pinned DESC, s.created_time DESC
-        LIMIT ?, ?
+        LIMIT ? OFFSET ?
     `;
 
     try {
