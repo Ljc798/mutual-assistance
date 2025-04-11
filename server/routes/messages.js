@@ -164,4 +164,45 @@ router.get('/read-status', async (req, res) => {
     }
 });
 
+// ✅ 获取所有未读数量（聊天消息 + 系统通知）
+router.get('/unread-count', async (req, res) => {
+    const { userId } = req.query;
+
+    if (!userId) {
+        return res.status(400).json({
+            success: false,
+            message: '缺少 userId 参数'
+        });
+    }
+
+    try {
+        // 1. 查询未读聊天消息数量
+        const [[msgResult]] = await db.query(
+            `SELECT COUNT(*) AS count FROM messages WHERE receiver_id = ? AND is_read = 0`,
+            [userId]
+        );
+
+        // 2. 查询未读通知数量（你可以根据实际情况加字段 is_read）
+        const [[notifyResult]] = await db.query(
+            `SELECT COUNT(*) AS count FROM notifications WHERE user_id = ? AND is_read = 0`,
+            [userId]
+        );
+
+        res.json({
+            success: true,
+            chat_unread: msgResult.count,
+            notify_unread: notifyResult.count,
+            total: msgResult.count + notifyResult.count
+        });
+
+    } catch (err) {
+        console.error("❌ 获取未读消息数量失败:", err);
+        res.status(500).json({
+            success: false,
+            message: '服务器错误',
+            error: err
+        });
+    }
+});
+
 module.exports = router;

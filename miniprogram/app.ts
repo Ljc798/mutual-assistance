@@ -1,4 +1,4 @@
-import { initWebSocket } from './utils/ws'; // 👈 引入你的 ws 封装模块
+import { initWebSocket, getUnreadCount } from './utils/ws';
 
 App<IAppOption>({
     globalData: {
@@ -22,12 +22,16 @@ App<IAppOption>({
             this.globalData.userInfo = user;
             this.globalData.token = token;
 
-            // ✅ 一旦 user 存在，就初始化 WebSocket 连接
             console.log(`🌐 初始化 WebSocket for userId: ${user.id}`);
             initWebSocket(user.id);
         }
 
-        // 无论有无 user，本地 token 都要校验一次
+        // ✅ ✅ ✅ 监听小程序级别的通知消息变化（⚠️ 你需要添加这一部分）
+        wx.onAppEvent?.('notifyUnreadChanged', (count: number) => {
+            console.log('🔴 全局未读数变更:', count);
+            this.globalData.hasUnread = count > 0;
+        });
+
         this.verifyUserFromServer(token);
     },
 
@@ -42,12 +46,10 @@ App<IAppOption>({
                     this.globalData.userInfo = res.data.user;
                     wx.setStorageSync("user", res.data.user);
 
-                    // 👇 防止因 onLaunch 先触发验证，user 未初始化导致 WS 没连上
                     if (!this.wsInitialized) {
                         initWebSocket(res.data.user.id);
                         this.wsInitialized = true;
                     }
-
                 } else {
                     console.warn("⚠️ token 无效或用户不存在，清除数据并跳转注册页");
                     this.clearUserData();
@@ -77,7 +79,6 @@ App<IAppOption>({
         wx.setStorageSync("user", user);
         wx.setStorageSync("token", token);
 
-        // ✅ 确保新登录用户也能自动建立 WS 连接
         initWebSocket(user.id);
         this.wsInitialized = true;
     },

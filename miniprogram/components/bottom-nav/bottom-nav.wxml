@@ -1,23 +1,28 @@
 <view class="bottom-nav">
-  <view class="nav-item" bindtap="goToPage" data-page="home">
-  <image src="/assets/icons/home-house-svgrepo-com.svg" class="icons"/>
-    <text>首页</text>
-  </view>
-  <view class="nav-item" bindtap="goToPage" data-page="square">
-  <image src="/assets/icons/file-svgrepo-com-2.svg" class="icons"/>
-    <text>广场</text>
-  </view>
-  <view class="nav-item" bindtap="goToPage" data-page="publish">
-  <image src="/assets/icons/fabu.svg" class="icons"/>
-    <text>发布</text>
-  </view>
-  <view class="nav-item" bindtap="goToPage" data-page="message" style="position: relative;">
-    <image src="/assets/icons/home-communication-svgrepo-com.svg" class="icons" />
-    <view wx:if="{{hasUnread}}" class="red-dot"></view>
-    <text>消息</text>
-  </view>
-  <view class="nav-item" bindtap="goToPage" data-page="user">
-  <image src="/assets/icons/user-svgrepo-com.svg" class="icons"/>
-    <text>我的</text>
-  </view>
+    <view class="nav-item" bindtap="goToPage" data-page="home">
+        <image src="/assets/icons/home-house-svgrepo-com.svg" class="icons" />
+        <text>首页</text>
+    </view>
+    <view class="nav-item" bindtap="goToPage" data-page="square">
+        <image src="/assets/icons/file-svgrepo-com-2.svg" class="icons" />
+        <text>广场</text>
+    </view>
+    <view class="nav-item" bindtap="goToPage" data-page="publish">
+        <image src="/assets/icons/fabu.svg" class="icons" />
+        <text>发布</text>
+    </view>
+    <view class="nav-item" bindtap="goToPage" data-page="message" style="position: relative;">
+        <image src="/assets/icons/home-communication-svgrepo-com.svg" class="icons" />
+
+        <!-- ✅ 显示红点 + 数字 -->
+        <view wx:if="{{unreadCount > 0}}" class="red-dot-with-number">
+            <text style="color: white">{{ unreadCount > 99 ? '99+' : unreadCount }}</text>
+        </view>
+
+        <text>消息</text>
+    </view>
+    <view class="nav-item" bindtap="goToPage" data-page="user">
+        <image src="/assets/icons/user-svgrepo-com.svg" class="icons" />
+        <text>我的</text>
+    </view>
 </view>
