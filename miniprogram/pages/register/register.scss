@@ -8,10 +8,12 @@
 
 .phone-btn {
     position: fixed;
-    bottom: 100rpx; /* 靠底距离可调 */
-    left: 50%;     /* 水平中心点 */
+    bottom: 100rpx;
+    /* 靠底距离可调 */
+    left: 50%;
+    /* 水平中心点 */
     transform: translateX(-50%);
-    
+
     background-color: #07c160;
     color: white;
     padding: 20rpx 0;
@@ -20,8 +22,9 @@
     width: 60%;
     font-weight: bold;
     box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.1);
-    z-index: 999; /* 确保不被其他元素遮挡 */
-  }
+    z-index: 999;
+    /* 确保不被其他元素遮挡 */
+}
 
 .user-info {
     display: flex;
@@ -54,4 +57,61 @@
     height: 80rpx;
     margin-top: 20rpx;
     border: 2rpx solid #ccc;
+}
+
+.admin-entry {
+    position: fixed;
+    bottom: 40rpx;
+    width: 100%;
+    text-align: center;
+    font-size: 26rpx;
+    color: #fff;
+    text-decoration: underline;
+}
+
+.admin-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba($color: #000000, $alpha: 0.5);
+    z-index: 999;
+
+    .admin-modal-box {
+        margin: 200rpx auto 0;
+        width: 80%;
+        background: white;
+        padding: 40rpx 30rpx;
+        border-radius: 20rpx;
+        box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.2);
+        text-align: center;
+
+        .modal-title {
+            font-size: 32rpx;
+            font-weight: bold;
+            margin-bottom: 30rpx;
+        }
+
+        .input {
+            padding: 20rpx;
+            border: 1rpx solid #ccc;
+            border-radius: 10rpx;
+            margin-bottom: 20rpx;
+        }
+
+        .submit-btn {
+            background-color: #07c160;
+            color: white;
+            font-weight: bold;
+            border-radius: 10rpx;
+            padding: 20rpx 0;
+        }
+
+        .close-btn {
+            font-size: 36rpx;
+            font-weight: bold;
+            color: #999;
+        }
+    }
 }

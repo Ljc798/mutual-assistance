@@ -118,6 +118,50 @@ router.post("/phone-login", async (req, res) => {
     }
 });
 
+router.post("/admin-login", async (req, res) => {
+    const { phone, password } = req.body;
+  
+    if (!phone || !password) {
+      return res.status(400).json({ success: false, message: "手机号和密码不能为空" });
+    }
+  
+    // 校验是否为管理员账号
+    const ADMIN_PHONE = process.env.ADMIN_PHONE;
+    const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+  
+    if (phone !== ADMIN_PHONE || password !== ADMIN_PASSWORD) {
+      return res.status(401).json({ success: false, message: "管理员账号或密码错误" });
+    }
+  
+    try {
+      const [rows] = await db.query("SELECT * FROM users WHERE phone_number = ?", [phone]);
+  
+      if (rows.length === 0) {
+        return res.status(404).json({ success: false, message: "管理员用户未注册，请先用手机号注册" });
+      }
+  
+      const user = rows[0];
+  
+      const token = jwt.sign({ id: user.id }, SECRET_KEY, {
+        expiresIn: "7d"
+      });
+  
+      return res.json({
+        success: true,
+        token,
+        user,
+        isAdmin: true
+      });
+  
+    } catch (err) {
+      console.error("❌ 管理员登录失败:", err);
+      return res.status(500).json({
+        success: false,
+        message: "服务器内部错误"
+      });
+    }
+  });
+
 // 📌 修改用户信息（使用 authMiddleware 来验证 token）
 router.post("/update", authMiddleware, async (req, res) => {
     const userId = req.user.id;

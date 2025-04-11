@@ -109,7 +109,7 @@
     background-color: #fef8e7;
     border: 2rpx solid #f5c048;
     box-shadow: 0 4rpx 12rpx rgba(245, 192, 72, 0.3);
-  }
+}
 
 /* 用户信息 */
 .post-header {
@@ -117,70 +117,76 @@
     align-items: center;
     gap: 20rpx;
     margin-bottom: 20rpx;
-  }
-  
-  .user-avatar {
+}
+
+.user-avatar {
     width: 60rpx;
     height: 60rpx;
     border-radius: 50%;
-  }
-  
-  .username-area {
+}
+
+.username-area {
     display: flex;
     align-items: center;
-  }
-  
-  .username {
+}
+
+.username {
     font-size: 32rpx;
     font-weight: bold;
     color: #333;
-  }
-  
-  /* ✨ VIP 用户名样式：渐变 + 动画 */
-  .vip-username {
+}
+
+/* ✨ VIP 用户名样式：渐变 + 动画 */
+.vip-username {
     background: linear-gradient(90deg, #FFD700, #FF69B4, #FFD700);
     background-size: 400%;
     color: transparent;
     -webkit-background-clip: text;
     animation: shimmer 5s linear infinite;
-  }
-  
-  /* 🎖️ VIP 徽章样式 */
-  .vip-badge {
+}
+
+/* 🎖️ VIP 徽章样式 */
+.vip-badge {
     width: 60rpx;
     height: 60rpx;
     margin-left: 15rpx;
     animation: shine 2s ease-in-out infinite;
     filter: drop-shadow(0 0 6rpx gold);
-  }
-  
-  /* ✨ 流光动画 */
-  @keyframes shimmer {
+}
+
+/* ✨ 流光动画 */
+@keyframes shimmer {
     0% {
-      background-position: 0% 50%;
+        background-position: 0% 50%;
     }
+
     100% {
-      background-position: 400% 50%;
+        background-position: 400% 50%;
     }
-  }
-  
-  /* ⭐ 徽章轻微闪烁 */
-  @keyframes shine {
-    0%, 100% {
-      transform: scale(1);
-      opacity: 1;
+}
+
+/* ⭐ 徽章轻微闪烁 */
+@keyframes shine {
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 1;
     }
+
     50% {
-      transform: scale(1.1);
-      opacity: 0.85;
+        transform: scale(1.1);
+        opacity: 0.85;
     }
-  }
+}
 
 /* 文字内容 */
 .post-text {
     font-size: 36rpx;
     color: #333;
     margin-bottom: 10rpx;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* 图片内容 */
@@ -210,11 +216,13 @@
 .post-footer-right {
     display: flex;
     align-items: center;
-    gap: 20rpx; /* **增加点赞和评论之间的间距** */
+    gap: 20rpx;
+    /* **增加点赞和评论之间的间距** */
 }
 
 /* 确保点赞和评论对齐 */
-.likes, .comments {
+.likes,
+.comments {
     display: flex;
     align-items: center;
 }
@@ -236,8 +244,10 @@
 .likes text,
 .comments text {
     display: inline-block;
-    width: 50rpx; /* **固定宽度，防止数字长短不一影响对齐** */
-    text-align: center; /* **让数字靠右对齐，使得布局整齐** */
+    width: 50rpx;
+    /* **固定宽度，防止数字长短不一影响对齐** */
+    text-align: center;
+    /* **让数字靠右对齐，使得布局整齐** */
 }
 
 /* 图标大小 */
@@ -399,50 +409,52 @@
     top: 10rpx;
     right: 10rpx;
     padding: 10rpx;
-  }
-  
-  .more-icon {
+}
+
+.more-icon {
     width: 40rpx;
     height: 40rpx;
     opacity: 0.8;
-  }
+}
 
-  .modal-overlay {
+.modal-overlay {
     position: fixed;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
     background: rgba(0, 0, 0, 0.5);
     z-index: 999;
     display: flex;
     align-items: center;
     justify-content: center;
-  }
-  
-  .modal {
+}
+
+.modal {
     background-color: #fff;
     border-radius: 16rpx;
     padding: 32rpx;
     width: 600rpx;
     box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.1);
     font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica;
-  }
-  
-  .modal-title {
+}
+
+.modal-title {
     font-size: 32rpx;
     font-weight: bold;
     margin-bottom: 32rpx;
-  }
-  
-  .picker-box {
+}
+
+.picker-box {
     border: 1px solid #ddd;
     border-radius: 12rpx;
     padding: 20rpx;
     margin-bottom: 24rpx;
     color: #666;
     background-color: #f8f8f8;
-  }
-  
-  .report-textarea {
+}
+
+.report-textarea {
     height: 160rpx;
     border: 1px solid #ccc;
     border-radius: 12rpx;
@@ -450,29 +462,29 @@
     background-color: #f9f9f9;
     font-size: 28rpx;
     margin-bottom: 32rpx;
-  }
-  
-  .modal-actions {
+}
+
+.modal-actions {
     display: flex;
     justify-content: space-between;
     gap: 20rpx;
-  }
-  
-  .cancel-btn2,
-  .submit-btn2 {
+}
+
+.cancel-btn2,
+.submit-btn2 {
     flex: 1;
     padding: 20rpx 0;
     border-radius: 12rpx;
     font-size: 30rpx;
-  }
-  
-  .cancel-btn2 {
+}
+
+.cancel-btn2 {
     background-color: #e0e0e0;
     color: #333;
-  }
-  
-  .submit-btn2 {
+}
+
+.submit-btn2 {
     background-color: #ff4d4f;
     color: white;
     font-weight: bold;
-  }
+}

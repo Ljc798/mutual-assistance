@@ -6,6 +6,22 @@
         </button>
     </view>
 
+    <!-- 管理员登录入口 -->
+    <view class="admin-entry">
+        <text bindtap="openAdminLoginModal">管理员登录</text>
+    </view>
+
+    <!-- 管理员登录弹窗 -->
+    <view wx:if="{{showAdminLogin}}" class="admin-modal">
+        <view class="admin-modal-box">
+            <text class="modal-title">管理员登录</text>
+            <input class="input" placeholder="请输入手机号" bindinput="onAdminPhoneInput" />
+            <input class="input" placeholder="请输入密码" password bindinput="onAdminPwdInput" />
+            <button class="submit-btn" bindtap="submitAdminLogin">登录</button>
+            <text class="close-btn" bindtap="closeAdminLoginModal">×</text>
+        </view>
+    </view>
+    
     <!-- 已登录时显示用户信息和操作按钮 -->
     <view wx:if="{{isLoggedIn}}" class="user-info">
         <image class="avatar" src="{{userInfo.avatar_url}}" />

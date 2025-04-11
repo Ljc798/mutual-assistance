@@ -1,5 +1,5 @@
 <view class="square-container">
-    <notify-banner/>
+    <notify-banner />
     <!-- 头部 -->
     <view class="header">
         <view class="app-name">广场</view>
@@ -82,7 +82,7 @@
             </picker>
 
             <!-- 文字输入框 -->
-            <textarea class="post-input" placeholder="写点什么吧..." bindinput="handlePostInput" value="{{newPostContent}}" />
+            <textarea class="post-input" placeholder="写点什么吧..." bindinput="handlePostInput" value="{{newPostContent}}" maxlength="-1"/>
 
             <!-- 图片上传区域 -->
             <view class="image-upload">

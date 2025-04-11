@@ -2,7 +2,10 @@ Page({
     data: {
         phoneNumber: "",
         isLoggedIn: false,
-        userInfo: null
+        userInfo: null,
+        showAdminLogin: false,
+        adminPhone: '',
+        adminPwd: ''
     },
 
     onLoad() {
@@ -116,5 +119,42 @@ Page({
                 console.error("❌ 跳转失败", err);
             }
         });
-    }
+    },
+    openAdminLoginModal() {
+        this.setData({ showAdminLogin: true });
+    },
+
+    onAdminPhoneInput(e) {
+        this.setData({ adminPhone: e.detail.value });
+    },
+
+    onAdminPwdInput(e) {
+        this.setData({ adminPwd: e.detail.value });
+    },
+
+    submitAdminLogin() {
+        const { adminPhone, adminPwd } = this.data;
+        wx.request({
+            url: "https://mutualcampus.top/api/user/admin-login",
+            method: "POST",
+            data: { phone: adminPhone, password: adminPwd },
+            success: (res: any) => {
+                if (res.data.success) {
+                    wx.setStorageSync("token", res.data.token);
+                    wx.setStorageSync("user", res.data.user);
+                    wx.redirectTo({ url: "/pages/home/home" });
+                } else {
+                    wx.showToast({ title: res.data.message || "登录失败", icon: "none" });
+                }
+            }
+        })
+    },
+
+    closeAdminLoginModal() {
+        this.setData({
+          showAdminLogin: false,
+          adminPhone: '',
+          adminPassword: ''
+        });
+      }
 });
