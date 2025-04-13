@@ -414,8 +414,6 @@ router.post("/check-image", upload.single("image"), async (req, res) => {
 router.post("/check-text", async (req, res) => {
     const { content } = req.body;
 
-    console.log("📥 收到内容审核请求:", content); // ✅ 打印请求内容
-
     if (!content || content.trim() === "") {
         return res.status(400).json({
             success: false,
@@ -424,6 +422,9 @@ router.post("/check-text", async (req, res) => {
     }
 
     try {
+        console.log("📥 收到内容审核请求:", content);
+
+        // 获取 access_token
         const tokenRes = await axios.get("https://api.weixin.qq.com/cgi-bin/token", {
             params: {
                 grant_type: "client_credential",
@@ -456,17 +457,14 @@ router.post("/check-text", async (req, res) => {
 
         console.log("✅ 微信返回内容审核结果:", wxRes.data);
 
-        const { errcode, result } = wxRes.data;
-
-        if (errcode === 0 && result?.suggest === "pass") {
-            console.log("✅ 内容审核通过");
+        if (wxRes.data.errcode === 0 && wxRes.data.result?.suggest === "pass") {
             return res.json({ success: true, safe: true });
         } else {
-            console.warn("⚠️ 内容审核未通过:", result || wxRes.data);
+            console.warn("⚠️ 内容审核未通过:", wxRes.data);
             return res.json({
                 success: true,
                 safe: false,
-                reason: result || wxRes.data
+                reason: wxRes.data.result || wxRes.data
             });
         }
     } catch (err) {

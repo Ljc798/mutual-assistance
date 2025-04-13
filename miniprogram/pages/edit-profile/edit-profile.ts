@@ -80,20 +80,30 @@ Page({
 
     checkTextContent(text: string): Promise<boolean> {
         return new Promise((resolve) => {
+            const token = wx.getStorageSync("token");
+            if (!token) {
+                wx.showToast({ title: "未登录", icon: "none" });
+                resolve(false);
+                return;
+            }
+    
             wx.request({
                 url: "https://mutualcampus.top/api/user/check-text",
                 method: "POST",
                 data: { content: text },
+                header: {
+                    Authorization: `Bearer ${token}`
+                },
                 success: (res: any) => {
                     if (res.data.success && res.data.safe) {
                         resolve(true);
                     } else {
-                        wx.showToast({ title: "内容含有敏感词", icon: "none" });
+                        wx.showToast({ title: "内容含敏感词", icon: "none" });
                         resolve(false);
                     }
                 },
                 fail: () => {
-                    wx.showToast({ title: "内容审核失败", icon: "none" });
+                    wx.showToast({ title: "审核失败", icon: "none" });
                     resolve(false);
                 }
             });
