@@ -1,0 +1,55 @@
+.terms-container {
+    display: flex;
+    flex-direction: column;
+    background-color: #ffffff;
+  }
+
+  .terms-header {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 100rpx 30rpx 30rpx 0;
+    background-color: #07c160;
+    border-bottom: 1rpx solid #eee;
+  
+    .back-btn {
+      width: 40rpx;
+      height: 40rpx;
+      margin-right: 20rpx;
+    }
+  
+    .terms-title {
+      font-size: 36rpx;
+      font-weight: bold;
+      color: #333;
+    }
+  }
+  
+  .terms-title {
+    font-size: 36rpx;
+    font-weight: bold;
+    color: #ffffff;
+  }
+  
+  .terms-content {
+    flex: 1;
+    margin-left: 5rpx;
+  }
+  
+  .section {
+    margin-bottom: 30rpx;
+  }
+  
+  .section-title {
+    font-size: 30rpx;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 12rpx;
+  }
+  
+  .section-text {
+    font-size: 28rpx;
+    width: 80%;
+    color: #555;
+    line-height: 48rpx;
+  }

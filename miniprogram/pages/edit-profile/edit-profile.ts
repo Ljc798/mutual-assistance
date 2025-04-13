@@ -146,6 +146,12 @@ Page({
         const isTempFile = filePath.includes("/tmp/") || filePath.startsWith("wxfile://");
         // ✅ 仅当为本地新头像时上传
         if (isTempFile) {
+            const isSafe = await this.checkImageContent(filePath);
+            if (!isSafe) {
+                wx.hideLoading();
+                return; // 🚫 内容不合规，停止执行
+            }
+        
             avatarUrl = await this.uploadAvatarToCOS(filePath, username);
             if (!avatarUrl) {
                 console.error("❌ 头像上传失败，返回空 URL");
@@ -235,5 +241,34 @@ Page({
         this.setData({
             "tempUserInfo.wxid": ""
         });
-    }
+    },
+    checkImageContent(filePath: string): Promise<boolean> {
+        const token = wx.getStorageSync("token");
+        return new Promise((resolve) => {
+            wx.uploadFile({
+                url: "https://mutualcampus.top/api/user/check-image",
+                filePath,
+                name: "image",
+                header: {
+                    Authorization: `Bearer ${token}`
+                },
+                formData: {
+                    scene: "avatar"
+                },
+                success: (res: any) => {
+                    const data = JSON.parse(res.data);
+                    if (data.success && data.safe) {
+                        resolve(true);
+                    } else {
+                        wx.showToast({ title: "头像内容违规，请更换", icon: "none" });
+                        resolve(false);
+                    }
+                },
+                fail: () => {
+                    wx.showToast({ title: "头像审核失败", icon: "none" });
+                    resolve(false);
+                }
+            });
+        });
+    },
 });

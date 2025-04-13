@@ -22,7 +22,9 @@
     "pages/mysquare/mysquare",
     "pages/mysquare/edit",
     "pages/notifications/notifications",
-    "pages/order/other-orders"
+    "pages/order/other-orders",
+    "pages/agreements/terms",
+    "pages/agreements/privacy"
   ],
   "window": {
     "navigationBarTextStyle": "black",

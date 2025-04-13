@@ -1,0 +1,100 @@
+<view class="terms-container">
+    <view class="terms-header">
+        <image src="/assets/icons/fanhui.svg" class="back-btn" bindtap="handleBack" />
+        <text class="terms-title">用户服务协议</text>
+    </view>
+
+    <scroll-view class="terms-content" scroll-y="true">
+        <view class="section">
+            <text class="section-title">一、接受条款</text>
+            <text class="section-text">
+                1. 当您注册、登录、使用本平台服务时，即视为您已阅读、理解并同意受本协议所有条款约束。
+                2. 若您为未成年人，请在法定监护人陪同下阅读本协议，并在取得监护人同意后使用本平台服务。
+            </text>
+        </view>
+
+        <view class="section">
+            <text class="section-title">二、账号管理</text>
+            <text class="section-text">
+                1. 用户需使用本人有效的手机号码进行注册，并设置登录信息，确保信息真实、合法、有效。
+                2. 用户应妥善保管账户信息，因个人原因导致的账户泄露或操作失误所造成的损失由用户自行承担。
+                3. 若发现账号存在异常登录、信息被盗等情况，用户应立即通知本平台，我们将协助您进行处理。
+            </text>
+        </view>
+
+        <view class="section">
+            <text class="section-title">三、平台服务内容</text>
+            <text class="section-text">
+                本平台主要提供以下服务（包括但不限于）：
+                • 任务发布与接单；
+                • 课程表查询及学习辅助工具；
+                • 社区交流与信息分享；
+                • 知识科普与打卡活动；
+                • 商城积分兑换及相关优惠活动；
+                • 消息通知与即时沟通服务。
+
+                平台保留随时变更、中断或终止部分或全部服务内容的权利。
+            </text>
+        </view>
+
+        <view class="section">
+            <text class="section-title">四、用户行为规范</text>
+            <text class="section-text">
+                1. 用户承诺不得利用本平台进行任何违法违规行为，包括但不限于传播违法信息、诈骗、侵犯他人权益、发布虚假内容等。
+                2. 用户应遵守平台社区管理规定，不得发布辱骂、攻击、低俗、恐吓等不当内容。
+                3. 用户不得使用本平台发布广告、从事营销推广行为，除非获得平台书面授权。
+            </text>
+        </view>
+
+        <view class="section">
+            <text class="section-title">五、数据与隐私保护</text>
+            <text class="section-text">
+                1. 本平台将依据《隐私政策》对您的个人信息进行严格保护。
+                2. 我们承诺在未获得您授权的情况下，不会泄露、出售或非法使用您的个人信息，除非法律法规另有规定。
+                3. 用户授权平台在使用过程中收集必要信息用于提供核心服务（如手机号等）。
+            </text>
+        </view>
+
+        <view class="section">
+            <text class="section-title">六、知识产权声明</text>
+            <text class="section-text">
+                1. 本平台提供的内容（包括但不限于图标、界面、功能、代码等）均归平台所有，未经授权，任何个人或组织不得擅自复制、传播或使用。
+                2. 用户在平台上发布的内容，用户仍保留其版权，但授权平台在全球范围内进行合理展示和使用。
+            </text>
+        </view>
+
+        <view class="section">
+            <text class="section-title">七、免责声明</text>
+            <text class="section-text">
+                1. 平台不对用户自行发布或执行的任务行为提供任何担保，平台仅作为信息撮合服务平台。
+                2. 因用户违反法律法规或本协议规定所引起的任何损失或责任，由用户自行承担，与平台无关。
+                3. 平台有权对违反本协议或扰乱平台秩序的用户采取警告、禁言、封号、清退等措施。
+            </text>
+        </view>
+
+        <view class="section">
+            <text class="section-title">八、协议变更与终止</text>
+            <text class="section-text">
+                1. 本平台有权根据实际情况修改本协议内容，并在平台上进行公示，修改后的协议一经公示即生效。
+                2. 若用户不同意变更内容，有权停止使用服务。若继续使用服务，则视为接受修改后的协议。
+            </text>
+        </view>
+
+        <view class="section">
+            <text class="section-title">九、法律适用与争议解决</text>
+            <text class="section-text">
+                1. 本协议适用中华人民共和国法律。
+                2. 若因本协议引发任何争议，双方应友好协商解决；协商不成时，任何一方可向本平台所在地有管辖权的人民法院提起诉讼。
+            </text>
+        </view>
+
+        <view class="section">
+            <text class="section-title">十、联系方式</text>
+            <text class="section-text">
+                如您在使用过程中有任何疑问、建议或投诉，欢迎通过以下方式与我们联系：
+                • 客服邮箱：1345017151@qq.com
+                • 客服微信：ljc16607923402
+            </text>
+        </view>
+    </scroll-view>
+</view>

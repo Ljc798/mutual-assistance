@@ -1,14 +1,32 @@
 <view class="register-container">
     <!-- 未登录时显示一键登录按钮 -->
     <view wx:if="{{!isLoggedIn}}">
-        <button class="phone-btn" open-type="getPhoneNumber" bindgetphonenumber="getPhoneNumber">
-            一键登录
-        </button>
+        <view wx:if="{{hasAgreed}}">
+            <button class="phone-btn" open-type="getPhoneNumber" bindgetphonenumber="getPhoneNumber">
+                一键登录
+            </button>
+        </view>
+
+        <view wx:else>
+            <button class="phone-btn warning" bindtap="handleAgreementWarning">
+                一键登录
+            </button>
+        </view>
     </view>
 
     <!-- 管理员登录入口 -->
     <view class="admin-entry">
         <text bindtap="openAdminLoginModal">管理员登录</text>
+    </view>
+
+    <!-- ✅ 同意协议区域 -->
+    <view class="agreement-fixed">
+        <view class="agreement-box" bindtap="toggleAgreement">
+            <view class="custom-radio {{hasAgreed ? 'checked' : ''}}"></view>
+            <text class="agreement-text">
+                我已阅读并同意<text class="agreement-link" catchtap="openTerms">《用户协议》</text>和<text class="agreement-link" catchtap="openPrivacy">《隐私政策》</text>
+            </text>
+        </view>
     </view>
 
     <!-- 管理员登录弹窗 -->
@@ -21,7 +39,7 @@
             <text class="close-btn" bindtap="closeAdminLoginModal">×</text>
         </view>
     </view>
-    
+
     <!-- 已登录时显示用户信息和操作按钮 -->
     <view wx:if="{{isLoggedIn}}" class="user-info">
         <image class="avatar" src="{{userInfo.avatar_url}}" />

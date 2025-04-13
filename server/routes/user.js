@@ -9,6 +9,12 @@ const {
 } = require("uuid");
 require("dotenv").config();
 
+const fs = require("fs");
+const FormData = require("form-data");
+const path = require("path");
+const multer = require("multer");
+const upload = multer({ dest: "uploads/" });
+
 // 引入 authMiddleware
 const authMiddleware = require("./authMiddleware");
 
@@ -318,5 +324,53 @@ router.post("/check-wxid", async (req, res) => {
         });
     }
 });
+
+// 微信内容安全检查：图片接口
+router.post("/check-image", authMiddleware, upload.single("image"), async (req, res) => {
+    const filePath = req.file?.path;
+    const token = req.headers.authorization?.replace("Bearer ", "");
+
+    if (!filePath) {
+        return res.status(400).json({ success: false, message: "图片上传失败" });
+    }
+
+    try {
+        // 获取 access_token
+        const tokenRes = await axios.get("https://api.weixin.qq.com/cgi-bin/token", {
+            params: {
+                grant_type: "client_credential",
+                appid: process.env.WX_APPID,
+                secret: process.env.WX_SECRET,
+            },
+        });
+
+        const accessToken = tokenRes.data.access_token;
+        if (!accessToken) throw new Error("access_token 获取失败");
+
+        const form = new FormData();
+        form.append("media", fs.createReadStream(filePath));
+
+        const wxRes = await axios.post(
+            `https://api.weixin.qq.com/wxa/img_sec_check?access_token=${accessToken}`,
+            form,
+            {
+                headers: form.getHeaders(),
+            }
+        );
+
+        fs.unlinkSync(filePath); // 删除临时文件
+
+        if (wxRes.data.errcode === 0) {
+            return res.json({ success: true, safe: true });
+        } else {
+            return res.json({ success: true, safe: false, reason: wxRes.data });
+        }
+    } catch (err) {
+        console.error("❌ 内容安全审核失败:", err);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        res.status(500).json({ success: false, message: "内容审核失败", error: err });
+    }
+});
+
 
 module.exports = router;

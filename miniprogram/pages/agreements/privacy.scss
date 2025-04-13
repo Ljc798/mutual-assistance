@@ -1,0 +1,27 @@
+.terms-header {
+    display: flex;
+    align-items: center;
+    padding: 100rpx 30rpx 30rpx 0;
+    background-color: #07c160;
+    border-bottom: 1rpx solid #eee;
+  
+    .back-btn {
+      width: 40rpx;
+      height: 40rpx;
+      margin-right: 20rpx;
+    }
+  
+    .terms-title {
+      font-size: 36rpx;
+      font-weight: bold;
+      color: #333;
+    }
+  }
+  
+  .terms-content {
+    line-height: 1.8;
+    margin-left: 5rpx;
+    font-size: 28rpx;
+    color: #333;
+    white-space: pre-wrap;
+  }

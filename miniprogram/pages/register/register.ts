@@ -5,7 +5,8 @@ Page({
         userInfo: null,
         showAdminLogin: false,
         adminPhone: '',
-        adminPwd: ''
+        adminPwd: '',
+        hasAgreed: false,
     },
 
     onLoad() {
@@ -25,6 +26,14 @@ Page({
     },
 
     getPhoneNumber(e: any) {
+        if (!this.data.hasAgreed) {
+            // ✨ 未勾选协议时提示并 shake 动画
+            wx.showToast({ title: "请先阅读并同意协议", icon: "none" });
+            this.setData({ shakeAgreement: true });
+            setTimeout(() => this.setData({ shakeAgreement: false }), 500);
+            return;
+        }
+
         if (e.detail.errMsg !== "getPhoneNumber:ok") {
             wx.showToast({ title: "用户拒绝授权", icon: "none" });
             return;
@@ -51,7 +60,6 @@ Page({
                         if (res.data.success) {
                             wx.setStorageSync("token", res.data.token);
                             wx.setStorageSync("user", res.data.user);
-
                             getApp().setGlobalUserInfo(res.data.user, res.data.token);
 
                             this.setData({
@@ -75,6 +83,18 @@ Page({
                 });
             }
         });
+    },
+
+    handleAgreementWarning() {
+        wx.showToast({
+            title: "请先阅读并同意协议",
+            icon: "none"
+        });
+
+        this.setData({ shakeAgreement: true });
+        setTimeout(() => {
+            this.setData({ shakeAgreement: false });
+        }, 500);
     },
 
     getUserInfo() {
@@ -152,9 +172,27 @@ Page({
 
     closeAdminLoginModal() {
         this.setData({
-          showAdminLogin: false,
-          adminPhone: '',
-          adminPassword: ''
+            showAdminLogin: false,
+            adminPhone: '',
+            adminPassword: ''
         });
-      }
+    },
+
+    toggleAgreement() {
+        this.setData({
+            hasAgreed: !this.data.hasAgreed
+        });
+    },
+
+    openTerms() {
+        wx.navigateTo({
+            url: '/pages/agreements/terms', // 👈 创建页面展示协议内容
+        });
+    },
+
+    openPrivacy() {
+        wx.navigateTo({
+            url: '/pages/agreements/privacy',
+        });
+    }
 });

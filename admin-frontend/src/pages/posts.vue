@@ -11,21 +11,20 @@
         <!-- 帖子详情弹窗 -->
         <n-modal v-model:show="showModal" title="帖子详情" :style="modalStyle">
             <div class="post-detail-grid">
-                <div class="label">内容：</div><div>{{ selectedPost.content }}</div>
-                <div class="label">分类：</div><div>{{ selectedPost.category }}</div>
-                <div class="label">用户ID：</div><div>{{ selectedPost.user_id }}</div>
-                <div class="label">发布时间：</div><div>{{ selectedPost.created_time }}</div>
+                <div class="label">内容：</div>
+                <div>{{ selectedPost.content }}</div>
+                <div class="label">分类：</div>
+                <div>{{ selectedPost.category }}</div>
+                <div class="label">用户ID：</div>
+                <div>{{ selectedPost.user_id }}</div>
+                <div class="label">发布时间：</div>
+                <div>{{ selectedPost.created_time }}</div>
                 <template v-if="selectedPost.images?.length">
                     <div class="label">图片预览：</div>
                     <div>
                         <n-image-group>
-                            <n-image
-                                v-for="(url, index) in selectedPost.images"
-                                :key="index"
-                                width="100"
-                                :src="url"
-                                style="margin-right: 8px; margin-bottom: 8px;"
-                            />
+                            <n-image v-for="(url, index) in selectedPost.images" :key="index" width="100" :src="url"
+                                style="margin-right: 8px; margin-bottom: 8px;" />
                         </n-image-group>
                     </div>
                 </template>
@@ -40,27 +39,27 @@ import axios from 'axios'
 import { NPageHeader, NInput, NButton, NDataTable, NModal, NImage, NImageGroup } from 'naive-ui'
 
 interface Post {
-  id: number
-  title: string
-  content: string
-  images?: string[]
-  created_time: string
-  category?: string
-  user_id?: string
-  likes_count?: number
-  comments_count?: number
-  school_id?: string
+    id: number
+    title: string
+    content: string
+    images?: string[]
+    created_time: string
+    category?: string
+    user_id?: string
+    likes_count?: number
+    comments_count?: number
+    school_id?: string
 }
 
 const selectedPost = ref<Partial<Post>>({})
 
 const searchKeyword = ref('')
 interface Post {
-  id: number
-  title: string
-  content: string
-  created_time: string
-  images?: string[]
+    id: number
+    title: string
+    content: string
+    created_time: string
+    images?: string[]
 }
 
 const posts = ref<Post[]>([])
@@ -69,7 +68,24 @@ const showModal = ref(false)
 
 const columns = [
     { title: '帖子ID', key: 'id' },
-    { title: '内容', key: 'content' },
+    {
+        title: '内容',
+        key: 'content',
+        width: 300,
+        render: (row: any) =>
+            h(
+                'div',
+                {},
+                h(
+                    'span',
+                    {
+                        class: 'ellipsis-text',
+                        title: row.content
+                    },
+                    row.content
+                )
+            )
+    },
     { title: '分类', key: 'category' },
     { title: '用户ID', key: 'user_id' },
     { title: '点赞数', key: 'likes_count' },
@@ -163,5 +179,14 @@ const modalStyle = {
 .n-image {
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.ellipsis-text {
+  display: inline-block;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap; /* ← 这个是关键，没有它不会省略 */
+  vertical-align: middle;
 }
 </style>
