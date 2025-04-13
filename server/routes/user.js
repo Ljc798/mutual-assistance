@@ -277,7 +277,7 @@ router.post("/check-username", async (req, res) => {
     const {
         username,
         id
-    } = req.query;
+    } = req.body;
 
     if (!username) {
         return res.status(400).json({
@@ -344,7 +344,7 @@ router.post("/check-wxid", async (req, res) => {
 const https = require("https"); // 👈 引入 https.Agent
 
 // 微信内容安全检查：图片接口
-router.post("/check-image", authMiddleware, upload.single("image"), async (req, res) => {
+router.post("/check-image", upload.single("image"), async (req, res) => {
     const filePath = req.file?.path;
     const token = req.headers.authorization?.replace("Bearer ", "");
 
@@ -356,7 +356,6 @@ router.post("/check-image", authMiddleware, upload.single("image"), async (req, 
     }
 
     try {
-        // 获取 access_token
         const tokenRes = await axios.get("https://api.weixin.qq.com/cgi-bin/token", {
             params: {
                 grant_type: "client_credential",
@@ -365,7 +364,7 @@ router.post("/check-image", authMiddleware, upload.single("image"), async (req, 
             },
             httpsAgent: new https.Agent({
                 rejectUnauthorized: false
-            }) // 👈 忽略证书校验
+            })
         });
 
         const accessToken = tokenRes.data.access_token;
@@ -380,11 +379,13 @@ router.post("/check-image", authMiddleware, upload.single("image"), async (req, 
                 headers: form.getHeaders(),
                 httpsAgent: new https.Agent({
                     rejectUnauthorized: false
-                }) // 👈 也加这里
+                })
             }
         );
 
         fs.unlinkSync(filePath); // 删除临时文件
+
+        console.log("✅ 微信返回图片审核结果:", wxRes.data);
 
         if (wxRes.data.errcode === 0) {
             return res.json({
@@ -409,11 +410,11 @@ router.post("/check-image", authMiddleware, upload.single("image"), async (req, 
     }
 });
 
-// ✅ 文本内容审核接口
+// ✅ 微信内容安全检查：文本接口
 router.post("/check-text", async (req, res) => {
-    const {
-        content
-    } = req.body;
+    const { content } = req.body;
+
+    console.log("📥 收到内容审核请求:", content); // ✅ 打印请求内容
 
     if (!content || content.trim() === "") {
         return res.status(400).json({
@@ -423,44 +424,49 @@ router.post("/check-text", async (req, res) => {
     }
 
     try {
-        // 获取 access_token
         const tokenRes = await axios.get("https://api.weixin.qq.com/cgi-bin/token", {
             params: {
                 grant_type: "client_credential",
                 appid: process.env.WX_APPID,
                 secret: process.env.WX_SECRET,
             },
-            httpsAgent: new https.Agent({
-                rejectUnauthorized: false
-            }) // ✅ 忽略自签名证书
+            httpsAgent: new https.Agent({ rejectUnauthorized: false })
         });
 
         const accessToken = tokenRes.data.access_token;
+        console.log("🔑 获取到 access_token:", accessToken);
+
         if (!accessToken) throw new Error("access_token 获取失败");
 
-        // 发起内容安全检查
+        const payload = {
+            version: 2,
+            scene: 3,
+            content
+        };
+
+        console.log("🚀 即将发送内容审核请求:", payload);
+
         const wxRes = await axios.post(
-            `https://api.weixin.qq.com/wxa/msg_sec_check?access_token=${accessToken}`, {
-                version: 2, // 建议使用 version 2，能力更强
-                scene: 3,
-                content,
-            }, {
-                httpsAgent: new https.Agent({
-                    rejectUnauthorized: false
-                }) // ✅ 同样加上
+            `https://api.weixin.qq.com/wxa/msg_sec_check?access_token=${accessToken}`,
+            payload,
+            {
+                httpsAgent: new https.Agent({ rejectUnauthorized: false })
             }
         );
 
-        if (wxRes.data.errcode === 0 && wxRes.data.result?.suggest === "pass") {
-            return res.json({
-                success: true,
-                safe: true
-            });
+        console.log("✅ 微信返回内容审核结果:", wxRes.data);
+
+        const { errcode, result } = wxRes.data;
+
+        if (errcode === 0 && result?.suggest === "pass") {
+            console.log("✅ 内容审核通过");
+            return res.json({ success: true, safe: true });
         } else {
+            console.warn("⚠️ 内容审核未通过:", result || wxRes.data);
             return res.json({
                 success: true,
                 safe: false,
-                reason: wxRes.data.result || wxRes.data,
+                reason: result || wxRes.data
             });
         }
     } catch (err) {
@@ -472,6 +478,5 @@ router.post("/check-text", async (req, res) => {
         });
     }
 });
-
 
 module.exports = router;

@@ -78,6 +78,28 @@ Page({
         });
     },
 
+    checkTextContent(text: string): Promise<boolean> {
+        return new Promise((resolve) => {
+            wx.request({
+                url: "https://mutualcampus.top/api/user/check-text",
+                method: "POST",
+                data: { content: text },
+                success: (res: any) => {
+                    if (res.data.success && res.data.safe) {
+                        resolve(true);
+                    } else {
+                        wx.showToast({ title: "内容含有敏感词", icon: "none" });
+                        resolve(false);
+                    }
+                },
+                fail: () => {
+                    wx.showToast({ title: "内容审核失败", icon: "none" });
+                    resolve(false);
+                }
+            });
+        });
+    },
+
     // 检查用户ID（wxid）是否重复
     checkWxid() {
         const newWxid = this.data.tempUserInfo.wxid;
@@ -127,12 +149,25 @@ Page({
             return;
         }
 
+        const { username, wxid } = this.data.tempUserInfo;
+
+        // ✅ 新增：审核用户名
+        const isUsernameSafe = await this.checkTextContent(username);
+        if (!isUsernameSafe) {
+            return;
+        }
+
+        // ✅ 新增：审核 wxid
+        const isWxidSafe = await this.checkTextContent(wxid);
+        if (!isWxidSafe) {
+            return;
+        }
+
         wx.showLoading({ title: "保存中..." });
 
         const token = wx.getStorageSync("token");
         const app = getApp();
         const userId = app.globalData.userInfo?.id;
-        const username = app.globalData.userInfo?.username;
 
         if (!token || !userId) {
             wx.hideLoading();

@@ -168,11 +168,38 @@ Page({
         });
     },
 
+    checkTextContent(content: string): Promise<boolean> {
+        const token = wx.getStorageSync("token");
+        return new Promise((resolve) => {
+            wx.request({
+                url: "https://mutualcampus.top/api/user/check-text",
+                method: "POST",
+                header: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                },
+                data: { content },
+                success: (res: any) => {
+                    if (res.data.success && res.data.safe) {
+                        resolve(true);
+                    } else {
+                        wx.showToast({ title: "内容包含敏感词", icon: "none" });
+                        resolve(false);
+                    }
+                },
+                fail: () => {
+                    wx.showToast({ title: "内容审核失败", icon: "none" });
+                    resolve(false);
+                }
+            });
+        });
+    },
+
     calculateCommissionInFen(amountYuan: number): number {
         return Math.max(Math.floor(amountYuan * 100 * 0.02), 1); // 保底 1 分
     },
-    
-      handlePublish() {
+
+    async handlePublish() {
         const app = getApp();
         const token = wx.getStorageSync("token");
         const user_id = app.globalData?.userInfo?.id;
@@ -181,17 +208,24 @@ Page({
             return;
         }
 
-        const { reward } = this.data;
+        const { reward, title, detail } = this.data;
         if (!reward || isNaN(parseFloat(reward))) {
             wx.showToast({ title: "请填写正确的金额", icon: "none" });
             return;
         }
 
+        // ✅ 检查标题和详情是否合规
+        const isTitleSafe = await this.checkTextContent(title);
+        if (!isTitleSafe) return;
+
+        const isDetailSafe = await this.checkTextContent(detail);
+        if (!isDetailSafe) return;
+
         const offer = parseFloat(reward);
         const commission = this.calculateCommissionInFen(offer);
 
         this.setData({
-            commissionAmount: (commission / 100).toFixed(2), // 用于 UI 展示
+            commissionAmount: (commission / 100).toFixed(2),
             showCommissionPopup: true
         });
     },
