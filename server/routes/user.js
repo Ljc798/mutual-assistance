@@ -414,6 +414,8 @@ router.post("/check-image", upload.single("image"), async (req, res) => {
 router.post("/check-text", async (req, res) => {
     const { content } = req.body;
 
+    console.log("📥 收到文本内容审核请求:", content);
+
     if (!content || content.trim() === "") {
         return res.status(400).json({
             success: false,
@@ -422,8 +424,6 @@ router.post("/check-text", async (req, res) => {
     }
 
     try {
-        console.log("📥 收到内容审核请求:", content);
-
         // 获取 access_token
         const tokenRes = await axios.get("https://api.weixin.qq.com/cgi-bin/token", {
             params: {
@@ -435,17 +435,13 @@ router.post("/check-text", async (req, res) => {
         });
 
         const accessToken = tokenRes.data.access_token;
-        console.log("🔑 获取到 access_token:", accessToken);
-
         if (!accessToken) throw new Error("access_token 获取失败");
 
-        const payload = {
-            version: 2,
-            scene: 3,
-            content
-        };
+        console.log("🔑 获取到 access_token:", accessToken);
 
-        console.log("🚀 即将发送内容审核请求:", payload);
+        // 构建 payload
+        const payload = { content };
+        console.log("🚀 即将发送微信内容审核请求:", payload);
 
         const wxRes = await axios.post(
             `https://api.weixin.qq.com/wxa/msg_sec_check?access_token=${accessToken}`,
@@ -457,15 +453,10 @@ router.post("/check-text", async (req, res) => {
 
         console.log("✅ 微信返回内容审核结果:", wxRes.data);
 
-        if (wxRes.data.errcode === 0 && wxRes.data.result?.suggest === "pass") {
+        if (wxRes.data.errcode === 0) {
             return res.json({ success: true, safe: true });
         } else {
-            console.warn("⚠️ 内容审核未通过:", wxRes.data);
-            return res.json({
-                success: true,
-                safe: false,
-                reason: wxRes.data.result || wxRes.data
-            });
+            return res.json({ success: true, safe: false, reason: wxRes.data });
         }
     } catch (err) {
         console.error("❌ 文本内容审核失败:", err);
@@ -476,5 +467,4 @@ router.post("/check-text", async (req, res) => {
         });
     }
 });
-
 module.exports = router;
