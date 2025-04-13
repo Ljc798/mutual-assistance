@@ -13,7 +13,9 @@ const fs = require("fs");
 const FormData = require("form-data");
 const path = require("path");
 const multer = require("multer");
-const upload = multer({ dest: "uploads/" });
+const upload = multer({
+    dest: "uploads/"
+});
 
 // 引入 authMiddleware
 const authMiddleware = require("./authMiddleware");
@@ -125,48 +127,62 @@ router.post("/phone-login", async (req, res) => {
 });
 
 router.post("/admin-login", async (req, res) => {
-    const { phone, password } = req.body;
-  
+    const {
+        phone,
+        password
+    } = req.body;
+
     if (!phone || !password) {
-      return res.status(400).json({ success: false, message: "手机号和密码不能为空" });
+        return res.status(400).json({
+            success: false,
+            message: "手机号和密码不能为空"
+        });
     }
-  
+
     // 校验是否为管理员账号
     const ADMIN_PHONE = process.env.ADMIN_PHONE;
     const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
-  
+
     if (phone !== ADMIN_PHONE || password !== ADMIN_PASSWORD) {
-      return res.status(401).json({ success: false, message: "管理员账号或密码错误" });
+        return res.status(401).json({
+            success: false,
+            message: "管理员账号或密码错误"
+        });
     }
-  
+
     try {
-      const [rows] = await db.query("SELECT * FROM users WHERE phone_number = ?", [phone]);
-  
-      if (rows.length === 0) {
-        return res.status(404).json({ success: false, message: "管理员用户未注册，请先用手机号注册" });
-      }
-  
-      const user = rows[0];
-  
-      const token = jwt.sign({ id: user.id }, SECRET_KEY, {
-        expiresIn: "7d"
-      });
-  
-      return res.json({
-        success: true,
-        token,
-        user,
-        isAdmin: true
-      });
-  
+        const [rows] = await db.query("SELECT * FROM users WHERE phone_number = ?", [phone]);
+
+        if (rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "管理员用户未注册，请先用手机号注册"
+            });
+        }
+
+        const user = rows[0];
+
+        const token = jwt.sign({
+            id: user.id
+        }, SECRET_KEY, {
+            expiresIn: "7d"
+        });
+
+        return res.json({
+            success: true,
+            token,
+            user,
+            isAdmin: true
+        });
+
     } catch (err) {
-      console.error("❌ 管理员登录失败:", err);
-      return res.status(500).json({
-        success: false,
-        message: "服务器内部错误"
-      });
+        console.error("❌ 管理员登录失败:", err);
+        return res.status(500).json({
+            success: false,
+            message: "服务器内部错误"
+        });
     }
-  });
+});
 
 // 📌 修改用户信息（使用 authMiddleware 来验证 token）
 router.post("/update", authMiddleware, async (req, res) => {
@@ -325,13 +341,18 @@ router.post("/check-wxid", async (req, res) => {
     }
 });
 
+const https = require("https"); // 👈 引入 https.Agent
+
 // 微信内容安全检查：图片接口
 router.post("/check-image", authMiddleware, upload.single("image"), async (req, res) => {
     const filePath = req.file?.path;
     const token = req.headers.authorization?.replace("Bearer ", "");
 
     if (!filePath) {
-        return res.status(400).json({ success: false, message: "图片上传失败" });
+        return res.status(400).json({
+            success: false,
+            message: "图片上传失败"
+        });
     }
 
     try {
@@ -342,6 +363,9 @@ router.post("/check-image", authMiddleware, upload.single("image"), async (req, 
                 appid: process.env.WX_APPID,
                 secret: process.env.WX_SECRET,
             },
+            httpsAgent: new https.Agent({
+                rejectUnauthorized: false
+            }) // 👈 忽略证书校验
         });
 
         const accessToken = tokenRes.data.access_token;
@@ -352,70 +376,102 @@ router.post("/check-image", authMiddleware, upload.single("image"), async (req, 
 
         const wxRes = await axios.post(
             `https://api.weixin.qq.com/wxa/img_sec_check?access_token=${accessToken}`,
-            form,
-            {
+            form, {
                 headers: form.getHeaders(),
+                httpsAgent: new https.Agent({
+                    rejectUnauthorized: false
+                }) // 👈 也加这里
             }
         );
 
         fs.unlinkSync(filePath); // 删除临时文件
 
         if (wxRes.data.errcode === 0) {
-            return res.json({ success: true, safe: true });
+            return res.json({
+                success: true,
+                safe: true
+            });
         } else {
-            return res.json({ success: true, safe: false, reason: wxRes.data });
+            return res.json({
+                success: true,
+                safe: false,
+                reason: wxRes.data
+            });
         }
     } catch (err) {
         console.error("❌ 内容安全审核失败:", err);
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-        res.status(500).json({ success: false, message: "内容审核失败", error: err });
+        res.status(500).json({
+            success: false,
+            message: "内容审核失败",
+            error: err
+        });
     }
 });
 
 // ✅ 文本内容审核接口
 router.post("/check-text", async (req, res) => {
-  const { content } = req.body;
+    const {
+        content
+    } = req.body;
 
-  if (!content || content.trim() === "") {
-    return res.status(400).json({ success: false, message: "缺少内容参数" });
-  }
-
-  try {
-    // 获取 access_token
-    const tokenRes = await axios.get("https://api.weixin.qq.com/cgi-bin/token", {
-      params: {
-        grant_type: "client_credential",
-        appid: process.env.WX_APPID,
-        secret: process.env.WX_SECRET,
-      },
-    });
-
-    const accessToken = tokenRes.data.access_token;
-    if (!accessToken) throw new Error("access_token 获取失败");
-
-    // 发起内容安全检查
-    const wxRes = await axios.post(
-      `https://api.weixin.qq.com/wxa/msg_sec_check?access_token=${accessToken}`,
-      {
-        version: 2, // 建议使用 version 2，能力更强
-        scene: 3, // 自定义业务场景编号
-        content,
-      }
-    );
-
-    if (wxRes.data.errcode === 0 && wxRes.data.result?.suggest === "pass") {
-      return res.json({ success: true, safe: true });
-    } else {
-      return res.json({
-        success: true,
-        safe: false,
-        reason: wxRes.data.result || wxRes.data,
-      });
+    if (!content || content.trim() === "") {
+        return res.status(400).json({
+            success: false,
+            message: "缺少内容参数"
+        });
     }
-  } catch (err) {
-    console.error("❌ 文本内容审核失败:", err);
-    return res.status(500).json({ success: false, message: "内容审核失败", error: err });
-  }
+
+    try {
+        // 获取 access_token
+        const tokenRes = await axios.get("https://api.weixin.qq.com/cgi-bin/token", {
+            params: {
+                grant_type: "client_credential",
+                appid: process.env.WX_APPID,
+                secret: process.env.WX_SECRET,
+            },
+            httpsAgent: new https.Agent({
+                rejectUnauthorized: false
+            }) // ✅ 忽略自签名证书
+        });
+
+        const accessToken = tokenRes.data.access_token;
+        if (!accessToken) throw new Error("access_token 获取失败");
+
+        // 发起内容安全检查
+        const wxRes = await axios.post(
+            `https://api.weixin.qq.com/wxa/msg_sec_check?access_token=${accessToken}`, {
+                version: 2, // 建议使用 version 2，能力更强
+                scene: 3,
+                content,
+            }, {
+                httpsAgent: new https.Agent({
+                    rejectUnauthorized: false
+                }) // ✅ 同样加上
+            }
+        );
+
+        if (wxRes.data.errcode === 0 && wxRes.data.result?.suggest === "pass") {
+            return res.json({
+                success: true,
+                safe: true
+            });
+        } else {
+            return res.json({
+                success: true,
+                safe: false,
+                reason: wxRes.data.result || wxRes.data,
+            });
+        }
+    } catch (err) {
+        console.error("❌ 文本内容审核失败:", err);
+        return res.status(500).json({
+            success: false,
+            message: "内容审核失败",
+            error: err
+        });
+    }
 });
+
 
 module.exports = router;
