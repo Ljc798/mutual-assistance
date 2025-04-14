@@ -1,3 +1,5 @@
+import { checkTextContent } from "../../utils/security";
+
 Page({
     data: {
         post: null, // 存储帖子详情
@@ -29,14 +31,14 @@ Page({
             wx.stopPullDownRefresh(); // 别让动画转下去了
             return;
         }
-    
+
         Promise.all([
             this.fetchPostDetail(postId),
             this.fetchComments(postId)
         ])
-        .finally(() => {
-            wx.stopPullDownRefresh(); // 拉完就停，别太拼
-        });
+            .finally(() => {
+                wx.stopPullDownRefresh(); // 拉完就停，别太拼
+            });
     },
 
     // ✅ 获取帖子详情
@@ -44,7 +46,7 @@ Page({
         const app = getApp();
         const user_id = app.globalData.userInfo?.id;
         const token = wx.getStorageSync("token");
-    
+
         wx.request({
             url: `https://mutualcampus.top/api/square/detail`,
             method: "GET",
@@ -55,14 +57,14 @@ Page({
                 if (res.data.success) {
                     let post = res.data.post;
                     const isVip = post.vip_expire_time && new Date(post.vip_expire_time).getTime() > Date.now();
-    
+
                     post = {
                         ...post,
                         isLiked: Boolean(post.isLiked),
                         isVip,
                         created_time: this.formatTime(post.created_time)
                     };
-    
+
                     this.setData({ post, isLoading: false });
                 } else {
                     wx.showToast({ title: "获取帖子失败", icon: "none" });
@@ -149,7 +151,7 @@ Page({
         const app = getApp();
         const user_id = app.globalData.userInfo?.id;
         const token = wx.getStorageSync("token");
-    
+
         wx.request({
             url: "https://mutualcampus.top/api/square/comments",
             method: "GET",
@@ -159,7 +161,7 @@ Page({
                 if (res.data.success) {
                     const comments = res.data.comments.map(comment => {
                         const isVip = comment.vip_expire_time && new Date(comment.vip_expire_time).getTime() > Date.now();
-    
+
                         comment = {
                             ...comment,
                             isVip,
@@ -173,10 +175,10 @@ Page({
                                 };
                             }) || []
                         };
-    
+
                         return comment;
                     });
-    
+
                     this.setData({ comments });
                 }
             },
@@ -191,14 +193,14 @@ Page({
     handleReply(e) {
         const { commentid, username, parentid, rootid } = e.currentTarget.dataset;
         const isFirstLevel = parentid == null;
-      
+
         this.setData({
-          replyTo: commentid,
-          rootParentId: isFirstLevel ? commentid : rootid,
-          replyPlaceholder: `回复 @${username}...`,
-          showCommentPopup: true
+            replyTo: commentid,
+            rootParentId: isFirstLevel ? commentid : rootid,
+            replyPlaceholder: `回复 @${username}...`,
+            showCommentPopup: true
         });
-      },
+    },
 
 
     // ✅ 输入框失焦（取消回复状态）
@@ -217,7 +219,7 @@ Page({
     },
 
     // ✅ 发布评论
-    submitComment() {
+    async submitComment() {
         const app = getApp();
         const user_id = app.globalData.userInfo?.id;
         const token = wx.getStorageSync("token");
@@ -231,6 +233,9 @@ Page({
             wx.showToast({ title: "评论不能为空", icon: "none" });
             return;
         }
+
+        const isSafe = await checkTextContent(this.data.newComment);
+        if (!isSafe) return;
 
         const isReply = !!this.data.replyTo;
 
@@ -281,17 +286,17 @@ Page({
     },
 
     // ✅ 展开更多子评论
-    expandReplies(e) {
-        const commentId = e.currentTarget.dataset.commentid;
-        const comments = this.data.comments.map(comment => {
-            if (comment.id === commentId) {
-                comment.showAllReplies = true;
-                comment.displayedChildren = comment.children;  // **显示全部**
-            }
-            return comment;
-        });
-        this.setData({ comments });
-    },
+    // expandReplies(e) {
+    //     const commentId = e.currentTarget.dataset.commentid;
+    //     const comments = this.data.comments.map(comment => {
+    //         if (comment.id === commentId) {
+    //             comment.showAllReplies = true;
+    //             comment.displayedChildren = comment.children;  // **显示全部**
+    //         }
+    //         return comment;
+    //     });
+    //     this.setData({ comments });
+    // },
 
     // ✅ 点赞/取消点赞评论
     toggleCommentLike(e: any) {
@@ -327,15 +332,15 @@ Page({
 
     openCommentPopup() {
         this.setData({ showCommentPopup: true });
-      },
-      
-      closeCommentPopup() {
+    },
+
+    closeCommentPopup() {
         this.setData({
-          showCommentPopup: false,
-          replyTo: null,
-          rootParentId: null,
-          newComment: '',
-          replyPlaceholder: '发布你的评论...'
+            showCommentPopup: false,
+            replyTo: null,
+            rootParentId: null,
+            newComment: '',
+            replyPlaceholder: '发布你的评论...'
         });
-      }
+    }
 });

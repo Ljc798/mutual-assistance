@@ -1,3 +1,5 @@
+import { checkTextContent } from "../../utils/security";
+
 Page({
     data: {
         categories: ["全部", "校园墙", "吐槽", "失物", "拼车", "二手交易", "拼单", "选课分享", "社团", "好物美景分享"],
@@ -286,18 +288,66 @@ Page({
 
     // ✅ 选择图片（但不立即上传）
     chooseImage() {
+        const token = wx.getStorageSync("token");
+        if (!token) {
+            wx.showToast({ title: "未登录", icon: "none" });
+            return;
+        }
+
         this.setData({
-            tempImageList: this.data.tempImageList || [] // ✅ 确保 tempImageList 是数组
+            tempImageList: this.data.tempImageList || []
         });
 
         wx.chooseMedia({
-            count: 9 - this.data.tempImageList.length, // 这里可能报错，如果 tempImageList 是 undefined
+            count: 9 - this.data.tempImageList.length,
             mediaType: ["image"],
             sourceType: ["album", "camera"],
-            success: (res) => {
-                console.log("✅ 选中的图片:", res.tempFiles);
-                const tempFilePaths = res.tempFiles.map(file => file.tempFilePath);
-                this.setData({ tempImageList: [...this.data.tempImageList, ...tempFilePaths] });
+            success: async (res) => {
+                const newFiles = res.tempFiles;
+
+                for (const file of newFiles) {
+                    const originalPath = file.tempFilePath;
+
+                    // ✅ 压缩图用于审核
+                    const compressedPath = await new Promise<string>((resolve) => {
+                        wx.compressImage({
+                            src: originalPath,
+                            quality: 50,
+                            success: (r) => resolve(r.tempFilePath),
+                            fail: () => resolve(originalPath)
+                        });
+                    });
+
+                    // ✅ 内容审核（压缩图）
+                    const isSafe = await new Promise<boolean>((resolve) => {
+                        wx.uploadFile({
+                            url: "https://mutualcampus.top/api/user/check-image",
+                            filePath: compressedPath,
+                            name: "image",
+                            header: {
+                                Authorization: `Bearer ${token}`
+                            },
+                            formData: {
+                                scene: "square"
+                            },
+                            success: (res: any) => {
+                                const data = JSON.parse(res.data);
+                                resolve(data.success && data.safe);
+                            },
+                            fail: () => resolve(false)
+                        });
+                    });
+
+                    if (!isSafe) {
+                        wx.showToast({ title: "图片含敏感内容，已忽略", icon: "none" });
+                        continue; // 🚫 不加入该图
+                    }
+
+                    // ✅ 审核通过后加入预览列表（原图）
+                    this.setData({
+                        tempImageList: [...this.data.tempImageList, originalPath]
+                    });
+                }
             }
         });
     },
@@ -358,6 +408,9 @@ Page({
             wx.showToast({ title: "内容不能为空", icon: "none" });
             return;
         }
+
+        const isSafe = await checkTextContent(this.data.newPostContent);
+        if (!isSafe) return;
 
         wx.showLoading({ title: "发布中..." });
 
@@ -425,6 +478,7 @@ Page({
             }
         });
     },
+
     // 重置表单
     resetPostForm() {
         this.setData({

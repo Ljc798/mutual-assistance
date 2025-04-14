@@ -1,3 +1,4 @@
+import { checkTextContent } from "../../utils/security";
 Page({
     data: {
         userInfo: {}, // 全局用户信息
@@ -78,38 +79,6 @@ Page({
         });
     },
 
-    checkTextContent(text: string): Promise<boolean> {
-        return new Promise((resolve) => {
-            const token = wx.getStorageSync("token");
-            if (!token) {
-                wx.showToast({ title: "未登录", icon: "none" });
-                resolve(false);
-                return;
-            }
-    
-            wx.request({
-                url: "https://mutualcampus.top/api/user/check-text",
-                method: "POST",
-                data: { content: text },
-                header: {
-                    Authorization: `Bearer ${token}`
-                },
-                success: (res: any) => {
-                    if (res.data.success && res.data.safe) {
-                        resolve(true);
-                    } else {
-                        wx.showToast({ title: "内容含敏感词", icon: "none" });
-                        resolve(false);
-                    }
-                },
-                fail: () => {
-                    wx.showToast({ title: "审核失败", icon: "none" });
-                    resolve(false);
-                }
-            });
-        });
-    },
-
     // 检查用户ID（wxid）是否重复
     checkWxid() {
         const newWxid = this.data.tempUserInfo.wxid;
@@ -162,13 +131,13 @@ Page({
         const { username, wxid } = this.data.tempUserInfo;
 
         // ✅ 新增：审核用户名
-        const isUsernameSafe = await this.checkTextContent(username);
+        const isUsernameSafe = await checkTextContent(username);
         if (!isUsernameSafe) {
             return;
         }
 
         // ✅ 新增：审核 wxid
-        const isWxidSafe = await this.checkTextContent(wxid);
+        const isWxidSafe = await checkTextContent(wxid);
         if (!isWxidSafe) {
             return;
         }
@@ -249,8 +218,12 @@ Page({
                 success: (res: any) => {
                     const data = JSON.parse(res.data);
                     if (data.success) {
-                        console.log("✅ 头像上传成功:", data.imageUrl);
-                        resolve(data.imageUrl);
+                        const freshUrl = data.imageUrl + "?t=" + Date.now(); // 防缓存
+                        this.setData({
+                            avatarFilePath: freshUrl,
+                            "tempUserInfo.avatar_url": freshUrl // 👈 更新显示
+                        });
+                        resolve(freshUrl);
                     } else {
                         console.error("❌ 头像上传失败:", data);
                         resolve(null);
@@ -287,6 +260,7 @@ Page({
             "tempUserInfo.wxid": ""
         });
     },
+
     checkImageContent(filePath: string): Promise<boolean> {
         const token = wx.getStorageSync("token");
         return new Promise((resolve) => {

@@ -1,3 +1,5 @@
+import { checkTextContent } from "../../utils/security";
+
 Page({
     data: {
         task: {} as Task,  // 存储任务详细信息
@@ -164,7 +166,7 @@ Page({
         this.setData({ commentPrice: e.detail.value });
     },
 
-    submitMessage() {
+    async submitMessage() {
         const app = getApp();
         const userId = app.globalData.userInfo?.id;
         const { commentContent, commentPrice, task } = this.data;
@@ -179,6 +181,9 @@ Page({
             wx.showToast({ title: "请先登录", icon: "none" });
             return;
         }
+
+        const isSafe = await checkTextContent(commentContent);
+        if (!isSafe) return;
 
         wx.request({
             url: 'https://mutualcampus.top/api/task/bid',

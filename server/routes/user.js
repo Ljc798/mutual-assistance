@@ -385,8 +385,6 @@ router.post("/check-image", upload.single("image"), async (req, res) => {
 
         fs.unlinkSync(filePath); // 删除临时文件
 
-        console.log("✅ 微信返回图片审核结果:", wxRes.data);
-
         if (wxRes.data.errcode === 0) {
             return res.json({
                 success: true,
@@ -414,8 +412,6 @@ router.post("/check-image", upload.single("image"), async (req, res) => {
 router.post("/check-text", async (req, res) => {
     const { content } = req.body;
 
-    console.log("📥 收到文本内容审核请求:", content);
-
     if (!content || content.trim() === "") {
         return res.status(400).json({
             success: false,
@@ -437,11 +433,8 @@ router.post("/check-text", async (req, res) => {
         const accessToken = tokenRes.data.access_token;
         if (!accessToken) throw new Error("access_token 获取失败");
 
-        console.log("🔑 获取到 access_token:", accessToken);
-
         // 构建 payload
         const payload = { content };
-        console.log("🚀 即将发送微信内容审核请求:", payload);
 
         const wxRes = await axios.post(
             `https://api.weixin.qq.com/wxa/msg_sec_check?access_token=${accessToken}`,
@@ -450,8 +443,6 @@ router.post("/check-text", async (req, res) => {
                 httpsAgent: new https.Agent({ rejectUnauthorized: false })
             }
         );
-
-        console.log("✅ 微信返回内容审核结果:", wxRes.data);
 
         if (wxRes.data.errcode === 0) {
             return res.json({ success: true, safe: true });

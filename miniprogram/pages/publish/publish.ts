@@ -1,3 +1,5 @@
+import { checkTextContent } from "../../utils/security";
+
 Page({
     data: {
         categories: ['代拿快递', '代拿外卖', '兼职发布', '作业协助', '二手交易', '寻物启事', '代办服务', '万能服务'], // 任务分类选项
@@ -168,33 +170,6 @@ Page({
         });
     },
 
-    checkTextContent(content: string): Promise<boolean> {
-        const token = wx.getStorageSync("token");
-        return new Promise((resolve) => {
-            wx.request({
-                url: "https://mutualcampus.top/api/user/check-text",
-                method: "POST",
-                header: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json"
-                },
-                data: { content },
-                success: (res: any) => {
-                    if (res.data.success && res.data.safe) {
-                        resolve(true);
-                    } else {
-                        wx.showToast({ title: "内容包含敏感词", icon: "none" });
-                        resolve(false);
-                    }
-                },
-                fail: () => {
-                    wx.showToast({ title: "内容审核失败", icon: "none" });
-                    resolve(false);
-                }
-            });
-        });
-    },
-
     calculateCommissionInFen(amountYuan: number): number {
         return Math.max(Math.floor(amountYuan * 100 * 0.02), 1); // 保底 1 分
     },
@@ -215,10 +190,18 @@ Page({
         }
 
         // ✅ 检查标题和详情是否合规
-        const isTitleSafe = await this.checkTextContent(title);
+        const isTitleSafe = await checkTextContent(title);
         if (!isTitleSafe) return;
 
-        const isDetailSafe = await this.checkTextContent(detail);
+        // ✅ 审核 address
+        const isAddressSafe = await checkTextContent(this.data.address);
+        if (!isAddressSafe) return;
+
+        // ✅ 审核 position
+        const isPositionSafe = await checkTextContent(this.data.position);
+        if (!isPositionSafe) return;
+
+        const isDetailSafe = await checkTextContent(detail);
         if (!isDetailSafe) return;
 
         const offer = parseFloat(reward);
