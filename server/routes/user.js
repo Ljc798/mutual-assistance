@@ -311,7 +311,7 @@ router.post("/check-wxid", async (req, res) => {
     const {
         wxid,
         id
-    } = req.query;
+    } = req.body;
 
     if (!wxid) {
         return res.status(400).json({
@@ -385,10 +385,13 @@ router.post("/check-image", upload.single("image"), async (req, res) => {
 
         fs.unlinkSync(filePath); // 删除临时文件
 
+        console.log("✅ 微信返回图片审核结果:", wxRes.data);
+
         if (wxRes.data.errcode === 0) {
             return res.json({
                 success: true,
-                safe: true
+                safe: true,
+                raw: wxRes.data
             });
         } else {
             return res.json({

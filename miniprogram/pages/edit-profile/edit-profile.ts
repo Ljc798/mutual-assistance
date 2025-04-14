@@ -276,10 +276,13 @@ Page({
                 },
                 success: (res: any) => {
                     const data = JSON.parse(res.data);
+                    console.log("✅ 后端审核返回数据:", data);
+                
                     if (data.success && data.safe) {
                         resolve(true);
                     } else {
-                        wx.showToast({ title: "头像内容违规，请更换", icon: "none" });
+                        console.warn("⚠️ 审核未通过，微信返回:", data.raw || data.reason);
+                        wx.showToast({ title: "图片含违规内容", icon: "none" });
                         resolve(false);
                     }
                 },
