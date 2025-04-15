@@ -295,39 +295,14 @@ Page({
         this.setData({
             tempImageList: this.data.tempImageList || []
         });
-    
+
         wx.chooseMedia({
             count: 9 - this.data.tempImageList.length,
             mediaType: ["image"],
             sourceType: ["album", "camera"],
-            success: async (res) => {
-                const newImages: string[] = [];
-    
-                for (const file of res.tempFiles) {
-                    const originalPath = file.tempFilePath;
-    
-                    // ✅ 尝试压缩图片（quality: 30）
-                    const compressedPath = await new Promise<string>((resolve) => {
-                        wx.compressImage({
-                            src: originalPath,
-                            quality: 30,
-                            success: (r) => {
-                                console.log("✅ 图片压缩成功:", r.tempFilePath);
-                                resolve(r.tempFilePath);
-                            },
-                            fail: (err) => {
-                                console.warn("⚠️ 图片压缩失败，使用原图:", err);
-                                resolve(originalPath); // fallback 原图
-                            }
-                        });
-                    });
-    
-                    newImages.push(compressedPath);
-                }
-    
-                this.setData({
-                    tempImageList: [...this.data.tempImageList, ...newImages]
-                });
+            success: (res) => {
+                const tempFilePaths = res.tempFiles.map(file => file.tempFilePath);
+                this.setData({ tempImageList: [...this.data.tempImageList, ...tempFilePaths] });
             }
         });
     },

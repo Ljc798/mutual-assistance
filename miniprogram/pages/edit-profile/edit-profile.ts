@@ -1,11 +1,10 @@
 import { checkTextContent } from "../../utils/security";
-
 Page({
     data: {
-        userInfo: {},
-        tempUserInfo: {},
-        errorMessage: "",
-        avatarFilePath: "",
+        userInfo: {}, // 全局用户信息
+        tempUserInfo: {}, // 临时修改数据
+        errorMessage: "", // 错误提示
+        avatarFilePath: "", // 临时存储头像路径（未上传）
     },
 
     onLoad(options: any) {
@@ -37,114 +36,23 @@ Page({
     },
 
     chooseAvatar() {
-        const token = wx.getStorageSync("token");
-        if (!token) {
-            wx.showToast({ title: "未登录", icon: "none" });
-            return;
-        }
-    
         wx.chooseMedia({
             count: 1,
             mediaType: ["image"],
             sourceType: ["album", "camera"],
-            success: async (res) => {
+            success: (res) => {
                 const tempFilePath = res.tempFiles[0].tempFilePath;
     
                 wx.compressImage({
                     src: tempFilePath,
-                    quality: 30,
-                    success: async (compressed) => {
-                        const compressedPath = compressed.tempFilePath;
-    
-                        // ✅ 审核图片（提交审核）
-                        wx.uploadFile({
-                            url: "https://mutualcampus.top/api/uploads/upload-image",
-                            filePath: compressedPath,
-                            name: "image",
-                            header: {
-                                Authorization: `Bearer ${token}`
-                            },
-                            formData: {
-                                type: "avatar",
-                                username: this.data.tempUserInfo.username || "anonymous"
-                            },
-                            success: async (res: any) => {
-                                try {
-                                    const data = JSON.parse(res.data);
-                                    const jobId = data.auditJob?.JobId;
-                                    const objectKey = data.objectKey;
-    
-                                    if (!jobId || !objectKey) {
-                                        wx.showToast({ title: "审核任务提交失败", icon: "none" });
-                                        return;
-                                    }
-    
-                                    wx.showLoading({ title: "头像审核中…" });
-    
-                                    // ✅ 轮询审核状态（每2秒查一次）
-                                    let tries = 0;
-                                    const poll = async () => {
-                                        if (tries++ > 10) {
-                                            wx.hideLoading();
-                                            wx.showToast({ title: "审核超时", icon: "none" });
-                                            return;
-                                        }
-    
-                                        wx.request({
-                                            url: "https://mutualcampus.top/api/uploads/audit-result",
-                                            method: "GET",
-                                            data: { jobId },
-                                            success: (res) => {
-                                                if (res.data.success) {
-                                                    const status = res.data.status;
-                                                    const result = res.data.result;
-    
-                                                    if (status === "Success") {
-                                                        if (result?.Suggestion === "Pass") {
-                                                            // ✅ 审核通过，拼接真实地址
-                                                            const imageUrl = `https://${result.Bucket}.cos.${result.Region}.myqcloud.com/${result.Key}`;
-                                                            this.setData({
-                                                                avatarFilePath: imageUrl,
-                                                                "tempUserInfo.avatar_url": imageUrl
-                                                            });
-                                                            wx.hideLoading();
-                                                            wx.showToast({ title: "头像审核通过", icon: "success" });
-                                                        } else {
-                                                            wx.hideLoading();
-                                                            wx.showToast({ title: "头像不合规，请更换", icon: "none" });
-                                                        }
-                                                    } else if (status === "Failed") {
-                                                        wx.hideLoading();
-                                                        wx.showToast({ title: "审核失败", icon: "none" });
-                                                    } else {
-                                                        // 审核中，继续轮询
-                                                        setTimeout(poll, 2000);
-                                                    }
-                                                } else {
-                                                    setTimeout(poll, 2000);
-                                                }
-                                            },
-                                            fail: () => {
-                                                setTimeout(poll, 2000);
-                                            }
-                                        });
-                                    };
-    
-                                    poll();
-    
-                                } catch (err) {
-                                    console.warn("❌ 上传/审核返回异常:", res.data);
-                                    wx.showToast({ title: "上传失败", icon: "none" });
-                                }
-                            },
-                            fail: () => {
-                                wx.showToast({ title: "头像上传失败", icon: "none" });
-                            }
-                        });
+                    quality: 30, // 调整质量在 40-80 之间
+                    success: (compressed) => {
+                        console.log("✅ 压缩后:", compressed.tempFilePath);
+                        this.setData({ avatarFilePath: compressed.tempFilePath });
                     },
                     fail: () => {
+                        console.warn("⚠️ 压缩失败，使用原图");
                         this.setData({ avatarFilePath: tempFilePath });
-                        wx.showToast({ title: "压缩失败，使用原图", icon: "none" });
                     }
                 });
             }
@@ -162,6 +70,7 @@ Page({
             method: "POST",
             data: { username: newUsername },
             success: (res: any) => {
+                console.log(res.data);
                 if (!res.data.available) {
                     wx.showToast({ title: "用户名已存在，请更换", icon: "none" });
                 }
@@ -239,7 +148,8 @@ Page({
         if (isTempFile) {
             avatarUrl = await this.uploadAvatarToCOS(filePath, username);
             if (!avatarUrl) {
-                wx.showToast({ title: "头像上传失败", icon: "none" });
+                console.error("❌ 头像上传失败，返回空 URL");
+                wx.showToast({ title: "头像上传失败，使用原头像", icon: "none" });
                 avatarUrl = this.data.tempUserInfo.avatar_url;
             }
         }
@@ -285,8 +195,9 @@ Page({
                 success: (res: any) => {
                     try {
                         const data = JSON.parse(res.data);
+
                         if (data.success) {
-                            const freshUrl = data.imageUrl + "?t=" + Date.now();
+                            const freshUrl = data.imageUrl + "?t=" + Date.now(); // 防缓存
                             this.setData({
                                 avatarFilePath: freshUrl,
                                 "tempUserInfo.avatar_url": freshUrl
@@ -313,9 +224,11 @@ Page({
     logout() {
         wx.removeStorageSync("user");
         wx.removeStorageSync("token");
+
         const app = getApp();
         app.globalData.userInfo = null;
         app.globalData.token = null;
+
         wx.redirectTo({ url: "/pages/register/register" });
     },
 
@@ -328,6 +241,6 @@ Page({
     },
 
     checkImageContent(filePath: string): Promise<boolean> {
-        return Promise.resolve(true);
+        return Promise.resolve(true); // ✅ 使用腾讯云 COS 自动审核，无需客户端再调微信 API 审核
     }
 });
