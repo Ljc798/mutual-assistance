@@ -17,7 +17,12 @@ const bucketName = process.env.COS_BUCKET;
 const region = process.env.COS_REGION;
 
 // multer 使用内存存储（避免写入本地磁盘）
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+      fileSize: 20 * 1024 * 1024  // 限制最大 10MB
+    }
+  });
 
 // ✅ 封装上传为 Promise
 function uploadToCOS({ Bucket, Region, Key, Body, ContentType }) {

@@ -27,15 +27,17 @@ Page({
         const app = getApp();
         const userInfo = app.globalData.userInfo;
 
-        if (!userInfo?.id) {
-            wx.showToast({ title: "请先登录", icon: "none" });
-            return;
-        }
-
-        this.setData({ userInfo }, () => {
+        if (userInfo?.id) {
+            // ✅ 已登录，设置数据后再加载
+            this.setData({ userInfo }, () => {
+                this.fetchPosts(false); // 带 user_id 获取是否点赞等
+                this.getCheckinStatus();
+            });
+        } else {
+            // ✅ 未登录，只加载帖子列表（不传 user_id）
             this.fetchPosts(false);
-            this.getCheckinStatus();
-        });
+            wx.showToast({ title: "请先登录", icon: "none" });
+        }
     },
 
     onShow() {
@@ -147,20 +149,20 @@ Page({
     fetchPosts(isLoadMore = false, callback?: Function) {
         const app = getApp();
         const user_id = app.globalData.userInfo?.id; // ❌ 不传 null
-    
+
         const { currentPage, pageSize, selectedCategory } = this.data;
-    
+
         const requestData: any = {
             category: selectedCategory,
             page: currentPage,
             pageSize
         };
-    
+
         // ✅ 仅在登录状态下附带 user_id
         if (user_id) {
             requestData.user_id = user_id;
         }
-    
+
         wx.request({
             url: "https://mutualcampus.top/api/square/posts",
             method: "GET",
@@ -170,14 +172,14 @@ Page({
                     let newPosts = res.data.posts || [];
                     const isVip = (vipTime) =>
                         vipTime && new Date(vipTime).getTime() > Date.now();
-    
+
                     newPosts = newPosts.map(post => ({
                         ...post,
                         isLiked: post.isLiked || false,
                         isVip: isVip(post.vip_expire_time),
                         created_time: this.formatTime(post.created_time)
                     }));
-    
+
                     this.setData({
                         posts: isLoadMore ? [...this.data.posts, ...newPosts] : newPosts,
                         hasMore: newPosts.length === pageSize
@@ -290,12 +292,6 @@ Page({
 
     // ✅ 选择图片（但不立即上传）
     chooseImage() {
-        const token = wx.getStorageSync("token");
-        if (!token) {
-            wx.showToast({ title: "未登录", icon: "none" });
-            return;
-        }
-
         this.setData({
             tempImageList: this.data.tempImageList || []
         });
@@ -304,52 +300,9 @@ Page({
             count: 9 - this.data.tempImageList.length,
             mediaType: ["image"],
             sourceType: ["album", "camera"],
-            success: async (res) => {
-                const newFiles = res.tempFiles;
-
-                for (const file of newFiles) {
-                    const originalPath = file.tempFilePath;
-
-                    // ✅ 压缩图用于审核
-                    const compressedPath = await new Promise<string>((resolve) => {
-                        wx.compressImage({
-                            src: originalPath,
-                            quality: 50,
-                            success: (r) => resolve(r.tempFilePath),
-                            fail: () => resolve(originalPath)
-                        });
-                    });
-
-                    // ✅ 内容审核（压缩图）
-                    const isSafe = await new Promise<boolean>((resolve) => {
-                        wx.uploadFile({
-                            url: "https://mutualcampus.top/api/user/check-image",
-                            filePath: compressedPath,
-                            name: "image",
-                            header: {
-                                Authorization: `Bearer ${token}`
-                            },
-                            formData: {
-                                scene: "square"
-                            },
-                            success: (res: any) => {
-                                const data = JSON.parse(res.data);
-                                resolve(data.success && data.safe);
-                            },
-                            fail: () => resolve(false)
-                        });
-                    });
-
-                    if (!isSafe) {
-                        wx.showToast({ title: "图片含敏感内容，已忽略", icon: "none" });
-                        continue; // 🚫 不加入该图
-                    }
-
-                    // ✅ 审核通过后加入预览列表（原图）
-                    this.setData({
-                        tempImageList: [...this.data.tempImageList, originalPath]
-                    });
-                }
+            success: (res) => {
+                const tempFilePaths = res.tempFiles.map(file => file.tempFilePath);
+                this.setData({ tempImageList: [...this.data.tempImageList, ...tempFilePaths] });
             }
         });
     },

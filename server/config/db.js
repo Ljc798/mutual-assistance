@@ -20,8 +20,6 @@ pool.logStatus = function () {
   const stats = this.pool._allConnections.length;
   const free = this.pool._freeConnections.length;
   const waiting = this.pool._connectionQueue.length;
-
-  console.log(`📊 [连接池状态] 总连接数: ${stats}, 空闲连接: ${free}, 等待队列: ${waiting}`);
 };
 
 module.exports = pool;
