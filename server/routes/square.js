@@ -27,9 +27,9 @@ router.get("/posts", async (req, res) => {
 
     values.push(offset, limit);
 
-    const likeSubquery = hasUserId
-        ? `(SELECT COUNT(*) FROM square_likes WHERE square_id = s.id AND user_id = ${db.escape(user_id)})`
-        : `0`;
+    const likeSubquery = hasUserId ?
+        `(SELECT COUNT(*) FROM square_likes WHERE square_id = s.id AND user_id = ${db.escape(user_id)})` :
+        `0`;
 
     const query = `
         SELECT s.*, 
@@ -48,24 +48,35 @@ router.get("/posts", async (req, res) => {
         const [posts] = await db.query(query, values);
 
         if (posts.length === 0) {
-            return res.json({ success: true, posts: [] });
+            return res.json({
+                success: true,
+                posts: []
+            });
         }
 
         const postIds = posts.map(p => p.id);
         const [images] = await db.query(
-            `SELECT square_id, image_url FROM square_images WHERE square_id IN (?)`,
+            `SELECT square_id, image_url, audit_status FROM square_images WHERE square_id IN (?) AND audit_status = 'pass'`,
             [postIds]
         );
 
         const now = new Date();
         const postsWithImages = posts.map(post => ({
             ...post,
-            images: images.filter(img => img.square_id === post.id).map(img => img.image_url),
+            images: images
+                .filter(img => img.square_id === post.id)
+                .map(img => ({
+                    url: img.image_url,
+                    status: img.audit_status
+                })),
             isLiked: Boolean(post.isLiked),
             isVip: post.vip_expire_time && new Date(post.vip_expire_time) > now
         }));
 
-        res.json({ success: true, posts: postsWithImages });
+        res.json({
+            success: true,
+            posts: postsWithImages
+        });
     } catch (err) {
         console.error("❌ 获取帖子失败:", err);
         res.status(500).json({
@@ -221,11 +232,12 @@ router.post("/create", authMiddleware, async (req, res) => { // 添加了认证�
 });
 
 // ===== 5. 更新图片 =====
-router.post("/update-images", authMiddleware, async (req, res) => { // 添加了认证中间件
+router.post("/update-images", authMiddleware, async (req, res) => {
     const {
         square_id,
         images
     } = req.body;
+
     if (!square_id || !images || images.length === 0) {
         return res.status(400).json({
             success: false,
@@ -234,8 +246,14 @@ router.post("/update-images", authMiddleware, async (req, res) => { // 添加了
     }
 
     try {
-        const imageInserts = images.map(url => [square_id, url]);
-        await db.query(`INSERT INTO square_images (square_id, image_url) VALUES ?`, [imageInserts]);
+        // 👇 每张图的审核状态初始化为 pending
+        const imageInserts = images.map(url => [square_id, url, 'pending']);
+
+        await db.query(
+            `INSERT INTO square_images (square_id, image_url, audit_status) VALUES ?`,
+            [imageInserts]
+        );
+
         res.json({
             success: true
         });

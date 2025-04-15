@@ -43,7 +43,9 @@
 
                 <block wx:if="{{item.images.length > 0}}">
                     <scroll-view class="image-scroll" scroll-x="true">
-                        <image wx:for="{{item.images}}" wx:key="index" src="{{item}}" class="post-image" mode="aspectFill" />
+                        <block wx:for="{{item.images}}" wx:key="index">
+                            <image wx:if="{{item.status === 'pass'}}" src="{{item.url}}" class="post-image" mode="aspectFill" />
+                        </block>
                     </scroll-view>
                 </block>
 
@@ -82,7 +84,7 @@
             </picker>
 
             <!-- 文字输入框 -->
-            <textarea class="post-input" placeholder="写点什么吧..." bindinput="handlePostInput" value="{{newPostContent}}" maxlength="-1"/>
+            <textarea class="post-input" placeholder="写点什么吧..." bindinput="handlePostInput" value="{{newPostContent}}" maxlength="-1" />
 
             <!-- 图片上传区域 -->
             <view class="image-upload">
