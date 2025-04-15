@@ -173,12 +173,25 @@ Page({
                     const isVip = (vipTime) =>
                         vipTime && new Date(vipTime).getTime() > Date.now();
 
-                    newPosts = newPosts.map(post => ({
-                        ...post,
-                        isLiked: post.isLiked || false,
-                        isVip: isVip(post.vip_expire_time),
-                        created_time: this.formatTime(post.created_time)
-                    }));
+                    newPosts = newPosts.map(post => {
+                        const approvedImages = (post.images || []).filter(img => img.status === "pass");
+                        const reviewedImages = (post.images || []).map(img => ({
+                            url: img.url,
+                            status: img.status || "checking"
+                        }));
+
+                        return {
+                            ...post,
+                            images: reviewedImages, // 用于前端展示 + 占位
+                            approvedImages,         // 若你后续只想拿审核通过的可用
+                            isLiked: post.isLiked || false,
+                            isVip: isVip(post.vip_expire_time),
+                            created_time: this.formatTime(post.created_time)
+                        };
+                    });
+
+                    console.log(newPosts);
+                    
 
                     this.setData({
                         posts: isLoadMore ? [...this.data.posts, ...newPosts] : newPosts,

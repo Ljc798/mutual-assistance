@@ -104,15 +104,17 @@ router.post("/upload-image", upload.single("image"), async (req, res) => {
 
 // COS 审核结果回调接口
 router.post("/image-review", express.json(), async (req, res) => {
+    console.log("✅ 收到回调内容:", JSON.stringify(req.body));
+    // ✅ 第一步：立即回复腾讯云，避免超时
+    res.status(200).send("OK");
+
     try {
+        console.log("✅ 开始:");
         const job = req.body?.JobsDetail;
 
-        // 安全校验：腾讯云会发送 JSON，但内容可能结构不一致
         if (!job || typeof job !== "object" || !job.Object || !job.Result || !job.Result.Label) {
-            return res.status(400).json({
-                success: false,
-                message: "格式错误"
-            });
+            console.warn("⚠️ 格式错误或字段缺失:", req.body);
+            return;
         }
 
         const objectKey = job.Object;
@@ -120,17 +122,19 @@ router.post("/image-review", express.json(), async (req, res) => {
 
         const auditStatus = label === "Normal" ? "pass" : "fail";
 
-        // ✅ 更新数据库
+        // ✅ 异步更新数据库
         const [result] = await db.query(
             `UPDATE square_images SET audit_status = ? WHERE image_url LIKE ?`,
             [auditStatus, `%${objectKey}`]
         );
 
-        console.log("✅ 审核回调成功：", objectKey, auditStatus, "更新行数：", result.affectedRows);
-        return res.status(200).send("OK"); // ✅ 必须返回 200，腾讯云才认为成功
+        console.log("✅ 审核成功：", {
+            objectKey,
+            auditStatus,
+            affectedRows: result.affectedRows
+        });
     } catch (err) {
-        console.error("❌ 审核回调异常:", err);
-        return res.status(500).send("FAIL");
+        console.error("❌ 审核处理失败:", err);
     }
 });
 
