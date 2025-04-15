@@ -102,54 +102,13 @@ router.post("/upload-image", upload.single("image"), async (req, res) => {
     }
 });
 
-// COS 审核回调接口
-router.post("/cos-callback", express.text({
-    type: "*/*"
-}), async (req, res) => {
-    try {
-        const xmlData = req.body;
-        const json = require("xml2js").parseString;
-
-        json(xmlData, async (err, result) => {
-            if (err) {
-                console.error("❌ 回调 XML 解析失败:", err);
-                return res.status(400).send("Invalid XML");
-            }
-
-            const job = result?.Response?.JobsDetail?.[0];
-            const state = job?.State?.[0]; // "Success"
-            const label = job?.Result?.[0]?.Label?.[0]; // "Normal" 或 "Porn" 等
-            const key = job?.Object?.[0]; // 审核的文件路径
-
-            console.log("📩 收到 COS 审核回调:", {
-                key,
-                state,
-                label
-            });
-
-            // ✅ 示例：更新数据库记录（你自己实现）
-            if (key && state === "Success") {
-                const status = label === "Normal" ? "pass" : "fail";
-
-                await db.query(
-                    `UPDATE square_images SET audit_status = ? WHERE image_url LIKE ?`,
-                    [status, `%${key}`]
-                );
-            }
-
-            return res.send("OK");
-        });
-    } catch (err) {
-        console.error("❌ 审核回调处理失败:", err);
-        return res.status(500).send("Server Error");
-    }
-});
-
 // COS 审核结果回调接口
-router.post("/image-review", async (req, res) => {
+router.post("/image-review", express.json(), async (req, res) => {
     try {
         const job = req.body?.JobsDetail;
-        if (!job || !job.Object || !job.Result?.Label) {
+
+        // 安全校验：腾讯云会发送 JSON，但内容可能结构不一致
+        if (!job || typeof job !== "object" || !job.Object || !job.Result || !job.Result.Label) {
             return res.status(400).json({
                 success: false,
                 message: "格式错误"
@@ -161,17 +120,17 @@ router.post("/image-review", async (req, res) => {
 
         const auditStatus = label === "Normal" ? "pass" : "fail";
 
-        // ✅ 更新数据库中审核状态（你需要提前加好 audit_status 字段）
-        await db.query(
+        // ✅ 更新数据库
+        const [result] = await db.query(
             `UPDATE square_images SET audit_status = ? WHERE image_url LIKE ?`,
             [auditStatus, `%${objectKey}`]
         );
 
-        console.log("✅ 回调审核成功：", objectKey, auditStatus);
-        res.send("OK");
+        console.log("✅ 审核回调成功：", objectKey, auditStatus, "更新行数：", result.affectedRows);
+        return res.status(200).send("OK"); // ✅ 必须返回 200，腾讯云才认为成功
     } catch (err) {
         console.error("❌ 审核回调异常:", err);
-        res.status(500).send("FAIL");
+        return res.status(500).send("FAIL");
     }
 });
 
