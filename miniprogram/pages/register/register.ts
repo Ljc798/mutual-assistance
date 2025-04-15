@@ -17,7 +17,6 @@ Page({
         const token = wx.getStorageSync("token");
         const user = wx.getStorageSync("user");
         if (token && user) {
-            console.log("✅ 读取到本地用户数据:", user);
             this.setData({ isLoggedIn: true, userInfo: user });
         } else if (token) {
             console.log("⚠️ 用户信息丢失，重新获取...");
@@ -133,7 +132,6 @@ Page({
         wx.redirectTo({
             url: "/pages/home/home",
             success: () => {
-                console.log("📌 已跳转到首页");
             },
             fail: (err) => {
                 console.error("❌ 跳转失败", err);

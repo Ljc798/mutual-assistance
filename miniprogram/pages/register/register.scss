@@ -8,7 +8,7 @@
 
 .phone-btn {
     position: fixed;
-    bottom: 130rpx;
+    bottom: 180rpx;
     /* 靠底距离可调 */
     left: 50%;
     /* 水平中心点 */
@@ -64,12 +64,23 @@
     border: 2rpx solid #ccc;
 }
 
-.admin-entry {
+.entry {
     position: fixed;
-    bottom: 80rpx;
+    bottom: 90rpx;
     width: 100%;
     text-align: center;
+    flex-direction: row;
+}
+
+.admin-entry {
     font-size: 26rpx;
+    color: #fff;
+    text-decoration: underline;
+}
+
+.home-entry {
+    font-size: 26rpx;
+    margin-top: 10rpx;
     color: #fff;
     text-decoration: underline;
 }

@@ -263,30 +263,33 @@
 
 .feedback-popup {
     position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     background: rgba(0, 0, 0, 0.5);
     z-index: 999;
     display: flex;
     align-items: center;
     justify-content: center;
-  }
-  
-  .popup-content {
+}
+
+.popup-content {
     width: 80%;
     background-color: #fff;
     border-radius: 20rpx;
     padding: 32rpx;
     box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.15);
-  }
-  
-  .popup-title {
+}
+
+.popup-title {
     font-size: 36rpx;
     font-weight: bold;
     text-align: center;
     margin-bottom: 24rpx;
-  }
-  
-  .popup-input {
+}
+
+.popup-input {
     width: 100%;
     height: 87rpx;
     border: 1px solid #ddd;
@@ -294,9 +297,9 @@
     padding: 16rpx;
     margin-bottom: 24rpx;
     box-sizing: border-box;
-  }
-  
-  .popup-textarea {
+}
+
+.popup-textarea {
     width: 100%;
     border: 1px solid #ddd;
     border-radius: 12rpx;
@@ -304,29 +307,49 @@
     margin-bottom: 24rpx;
     box-sizing: border-box;
     padding: 16rpx;
-  }
-  
-  .popup-actions {
+}
+
+.popup-actions {
     display: flex;
     gap: 10rpx;
     justify-content: space-between;
-  }
-  
-  .cancel-btn,
-  .submit-btn {
+}
+
+.cancel-btn,
+.submit-btn {
     flex: 1;
     margin: 0 10rpx;
     padding: 20rpx 0;
     border-radius: 12rpx;
     font-size: 30rpx;
-  }
-  
-  .cancel-btn {
+}
+
+.cancel-btn {
     background-color: #f0f0f0;
     color: #333;
-  }
-  
-  .submit-btn {
+}
+
+.submit-btn {
     background-color: #007aff;
     color: #fff;
-  }
+}
+
+.unauth-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 160rpx 20rpx 20rpx 20rpx;
+}
+
+.unauth-text {
+    margin-top: 30rpx;
+    font-size: 32rpx;
+    color: #666;
+}
+
+.login-btn {
+    margin-top: 40rpx;
+    background-color: #20c997;
+    color: white;
+    border-radius: 8rpx;
+}

@@ -15,7 +15,7 @@ class Square(Base):
     comments_count = Column(Integer, default=0)
     school_id = Column(Integer)
     created_time = Column(DateTime, default=datetime.utcnow)
-
+    is_pinned = Column(Integer, default=0)
     images = relationship("PostImage", back_populates="post", cascade="all, delete-orphan")
     comments = relationship("SquareComment", back_populates="post", cascade="all, delete-orphan")
     reports = relationship("SquareReport", back_populates="post", cascade="all, delete-orphan")  # 🫶 加上它！

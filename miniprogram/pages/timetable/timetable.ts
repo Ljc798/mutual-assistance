@@ -357,6 +357,11 @@ Page({
 
     // 打开菜单
     openMenu() {
+        const token = wx.getStorageSync("token");  // 获取 token
+        if (!token) {
+            wx.showToast({ title: "请先登录", icon: "none" });
+            return;
+        }
         this.setData({
             showMenu: true
         });

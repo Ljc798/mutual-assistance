@@ -151,6 +151,11 @@ Page({
 
 
     openPopup() {
+        const token = wx.getStorageSync("token");  // 获取 token
+        if (!token) {
+            wx.showToast({ title: "请先登录", icon: "none" });
+            return;
+        }
         this.setData({ showPopup: true });
     },
 
@@ -214,6 +219,11 @@ Page({
     },
 
     goToChat(e) {
+        const token = wx.getStorageSync("token");  // 获取 token
+        if (!token) {
+            wx.showToast({ title: "请先登录", icon: "none" });
+            return;
+        }
         const targetId = e.currentTarget.dataset.targetid;
         const targetName = e.currentTarget.dataset.username;
         wx.navigateTo({

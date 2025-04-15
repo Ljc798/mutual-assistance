@@ -13,8 +13,9 @@ App<IAppOption>({
         const user = wx.getStorageSync("user") || null;
 
         if (!token) {
-            console.warn("⚠️ 未找到 token，跳转注册页...");
-            wx.redirectTo({ url: "/pages/register/register" });
+            console.warn("⚠️ 未找到 token，本次启动为游客身份");
+            this.globalData.userInfo = null;
+            this.globalData.token = null;
             return;
         }
 
@@ -51,8 +52,8 @@ App<IAppOption>({
                         this.wsInitialized = true;
                     }
                 } else {
-                    console.warn("⚠️ token 无效或用户不存在，清除数据并跳转注册页");
-                    this.clearUserData();
+                    console.warn("⚠️ token 无效或用户不存在，清除本地用户信息");
+                    this.clearUserData(false); // 不跳转
                 }
             },
             fail: (err) => {
@@ -62,12 +63,15 @@ App<IAppOption>({
         });
     },
 
-    clearUserData() {
+    clearUserData(shouldRedirect = true) {
         wx.removeStorageSync("user");
         wx.removeStorageSync("token");
         this.globalData.userInfo = null;
         this.globalData.token = null;
-        wx.redirectTo({ url: "/pages/register/register" });
+    
+        if (shouldRedirect) {
+            wx.redirectTo({ url: "/pages/register/register" });
+        }
     },
 
     setGlobalUserInfo(user: any, token: string) {

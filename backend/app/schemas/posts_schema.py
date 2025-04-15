@@ -31,8 +31,11 @@ class PostOut(BaseModel):
     likes_count: int
     comments_count: int
     created_time: datetime
+    school_id: Optional[int] = None
+    category: Optional[str] = None
     images: List[PostImageOut] = []
     comments: List[CommentOut] = []
+    is_pinned: Optional[bool] = False
 
     class Config:
         from_attributes = True

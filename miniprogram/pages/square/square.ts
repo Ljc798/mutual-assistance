@@ -29,7 +29,6 @@ Page({
 
         if (!userInfo?.id) {
             wx.showToast({ title: "请先登录", icon: "none" });
-            wx.redirectTo({ url: "/pages/register/register" });
             return;
         }
 
@@ -46,7 +45,6 @@ Page({
 
         if (!userInfo?.id) {
             wx.showToast({ title: "请先登录", icon: "none" });
-            wx.redirectTo({ url: "/pages/register/register" });
             return;
         }
 
@@ -148,39 +146,38 @@ Page({
     // ✅ 获取帖子数据
     fetchPosts(isLoadMore = false, callback?: Function) {
         const app = getApp();
-        const user_id = app.globalData.userInfo?.id || null;
-        const token = wx.getStorageSync("token");
-
-        if (!user_id) {
-            wx.showToast({ title: "请先登录", icon: "none" });
-            return;
-        }
-
+        const user_id = app.globalData.userInfo?.id; // ❌ 不传 null
+    
         const { currentPage, pageSize, selectedCategory } = this.data;
-
+    
+        const requestData: any = {
+            category: selectedCategory,
+            page: currentPage,
+            pageSize
+        };
+    
+        // ✅ 仅在登录状态下附带 user_id
+        if (user_id) {
+            requestData.user_id = user_id;
+        }
+    
         wx.request({
             url: "https://mutualcampus.top/api/square/posts",
             method: "GET",
-            header: { Authorization: `Bearer ${token}` },
-            data: {
-                category: selectedCategory,
-                user_id,
-                page: currentPage,
-                pageSize
-            },
+            data: requestData,
             success: (res: any) => {
                 if (res.data.success) {
                     let newPosts = res.data.posts || [];
                     const isVip = (vipTime) =>
                         vipTime && new Date(vipTime).getTime() > Date.now();
-
+    
                     newPosts = newPosts.map(post => ({
                         ...post,
                         isLiked: post.isLiked || false,
                         isVip: isVip(post.vip_expire_time),
                         created_time: this.formatTime(post.created_time)
                     }));
-
+    
                     this.setData({
                         posts: isLoadMore ? [...this.data.posts, ...newPosts] : newPosts,
                         hasMore: newPosts.length === pageSize
@@ -268,6 +265,11 @@ Page({
 
     // 打开发布界面
     openPostModal() {
+        const token = wx.getStorageSync("token");  // 获取 token
+        if (!token) {
+            wx.showToast({ title: "请先登录", icon: "none" });
+            return;
+        }
         this.setData({ isModalOpen: true });
     },
 

@@ -1,5 +1,14 @@
-<view class="user-container">
-    <notify-banner/>
+<view wx:if="{{!userInfo}}">
+    <view class="unauth-wrapper">
+        <image src="" class="avatar-img" mode="aspectFill" />
+        <view class="unauth-text">您尚未登录</view>
+        <button class="login-btn" bindtap="goToLoginPage">立即登录</button>
+    </view>
+</view>
+
+<!-- 🟢 已登录时才展示真实内容 -->
+<view wx:else class="user-container">
+    <notify-banner />
     <view class="header">
         <view class="app-name">我的信息</view>
     </view>
@@ -85,5 +94,5 @@
     </view>
 
     <!-- 底部导航栏 -->
-    <bottom-nav></bottom-nav>
 </view>
+    <bottom-nav></bottom-nav>

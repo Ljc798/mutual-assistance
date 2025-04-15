@@ -16,28 +16,34 @@ router.get("/posts", async (req, res) => {
     const offset = (parseInt(page) - 1) * parseInt(pageSize);
     const limit = parseInt(pageSize);
 
-    const values = [user_id]; // 用于 isLiked 子查询
-    let whereClause = "";
+    const hasUserId = !!user_id;
+    const values = [];
 
+    let whereClause = "";
     if (category && category !== "全部") {
         whereClause = "WHERE s.category = ?";
         values.push(category);
     }
 
-    values.push(offset, limit); // 注意顺序调整：LIMIT ?, ?
+    values.push(offset, limit);
+
+    const likeSubquery = hasUserId
+        ? `(SELECT COUNT(*) FROM square_likes WHERE square_id = s.id AND user_id = ${db.escape(user_id)})`
+        : `0`;
 
     const query = `
         SELECT s.*, 
                u.username, 
                u.avatar_url, 
                u.vip_expire_time,
-               (SELECT COUNT(*) FROM square_likes WHERE square_id = s.id AND user_id = ?) AS isLiked
+               ${likeSubquery} AS isLiked
         FROM square s
         LEFT JOIN users u ON s.user_id = u.id
         ${whereClause}
         ORDER BY s.is_pinned DESC, s.created_time DESC
         LIMIT ?, ?
     `;
+
     try {
         const [posts] = await db.query(query, values);
 

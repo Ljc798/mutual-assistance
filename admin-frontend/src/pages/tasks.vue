@@ -41,7 +41,7 @@ interface Task {
     category: string
     employer_id: string
     employee_id: string
-    status: TaskStatus  // 👈 修改这里！
+    status: TaskStatus
     DDL: string
     offer: string
     detail: string
@@ -50,7 +50,7 @@ interface Task {
     takeaway_tel: string
 }
 
-const tasks = ref<Task[]>([])  // 👈 指定类型
+const tasks = ref<Task[]>([])
 
 const selectedTask = ref({
     id: '',

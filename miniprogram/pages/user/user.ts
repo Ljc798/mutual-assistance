@@ -36,7 +36,6 @@ Page({
         const token = wx.getStorageSync("token");
         if (!token) {
             wx.showToast({ title: "未登录，请重新登录", icon: "none" });
-            wx.redirectTo({ url: "/pages/register/register" });
             return;
         }
 
@@ -163,5 +162,11 @@ Page({
     // 👇 绑定这个到“意见反馈”按钮
     onFeedbackClick() {
         this.openFeedbackPopup();
+    },
+
+    goToLoginPage() {
+        wx.navigateTo({
+            url: '/pages/register/register',
+        });
     },
 });
