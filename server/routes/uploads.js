@@ -104,37 +104,32 @@ router.post("/upload-image", upload.single("image"), async (req, res) => {
 
 // COS 审核结果回调接口
 router.post("/image-review", express.json(), async (req, res) => {
-    console.log("✅ 收到回调内容:", JSON.stringify(req.body));
-    // ✅ 第一步：立即回复腾讯云，避免超时
-    res.status(200).send("OK");
+    res.status(200).send("OK"); // 必须尽快响应 200
 
     try {
-        console.log("✅ 开始:");
-        const job = req.body?.JobsDetail;
-
-        if (!job || typeof job !== "object" || !job.Object || !job.Result || !job.Result.Label) {
-            console.warn("⚠️ 格式错误或字段缺失:", req.body);
+        const {
+            data
+        } = req.body;
+        if (!data || !data.url || data.forbidden_status === undefined) {
+            console.warn("⚠️ 回调格式缺失:", req.body);
             return;
         }
 
-        const objectKey = job.Object;
-        const label = job.Result.Label;
+        const objectKey = data.url.split(".myqcloud.com/")[1]; // 提取 key
+        const auditStatus = data.forbidden_status === 0 ? "pass" : "fail";
 
-        const auditStatus = label === "Normal" ? "pass" : "fail";
-
-        // ✅ 异步更新数据库
         const [result] = await db.query(
             `UPDATE square_images SET audit_status = ? WHERE image_url LIKE ?`,
             [auditStatus, `%${objectKey}`]
         );
 
-        console.log("✅ 审核成功：", {
+        console.log("✅ 审核回调成功：", {
             objectKey,
             auditStatus,
             affectedRows: result.affectedRows
         });
     } catch (err) {
-        console.error("❌ 审核处理失败:", err);
+        console.error("❌ 审核处理异常:", err);
     }
 });
 

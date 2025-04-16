@@ -305,17 +305,34 @@ Page({
 
     // ✅ 选择图片（但不立即上传）
     chooseImage() {
-        this.setData({
-            tempImageList: this.data.tempImageList || []
-        });
-
+        const remain = 9 - (this.data.tempImageList?.length || 0);
+        if (remain <= 0) return;
+    
         wx.chooseMedia({
-            count: 9 - this.data.tempImageList.length,
+            count: remain,
             mediaType: ["image"],
             sourceType: ["album", "camera"],
-            success: (res) => {
-                const tempFilePaths = res.tempFiles.map(file => file.tempFilePath);
-                this.setData({ tempImageList: [...this.data.tempImageList, ...tempFilePaths] });
+            success: async (res) => {
+                const compressedList: string[] = [];
+    
+                for (const file of res.tempFiles) {
+                    const originalPath = file.tempFilePath;
+    
+                    const compressedPath = await new Promise<string>((resolve) => {
+                        wx.compressImage({
+                            src: originalPath,
+                            quality: 30,
+                            success: (res) => resolve(res.tempFilePath),
+                            fail: () => resolve(originalPath) // 压缩失败就用原图
+                        });
+                    });
+    
+                    compressedList.push(compressedPath);
+                }
+    
+                this.setData({
+                    tempImageList: [...(this.data.tempImageList || []), ...compressedList]
+                });
             }
         });
     },
