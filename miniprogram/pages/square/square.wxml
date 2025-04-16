@@ -43,12 +43,11 @@
 
                 <block wx:if="{{item.images.length > 0}}">
                     <scroll-view class="image-scroll" scroll-x="true">
-                        <block wx:for="{{item.images}}" wx:key="index">
+                        <block wx:for="{{item.images}}" wx:for-item="image" wx:key="index">
                             <block wx:if="{{image.status === 'pass'}}">
                                 <image src="{{image.url}}" class="post-image" mode="aspectFill" />
                             </block>
                             <block wx:else>
-                                <!-- 占位样式，可以是文字、灰色盒子、图片等 -->
                                 <view class="post-image audit-placeholder">
                                     图片审核中
                                 </view>

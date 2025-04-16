@@ -303,11 +303,20 @@ router.get("/detail", async (req, res) => {
         post.isLiked = Boolean(post.isLiked);
 
         const [images] = await db.query(
-            "SELECT image_url FROM square_images WHERE square_id = ?",
+            "SELECT image_url, audit_status FROM square_images WHERE square_id = ?",
             [post_id]
-        );
+          );
+          
+          post.images = images.map(img => ({
+            url: img.image_url,
+            status: img.audit_status || 'pending'
+          }));
+          
+          // ✅ 可选：供图片预览使用的纯 URL 列表（只预览通过审核的）
+          post.imageUrls = post.images
+            .filter(img => img.status === 'pass')
+            .map(img => img.url);
 
-        post.images = images.map(img => img.image_url);
         res.json({
             success: true,
             post

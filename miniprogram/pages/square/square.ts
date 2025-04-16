@@ -191,7 +191,7 @@ Page({
                     });
 
                     console.log(newPosts);
-                    
+
 
                     this.setData({
                         posts: isLoadMore ? [...this.data.posts, ...newPosts] : newPosts,
@@ -307,17 +307,17 @@ Page({
     chooseImage() {
         const remain = 9 - (this.data.tempImageList?.length || 0);
         if (remain <= 0) return;
-    
+
         wx.chooseMedia({
             count: remain,
             mediaType: ["image"],
             sourceType: ["album", "camera"],
             success: async (res) => {
                 const compressedList: string[] = [];
-    
+
                 for (const file of res.tempFiles) {
                     const originalPath = file.tempFilePath;
-    
+
                     const compressedPath = await new Promise<string>((resolve) => {
                         wx.compressImage({
                             src: originalPath,
@@ -326,10 +326,10 @@ Page({
                             fail: () => resolve(originalPath) // 压缩失败就用原图
                         });
                     });
-    
+
                     compressedList.push(compressedPath);
                 }
-    
+
                 this.setData({
                     tempImageList: [...(this.data.tempImageList || []), ...compressedList]
                 });
@@ -445,7 +445,9 @@ Page({
                         success: () => {
                             wx.hideLoading();
                             wx.showToast({ title: "发布成功", icon: "success" });
-                            this.fetchPosts(false);
+                            setTimeout(() => {
+                                this.fetchPosts(false);
+                              }, 1000);
                             this.resetPostForm();
                         },
                         fail: (err) => {

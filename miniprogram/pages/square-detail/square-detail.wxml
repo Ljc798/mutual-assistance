@@ -1,5 +1,5 @@
 <view class="post-detail">
-    <notify-banner/>
+    <notify-banner />
     <!-- 顶部导航栏 -->
     <view class="post-header">
         <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="goBack" />
@@ -17,34 +17,74 @@
             <block wx:if="{{post.images.length > 0}}">
                 <!-- 单张图片 -->
                 <view class="post-images" wx:if="{{post.images.length === 1}}">
-                    <image src="{{post.images[0]}}" class="single-image" mode="widthFix" bindtap="previewImage" data-current="{{post.images[0]}}" data-urls="{{post.images}}" />
+                    <block wx:if="{{post.images[0].status === 'pass'}}">
+                        <image src="{{post.images[0].url}}" class="single-image" mode="widthFix" bindtap="previewImage" data-current="{{post.images[0].url}}" data-urls="{{post.imageUrls}}" />
+                    </block>
+                    <block wx:elif="{{post.images[0].status === 'fail'}}">
+                        <view class="post-image failed-placeholder">图片违规</view>
+                    </block>
+                    <block wx:else>
+                        <view class="post-image audit-placeholder">图片审核中</view>
+                    </block>
                 </view>
 
                 <!-- 2 张图片（两张并排） -->
                 <view class="image-grid two-grid" wx:elif="{{post.images.length === 2}}">
                     <block wx:for="{{post.images}}" wx:key="index">
-                        <image src="{{item}}" class="grid-image" bindtap="previewImage" data-current="{{item}}" data-urls="{{post.images}}" />
+                        <block wx:if="{{item.status === 'pass'}}">
+                            <image src="{{item.url}}" class="grid-image" bindtap="previewImage" data-current="{{item.url}}"  data-urls="{{post.imageUrls}}" />
+                        </block>
+                        <block wx:elif="{{item.status === 'fail'}}">
+                            <view class="grid-image failed-placeholder">图片违规</view>
+                        </block>
+                        <block wx:else>
+                            <view class="grid-image audit-placeholder">审核中</view>
+                        </block>
                     </block>
                 </view>
 
                 <!-- 3 张图片（3 宫格） -->
                 <view class="image-grid three-grid" wx:elif="{{post.images.length === 3}}">
                     <block wx:for="{{post.images}}" wx:key="index">
-                        <image src="{{item}}" class="grid-image" bindtap="previewImage" data-current="{{item}}" data-urls="{{post.images}}" />
+                        <block wx:if="{{item.status === 'pass'}}">
+                            <image src="{{item.url}}" class="grid-image" bindtap="previewImage" data-current="{{item.url}}"  data-urls="{{post.imageUrls}}" />
+                        </block>
+                        <block wx:elif="{{item.status === 'fail'}}">
+                            <view class="grid-image failed-placeholder">图片违规</view>
+                        </block>
+                        <block wx:else>
+                            <view class="grid-image audit-placeholder">审核中</view>
+                        </block>
                     </block>
                 </view>
 
                 <!-- 4 张图片（特殊 2x2 处理） -->
                 <view class="image-grid four-grid" wx:elif="{{post.images.length === 4}}">
                     <block wx:for="{{post.images}}" wx:key="index">
-                        <image src="{{item}}" class="grid-image" bindtap="previewImage" data-current="{{item}}" data-urls="{{post.images}}" />
+                        <block wx:if="{{item.status === 'pass'}}">
+                            <image src="{{item.url}}" class="grid-image" bindtap="previewImage" data-current="{{item.url}}"  data-urls="{{post.imageUrls}}" />
+                        </block>
+                        <block wx:elif="{{item.status === 'fail'}}">
+                            <view class="grid-image failed-placeholder">图片违规</view>
+                        </block>
+                        <block wx:else>
+                            <view class="grid-image audit-placeholder">审核中</view>
+                        </block>
                     </block>
                 </view>
 
                 <!-- 5-9 张图片（九宫格） -->
                 <view class="image-grid nine-grid" wx:elif="{{post.images.length >= 5}}">
                     <block wx:for="{{post.images}}" wx:key="index">
-                        <image src="{{item}}" class="grid-image" bindtap="previewImage" data-current="{{item}}" data-urls="{{post.images}}" />
+                        <block wx:if="{{item.status === 'pass'}}">
+                            <image src="{{item.url}}" class="grid-image" bindtap="previewImage" data-current="{{item.url}}"  data-urls="{{post.imageUrls}}" />
+                        </block>
+                        <block wx:elif="{{item.status === 'fail'}}">
+                            <view class="grid-image failed-placeholder">图片违规</view>
+                        </block>
+                        <block wx:else>
+                            <view class="grid-image audit-placeholder">审核中</view>
+                        </block>
                     </block>
                 </view>
             </block>
