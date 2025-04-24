@@ -6,10 +6,11 @@ from app.core.database import get_db
 from app.models.withdrawals_model import Withdrawal, StatusEnum
 from app.schemas.withdrawals_schema import WithdrawalOut
 from datetime import datetime
+from app.core.dependencies import verify_token
 router = APIRouter()
 
 @router.get("/withdrawals", response_model=List[WithdrawalOut])
-def get_withdrawals(db: Session = Depends(get_db)):
+def get_withdrawals(db: Session = Depends(get_db), token_data = Depends(verify_token)):
     try:
         records = db.query(Withdrawal).all()
         return records
@@ -22,7 +23,8 @@ def get_withdrawals(db: Session = Depends(get_db)):
 def update_withdrawal_status(
     withdrawal_id: int,
     new_status: StatusEnum,  # 直接用枚举值：'approved'、'rejected'等
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    token_data = Depends(verify_token)
 ):
     withdrawal = db.query(Withdrawal).filter(Withdrawal.id == withdrawal_id).first()
     if not withdrawal:

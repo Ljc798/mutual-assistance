@@ -9,10 +9,15 @@ class FeedbackBase(BaseModel):
 class FeedbackCreate(FeedbackBase):
     pass
 
-class FeedbackOut(FeedbackBase):
+class FeedbackOut(BaseModel):
     id: int
+    user_id: int
+    title: str
+    content: str
     created_at: datetime
     reward_points: int
+    is_resolved: bool  # 加上它！！！
+
 
 class ResolvePayload(BaseModel):
     reward_points: int

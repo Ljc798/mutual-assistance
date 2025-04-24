@@ -32,8 +32,8 @@
 
 <script setup lang="ts">
 import { ref, h, onMounted } from 'vue'
-import axios from 'axios'
 import { NButton, useMessage, NModal, NCard, NInput, NTag } from 'naive-ui'
+import request from '@/utils/request'
 
 const message = useMessage()
 
@@ -43,7 +43,7 @@ const currentFeedback = ref<any>(null)
 const editablePoints = ref(0)
 const fetchFeedbacks = async () => {
   try {
-    const res = await axios.get('http://localhost:8000/feedbacks')
+    const res = await request.get('feedbacks')
     feedbackList.value = res.data
   } catch (err) {
     console.error('反馈获取失败', err)
@@ -53,7 +53,7 @@ const fetchFeedbacks = async () => {
 
 const openFeedbackDetail = async (row: any) => {
   try {
-    const res = await axios.get(`http://localhost:8000/feedbacks/${row.id}`)
+    const res = await request.get(`feedbacks/${row.id}`)
     currentFeedback.value = res.data
     editablePoints.value = res.data.reward_points || 0
     showModal.value = true
@@ -65,7 +65,7 @@ const openFeedbackDetail = async (row: any) => {
 
 const resolveFeedback = async () => {
   try {
-    await axios.post(`http://localhost:8000/feedbacks/${currentFeedback.value.id}/resolve`, {
+    await request.post(`feedbacks/${currentFeedback.value.id}/resolve`, {
       reward_points: editablePoints.value
     })
     message.success('用户已奖励并通知')

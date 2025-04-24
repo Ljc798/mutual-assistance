@@ -20,7 +20,6 @@
 
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
-import axios from 'axios'
 import {
     NPageHeader,
     NDataTable,
@@ -34,6 +33,7 @@ import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
 import { CheckmarkCircleOutline, NotificationsOutline } from '@vicons/ionicons5'
 import { useMessage } from 'naive-ui'
+import request from '@/utils/request'
 
 dayjs.extend(utc)
 dayjs.extend(timezone)
@@ -65,7 +65,7 @@ function formatTime(time?: string | null): string {
 
 async function fetchWithdrawals() {
     try {
-        const res = await axios.get('http://localhost:8000/withdrawals')
+        const res = await request.get('withdrawals')
         withdrawals.value = res.data
     } catch (err) {
         console.error('获取转账数据失败', err)
@@ -74,7 +74,7 @@ async function fetchWithdrawals() {
 
 async function handleTransferDone(id: number) {
     try {
-        await axios.put(`http://localhost:8000/withdrawals/${id}/status`, null, {
+        await request.put(`withdrawals/${id}/status`, null, {
             params: { new_status: 'approved' }
         })
 
@@ -102,7 +102,7 @@ async function handleSendCustomNotification() {
     if (!currentRow.value) return
 
     try {
-        await axios.post('http://localhost:8000/notifications', {
+        await request.post('/notifications', {
             user_id: currentRow.value.user_id,
             type: 'system',
             title: notificationTitle.value,

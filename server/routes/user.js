@@ -91,7 +91,7 @@ router.post("/phone-login", async (req, res) => {
                 wxid: uuidv4(),
                 phone_number: phoneNumber,
                 username: "微信用户" + phoneNumber.slice(-4),
-                avatar_url: "https://default-avatar.com/avatar.png",
+                avatar_url: "https://mutual-campus-1348081197.cos.ap-nanjing.myqcloud.com/avatar/default.png",
                 free_counts: 5,
                 points: 10,
                 created_time: now,

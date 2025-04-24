@@ -74,8 +74,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, h, resolveComponent } from 'vue'
-import axios from 'axios'
 import { NPageHeader, NInput, NButton, NDataTable, NModal, NImage, NImageGroup } from 'naive-ui'
+import request from '@/utils/request'
 
 interface Comment {
     id: number
@@ -180,7 +180,7 @@ const pagination = { pageSize: 10 }
 
 async function fetchPosts() {
     try {
-        const res = await axios.get('http://localhost:8000/posts')
+        const res = await request.get('posts')
         posts.value = res.data
     } catch (err) {
         console.error('获取帖子失败', err)
@@ -191,7 +191,7 @@ function handleSearch() { }
 
 async function handleShowPostDetail(postId: number) {
     try {
-        const res = await axios.get(`http://localhost:8000/posts/${postId}`)
+        const res = await request.get(`posts/${postId}`)
         selectedPost.value = res.data
         selectedPost.value.created_time = formatDate(res.data.created_time)
         showModal.value = true
@@ -204,7 +204,7 @@ async function handleDeleteComment(commentId: number) {
     if (!window.confirm('你确定要删除这条评论吗？')) return
 
     try {
-        await axios.delete(`http://localhost:8000/comments/${commentId}`)
+        await request.delete(`comments/${commentId}`)
         selectedPost.value.comments = selectedPost.value.comments?.filter(c => c.id !== commentId)
         selectedPost.value.comments_count = (selectedPost.value.comments_count || 1) - 1
     } catch (err) {
@@ -215,7 +215,7 @@ async function handleDeleteComment(commentId: number) {
 async function handleDeletePost(postId: number) {
     if (!window.confirm('确定删除？包括图片、评论、点赞、举报都将永久清除')) return
     try {
-        await axios.delete(`http://localhost:8000/posts/${postId}`)
+        await request.delete(`posts/${postId}`)
         posts.value = posts.value.filter(post => post.id !== postId)
     } catch (err) {
         console.error('删除帖子失败', err)
@@ -224,7 +224,7 @@ async function handleDeletePost(postId: number) {
 
 async function togglePin() {
     try {
-        const res = await axios.post(`http://localhost:8000/posts/${selectedPost.value.id}/pin`)
+        const res = await request.post(`posts/${selectedPost.value.id}/pin`)
         selectedPost.value.is_pinned = res.data.is_pinned
     } catch (err) {
         console.error('置顶失败', err)

@@ -8,11 +8,12 @@ from app.schemas.feedback_schema import FeedbackOut, FeedbackCreate
 from app.models.notifications_model import Notification
 from app.models.users_model import User  # 假设你有这个
 from app.schemas.feedback_schema import ResolvePayload
+from app.core.dependencies import verify_token
 router = APIRouter()
 
 # 获取所有反馈
 @router.get("/feedbacks", response_model=List[FeedbackOut])
-def get_feedbacks(db: Session = Depends(get_db)):
+def get_feedbacks(db: Session = Depends(get_db), token_data = Depends(verify_token)):
     return db.query(Feedback).order_by(Feedback.created_at.desc()).all()
 
 # 获取单个反馈
@@ -24,7 +25,7 @@ def get_feedback_detail(feedback_id: int, db: Session = Depends(get_db)):
     return feedback
 
 @router.post("/feedbacks/{feedback_id}/resolve")
-def resolve_feedback(feedback_id: int, payload: ResolvePayload, db: Session = Depends(get_db)):
+def resolve_feedback(feedback_id: int, payload: ResolvePayload, db: Session = Depends(get_db), token_data = Depends(verify_token)):
     feedback = db.query(Feedback).filter(Feedback.id == feedback_id).first()
     if feedback.is_resolved:
         raise HTTPException(status_code=400, detail="该反馈已处理过，别想重复奖励")

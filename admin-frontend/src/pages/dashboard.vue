@@ -40,79 +40,146 @@
 </template>
 
 <script setup lang="ts">
+interface UserGrowthItem {
+  date: string
+  count: number
+}
+
+interface TaskStatsItem {
+  date: string
+  published: number
+  completed: number
+}
+
+interface UserStructureItem {
+  role: string
+  count: number
+}
+
+interface PostCategoryItem {
+  category: string
+  count: number
+}
+
 import { ref, onMounted, computed } from 'vue'
 import { NGrid, NGi, NCard, NStatistic } from 'naive-ui'
 import * as echarts from 'echarts'
+import request from '@/utils/request'
 
 const userChartRef = ref<HTMLElement | null>(null)
 const taskChartRef = ref<HTMLElement | null>(null)
 const userPieRef = ref<HTMLElement | null>(null)
 const postChartRef = ref<HTMLElement | null>(null)
 
-const coreStats = [
-  { label: '今日新增用户', value: 38 },
-  { label: '今日发布任务', value: 12 },
-  { label: '未完成任务数', value: 34 },
-  { label: '今日发布帖子数', value: 134 },
-  { label: '总帖子数', value: 1234 },
-  { label: '今日收入（元）', value: 53 }
-]
+const coreStats = ref([
+  { label: '今日新增用户', value: 0 },
+  { label: '今日发布任务', value: 0 },
+  { label: '未完成任务数', value: 0 },
+  { label: '今日发布帖子数', value: 0 },
+  { label: '总帖子数', value: 0 },
+  { label: '今日收入（元）', value: 0 }
+])
 
 // ✅ 响应式列数：小屏幕1列，中屏2列，大屏6列
 const gridColsStat = computed(() => window.innerWidth < 600 ? 1 : (window.innerWidth < 960 ? 2 : 6))
 const gridColsChart = computed(() => window.innerWidth < 600 ? 1 : 2)
 
-onMounted(() => {
-  const charts = [
-    { ref: userChartRef, option: {
-      xAxis: { type: 'category', data: ['一', '二', '三', '四', '五', '六', '日'] },
-      yAxis: { type: 'value' },
-      series: [{ data: [10, 12, 18, 25, 30, 45, 60], type: 'line', smooth: true }],
-      tooltip: { trigger: 'axis' }
-    }},
-    { ref: taskChartRef, option: {
-      legend: {},
-      tooltip: {},
-      xAxis: { type: 'category', data: ['一', '二', '三', '四', '五', '六', '日'] },
-      yAxis: {},
-      series: [
-        { name: '发布任务', type: 'bar', data: [5, 8, 12, 15, 9, 6, 4] },
-        { name: '完成任务', type: 'bar', data: [3, 7, 9, 12, 8, 5, 3] }
-      ]
-    }},
-    { ref: userPieRef, option: {
-      title: {
-        text: '总用户数：1258',
-        left: 'center',
-        top: '5%',
-        textStyle: { fontSize: 14, fontWeight: 'normal' }
-      },
-      tooltip: { trigger: 'item' },
-      legend: { top: 'bottom' },
-      series: [{
-        name: '用户构成',
-        type: 'pie',
-        radius: ['40%', '70%'],
-        data: [
-          { value: 1120, name: '普通用户' },
-          { value: 138, name: 'VIP用户' }
-        ]
-      }]
-    }},
-    { ref: postChartRef, option: {
-      tooltip: {},
-      xAxis: { type: 'category', data: ['提问', '分享', '求助', '资源'] },
-      yAxis: { type: 'value' },
-      series: [{ data: [30, 24, 16, 12], type: 'bar', name: '帖子数' }]
-    }}
-  ]
-  charts.forEach(({ ref, option }) => {
-    if (ref.value) {
-      const chart = echarts.init(ref.value)
-      chart.setOption(option)
-      window.addEventListener('resize', () => chart.resize())
-    }
+const initUserGrowthChart = async () => {
+  const res = await request.get<UserGrowthItem[]>('/dashboard/user-growth')
+  const data = res.data
+
+  const chart = echarts.init(userChartRef.value!)
+  chart.setOption({
+    xAxis: { type: 'category', data: data.map(item => item.date) },
+    yAxis: { type: 'value' },
+    series: [{
+      data: data.map(item => item.count),
+      type: 'line',
+      smooth: true,
+      name: '新增用户'
+    }],
+    tooltip: { trigger: 'axis' }
   })
+}
+
+const initTaskChart = async () => {
+  const res = await request.get<TaskStatsItem[]>('/dashboard/task-stats')
+  const data = res.data
+
+  const chart = echarts.init(taskChartRef.value!)
+  chart.setOption({
+    xAxis: { type: 'category', data: data.map(item => item.date) },
+    yAxis: { type: 'value' },
+    series: [
+      {
+        name: '发布',
+        data: data.map(item => item.published),
+        type: 'bar'
+      },
+      {
+        name: '完成',
+        data: data.map(item => item.completed),
+        type: 'bar'
+      }
+    ],
+    tooltip: { trigger: 'axis' },
+    legend: { data: ['发布', '完成'] }
+  })
+}
+
+const initUserPieChart = async () => {
+  const res = await request.get<UserStructureItem[]>('/dashboard/user-structure')
+  const data = res.data
+
+  const chart = echarts.init(userPieRef.value!)
+  chart.setOption({
+    tooltip: { trigger: 'item' },
+    legend: { top: 'bottom' },
+    series: [{
+      type: 'pie',
+      radius: '60%',
+      data: data.map(item => ({ name: item.role, value: item.count }))
+    }]
+  })
+}
+
+const initPostChart = async () => {
+  const res = await request.get<PostCategoryItem[]>('/dashboard/post-category')
+  const data = res.data
+
+  const chart = echarts.init(postChartRef.value!)
+  chart.setOption({
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: 'category', data: data.map(i => i.category) },
+    yAxis: { type: 'value' },
+    series: [{
+      data: data.map(i => i.count),
+      type: 'bar'
+    }]
+  })
+}
+
+onMounted(async () => {
+  try {
+    const res = await request.get('/dashboard/summary')
+    const data = res.data
+
+    coreStats.value = [
+      { label: '今日新增用户', value: data.new_users_today },
+      { label: '今日发布任务', value: data.new_tasks_today },
+      { label: '未完成任务数', value: data.unfinished_tasks },
+      { label: '今日发布帖子数', value: data.new_posts_today },
+      { label: '总帖子数', value: data.total_posts },
+      { label: '今日收入（元）', value: data.income_today }
+    ]
+  } catch (e) {
+    console.error('获取 dashboard 数据失败:', e)
+  }
+
+  await initUserGrowthChart()
+  await initTaskChart()
+  await initUserPieChart()
+  await initPostChart()
 })
 </script>
 
@@ -131,6 +198,7 @@ onMounted(() => {
   .dashboard-wrapper {
     padding: 12px;
   }
+
   .chart-container {
     height: 250px;
   }

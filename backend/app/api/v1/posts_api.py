@@ -8,11 +8,12 @@ from typing import List
 from app.models.posts_model import SquareComment
 from sqlalchemy import text
 from sqlalchemy import desc
+from app.core.dependencies import verify_token
 
 router = APIRouter()
 
 @router.get("/posts", response_model=List[PostOut])
-def get_post_list(db: Session = Depends(get_db)):
+def get_post_list(db: Session = Depends(get_db), token_data = Depends(verify_token)):
     posts = db.query(Square).options(
         joinedload(Square.images),
         joinedload(Square.comments)
@@ -21,7 +22,7 @@ def get_post_list(db: Session = Depends(get_db)):
 
 
 @router.get("/posts/{post_id}", response_model=PostOut)
-def get_post_detail(post_id: int, db: Session = Depends(get_db)):
+def get_post_detail(post_id: int, db: Session = Depends(get_db), token_data = Depends(verify_token)):
     post = db.query(Square).options(
         joinedload(Square.images),
         joinedload(Square.comments)
@@ -31,7 +32,7 @@ def get_post_detail(post_id: int, db: Session = Depends(get_db)):
     return post
 
 @router.delete("/comments/{comment_id}")
-def delete_comment(comment_id: int, db: Session = Depends(get_db)):
+def delete_comment(comment_id: int, db: Session = Depends(get_db), token_data = Depends(verify_token)):
     comment = db.query(SquareComment).filter(SquareComment.id == comment_id).first()
     if not comment:
         raise HTTPException(status_code=404, detail="评论不存在")
@@ -41,7 +42,7 @@ def delete_comment(comment_id: int, db: Session = Depends(get_db)):
 
 
 @router.delete("/posts/{post_id}")
-def delete_post(post_id: int, db: Session = Depends(get_db)):
+def delete_post(post_id: int, db: Session = Depends(get_db), token_data = Depends(verify_token)):
     post = db.query(Square).filter(Square.id == post_id).first()
     if not post:
         raise HTTPException(status_code=404, detail="帖子不存在")
@@ -73,7 +74,7 @@ def delete_post(post_id: int, db: Session = Depends(get_db)):
     return {"message": "帖子和相关数据已成功删除"}
 
 @router.post("/posts/{post_id}/pin")
-def pin_post(post_id: int, db: Session = Depends(get_db)):
+def pin_post(post_id: int, db: Session = Depends(get_db), token_data = Depends(verify_token)):
     post = db.query(Square).filter(Square.id == post_id).first()
     if not post:
         raise HTTPException(status_code=404, detail="帖子不存在")

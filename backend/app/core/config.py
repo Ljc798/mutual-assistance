@@ -1,4 +1,6 @@
 from pydantic_settings import BaseSettings
+from dotenv import load_dotenv
+load_dotenv()
 
 class Settings(BaseSettings):
     SECRET_KEY: str
@@ -7,6 +9,8 @@ class Settings(BaseSettings):
     DB_PASSWORD: str
     DB_HOST: str
     DB_NAME: str
+    admin_username: str
+    admin_password: str
 
     class Config:
         env_file = ".env"

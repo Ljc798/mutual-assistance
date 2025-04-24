@@ -32,8 +32,8 @@
 
 <script setup lang="ts">
 import { ref, h, onMounted } from 'vue'
-import axios from 'axios'
 import { NButton, useMessage, NModal, NCard, NInput, NPopconfirm } from 'naive-ui'
+import request from '@/utils/request'
 
 const message = useMessage()
 
@@ -43,7 +43,7 @@ const reportList = ref([])
 
 const fetchReports = async () => {
     try {
-        const res = await axios.get('http://localhost:8000/reports')
+        const res = await request.get('reports')
         reportList.value = res.data
     } catch (err) {
         console.error('举报数据获取失败', err)
@@ -52,7 +52,7 @@ const fetchReports = async () => {
 
 const openPostDetail = async (row: any) => {
     try {
-        const res = await axios.get(`http://localhost:8000/posts/${row.post.id}`)
+        const res = await request.get(`posts/${row.post.id}`)
         currentPost.value = res.data
         showModal.value = true
     } catch (err) {
@@ -63,7 +63,7 @@ const openPostDetail = async (row: any) => {
 
 const deletePost = async (postId: number) => {
     try {
-        await axios.delete(`http://localhost:8000/posts/${postId}`)
+        await request.delete(`posts/${postId}`)
         message.success('帖子已彻底删除')
         fetchReports()
     } catch (err) {
@@ -74,7 +74,7 @@ const deletePost = async (postId: number) => {
 
 const handleAction = async (id: number, action: 'approve' | 'reject') => {
     try {
-        await axios.put(`http://localhost:8000/report/${id}`, { action })
+        await request.put(`report/${id}`, { action })
         message.success(`已${action === 'approve' ? '通过' : '忽略'}举报`)
         fetchReports()
     } catch (err) {

@@ -20,20 +20,24 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
+import request from '@/utils/request' // 你自己的封装 axios 文件路径，确保这行没写错
 
 const username = ref('')
 const password = ref('')
 const router = useRouter()
 const message = useMessage()
-const envUsername = import.meta.env.VITE_ADMIN_USERNAME
-const envPassword = import.meta.env.VITE_ADMIN_PASSWORD
 
-function login() {
-  if (username.value === envUsername && password.value === envPassword) {
-    localStorage.setItem('token', 'mock-token')
+async function login() {
+  try {
+    const res = await request.post('/login', {
+      username: username.value,
+      password: password.value
+    })
+
+    localStorage.setItem('token', res.data.token)
     message.success('登录成功')
     router.push('/dashboard')
-  } else {
+  } catch (err) {
     message.error('用户名或密码错误')
   }
 }

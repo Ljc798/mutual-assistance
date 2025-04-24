@@ -29,8 +29,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, h } from 'vue'
-import axios from 'axios'
 import { NPageHeader, NInput, NButton, NDataTable, NModal } from 'naive-ui'
+import request from '@/utils/request'
 
 const searchKeyword = ref('')
 const showDialog = ref(false)  // 控制弹窗显示
@@ -133,7 +133,7 @@ const pagination = {
 // 获取任务数据的函数
 async function fetchTasks() {
     try {
-        const response = await axios.get('http://localhost:8000/tasks')  // 使用你的后端API地址
+        const response = await request.get('tasks')  // 使用你的后端API地址
         tasks.value = response.data
     } catch (error) {
         console.error('获取任务数据失败', error)

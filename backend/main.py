@@ -1,15 +1,20 @@
 from fastapi import FastAPI
-from app.api.v1 import users_api, tasks_api, posts_api, withdrawals_api, notifications_api, reports_api, dashboard_api, feedback_api  # 确保 users_schema.py 在 api 文件夹中
-app = FastAPI()
+from app.api.v1 import users_api, tasks_api, posts_api, withdrawals_api, notifications_api, reports_api, dashboard_api, feedback_api, login_api  # 确保 users_schema.py 在 api 文件夹中
+app = FastAPI(
+    docs_url=None,        # 禁用 Swagger UI
+    redoc_url=None,       # 禁用 Redoc 文档
+    openapi_url=None      # 禁用 OpenAPI schema
+)
 
-app.include_router(users_api.router)
-app.include_router(tasks_api.router)
-app.include_router(posts_api.router)
-app.include_router(withdrawals_api.router)
-app.include_router(notifications_api.router)
-app.include_router(reports_api.router)
-app.include_router(dashboard_api.router)
-app.include_router(feedback_api.router)
+app.include_router(users_api.router, prefix="/api")
+app.include_router(tasks_api.router, prefix="/api")
+app.include_router(posts_api.router, prefix="/api")
+app.include_router(withdrawals_api.router, prefix="/api")
+app.include_router(notifications_api.router, prefix="/api")
+app.include_router(reports_api.router, prefix="/api")
+app.include_router(dashboard_api.router, prefix="/api")
+app.include_router(feedback_api.router, prefix="/api")
+app.include_router(login_api.router, prefix="/api")
 
 from fastapi.middleware.cors import CORSMiddleware
 

@@ -47,7 +47,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { h } from 'vue'
-import axios from 'axios'
 import { useMessage } from 'naive-ui'
 import {
   NButton,
@@ -59,6 +58,7 @@ import {
   NFormItem,
   NModal
 } from 'naive-ui'
+import request from '@/utils/request'
 
 const filters = ref({
   id: null,
@@ -89,7 +89,7 @@ const message = useMessage()
 
 async function fetchUsers() {
   try {
-    const res = await axios.get('http://localhost:8000/users')
+    const res = await request.get('users')
     userList.value = res.data
   } catch (err) {
     console.error('获取用户数据失败:', err)
@@ -149,7 +149,7 @@ function openEditModal(row: any) {
 
 async function saveUserEdit() {
   try {
-    await axios.put(`http://localhost:8000/users/${currentUser.value.id}`, currentUser.value)
+    await request.put(`users/${currentUser.value.id}`, currentUser.value)
     showEditModal.value = false
     fetchUsers()
     message.success('用户信息已成功更新')
