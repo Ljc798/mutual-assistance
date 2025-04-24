@@ -36,6 +36,9 @@ Page({
     },
 
     chooseAvatar() {
+        const token = wx.getStorageSync("token");
+        const username = this.data.tempUserInfo.username || "anonymous";
+    
         wx.chooseMedia({
             count: 1,
             mediaType: ["image"],
@@ -45,14 +48,44 @@ Page({
     
                 wx.compressImage({
                     src: tempFilePath,
-                    quality: 30, // 调整质量在 40-80 之间
+                    quality: 30,
                     success: (compressed) => {
-                        console.log("✅ 压缩后:", compressed.tempFilePath);
-                        this.setData({ avatarFilePath: compressed.tempFilePath });
+                        const compressedPath = compressed.tempFilePath;
+    
+                        wx.uploadFile({
+                            url: "https://mutualcampus.top/api/uploads/upload-image",
+                            filePath: compressedPath,
+                            name: "image",
+                            formData: {
+                                type: "avatar",
+                                username
+                            },
+                            header: {
+                                Authorization: `Bearer ${token}`
+                            },
+                            success: (res: any) => {
+                                try {
+                                    const data = JSON.parse(res.data);
+                                    if (data.success) {
+                                        const freshUrl = data.imageUrl + "?t=" + Date.now();
+                                        this.setData({
+                                            avatarFilePath: freshUrl,
+                                            "tempUserInfo.avatar_url": freshUrl
+                                        });
+                                    } else {
+                                        wx.showToast({ title: "头像上传失败", icon: "none" });
+                                    }
+                                } catch {
+                                    wx.showToast({ title: "上传响应异常", icon: "none" });
+                                }
+                            },
+                            fail: () => {
+                                wx.showToast({ title: "头像上传失败", icon: "none" });
+                            }
+                        });
                     },
                     fail: () => {
-                        console.warn("⚠️ 压缩失败，使用原图");
-                        this.setData({ avatarFilePath: tempFilePath });
+                        wx.showToast({ title: "压缩失败", icon: "none" });
                     }
                 });
             }

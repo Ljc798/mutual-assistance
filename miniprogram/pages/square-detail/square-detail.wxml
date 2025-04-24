@@ -32,7 +32,7 @@
                 <view class="image-grid two-grid" wx:elif="{{post.images.length === 2}}">
                     <block wx:for="{{post.images}}" wx:key="index">
                         <block wx:if="{{item.status === 'pass'}}">
-                            <image src="{{item.url}}" class="grid-image" bindtap="previewImage" data-current="{{item.url}}"  data-urls="{{post.imageUrls}}" />
+                            <image src="{{item.url}}" class="grid-image" mode="aspectFill" bindtap="previewImage" data-current="{{item.url}}"  data-urls="{{post.imageUrls}}" />
                         </block>
                         <block wx:elif="{{item.status === 'fail'}}">
                             <view class="grid-image failed-placeholder">图片违规</view>
@@ -47,7 +47,7 @@
                 <view class="image-grid three-grid" wx:elif="{{post.images.length === 3}}">
                     <block wx:for="{{post.images}}" wx:key="index">
                         <block wx:if="{{item.status === 'pass'}}">
-                            <image src="{{item.url}}" class="grid-image" bindtap="previewImage" data-current="{{item.url}}"  data-urls="{{post.imageUrls}}" />
+                            <image src="{{item.url}}" class="grid-image" mode="aspectFill" bindtap="previewImage" data-current="{{item.url}}"  data-urls="{{post.imageUrls}}" />
                         </block>
                         <block wx:elif="{{item.status === 'fail'}}">
                             <view class="grid-image failed-placeholder">图片违规</view>
@@ -62,7 +62,7 @@
                 <view class="image-grid four-grid" wx:elif="{{post.images.length === 4}}">
                     <block wx:for="{{post.images}}" wx:key="index">
                         <block wx:if="{{item.status === 'pass'}}">
-                            <image src="{{item.url}}" class="grid-image" bindtap="previewImage" data-current="{{item.url}}"  data-urls="{{post.imageUrls}}" />
+                            <image src="{{item.url}}" class="grid-image" mode="aspectFill" bindtap="previewImage" data-current="{{item.url}}"  data-urls="{{post.imageUrls}}" />
                         </block>
                         <block wx:elif="{{item.status === 'fail'}}">
                             <view class="grid-image failed-placeholder">图片违规</view>
@@ -77,7 +77,7 @@
                 <view class="image-grid nine-grid" wx:elif="{{post.images.length >= 5}}">
                     <block wx:for="{{post.images}}" wx:key="index">
                         <block wx:if="{{item.status === 'pass'}}">
-                            <image src="{{item.url}}" class="grid-image" bindtap="previewImage" data-current="{{item.url}}"  data-urls="{{post.imageUrls}}" />
+                            <image src="{{item.url}}" class="grid-image" mode="aspectFill" bindtap="previewImage" data-current="{{item.url}}"  data-urls="{{post.imageUrls}}" />
                         </block>
                         <block wx:elif="{{item.status === 'fail'}}">
                             <view class="grid-image failed-placeholder">图片违规</view>

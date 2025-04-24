@@ -1,13 +1,4 @@
-<view wx:if="{{!userInfo}}">
-    <view class="unauth-wrapper">
-        <image src="" class="avatar-img" mode="aspectFill" />
-        <view class="unauth-text">您尚未登录</view>
-        <button class="login-btn" bindtap="goToLoginPage">立即登录</button>
-    </view>
-</view>
-
-<!-- 🟢 已登录时才展示真实内容 -->
-<view wx:else class="user-container">
+<view class="user-container">
     <notify-banner />
     <view class="header">
         <view class="app-name">我的信息</view>
@@ -18,10 +9,12 @@
         <view class="avatar">
             <image src="{{userInfo.avatar_url}}" class="avatar-img" mode="aspectFill" />
         </view>
+
         <view class="info">
-            <text class="user-name">{{userInfo.username}}</text>
-            <text class="user-id">ID: {{userInfo.wxid}}</text>
+            <text class="user-name">{{userInfo && userInfo.username ? userInfo.username : '立即登录'}}</text>
+            <text class="user-id">{{userInfo && userInfo.wxid ? 'ID: ' + userInfo.wxid : '登录以体验完整功能'}}</text>
         </view>
+
         <view class="arrow">
             <image src="/assets/icons/right-chevron-svgrepo-com.svg" class="arrow-icon" />
         </view>
@@ -95,4 +88,4 @@
 
     <!-- 底部导航栏 -->
 </view>
-    <bottom-nav></bottom-nav>
+<bottom-nav></bottom-nav>

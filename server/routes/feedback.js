@@ -20,7 +20,7 @@ router.post("/submit", authMiddleware, async (req, res) => {
 
     try {
         await db.query(
-            "INSERT INTO feedbacks (user_id, title, content, reward_points) VALUES (?, ?, ?, NULL)",
+            "INSERT INTO feedbacks (user_id, title, content, reward_points) VALUES (?, ?, ?, 0)",
             [userId, title.trim(), content.trim()]
         );
 

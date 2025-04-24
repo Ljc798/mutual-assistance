@@ -1,35 +1,44 @@
 <template>
-    <div style="padding: 24px">
-        <n-data-table :columns="columns" :data="reportList" :pagination="{ pageSize: 10 }" :bordered="false" />
+    <div style="display: flex; flex-direction: column; height: 100%; padding: 24px;">
+        <n-data-table :columns="columns" :data="reportList" :pagination="{ pageSize: 10 }" :bordered="false"
+            style="flex: 1;" />
     </div>
-    <n-modal v-model:show="showModal" title="帖子详情" preset="dialog" style="width: 500px;">
-  <n-card>
-    <p><strong>帖子 ID：</strong>{{ currentPost?.id }}</p>
-    <p><strong>作者 ID：</strong>{{ currentPost?.author_id }}</p>
-    <p><strong>内容：</strong></p>
-    <n-input
-      type="textarea"
-      :value="currentPost?.content"
-      readonly
-      autosize
-    />
-  </n-card>
-</n-modal>
+
+    <n-modal v-model:show="showModal" title="帖子详情" preset="dialog" style="width: 600px;">
+        <n-card>
+            <template #header>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>帖子详情</span>
+                    <n-button size="small" @click="showModal = false">关闭</n-button>
+                </div>
+            </template>
+
+            <p><strong>帖子 ID：</strong>{{ currentPost?.id }}</p>
+            <p><strong>作者 ID：</strong>{{ currentPost?.user_id }}</p>
+            <p><strong>是否置顶：</strong>{{ currentPost?.is_pinned ? '是' : '否' }}</p>
+            <p><strong>内容：</strong></p>
+            <n-input type="textarea" :value="currentPost?.content" readonly autosize />
+
+            <template v-if="currentPost?.images?.length">
+                <p style="margin-top: 16px"><strong>图片：</strong></p>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap">
+                    <img v-for="img in currentPost.images" :src="img.image_url" :key="img.id"
+                        style="width: 100px; height: auto; border-radius: 4px;" />
+                </div>
+            </template>
+        </n-card>
+    </n-modal>
 </template>
 
 <script setup lang="ts">
 import { ref, h, onMounted } from 'vue'
 import axios from 'axios'
-import { NButton } from 'naive-ui'
-import { NModal, NCard } from 'naive-ui'
+import { NButton, useMessage, NModal, NCard, NInput, NPopconfirm } from 'naive-ui'
+
+const message = useMessage()
 
 const showModal = ref(false)
 const currentPost = ref<any>(null)
-
-function openPostDetail(row: any) {
-  currentPost.value = row.post
-  showModal.value = true
-}
 const reportList = ref([])
 
 const fetchReports = async () => {
@@ -41,14 +50,36 @@ const fetchReports = async () => {
     }
 }
 
+const openPostDetail = async (row: any) => {
+    try {
+        const res = await axios.get(`http://localhost:8000/posts/${row.post.id}`)
+        currentPost.value = res.data
+        showModal.value = true
+    } catch (err) {
+        console.error('帖子详情获取失败', err)
+        message.error('帖子详情获取失败')
+    }
+}
+
+const deletePost = async (postId: number) => {
+    try {
+        await axios.delete(`http://localhost:8000/posts/${postId}`)
+        message.success('帖子已彻底删除')
+        fetchReports()
+    } catch (err) {
+        console.error('帖子删除失败', err)
+        message.error('帖子删除失败')
+    }
+}
+
 const handleAction = async (id: number, action: 'approve' | 'reject') => {
     try {
-        await axios.put(`http://localhost:8000/reports/${id}/action`, {
-            action
-        })
+        await axios.put(`http://localhost:8000/report/${id}`, { action })
+        message.success(`已${action === 'approve' ? '通过' : '忽略'}举报`)
         fetchReports()
     } catch (err) {
         console.error('操作失败', err)
+        message.error('操作失败')
     }
 }
 
@@ -60,7 +91,19 @@ const columns = [
         key: 'post',
         render(row: any) {
             return h('div', { style: { display: 'flex', alignItems: 'center' } }, [
-                h('span', { style: { flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px' } }, row.post?.content || '（已删除）'),
+                h(
+                    'span',
+                    {
+                        style: {
+                            flex: 1,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            maxWidth: '200px'
+                        }
+                    },
+                    row.post?.content || '（已删除）'
+                ),
                 h(
                     NButton,
                     {
@@ -79,13 +122,21 @@ const columns = [
         render(row: any) {
             return [
                 h(
-                    NButton,
+                    NPopconfirm,
                     {
-                        type: 'error',
-                        size: 'small',
-                        onClick: () => handleAction(row.id, 'approve')
+                        onPositiveClick: () => deletePost(row.post.id),
+                        positiveText: '删除',
+                        negativeText: '取消'
                     },
-                    { default: () => '删除帖子' }
+                    {
+                        trigger: () =>
+                            h(
+                                NButton,
+                                { type: 'error', size: 'small' },
+                                { default: () => '彻底删除帖子' }
+                            ),
+                        default: () => '确定删除此帖子及相关内容？'
+                    }
                 ),
                 h(
                     NButton,

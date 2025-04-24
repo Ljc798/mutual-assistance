@@ -110,6 +110,30 @@
     border-radius: 10rpx;
 }
 
+.failed-placeholder,
+.audit-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f5f5f5;
+    color: #999;
+    font-size: 12px;
+    border-radius: 8rpx;
+}
+
+.grid-image,
+.failed-placeholder,
+.audit-placeholder {
+    width: 100%;
+    height: 200rpx;
+    margin: 4rpx;
+}
+
+.status-text {
+    padding: 0 8rpx;
+    text-align: center;
+}
+
 /* 图片宫格布局 */
 .image-grid {
     display: grid;

@@ -16,6 +16,22 @@ Page({
         this.getUserInfo();
     },
 
+    checkLoginAndGo(callback: Function) {
+        const { userInfo } = this.data;
+        if (!userInfo || !userInfo.id) {
+            wx.showToast({
+                title: "请先登录",
+                icon: "none",
+                duration: 1500
+            });
+            setTimeout(() => {
+                this.goToLoginPage();
+            }, 1500);
+            return;
+        }
+        callback(); // ✅ 登录过，执行目标函数
+    },
+
     // ✅ 加载用户信息并判断是否为 VIP
     loadUserInfo() {
         const app = getApp();
@@ -84,33 +100,45 @@ Page({
         return `${y}-${m}-${d}`;
     },
 
-    // 跳转到信息修改页面
     goToEditProfile() {
-        wx.navigateTo({ url: "/pages/edit-profile/edit-profile" });
-    },
-
-    goToShop() {
-        wx.navigateTo({ url: "/pages/shop/shop" });
-    },
-
-    // 跳转订单页
-    handleOrderClick() {
-        wx.navigateTo({ url: "/pages/order/other-orders" });
-    },
-
-    handleSpaceClick() {
-        wx.navigateTo({url: "/pages/mysquare/mysquare"});
-    },
-
-    goToWallet() {
-        wx.navigateTo({
-            url: '/pages/wallet/wallet',
+        this.checkLoginAndGo(() => {
+            wx.navigateTo({ url: "/pages/edit-profile/edit-profile" });
         });
     },
-
+    
+    goToShop() {
+        this.checkLoginAndGo(() => {
+            wx.navigateTo({ url: "/pages/shop/shop" });
+        });
+    },
+    
+    handleOrderClick() {
+        this.checkLoginAndGo(() => {
+            wx.navigateTo({ url: "/pages/order/other-orders" });
+        });
+    },
+    
+    handleSpaceClick() {
+        this.checkLoginAndGo(() => {
+            wx.navigateTo({ url: "/pages/mysquare/mysquare" });
+        });
+    },
+    
+    goToWallet() {
+        this.checkLoginAndGo(() => {
+            wx.navigateTo({ url: '/pages/wallet/wallet' });
+        });
+    },
+    
     goToVipPage() {
-        wx.navigateTo({
-            url: '/pages/vip/vip',
+        this.checkLoginAndGo(() => {
+            wx.navigateTo({ url: '/pages/vip/vip' });
+        });
+    },
+    
+    onFeedbackClick() {
+        this.checkLoginAndGo(() => {
+            this.openFeedbackPopup();
         });
     },
 
@@ -157,11 +185,6 @@ Page({
                 }
             }
         });
-    },
-
-    // 👇 绑定这个到“意见反馈”按钮
-    onFeedbackClick() {
-        this.openFeedbackPopup();
     },
 
     goToLoginPage() {

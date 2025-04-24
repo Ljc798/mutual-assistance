@@ -202,6 +202,16 @@
     border-radius: 10rpx;
 }
 
+.audit-placeholder {
+    background-color: #f0f0f0;
+    color: #888;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24rpx;
+    text-align: center;
+  }
+
 .image-placeholder {
     width: 400rpx;
     height: 400rpx;
