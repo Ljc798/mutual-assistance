@@ -442,7 +442,19 @@ router.get("/:id", async (req, res) => {
     const taskId = req.params.id;
 
     try {
-        const [results] = await db.query("SELECT * FROM tasks WHERE id = ?", [taskId]);
+        const [results] = await db.query(`
+            SELECT 
+                t.*, 
+                u.username AS employer_name 
+            FROM 
+                tasks t
+            LEFT JOIN 
+                users u 
+            ON 
+                t.employer_id = u.id
+            WHERE 
+                t.id = ?
+        `, [taskId]);
 
         if (results.length === 0) {
             return res.status(404).json({
