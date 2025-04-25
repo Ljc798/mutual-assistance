@@ -3,6 +3,8 @@ const router = express.Router();
 const db = require("../config/db");
 const dayjs = require("dayjs");
 const authMiddleware = require("./authMiddleware"); // 引入中间件
+const redis = require("../utils/redis"); // 你自己封装的 redis 文件
+
 
 // ===== 1. 获取广场帖子列表 =====
 router.get("/posts", async (req, res) => {
@@ -88,53 +90,34 @@ router.get("/posts", async (req, res) => {
 });
 
 // ===== 2. 点赞帖子 + 通知作者 =====
+
 router.post("/like", authMiddleware, async (req, res) => {
-    const {
-        user_id,
-        square_id
-    } = req.body;
+    const { user_id, square_id } = req.body;
+
     if (!user_id) {
-        return res.status(400).json({
-            success: false,
-            message: "缺少 user_id"
-        });
+        return res.status(400).json({ success: false, message: "缺少 user_id" });
     }
 
+    const redisKey = `square:like:${user_id}:${square_id}`;
+
     try {
-        // 1. 防止重复点赞
-        const [existing] = await db.query(
-            `SELECT * FROM square_likes WHERE user_id = ? AND square_id = ?`,
-            [user_id, square_id]
-        );
-        if (existing.length > 0) {
-            return res.status(400).json({
-                success: false,
-                message: "已经点赞过了"
-            });
+        // ✅ Redis 检查是否已点赞
+        const liked = await redis.get(redisKey);
+        if (liked) {
+            return res.status(400).json({ success: false, message: "已经点赞过了" });
         }
 
-        // 2. 点赞操作
+        // ✅ 数据库插入
         await db.query(`INSERT INTO square_likes (user_id, square_id) VALUES (?, ?)`, [user_id, square_id]);
         await db.query(`UPDATE square SET likes_count = likes_count + 1 WHERE id = ?`, [square_id]);
 
-        // 3. 获取作者信息 & 用户名
-        const [
-            [{
-                user_id: receiver_id
-            }]
-        ] = await db.query(
-            `SELECT user_id FROM square WHERE id = ?`, [square_id]
-        );
+        // ✅ 缓存标记 1小时有效
+        await redis.set(redisKey, "1", "EX", 3600);
 
-        const [
-            [{
-                username
-            }]
-        ] = await db.query(
-            `SELECT username FROM users WHERE id = ?`, [user_id]
-        );
+        // ✅ 通知逻辑不变
+        const [[{ user_id: receiver_id }]] = await db.query(`SELECT user_id FROM square WHERE id = ?`, [square_id]);
+        const [[{ username }]] = await db.query(`SELECT username FROM users WHERE id = ?`, [user_id]);
 
-        // 4. 插入通知（别忘了你叫 notification 表）
         if (receiver_id && receiver_id !== user_id) {
             await db.query(
                 `INSERT INTO notifications (user_id, type, title, content, is_read) VALUES (?, 'like', NULL, ?, 0)`,
@@ -142,29 +125,21 @@ router.post("/like", authMiddleware, async (req, res) => {
             );
         }
 
-        res.json({
-            success: true,
-            message: "点赞成功"
-        });
+        res.json({ success: true, message: "点赞成功" });
     } catch (err) {
         console.error("❌ 点赞失败:", err);
-        res.status(500).json({
-            success: false,
-            message: "点赞失败"
-        });
+        res.status(500).json({ success: false, message: "点赞失败" });
     }
 });
 
-// ===== 3. 取消点赞 =====
-router.post("/unlike", authMiddleware, async (req, res) => { // 添加了认证中间件
-    const {
-        user_id,
-        square_id
-    } = req.body;
-    if (!user_id) return res.status(400).json({
-        success: false,
-        message: "缺少 user_id"
-    });
+router.post("/unlike", authMiddleware, async (req, res) => {
+    const { user_id, square_id } = req.body;
+
+    if (!user_id) {
+        return res.status(400).json({ success: false, message: "缺少 user_id" });
+    }
+
+    const redisKey = `square:like:${user_id}:${square_id}`;
 
     try {
         const [result] = await db.query(
@@ -173,10 +148,7 @@ router.post("/unlike", authMiddleware, async (req, res) => { // 添加了认证�
         );
 
         if (result.affectedRows === 0) {
-            return res.status(400).json({
-                success: false,
-                message: "未点赞，无法取消"
-            });
+            return res.status(400).json({ success: false, message: "未点赞，无法取消" });
         }
 
         await db.query(
@@ -184,16 +156,13 @@ router.post("/unlike", authMiddleware, async (req, res) => { // 添加了认证�
             [square_id]
         );
 
-        res.json({
-            success: true,
-            message: "取消点赞成功"
-        });
+        // ✅ Redis 删除缓存
+        await redis.del(redisKey);
+
+        res.json({ success: true, message: "取消点赞成功" });
     } catch (err) {
         console.error("❌ 取消点赞失败:", err);
-        res.status(500).json({
-            success: false,
-            message: "取消点赞失败"
-        });
+        res.status(500).json({ success: false, message: "取消点赞失败" });
     }
 });
 
@@ -501,114 +470,107 @@ router.post("/comments/create", authMiddleware, async (req, res) => {
     }
 });
 
-// 点赞评论
-router.post("/comments/like", async (req, res) => { // 添加了认证中间件
-    const {
-        user_id,
-        comment_id
-    } = req.body;
-
+// 评论点赞
+router.post("/comments/like", async (req, res) => {
+    const { user_id, comment_id } = req.body;
+  
     if (!user_id || !comment_id) {
-        return res.status(400).json({
-            success: false,
-            message: "缺少 user_id 或 comment_id"
-        });
+      return res.status(400).json({
+        success: false,
+        message: "缺少 user_id 或 comment_id",
+      });
     }
-
+  
+    const redisKey = `comment:like:${comment_id}`;
+  
     try {
-
-        // 1. 查询是否已经点赞
-        const [existingLike] = await db.query(
-            "SELECT * FROM comment_likes WHERE user_id = ? AND comment_id = ?",
-            [user_id, comment_id]
-        );
-
-        if (existingLike.length > 0) {
-            return res.status(400).json({
-                success: false,
-                message: "已经点赞过"
-            });
-        }
-
-        // 2. 插入点赞记录
-        await db.query(
-            "INSERT INTO comment_likes (user_id, comment_id) VALUES (?, ?)",
-            [user_id, comment_id]
-        );
-
-        // 3. 更新评论点赞数
-        await db.query(
-            "UPDATE square_comments SET likes_count = likes_count + 1 WHERE id = ?",
-            [comment_id]
-        );
-
-        return res.json({
-            success: true,
-            message: "点赞成功"
+      // 查 Redis 是否已经点赞过
+      const alreadyLiked = await redis.sismember(redisKey, user_id);
+      if (alreadyLiked) {
+        return res.status(400).json({
+          success: false,
+          message: "已经点赞过",
         });
-
+      }
+  
+      // 数据库插入点赞记录
+      await db.query(
+        "INSERT INTO comment_likes (user_id, comment_id) VALUES (?, ?)",
+        [user_id, comment_id]
+      );
+  
+      // 更新点赞数
+      await db.query(
+        "UPDATE square_comments SET likes_count = likes_count + 1 WHERE id = ?",
+        [comment_id]
+      );
+  
+      // Redis 写入点赞记录
+      await redis.sadd(redisKey, user_id);
+  
+      return res.json({
+        success: true,
+        message: "点赞成功",
+      });
     } catch (err) {
-        console.error("❌ 点赞失败:", err);
-        return res.status(500).json({
-            success: false,
-            message: "服务器错误"
-        });
+      console.error("❌ 点赞失败:", err);
+      return res.status(500).json({
+        success: false,
+        message: "服务器炸了，点赞失败",
+      });
     }
-});
+  });
 
+// 取消评论点赞
 router.post("/comments/unlike", async (req, res) => {
-    const {
-        user_id,
-        comment_id
-    } = req.body;
-
+    const { user_id, comment_id } = req.body;
+  
     if (!user_id || !comment_id) {
-        return res.status(400).json({
-            success: false,
-            message: "缺少 user_id 或 comment_id"
-        });
+      return res.status(400).json({
+        success: false,
+        message: "缺少 user_id 或 comment_id",
+      });
     }
-
+  
+    const redisKey = `comment:like:${comment_id}`;
+  
     try {
-
-        // 1. 确认是否已点赞
-        const [results] = await db.query(
-            "SELECT * FROM comment_likes WHERE user_id = ? AND comment_id = ?",
-            [user_id, comment_id]
-        );
-
-        if (results.length === 0) {
-            return res.status(400).json({
-                success: false,
-                message: "尚未点赞，无法取消"
-            });
-        }
-
-        // 2. 删除点赞记录
-        await db.query(
-            "DELETE FROM comment_likes WHERE user_id = ? AND comment_id = ?",
-            [user_id, comment_id]
-        );
-
-        // 3. 更新点赞数（防止小于0）
-        await db.query(
-            "UPDATE square_comments SET likes_count = likes_count - 1 WHERE id = ? AND likes_count > 0",
-            [comment_id]
-        );
-
-        return res.json({
-            success: true,
-            message: "取消点赞成功"
+      // 查 Redis 是否有记录
+      const liked = await redis.sismember(redisKey, user_id);
+      if (!liked) {
+        return res.status(400).json({
+          success: false,
+          message: "未点赞，无法取消",
         });
-
+      }
+  
+      // 数据库删除点赞记录
+      await db.query(
+        "DELETE FROM comment_likes WHERE user_id = ? AND comment_id = ?",
+        [user_id, comment_id]
+      );
+  
+      // 更新点赞数
+      await db.query(
+        "UPDATE square_comments SET likes_count = likes_count - 1 WHERE id = ? AND likes_count > 0",
+        [comment_id]
+      );
+  
+      // Redis 删除
+      await redis.srem(redisKey, user_id);
+  
+      return res.json({
+        success: true,
+        message: "取消点赞成功",
+      });
     } catch (err) {
-        console.error("❌ 取消点赞失败:", err);
-        return res.status(500).json({
-            success: false,
-            message: "服务器错误"
-        });
+      console.error("❌ 取消点赞失败:", err);
+      return res.status(500).json({
+        success: false,
+        message: "服务器继续炸",
+      });
     }
-});
+  });
 
 router.post('/report', authMiddleware, async (req, res) => {
     const userId = req.user.id;
