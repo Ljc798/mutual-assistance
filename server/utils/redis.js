@@ -7,6 +7,17 @@ const redis = new Redis({
   db: process.env.REDIS_DB || 0,
 });
 
+redis.set("test_key", "hello redis")
+  .then(() => redis.get("test_key"))
+  .then((value) => {
+    console.log("✅ Redis连接成功，值为：", value);
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error("❌ Redis连接失败:", err);
+    process.exit(1);
+  });
+
 redis.on("connect", () => {
   console.log("✅ Redis 连接成功");
 });
