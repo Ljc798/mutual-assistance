@@ -1,0 +1,34 @@
+<view class="school-page">
+    <!-- 顶部返回栏 -->
+    <view class="notification-header">
+        <image class="back-btn" src="/assets/icons/fanhui.svg" catchtap="handleBack" />
+        <text class="header-title">学校选择</text>
+    </view>
+
+    <!-- 搜索栏 -->
+    <view class="search-bar">
+        <input class="search-input" placeholder="输入学校名称搜索" bindinput="onSearchInput" value="{{searchKeyword}}" />
+        <button class="search-btn" bindtap="onSearchConfirm">搜索</button>
+    </view>
+
+    <!-- 筛选栏 -->
+    <view class="filter-bar">
+        <picker mode="selector" range="{{provinces}}" bindchange="onProvinceChange">
+            <view class="filter-item">{{selectedProvince || '选择省份'}}</view>
+        </picker>
+        <picker mode="selector" range="{{cities}}" bindchange="onCityChange" wx:if="{{cities.length > 0}}">
+            <view class="filter-item">{{selectedCity || '选择城市'}}</view>
+        </picker>
+    </view>
+
+    <text class="feedback">没有您的学校？点击反馈！</text>
+
+    <!-- 学校列表 -->
+    <scroll-view scroll-y="true" class="school-list" bindscrolltolower="onLoadMore">
+        <block wx:for="{{schoolList}}" wx:key="id">
+            <view class="school-item" catchtap="onSelectSchool" data-name="{{item.name}}">
+                {{item.name}}
+            </view>
+        </block>
+    </scroll-view>
+</view>

@@ -133,6 +133,10 @@ Page({
         wx.navigateTo({ url: "/pages/order/order" });
     },
 
+    handleSchoolClick() {
+        wx.navigateTo({ url: "/pages/schools/schools" });
+    },
+
     handleSearchInput(e) {
         const value = e.detail.value;
         this.setData({ keyword: value });
