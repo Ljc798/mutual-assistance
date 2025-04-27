@@ -1,15 +1,12 @@
 <view class="container">
-    <notify-banner/>
+    <notify-banner />
     <!-- 返回按钮 -->
-    <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack"/>
+    <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack" />
 
     <!-- 筛选菜单 -->
     <view class="filter-bar">
         <block wx:for="{{filterOptions}}" wx:key="index">
-            <view 
-                bindtap="selectFilter" 
-                data-index="{{index}}" 
-                class="filter-item {{index === activeFilter ? 'active' : ''}}">
+            <view bindtap="selectFilter" data-index="{{index}}" class="filter-item {{index === activeFilter ? 'active' : ''}}">
                 {{item}}
             </view>
         </block>
@@ -29,7 +26,9 @@
                         </view>
                     </view>
                     <view class="task-right">
-                        <text class="task-status">{{item.formattedStatus}}</text>
+                        <view wx:if="{{item.status === 0}}" class="task-status status-pending">{{item.formattedStatus}}</view>
+                        <view wx:if="{{item.status === 1}}" class="task-status status-ongoing">{{item.formattedStatus}}</view>
+                        <view wx:if="{{item.status === 2}}" class="task-status status-finished">{{item.formattedStatus}}</view>
                         <text class="task-reward">¥{{item.displayPrice}}</text>
                     </view>
                 </view>

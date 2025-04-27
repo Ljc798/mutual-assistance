@@ -7,8 +7,6 @@ App<IAppOption>({
     },
 
     async onLaunch() {
-        console.log("✅ 小程序启动中...");
-
         const token = wx.getStorageSync("token") || null;
         const user = wx.getStorageSync("user") || null;
 
@@ -23,7 +21,6 @@ App<IAppOption>({
             this.globalData.userInfo = user;
             this.globalData.token = token;
 
-            console.log(`🌐 初始化 WebSocket for userId: ${user.id}`);
             initWebSocket(user.id);
         }
 
@@ -43,7 +40,6 @@ App<IAppOption>({
             header: { Authorization: `Bearer ${token}` },
             success: (res: any) => {
                 if (res.data.success) {
-                    console.log("✅ 服务器验证成功，用户存在:", res.data.user);
                     this.globalData.userInfo = res.data.user;
                     wx.setStorageSync("user", res.data.user);
 

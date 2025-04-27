@@ -65,7 +65,7 @@ Page({
                         formattedDDL: this.formatTime(task.DDL),
                         formattedStatus: this.formatStatus(task.status),
                     }));
-
+                    
                     this.setData({
                         tasks: isLoadMore ? [...tasks, ...newTasks] : newTasks,
                         hasMore: newTasks.length === pageSize
@@ -98,6 +98,7 @@ Page({
 
     handleTaskClick(event: any) {
         const taskId = event.currentTarget.dataset.id;
+        
         if (!taskId) {
             wx.showToast({ title: "任务 ID 缺失", icon: "none" });
             return;

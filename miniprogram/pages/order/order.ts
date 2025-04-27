@@ -9,6 +9,10 @@ Page({
         userId: null,
         hasConfirmed: false,
         showDoneButton: false,
+        showCancelModal: false,
+        cancelReason: "",
+        currentOrderId: null,
+        freeCancelCount: 3, // 后端接口返回用户本月剩余取消次数
     },
 
     onLoad() {
@@ -21,7 +25,7 @@ Page({
         this.setData({ userId });
 
         this.fetchOrders();
-        
+
     },
 
     onPullDownRefresh() {
@@ -188,4 +192,117 @@ Page({
             }
         });
     },
+
+    // 点击取消按钮
+    handleCancelTask(e) {
+        const orderId = e.currentTarget.dataset.orderId;
+        const app = getApp();
+        const userId = app.globalData.userInfo?.id;
+        const token = wx.getStorageSync('token');
+      
+        if (!userId) {
+          wx.showToast({ title: "请先登录", icon: "none" });
+          return;
+        }
+      
+        // 1. 先打开弹窗
+        this.setData({
+          currentOrderId: orderId,
+          showCancelModal: true,
+          cancelReason: "",
+          freeCancelCount: 0 // 新增字段
+        });
+      
+        // 2. 调用后端查剩余免费取消次数
+        wx.request({
+          url: `https://mutualcampus.top/api/task/cancel/count`,
+          method: "GET",
+          header: {
+            Authorization: `Bearer ${token}`
+          },
+          data: {
+            user_id: userId
+          },
+          success: (res) => {
+            if (res.data.success) {
+              this.setData({
+                freeCancelCount: res.data.freeCancelCount
+              });
+            } else {
+              console.error('❌ 查询取消次数失败:', res.data.message);
+            }
+          },
+          fail: (err) => {
+            console.error('❌ 查询取消次数失败:', err);
+          }
+        });
+      },
+
+    // 关闭弹窗
+    closeCancelModal() {
+        this.setData({
+            showCancelModal: false,
+            cancelReason: "",
+            currentOrderId: null
+        });
+    },
+
+    // 绑定输入取消原因
+    handleCancelReasonInput(e) {
+        this.setData({
+            cancelReason: e.detail.value
+        });
+    },
+
+    // 确认取消任务
+    confirmCancelTask() {
+        const app = getApp();
+        const { cancelReason, currentOrderId, orders } = this.data;
+        const token = wx.getStorageSync("token");
+    
+        if (!cancelReason.trim()) {
+            wx.showToast({ title: "请输入取消原因", icon: "none" });
+            return;
+        }
+    
+        const currentOrder = orders.find(order => order.orderId === currentOrderId);
+        if (!currentOrder) {
+            wx.showToast({ title: "订单不存在", icon: "none" });
+            return;
+        }
+    
+        const role = currentOrder.role; // 直接用你之前映射好的role
+    
+        wx.showLoading({ title: "取消中..." });
+    
+        wx.request({
+            url: "https://mutualcampus.top/api/task/cancel",
+            method: "POST",
+            header: {
+                Authorization: `Bearer ${token}`
+            },
+            data: {
+                task_id: currentOrderId,
+                user_id: app.globalData.userInfo?.id,
+                role,
+                cancel_reason: cancelReason
+            },
+            success: (res) => {
+                wx.hideLoading();
+                if (res.data.success) {
+                    wx.showToast({ title: "取消成功", icon: "success" });
+                    this.setData({ showCancelModal: false });
+                    this.fetchOrders(); // 重新拉取订单列表，别忘了！
+                } else {
+                    wx.showToast({ title: res.data.message || "取消失败", icon: "none" });
+                }
+            },
+            fail: (err) => {
+                wx.hideLoading();
+                console.error("❌ 取消失败:", err);
+                wx.showToast({ title: "网络错误", icon: "none" });
+            }
+        });
+    },
+
 });

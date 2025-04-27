@@ -9,7 +9,6 @@ Component({
 
   lifetimes: {
     attached() {
-      console.log('✅ notify-banner 组件挂载');
 
       // 👇 绑定 this，避免回调中 this 丢失
       this._boundNotifyHandler = this.handleNotify.bind(this);

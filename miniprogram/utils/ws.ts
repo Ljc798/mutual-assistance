@@ -17,7 +17,6 @@ export function initWebSocket(_userId: number) {
   });
 
   socket.onOpen(() => {
-    console.log('🌐 WebSocket 已连接');
     sendMessage({ type: 'init', userId });
     startHeartbeat();
   });

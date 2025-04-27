@@ -73,9 +73,21 @@
 
 .task-status {
     font-size: 26rpx;
-    color: #333;
     margin-top: 10rpx;
 }
+
+.status-pending {
+    color: #ffcc00; /* 橙色，待接单 */
+}
+
+.status-ongoing {
+    color: #4caf50; /* 绿色，进行中 */
+}
+
+.status-finished {
+    color: #999999; /* 灰色，已完成 */
+}
+
 
 .back-btn {
     position: absolute;

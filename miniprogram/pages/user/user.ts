@@ -39,7 +39,6 @@ Page({
         let user = app.globalData.userInfo || wx.getStorageSync("user");
 
         if (user) {
-            console.log("📌 使用已有用户信息:", user);
             this.updateUserData(user);
         } else {
             console.warn("⚠️ 用户信息丢失，尝试从服务器获取...");
@@ -62,7 +61,6 @@ Page({
             success: (res: any) => {
                 if (res.data.success) {
                     const user = res.data.user;
-                    console.log("📡 获取到用户信息:", user);
 
                     wx.setStorageSync("user", user);
                     getApp().globalData.userInfo = user;

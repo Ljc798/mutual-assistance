@@ -17,12 +17,12 @@
 
 .sticky-header {
     position: fixed;
-    top: 160rpx;
+    top: 0;
     left: 0;
     width: 100%;
     background-color: #fff;
     z-index: 999;
-    padding: 20rpx 30rpx;
+    padding: 180rpx 30rpx 20rpx 30rpx;
     box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.05);
 }
 
@@ -74,37 +74,40 @@
     box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.06);
     border-left: 10rpx solid #ccc;
     transition: border 0.3s ease;
-  }
-  
-  .order-item.waiting {
-    border-color: #b0c4de; /* 灰蓝 */
-  }
-  
-  .order-item.active {
-    border-color: #ff9900; /* 橙色 */
-  }
-  
-  .order-item.completed {
-    border-color: #32cd32; /* 绿色 */
-  }
-  
-  .order-header {
+}
+
+.order-item.waiting {
+    border-color: #b0c4de;
+    /* 灰蓝 */
+}
+
+.order-item.active {
+    border-color: #ff9900;
+    /* 橙色 */
+}
+
+.order-item.completed {
+    border-color: #32cd32;
+    /* 绿色 */
+}
+
+.order-header {
     display: flex;
     justify-content: space-between;
     margin-bottom: 16rpx;
-  }
-  
-  .order-title {
+}
+
+.order-title {
     font-weight: bold;
     font-size: 30rpx;
-  }
-  
-  .order-status {
+}
+
+.order-status {
     font-size: 26rpx;
     color: #666;
-  }
+}
 
-  .order-footer {
+.order-footer {
     display: flex;
     justify-content: space-between;
     margin-top: 10rpx;
@@ -114,38 +117,129 @@
     color: #666;
 }
 
-  
-  .order-salary {
+
+.order-salary {
     font-weight: bold;
     color: #ff5500;
     font-size: 28rpx;
     margin-left: 10rpx;
-  }
-  
-  .action-button {
+}
+
+.action-buttons {
+    display: flex;
+    gap: 20rpx;
+    /* 两个按钮之间留点空隙，别挤得像沙丁鱼 */
+}
+
+.cancel-button {
     margin-top: 20rpx;
-    background-color: #ff9900;
+    width: 30%;
+    background-color: #f44336;
     color: white;
     padding: 16rpx 24rpx;
     border-radius: 999rpx;
     text-align: center;
-  }
+}
 
-  .order-action {
+
+.action-button {
     margin-top: 20rpx;
-  }
-  
-  .action-text {
+    background-color: #4caf50;
+    width: 70%;
+    color: white;
+    padding: 16rpx 24rpx;
+    border-radius: 999rpx;
+    text-align: center;
+}
+
+.order-action {
+    margin-top: 20rpx;
+}
+
+.action-text {
     color: #666;
     font-size: 26rpx;
-  }
-  
-  .action-button {
-    margin-top: 10rpx;
-    background-color: #ff9900;
-    color: white;
-    padding: 16rpx 24rpx;
-    border-radius: 999rpx;
-    text-align: center;
+}
+
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.modal-content {
+    background: #ffffff;
+    width: 80%;
+    padding: 30rpx 20rpx;
+    border-radius: 20rpx;
+    box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.2);
+}
+
+.modal-title {
+    font-size: 36rpx;
     font-weight: bold;
-  }
+    text-align: center;
+    margin-bottom: 20rpx;
+}
+
+.cancel-textarea {
+    height: 200rpx;
+    border: 1rpx solid #ddd;
+    border-radius: 10rpx;
+    padding: 20rpx;
+    font-size: 28rpx;
+    margin-bottom: 20rpx;
+}
+
+.cancel-info {
+    font-size: 26rpx;
+    text-align: center;
+    color: #666;
+    margin-bottom: 10rpx;
+}
+
+.cancel-times {
+    font-weight: bold;
+    color: #4caf50;
+}
+
+.penalty-warning {
+    font-size: 24rpx;
+    color: #e53935;
+    text-align: center;
+    margin-bottom: 20rpx;
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20rpx;
+    gap: 20rpx;
+}
+
+.cancel-btn,
+.confirm-btn {
+    flex: 1;
+    margin: 0 10rpx;
+    padding: 20rpx;
+    border-radius: 10rpx;
+    font-size: 30rpx;
+    text-align: center;
+    color: #ffffff;
+}
+
+.cancel-btn {
+    background-color: #999;
+}
+
+.confirm-btn {
+    background-color: #f44336;
+}

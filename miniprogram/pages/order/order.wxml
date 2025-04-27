@@ -1,5 +1,5 @@
 <view class="container">
-    <notify-banner/>
+    <notify-banner />
     <view class="sticky-header">
         <!-- 圆形返回按钮 -->
         <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack" />
@@ -52,11 +52,40 @@
                     </text>
 
                     <!-- “我已完成”按钮 -->
-                    <view wx:if="{{item.statusCode === 1 && !item.hasConfirmed}}" class="action-button" bindtap="handleMarkDone" data-order-id="{{item.orderId}}">
-                        我已完成
+                    <view class="action-buttons">
+                        <view wx:if="{{item.statusCode === 1 && !item.hasConfirmed}}" class="cancel-button" bindtap="handleCancelTask" data-order-id="{{item.orderId}}">
+                            取消任务
+                        </view>
+                        <view wx:if="{{item.statusCode === 1 && !item.hasConfirmed}}" class="action-button" bindtap="handleMarkDone" data-order-id="{{item.orderId}}">
+                            我已完成
+                        </view>
                     </view>
                 </view>
             </view>
         </block>
+    </view>
+
+    <!-- 取消任务弹窗 -->
+    <view wx:if="{{showCancelModal}}" class="modal-overlay">
+        <view class="modal-content">
+
+            <view class="modal-title">取消任务</view>
+
+            <textarea placeholder="请输入取消原因（必填）" value="{{cancelReason}}" bindinput="handleCancelReasonInput" class="cancel-textarea"></textarea>
+
+            <view class="cancel-info">
+                本月剩余免费取消次数：<text class="cancel-times">{{freeCancelCount}}</text> 次
+            </view>
+
+            <view wx:if="{{freeCancelCount === 0}}" class="penalty-warning">
+                ⚠️ 已超出免费取消次数，取消将扣除实付金额10%作为违约金
+            </view>
+
+            <view class="modal-buttons">
+                <button class="cancel-btn" bindtap="closeCancelModal">关闭</button>
+                <button class="confirm-btn" bindtap="confirmCancelTask">确认取消</button>
+            </view>
+
+        </view>
     </view>
 </view>

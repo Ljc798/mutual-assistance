@@ -401,6 +401,157 @@ router.post("/bid", authMiddleware, async (req, res) => {
     }
 });
 
+// 查询本月取消次数
+router.get('/cancel/count', async (req, res) => {
+    const user_id = req.query.user_id;
+    
+    if (!user_id) {
+      return res.status(400).json({
+        success: false,
+        message: '缺少 user_id'
+      });
+    }
+  
+    try {
+      const firstDayOfMonth = dayjs().startOf('month').format('YYYY-MM-DD HH:mm:ss');
+      const [result] = await db.query(
+        `SELECT COUNT(*) as count FROM task_cancel_records WHERE user_id = ? AND cancel_time >= ?`,
+        [user_id, firstDayOfMonth]
+      );
+  
+      const cancelCount = result[0].count || 0;
+      const freeCancelCount = Math.max(3 - cancelCount, 0);
+  
+      res.json({
+        success: true,
+        freeCancelCount: freeCancelCount
+      });
+    } catch (err) {
+      console.error('❌ 查询取消次数失败:', err);
+      res.status(500).json({
+        success: false,
+        message: '服务器错误'
+      });
+    }
+  });
+
+router.post('/cancel', async (req, res) => {
+    const {
+        task_id,
+        user_id,
+        role,
+        cancel_reason
+    } = req.body;
+
+    if (!task_id || !user_id || !role || !cancel_reason) {
+        return res.status(400).json({
+            success: false,
+            message: '缺少参数'
+        });
+    }
+
+    try {
+        // 查询任务信息
+        const [taskResult] = await db.query(
+            'SELECT * FROM tasks WHERE id = ?',
+            [task_id]
+        );
+
+        if (taskResult.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: '任务不存在'
+            });
+        }
+
+        const task = taskResult[0];
+
+        if (task.status !== 1) {
+            return res.status(400).json({
+                success: false,
+                message: '该任务无法取消'
+            });
+        }
+
+        // 查询本月取消次数
+        const firstDayOfMonth = dayjs().startOf('month').format('YYYY-MM-DD HH:mm:ss');
+        const [cancelCountResult] = await db.query(
+            `SELECT COUNT(*) as count FROM task_cancel_records 
+         WHERE user_id = ? AND cancel_time >= ?`,
+            [user_id, firstDayOfMonth]
+        );
+        const cancelCount = cancelCountResult[0].count || 0;
+
+        // 超过次数要扣违约金
+        const FREE_CANCEL_LIMIT = 3;
+        const needPenalty = cancelCount >= FREE_CANCEL_LIMIT;
+
+        // 计算违约金
+        let penalty = 0;
+        if (needPenalty) {
+            penalty = Math.ceil(task.pay_amount * 0.1 * 100) / 100; // 向上取两位小数
+        }
+
+        const refundAmount = task.pay_amount - penalty;
+
+        // 更新任务状态为已取消（-2）
+        await db.query(
+            `UPDATE tasks SET status = -2, cancel_reason = ?, cancel_by = ?, refunded = 1 WHERE id = ?`,
+            [cancel_reason, role, task_id]
+        );
+
+        // 给取消人扣罚金 or 退款
+        await db.query(
+            `UPDATE users SET balance = balance + ? WHERE id = ?`,
+            [refundAmount, user_id]
+        );
+
+        // 记录取消记录
+        await db.query(
+            `INSERT INTO task_cancel_records (user_id, role, task_id) VALUES (?, ?, ?)`,
+            [user_id, role, task_id]
+        );
+
+        // 给另一个人发通知
+        let receiverId = null;
+        if (role === 'employer') {
+            receiverId = task.employee_id;
+        } else if (role === 'employee') {
+            receiverId = task.employer_id;
+        }
+
+        if (receiverId) {
+            await db.query(
+                `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', '任务取消通知', ?)`,
+                [
+                    receiverId,
+                    `对方取消了任务《${task.title}》，取消原因："${cancel_reason}"`
+                ]
+            );
+
+            // WebSocket 推送
+            sendToUser(receiverId, {
+                type: 'notify',
+                content: `🔔 任务《${task.title}》被取消，原因："${cancel_reason}"`,
+                created_time: new Date().toISOString()
+            });
+        }
+
+        return res.json({
+            success: true,
+            message: `取消成功${needPenalty ? `，本次扣除违约金 ¥${penalty}` : ''}`,
+            penalty: penalty
+        });
+
+    } catch (err) {
+        console.error('❌ 取消任务失败:', err);
+        return res.status(500).json({
+            success: false,
+            message: '服务器错误'
+        });
+    }
+});
+
 // ===== 7. 获取投标记录 =====
 router.get("/:taskId/bids", async (req, res) => {
     const {

@@ -246,7 +246,7 @@
 
 .chat-button {
     font-size: 26rpx;
-    max-width: 180rpx;
+    max-width: 200rpx;
     background-color: #4fc3f7;
     color: white;
     border-radius: 30rpx;
@@ -267,10 +267,12 @@
 
 .select-button {
     background-color: #4caf50;
-    max-width: 180rpx;
+    max-width: 200rpx;
     font-size: 26rpx;
     color: white;
     border-radius: 30rpx;
+    white-space: nowrap; /* ❗ 不换行 */
+    display: inline-block; /* 保证nowrap生效 */
 }
 
 .comment-disabled {

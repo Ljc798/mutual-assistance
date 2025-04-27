@@ -1,5 +1,5 @@
 <view class="page">
-    <notify-banner/>
+    <notify-banner />
     <!-- 上方固定部分 -->
     <view class="header">
         <view class="app-name">互助Campus</view>
@@ -19,9 +19,9 @@
             <!-- 搜索结果 -->
             <view class="search-results" wx:if="{{searchResults.length > 0}}">
                 <block wx:for="{{searchResults}}" wx:key="id">
-                    <view class="search-item" bindtap="handleTaskClick" data-index="{{index}}">
+                    <view class="search-item" bindtap="handleTaskClick" data-index="{{index}}" data-id="{{item.id}}">
                         <text class="search-title">{{item.title}}</text>
-                        <text class="search-meta">¥{{item.displayPrice}}</text>
+                        <text class="search-meta">¥{{item.offer}}</text>
                     </view>
                 </block>
             </view>
@@ -85,7 +85,9 @@
                     </view>
                 </view>
                 <view class="task-right">
-                    <text class="task-status">{{item.formattedStatus}}</text>
+                    <view wx:if="{{item.status === 0}}" class="task-status status-pending">{{item.formattedStatus}}</view>
+                    <view wx:if="{{item.status === 1}}" class="task-status status-ongoing">{{item.formattedStatus}}</view>
+                    <view wx:if="{{item.status === 2}}" class="task-status status-finished">{{item.formattedStatus}}</view>
                     <text class="task-reward">¥{{item.displayPrice}}</text>
                 </view>
             </view>
