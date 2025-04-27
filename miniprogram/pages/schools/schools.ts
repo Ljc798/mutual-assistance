@@ -14,8 +14,8 @@ Page({
         newSchoolName: '',
     },
 
-    onLoad() {
-        const mode = options.mode || 'task';  // 接受页面传的 mode
+    onLoad(options: any) { 
+        const mode = options.mode || 'task';
         this.setData({ mode });
 
         this.loadProvinces();

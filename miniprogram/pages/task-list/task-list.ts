@@ -51,7 +51,8 @@ Page({
 
     loadTasksForCategory(isLoadMore = false) {
         const { category, page, pageSize } = this.data;
-        wx.showLoading({ title: "加载中...", mask: true });
+        const app = getApp();
+        const school = app.globalData.selectedTaskSchoolId;
 
         wx.request({
             url: `https://mutualcampus.top/api/task/tasks`,
@@ -60,6 +61,7 @@ Page({
                 category: encodeURIComponent(category),
                 page,
                 pageSize,
+                school_id: school,
             },
             success: (res: any) => {
                 const tasks = Array.isArray(res.data) ? res.data : [];

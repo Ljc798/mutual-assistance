@@ -21,13 +21,12 @@ Page({
         currentPage: 1,
         pageSize: 10,
         hasMore: true,
-        selectedSquareSchool: '',
+        selectedSchoolName: '',
     },
 
     onLoad() {
         const app = getApp();
         const userInfo = app.globalData.userInfo;
-
         if (userInfo?.id) {
             // ✅ 已登录，设置数据后再加载
             this.setData({ userInfo }, () => {
@@ -52,7 +51,7 @@ Page({
         }
 
         // ✅ 已登录，确保 userInfo 已同步
-        this.setData({ userInfo });
+        this.setData({ userInfo, selectedSchoolName: app.globalData.selectedSquareSchoolName || '' });
     },
 
     // ✅ 获取签到状态
@@ -150,6 +149,8 @@ Page({
     fetchPosts(isLoadMore = false, callback?: Function) {
         const app = getApp();
         const user_id = app.globalData.userInfo?.id; // ❌ 不传 null
+        const school_id = app.globalData.selectedSquareSchoolId;  // 👈 新加的
+
 
         const { currentPage, pageSize, selectedCategory } = this.data;
 
@@ -162,6 +163,10 @@ Page({
         // ✅ 仅在登录状态下附带 user_id
         if (user_id) {
             requestData.user_id = user_id;
+        }
+
+        if (school_id) {
+            requestData.school_id = school_id;  // 👈 加进去一起传
         }
 
         wx.request({
@@ -378,10 +383,11 @@ Page({
     async submitPost() {
         const app = getApp();
         const user_id = app.globalData.userInfo?.id;
+        const school_id = app.globalData.selectedSquareSchoolId;
         const token = wx.getStorageSync("token");
 
-        if (!user_id) {
-            wx.showToast({ title: "请先登录", icon: "none" });
+        if (!user_id || !school_id) {   // 👈 这里也加校验
+            wx.showToast({ title: "请先选择学校", icon: "none" });
             return;
         }
 
@@ -407,6 +413,7 @@ Page({
             header: { Authorization: `Bearer ${token}` }, // 添加 token
             data: {
                 user_id,
+                school_id,
                 category: this.data.selectedPostCategory,
                 content: this.data.newPostContent,
                 images: []  // 先不传图片
@@ -448,7 +455,7 @@ Page({
                             wx.showToast({ title: "发布成功", icon: "success" });
                             setTimeout(() => {
                                 this.fetchPosts(false);
-                              }, 1000);
+                            }, 1000);
                             this.resetPostForm();
                         },
                         fail: (err) => {
@@ -537,6 +544,6 @@ Page({
     handleSchoolClick() {
         wx.navigateTo({
             url: '/pages/schools/schools?mode=square'
-          });
+        });
     },
 });

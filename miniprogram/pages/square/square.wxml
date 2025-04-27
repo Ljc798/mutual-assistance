@@ -5,7 +5,7 @@
         <view class="app-name">广场</view>
         <view class="location-icon">
             <image src="/assets/icons/ditu.svg" class="location-icon-image" bindtap="handleSchoolClick" />
-            <span class="location-text" bindtap="handleSchoolClick">{{selectedSquareSchool || '九江学院'}}</span>
+            <span class="location-text" bindtap="handleSchoolClick">{{selectedSchoolName || '九江学院'}}</span>
         </view>
     </view>
 
