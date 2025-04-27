@@ -4,6 +4,15 @@ App<IAppOption>({
     globalData: {
         userInfo: null,
         token: null,
+        // 🏫 各页面独立的学校选择
+    selectedTaskSchoolId: null,      // 主页任务用
+    selectedTaskSchoolName: '',
+
+    selectedSquareSchoolId: null,    // 广场页帖子用
+    selectedSquareSchoolName: '',
+
+    selectedUserSchoolId: null,      // 用户资料页用
+    selectedUserSchoolName: '',
     },
 
     async onLaunch() {
@@ -64,7 +73,7 @@ App<IAppOption>({
         wx.removeStorageSync("token");
         this.globalData.userInfo = null;
         this.globalData.token = null;
-    
+
         if (shouldRedirect) {
             wx.redirectTo({ url: "/pages/register/register" });
         }

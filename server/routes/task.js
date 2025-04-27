@@ -11,6 +11,7 @@ const {
 router.post("/create", authMiddleware, async (req, res) => {
     const {
         employer_id,
+        school_id,
         category,
         position,
         address,
@@ -24,7 +25,7 @@ router.post("/create", authMiddleware, async (req, res) => {
         publish_method // 'pay' | 'vip' | 'free'
     } = req.body;
 
-    if (!employer_id || !category || !position || !address || !DDL || !title || !offer || !detail || !publish_method) {
+    if (!employer_id || !school_id || !category || !position || !address || !DDL || !title || !offer || !detail || !publish_method) {
         return res.status(400).json({
             success: false,
             message: "缺少必要参数"
@@ -77,8 +78,8 @@ router.post("/create", authMiddleware, async (req, res) => {
                 employer_id, employee_id, category, status,
                 position, address, DDL, title, offer, detail,
                 takeaway_code, takeaway_tel, takeaway_name,
-                commission
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                commission, school_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
         const values = [
@@ -95,7 +96,8 @@ router.post("/create", authMiddleware, async (req, res) => {
             takeaway_code || '',
             takeaway_tel || null,
             takeaway_name || '',
-            commission
+            commission,
+            school_id
         ];
 
         const [result] = await db.query(insertSQL, values);
@@ -139,12 +141,11 @@ router.get("/tasks", async (req, res) => {
     let {
         category,
         page = 1,
-        pageSize = 10
+        pageSize = 10,
+        school_id
     } = req.query;
 
     category = decodeURIComponent(category || "全部");
-
-
     const offset = (parseInt(page) - 1) * parseInt(pageSize);
     const limit = parseInt(pageSize);
 
@@ -156,9 +157,13 @@ router.get("/tasks", async (req, res) => {
         queryParams.push(category);
     }
 
+    if (school_id) {
+        query += " AND school_id = ?";
+        queryParams.push(school_id);
+    }
+
     query += " ORDER BY DDL DESC LIMIT ? OFFSET ?";
     queryParams.push(limit, offset);
-
 
     try {
         const [results] = await db.query(query, queryParams);
@@ -307,22 +312,30 @@ router.post("/update", authMiddleware, async (req, res) => {
 
 router.get("/search", async (req, res) => {
     const keyword = req.query.q;
+    const school_id = req.query.school_id; // 👈 接收school_id
 
     if (!keyword || keyword.trim() === "") {
         return res.json({
             success: true,
             tasks: []
-        }); // 没关键词就返回空
+        });
     }
 
     try {
-        const [tasks] = await db.query(
-            `SELECT * FROM tasks 
-         WHERE title LIKE ? OR detail LIKE ?
-         ORDER BY created_time DESC
-         LIMIT 30`,
-            [`%${keyword}%`, `%${keyword}%`]
-        );
+        let sql = `
+            SELECT * FROM tasks 
+            WHERE (title LIKE ? OR detail LIKE ?)
+        `;
+        const params = [`%${keyword}%`, `%${keyword}%`];
+
+        if (school_id) {
+            sql += ` AND school_id = ?`; // 👈 加筛选
+            params.push(school_id);
+        }
+
+        sql += ` ORDER BY created_time DESC LIMIT 30`;
+
+        const [tasks] = await db.query(sql, params);
 
         res.json({
             success: true,

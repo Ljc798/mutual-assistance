@@ -21,6 +21,7 @@ Page({
         currentPage: 1,
         pageSize: 10,
         hasMore: true,
+        selectedSquareSchool: '',
     },
 
     onLoad() {
@@ -531,5 +532,11 @@ Page({
                 this.setData({ showReportModal: false });
             }
         });
+    },
+
+    handleSchoolClick() {
+        wx.navigateTo({
+            url: '/pages/schools/schools?mode=square'
+          });
     },
 });

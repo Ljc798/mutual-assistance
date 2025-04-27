@@ -19,16 +19,38 @@
         <picker mode="selector" range="{{cities}}" bindchange="onCityChange" wx:if="{{cities.length > 0}}">
             <view class="filter-item">{{selectedCity || '选择城市'}}</view>
         </picker>
+        <text class="feedback" catchtap="openFeedbackModal">没有您的学校？点击反馈！</text>
+
+
     </view>
 
-    <text class="feedback">没有您的学校？点击反馈！</text>
 
     <!-- 学校列表 -->
     <scroll-view scroll-y="true" class="school-list" bindscrolltolower="onLoadMore">
         <block wx:for="{{schoolList}}" wx:key="id">
-            <view class="school-item" catchtap="onSelectSchool" data-name="{{item.name}}">
+            <view class="school-item" catchtap="onSelectSchool" data-name="{{item.name}}" data-id="{{item.id}}">
                 {{item.name}}
             </view>
         </block>
     </scroll-view>
+
+    <!-- 悬浮窗 -->
+    <view class="modal" wx:if="{{showFeedbackModal}}">
+        <view class="modal-content">
+            <picker mode="selector" range="{{provinces}}" bindchange="onProvincePickerChange">
+                <view class="picker-item">{{selectedProvince || '选择省份'}}</view>
+            </picker>
+
+            <picker mode="selector" range="{{cities}}" bindchange="onCityPickerChange" wx:if="{{cities.length > 0}}">
+                <view class="picker-item">{{selectedCity || '选择城市'}}</view>
+            </picker>
+
+            <input class="school-input" placeholder="输入学校名称" bindinput="onSchoolNameInput" value="{{newSchoolName}}" />
+
+            <view class="modal-actions">
+                <button class="cancel-btn" catchtap="closeFeedbackModal">取消</button>
+                <button class="confirm-btn" catchtap="submitFeedback">提交</button>
+            </view>
+        </view>
+    </view>
 </view>

@@ -224,10 +224,12 @@ Page({
             selectedCategory, position, address, DDL, title, reward,
             detail, takeCode, takeTel, takeName
         } = this.data;
-
+        const schoolId = app.globalData?.selectedTaskSchoolId;
+        
         const offer = parseFloat(reward);
         const payload = {
             employer_id: userId,
+            school_id: schoolId,
             category: selectedCategory,
             position,
             address,

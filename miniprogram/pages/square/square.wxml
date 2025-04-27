@@ -4,8 +4,8 @@
     <view class="header">
         <view class="app-name">广场</view>
         <view class="location-icon">
-            <image src="/assets/icons/ditu.svg" class="location-icon-image" />
-            <span class="location-text">九江学院</span>
+            <image src="/assets/icons/ditu.svg" class="location-icon-image" bindtap="handleSchoolClick" />
+            <span class="location-text" bindtap="handleSchoolClick">{{selectedSquareSchool || '九江学院'}}</span>
         </view>
     </view>
 

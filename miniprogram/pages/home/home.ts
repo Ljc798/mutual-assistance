@@ -26,7 +26,8 @@ Page({
         searchResults: [],
         currentPage: 1,
         pageSize: 10,
-        hasMore: true
+        hasMore: true,
+        selectedSchoolName: '',
     },
 
     onLoad() {
@@ -34,6 +35,10 @@ Page({
     },
 
     onShow() {
+        const app = getApp();
+        this.setData({
+            selectedSchoolName: app.globalData.selectedTaskSchoolName || ''
+        });
         this.loadTasks(); // 加载任务数据
     },
 
@@ -45,6 +50,8 @@ Page({
 
     loadTasks(isLoadMore = false) {
         const { selectedCategory, currentPage, pageSize, tasks } = this.data;
+        const app = getApp();
+        const school = app.globalData.selectedTaskSchoolId;
 
         wx.request({
             url: "https://mutualcampus.top/api/task/tasks",
@@ -52,7 +59,8 @@ Page({
             data: {
                 category: selectedCategory,
                 page: currentPage,
-                pageSize
+                pageSize,
+                school_id: school || '',
             },
             header: {
                 "Accept": "application/json"
@@ -65,7 +73,7 @@ Page({
                         formattedDDL: this.formatTime(task.DDL),
                         formattedStatus: this.formatStatus(task.status),
                     }));
-                    
+
                     this.setData({
                         tasks: isLoadMore ? [...tasks, ...newTasks] : newTasks,
                         hasMore: newTasks.length === pageSize
@@ -98,7 +106,7 @@ Page({
 
     handleTaskClick(event: any) {
         const taskId = event.currentTarget.dataset.id;
-        
+
         if (!taskId) {
             wx.showToast({ title: "任务 ID 缺失", icon: "none" });
             return;
@@ -134,7 +142,9 @@ Page({
     },
 
     handleSchoolClick() {
-        wx.navigateTo({ url: "/pages/schools/schools" });
+        wx.navigateTo({
+            url: '/pages/schools/schools?mode=task'
+        });
     },
 
     handleSearchInput(e) {
@@ -147,6 +157,9 @@ Page({
     },
 
     searchTasks(keyword) {
+        const app = getApp();
+        const schoolId = app.globalData?.selectedTaskSchoolId;
+
         if (!keyword.trim()) {
             this.setData({ searchResults: [] });
             return;
@@ -155,7 +168,10 @@ Page({
         wx.request({
             url: "https://mutualcampus.top/api/task/search",
             method: "GET",
-            data: { q: keyword },
+            data: {
+                q: keyword,
+                school_id: schoolId // 👈 带上学校id
+            },
             success: (res) => {
                 if (res.data.success) {
                     this.setData({ searchResults: res.data.tasks });
