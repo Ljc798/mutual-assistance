@@ -190,7 +190,8 @@ router.post("/update", authMiddleware, async (req, res) => {
     const {
         username,
         avatar_url,
-        wxid
+        wxid,
+        school_id
     } = req.body;
 
     try {
@@ -228,8 +229,8 @@ router.post("/update", authMiddleware, async (req, res) => {
 
         // ✅ 执行更新操作
         await db.query(
-            "UPDATE users SET username = ?, avatar_url = ?, wxid = ? WHERE id = ?",
-            [username, avatar_url, wxid, userId]
+            "UPDATE users SET username = ?, avatar_url = ?, wxid = ?, school_id = ? WHERE id = ?",
+            [username, avatar_url, wxid, school_id || 1, userId]
         );
 
         const [updatedUser] = await db.query("SELECT * FROM users WHERE id = ?", [userId]);
@@ -254,18 +255,27 @@ router.get("/info", authMiddleware, async (req, res) => {
     const userId = req.user.id; // 从 token 中提取 id
 
     try {
-        const [results] = await db.query("SELECT * FROM users WHERE id = ?", [userId]);
+        const [results] = await db.query(
+            `SELECT u.*, s.name AS school_name
+             FROM users u
+             LEFT JOIN schools s ON u.school_id = s.id
+             WHERE u.id = ?`,
+            [userId]
+        );
+
         if (results.length === 0) {
             return res.status(404).json({
                 success: false,
                 message: "用户不存在"
             });
         }
+
         return res.json({
             success: true,
             user: results[0]
         });
     } catch (err) {
+        console.error("❌ 查询用户信息失败:", err);
         return res.status(500).json({
             success: false,
             message: "数据库错误"
@@ -413,7 +423,9 @@ router.post("/check-image", upload.single("image"), async (req, res) => {
 
 // ✅ 微信内容安全检查：文本接口
 router.post("/check-text", async (req, res) => {
-    const { content } = req.body;
+    const {
+        content
+    } = req.body;
 
     if (!content || content.trim() === "") {
         return res.status(400).json({
@@ -430,27 +442,39 @@ router.post("/check-text", async (req, res) => {
                 appid: process.env.WX_APPID,
                 secret: process.env.WX_SECRET,
             },
-            httpsAgent: new https.Agent({ rejectUnauthorized: false })
+            httpsAgent: new https.Agent({
+                rejectUnauthorized: false
+            })
         });
 
         const accessToken = tokenRes.data.access_token;
         if (!accessToken) throw new Error("access_token 获取失败");
 
         // 构建 payload
-        const payload = { content };
+        const payload = {
+            content
+        };
 
         const wxRes = await axios.post(
             `https://api.weixin.qq.com/wxa/msg_sec_check?access_token=${accessToken}`,
-            payload,
-            {
-                httpsAgent: new https.Agent({ rejectUnauthorized: false })
+            payload, {
+                httpsAgent: new https.Agent({
+                    rejectUnauthorized: false
+                })
             }
         );
 
         if (wxRes.data.errcode === 0) {
-            return res.json({ success: true, safe: true });
+            return res.json({
+                success: true,
+                safe: true
+            });
         } else {
-            return res.json({ success: true, safe: false, reason: wxRes.data });
+            return res.json({
+                success: true,
+                safe: false,
+                reason: wxRes.data
+            });
         }
     } catch (err) {
         console.error("❌ 文本内容审核失败:", err);

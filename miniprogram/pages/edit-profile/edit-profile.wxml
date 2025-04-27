@@ -20,6 +20,13 @@
         </view>
     </view>
 
+    <view class="section">
+        <text class="label">学校<text style="color: #333; font-weight: 400;"> (必填)</text></text>
+        <view class="input-wrapper" bindtap="goChooseSchool">
+            <text class="school">{{ tempUserInfo.school_name || '请选择学校' }}</text>
+        </view>
+    </view>
+
     <button class="save-btn" bindtap="saveChanges">保存修改</button>
     <button class="logout-btn" bindtap="logout">退出登录</button>
 </view>

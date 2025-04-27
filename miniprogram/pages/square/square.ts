@@ -52,6 +52,8 @@ Page({
 
         // ✅ 已登录，确保 userInfo 已同步
         this.setData({ userInfo, selectedSchoolName: app.globalData.selectedSquareSchoolName || '' });
+        this.fetchPosts(false); // 带 user_id 获取是否点赞等
+
     },
 
     // ✅ 获取签到状态

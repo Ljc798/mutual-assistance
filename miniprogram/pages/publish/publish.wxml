@@ -78,6 +78,8 @@
         <input type="text" placeholder="请输入金额" bindinput="handleRewardInput" />
     </view>
 
+    <text>当前发布任务所处学校为首页选择的学校</text>
+
     <!-- 发布按钮 -->
     <button bindtap="handlePublish" disabled="{{isDisabled}}">发布</button>
 

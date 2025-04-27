@@ -16,6 +16,7 @@ Page({
                 duration: 3000
             });
         }
+        
     },
 
     loadUserData() {
@@ -23,7 +24,8 @@ Page({
         this.setData({
             userInfo: app.globalData.userInfo || {},
             tempUserInfo: JSON.parse(JSON.stringify(app.globalData.userInfo)),
-            avatarFilePath: app.globalData.userInfo.avatar_url
+            avatarFilePath: app.globalData.userInfo.avatar_url,
+            school_id: this.data.tempUserInfo.school_id
         });
     },
 
@@ -153,7 +155,7 @@ Page({
             return;
         }
 
-        const { username, wxid } = this.data.tempUserInfo;
+        const { username, wxid, school_id } = this.data.tempUserInfo;
 
         const isUsernameSafe = await checkTextContent(username);
         if (!isUsernameSafe) return;
@@ -192,9 +194,10 @@ Page({
             method: "POST",
             header: { Authorization: `Bearer ${token}` },
             data: {
-                username: this.data.tempUserInfo.username,
+                username,
                 avatar_url: avatarUrl,
-                wxid: this.data.tempUserInfo.wxid
+                wxid,
+                school_id: school_id || 1  // 👈 保底，如果没选学校就传 null
             },
             success: (res) => {
                 if (res.data.success) {
@@ -275,5 +278,19 @@ Page({
 
     checkImageContent(filePath: string): Promise<boolean> {
         return Promise.resolve(true); // ✅ 使用腾讯云 COS 自动审核，无需客户端再调微信 API 审核
+    },
+
+    goChooseSchool() {
+        wx.navigateTo({
+            url: '/pages/schools/schools?mode=user',
+            events: {
+                schoolSelected: (data) => {
+                    this.setData({
+                        'tempUserInfo.school_id': data.id,
+                        'tempUserInfo.school_name': data.name
+                    });
+                }
+            }
+        });
     }
 });
