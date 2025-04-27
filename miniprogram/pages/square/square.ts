@@ -41,7 +41,6 @@ Page({
     },
 
     onShow() {
-        // 防止用户在其他页面退出登录后返回广场页，此处再校验一次
         const app = getApp();
         const userInfo = app.globalData.userInfo;
 
@@ -50,10 +49,18 @@ Page({
             return;
         }
 
-        // ✅ 已登录，确保 userInfo 已同步
-        this.setData({ userInfo, selectedSchoolName: app.globalData.selectedSquareSchoolName || '' });
-        this.fetchPosts(false); // 带 user_id 获取是否点赞等
+        const selectedSchoolName = app.globalData.selectedSquareSchoolName || userInfo.school_name || '';
+        const selectedSchoolId = app.globalData.selectedSquareSchoolId || userInfo.school_id || null;
 
+        this.setData({
+            userInfo,
+            selectedSchoolName,
+            selectedSchoolId, // 👈 顺便存下来，方便请求时带 school_id
+            currentPage: 1,   // 🧹 重置分页（回到第一页）
+            posts: []         // 🧹 清空旧帖子
+        }, () => {
+            this.fetchPosts(false); // 👈 带上 school_id 重新拉取帖子
+        });
     },
 
     // ✅ 获取签到状态
@@ -150,27 +157,23 @@ Page({
     // ✅ 获取帖子数据
     fetchPosts(isLoadMore = false, callback?: Function) {
         const app = getApp();
-        const user_id = app.globalData.userInfo?.id; // ❌ 不传 null
-        const school_id = app.globalData.selectedSquareSchoolId;  // 👈 新加的
-
-
-        const { currentPage, pageSize, selectedCategory } = this.data;
-
+        const user_id = app.globalData.userInfo?.id;
+        const { currentPage, pageSize, selectedCategory, selectedSchoolId } = this.data;
+    
         const requestData: any = {
             category: selectedCategory,
             page: currentPage,
             pageSize
         };
-
-        // ✅ 仅在登录状态下附带 user_id
+    
         if (user_id) {
             requestData.user_id = user_id;
         }
-
-        if (school_id) {
-            requestData.school_id = school_id;  // 👈 加进去一起传
+    
+        if (selectedSchoolId) {
+            requestData.school_id = selectedSchoolId;
         }
-
+    
         wx.request({
             url: "https://mutualcampus.top/api/square/posts",
             method: "GET",
@@ -180,27 +183,24 @@ Page({
                     let newPosts = res.data.posts || [];
                     const isVip = (vipTime) =>
                         vipTime && new Date(vipTime).getTime() > Date.now();
-
+    
                     newPosts = newPosts.map(post => {
                         const approvedImages = (post.images || []).filter(img => img.status === "pass");
                         const reviewedImages = (post.images || []).map(img => ({
                             url: img.url,
                             status: img.status || "checking"
                         }));
-
+    
                         return {
                             ...post,
-                            images: reviewedImages, // 用于前端展示 + 占位
-                            approvedImages,         // 若你后续只想拿审核通过的可用
+                            images: reviewedImages,
+                            approvedImages,
                             isLiked: post.isLiked || false,
                             isVip: isVip(post.vip_expire_time),
                             created_time: this.formatTime(post.created_time)
                         };
                     });
-
-                    console.log(newPosts);
-
-
+    
                     this.setData({
                         posts: isLoadMore ? [...this.data.posts, ...newPosts] : newPosts,
                         hasMore: newPosts.length === pageSize

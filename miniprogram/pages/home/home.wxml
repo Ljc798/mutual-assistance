@@ -2,10 +2,10 @@
     <notify-banner />
     <!-- 上方固定部分 -->
     <view class="header">
-        <view class="app-name">互助Campus</view>
+        <view class="app-name">首页</view>
         <view class="location-icon">
             <image src="/assets/icons/ditu.svg" class="location-icon-image" bindtap="handleSchoolClick" />
-            <span class="location-text" bindtap="handleSchoolClick">{{selectedSchoolName || '九江学院'}}</span>
+            <span class="location-text" bindtap="handleSchoolClick">{{selectedSchoolName || '请选择学校'}}</span>
         </view>
     </view>
 

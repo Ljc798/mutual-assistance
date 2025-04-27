@@ -36,10 +36,17 @@ Page({
 
     onShow() {
         const app = getApp();
+        const userSchoolName = app.globalData.selectedTaskSchoolName || app.globalData.userInfo?.school_name || '';
+        const userSchoolId = app.globalData.selectedTaskSchoolId || app.globalData.userInfo?.school_id || null;
+    
         this.setData({
-            selectedSchoolName: app.globalData.selectedTaskSchoolName || ''
+            selectedSchoolName: userSchoolName
         });
-        this.loadTasks(); // 加载任务数据
+    
+        app.globalData.selectedTaskSchoolName = userSchoolName;
+        app.globalData.selectedTaskSchoolId = userSchoolId;
+    
+        this.loadTasks(); // 加载任务
     },
 
     onPullDownRefresh() {
@@ -51,7 +58,12 @@ Page({
     loadTasks(isLoadMore = false) {
         const { selectedCategory, currentPage, pageSize, tasks } = this.data;
         const app = getApp();
-        const school = app.globalData.selectedTaskSchoolId;
+        let school = app.globalData.selectedTaskSchoolId;
+
+        if (!school) {
+            // 🛟 自动兜底用自己学校
+            school = app.globalData.userInfo?.school_id || null;
+        }
 
         wx.request({
             url: "https://mutualcampus.top/api/task/tasks",

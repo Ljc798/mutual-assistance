@@ -5,6 +5,7 @@ Page({
         tempUserInfo: {}, // 临时修改数据
         errorMessage: "", // 错误提示
         avatarFilePath: "", // 临时存储头像路径（未上传）
+        isNewUser: false,
     },
 
     onLoad(options: any) {
@@ -15,8 +16,14 @@ Page({
                 icon: "none",
                 duration: 3000
             });
+            this.setData({
+                isNewUser: true // ✅ 记录是新用户
+            });
+        } else {
+            this.setData({
+                isNewUser: false
+            });
         }
-        
     },
 
     loadUserData() {
@@ -269,6 +276,13 @@ Page({
     },
 
     handleBack() {
+        if (this.data.isNewUser) {
+            wx.showToast({
+                title: "请先完善信息哦",
+                icon: "none"
+            });
+            return;
+        }
         wx.navigateBack({ delta: 1 });
     },
 

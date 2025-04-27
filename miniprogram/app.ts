@@ -5,14 +5,14 @@ App<IAppOption>({
         userInfo: null,
         token: null,
         // 🏫 各页面独立的学校选择
-    selectedTaskSchoolId: null,      // 主页任务用
-    selectedTaskSchoolName: '',
+        selectedTaskSchoolId: null,      // 主页任务用
+        selectedTaskSchoolName: '',
 
-    selectedSquareSchoolId: null,    // 广场页帖子用
-    selectedSquareSchoolName: '',
+        selectedSquareSchoolId: null,    // 广场页帖子用
+        selectedSquareSchoolName: '',
 
-    selectedUserSchoolId: null,      // 用户资料页用
-    selectedUserSchoolName: '',
+        selectedUserSchoolId: null,      // 用户资料页用
+        selectedUserSchoolName: '',
     },
 
     async onLaunch() {
@@ -84,6 +84,8 @@ App<IAppOption>({
 
         this.globalData.userInfo = user;
         this.globalData.token = token;
+        this.globalData.selectedUserSchoolId = user.school_id || null;
+        this.globalData.selectedUserSchoolName = user.school_name || '';
 
         wx.setStorageSync("user", user);
         wx.setStorageSync("token", token);
@@ -104,6 +106,8 @@ App<IAppOption>({
                 if (res.data.success) {
                     this.globalData.userInfo = res.data.user;
                     wx.setStorageSync("user", res.data.user);
+                    this.globalData.selectedUserSchoolId = res.data.user.school_id || null;
+                    this.globalData.selectedUserSchoolName = res.data.user.school_name || '';
                     callback?.(res.data.user);
                 }
             }
