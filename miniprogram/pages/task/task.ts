@@ -12,9 +12,12 @@ Page({
         isOwner: false,
         isAuthorizedUser: false,
         canLeaveMessage: false,
+        userId: null,
     },
 
     onLoad(options: any) {
+        const app = getApp();  // 👈 加上
+        const userId = app.globalData.userInfo?.id || null; // 保险一点
         if (!options.taskId) {
             wx.showToast({ title: "任务 ID 不存在", icon: "none" });
             return;
@@ -138,7 +141,15 @@ Page({
             },
             success: (res) => {
                 if (res.data.success) {
-                    this.setData({ bids: res.data.bids });
+                    const app = getApp();
+                    const myUserId = app.globalData.userInfo?.id;
+
+                    const processedBids = res.data.bids.map(bid => ({
+                        ...bid,
+                        isMyBid: bid.user_id === myUserId // 👈 自己出的就标记 true
+                    }));
+
+                    this.setData({ bids: processedBids });
                 } else {
                     wx.showToast({ title: '留言加载失败', icon: 'none' });
                 }
@@ -213,6 +224,39 @@ Page({
                     this.loadBids(task.id);
                 } else {
                     wx.showToast({ title: res.data.message || '提交失败', icon: 'none' });
+                }
+            }
+        });
+    },
+
+    handleCancelBid(e) {
+        const bidId = e.currentTarget.dataset.bidid;
+        const token = wx.getStorageSync("token");
+        const userId = getApp().globalData.userInfo?.id;
+        const taskId = this.data.task.id; // 👈补上任务ID
+
+        wx.showModal({
+            title: "确认撤回出价",
+            content: "撤回后将无法恢复，确定吗？",
+            success: (res) => {
+                if (res.confirm) {
+                    wx.request({
+                        url: "https://mutualcampus.top/api/task/bid/cancel",
+                        method: "POST",
+                        header: { Authorization: `Bearer ${token}` },
+                        data: { bid_id: bidId, user_id: userId },
+                        success: (res) => {
+                            if (res.data.success) {
+                                wx.showToast({ title: "撤回成功", icon: "success" });
+                                this.loadBids(taskId); // 👈 改成正确的方法！
+                            } else {
+                                wx.showToast({ title: res.data.message || "撤回失败", icon: "none" });
+                            }
+                        },
+                        fail: () => {
+                            wx.showToast({ title: "网络错误", icon: "none" });
+                        }
+                    });
                 }
             }
         });

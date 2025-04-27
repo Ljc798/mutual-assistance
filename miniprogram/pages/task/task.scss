@@ -285,3 +285,14 @@
     font-size: 28rpx;
     text-align: center;
 }
+
+.cancel-bid-button {
+    margin-top: 8rpx;
+    font-size: 24rpx;
+    color: #ff4d4f; /* 红色文字 */
+    background: transparent;
+    border: 1rpx solid #ff4d4f;
+    border-radius: 20rpx;
+    padding: 4rpx 12rpx;
+    display: inline-block;
+  }

@@ -401,6 +401,82 @@ router.post("/bid", authMiddleware, async (req, res) => {
     }
 });
 
+router.post("/bid/cancel", authMiddleware, async (req, res) => {
+    const { bid_id, user_id } = req.body;
+
+    if (!bid_id || !user_id) {
+        return res.status(400).json({
+            success: false,
+            message: "缺少必要参数"
+        });
+    }
+
+    try {
+        // 查询出价记录
+        const [[bid]] = await db.query(`SELECT * FROM task_bids WHERE id = ?`, [bid_id]);
+
+        if (!bid) {
+            return res.status(404).json({
+                success: false,
+                message: "出价记录不存在"
+            });
+        }
+
+        // 校验是不是自己取消自己的
+        if (bid.user_id !== user_id) {
+            return res.status(403).json({
+                success: false,
+                message: "无权限取消该出价"
+            });
+        }
+
+        // 查询任务雇主
+        const [[task]] = await db.query(`SELECT id, title, employer_id FROM tasks WHERE id = ?`, [bid.task_id]);
+
+        if (!task) {
+            return res.status(404).json({
+                success: false,
+                message: "任务不存在"
+            });
+        }
+
+        // 删除出价记录
+        await db.query(`DELETE FROM task_bids WHERE id = ?`, [bid_id]);
+
+        // 给雇主发通知
+        if (task.employer_id) {
+            await db.query(
+                `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
+                [
+                    task.employer_id,
+                    '出价撤回通知',
+                    `有投标人撤回了对任务《${task.title}》的出价，请注意。`
+                ]
+            );
+
+            // ✅ WebSocket实时推送（如果你集成了推送）
+            sendToUser(task.employer_id, {
+                type: 'notify',
+                content: `⚡ 有人撤回了任务《${task.title}》的出价，请注意哦～`,
+                created_time: new Date().toISOString()
+            });
+
+            console.log(`📡 通知推送给雇主ID：${task.employer_id}`);
+        }
+
+        return res.json({
+            success: true,
+            message: "出价已撤回"
+        });
+    } catch (err) {
+        console.error("❌ 撤回出价失败:", err);
+        return res.status(500).json({
+            success: false,
+            message: "服务器错误"
+        });
+    }
+});
+
 // 查询本月取消次数
 router.get('/cancel/count', async (req, res) => {
     const user_id = req.query.user_id;

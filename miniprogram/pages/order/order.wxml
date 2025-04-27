@@ -21,8 +21,7 @@
     <!-- 订单列表 -->
     <view class="order-list">
         <block wx:for="{{orders}}" wx:key="orderId">
-            <view class="order-item {{item.statusCode === 0 ? 'waiting' : item.statusCode === 1 ? 'active' : 'completed'}}">
-
+            <view class="order-item {{item.statusCode === -2 ? 'canceled' : item.statusCode === 0 ? 'waiting' : item.statusCode === 1 ? 'active' : 'completed'}}">
                 <!-- 订单头 -->
                 <view class="order-header">
                     <text class="order-id">订单号：{{item.orderId}}</text>

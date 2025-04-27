@@ -78,7 +78,6 @@ Page({
                         if (activeFilter2 === 3 && task.status !== 2) return false; // 已完成
                         return true;
                     });
-                    console.log(res.data);
 
 
                     const mapped = filtered.map(task => {
@@ -160,7 +159,7 @@ Page({
 
     // ✅ 状态转换
     translateStatus(statusCode) {
-        return ["待接单", "进行中", "已完成"][statusCode] || "未知";
+        return ["待接单", "进行中", "已完成"][statusCode] || "已取消";
     },
 
     handleMarkDone(e) {

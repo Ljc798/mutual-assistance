@@ -1,5 +1,5 @@
 <view class="task-detail-container">
-    <notify-banner/>
+    <notify-banner />
     <!-- 圆形返回按钮 -->
     <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack" />
     <!-- 任务介绍部分 -->
@@ -57,6 +57,9 @@
                         <text>{{item.advantage}}</text>
                         <button wx:if="{{isOwner}}" class="chat-button" bindtap="goToChat" data-targetid="{{item.user_id}}" data-username="{{item.username}}">聊一聊</button>
                         <button wx:if="{{isOwner}}" class="select-button" bindtap="confirmAssign" data-userid="{{item.user_id}}" data-username="{{item.username}}" data-price="{{item.price}}" data-bidid="{{item.id}}">选择TA</button>
+                        <button wx:if="{{item.isMyBid}}" class="cancel-bid-button" bindtap="handleCancelBid" data-bidid="{{item.id}}">
+                            撤回出价
+                        </button>
                     </view>
                 </view>
             </block>

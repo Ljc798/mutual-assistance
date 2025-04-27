@@ -76,6 +76,11 @@
     transition: border 0.3s ease;
 }
 
+/* 新增：取消的单子 */
+.order-item.canceled {
+    border-color: #999999; /* 暗灰色，看着就很“死” */
+}
+
 .order-item.waiting {
     border-color: #b0c4de;
     /* 灰蓝 */
