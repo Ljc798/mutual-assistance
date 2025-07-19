@@ -1,17 +1,19 @@
 const express = require("express");
 const axios = require("axios");
+const authMiddleware = require("../authMiddleware");
 
 const router = express.Router();
 
-const DIFY_API_KEY = process.env.DIFY_API_KEY; // 在环境变量里设置
+const DIFY_API_KEY = process.env.AI_TASK_HELPER_API_KEY; // 在环境变量里设置
 const DIFY_API_URL = "https://ai.mutualcampus.top/v1/chat-messages";
 
 // 🌟 提取任务结构字段
-router.post("/extract", async (req, res) => {
-  const { text, conversation_id, userId } = req.body;
-
-  if (!text || !userId) {
-    return res.status(400).json({ error: "text 和 userId 为必填参数" });
+router.post("/extract", authMiddleware, async (req, res) => {
+  const { text, conversation_id } = req.body;
+  const userId = req.user.userId; // 从认证中间件获取用户ID
+  console.log("🧪 AI Extract 请求用户ID:", userId);;
+  if (!text) {
+    return res.status(400).json({ error: "text 为必填参数" });
   }
 
   try {

@@ -16,7 +16,7 @@
         <input type="text" placeholder="请输入任务标题(取件请标注大/中/小件)" bindinput="handleTitleInput" />
     </view>
 
-    <!-- 任务分类为“代拿快递”或“代拿外卖”时显示取件码输入框 -->
+    <!-- 任务分类为"代拿快递"或"代拿外卖"时显示取件码输入框 -->
     <view class="field">
         <view wx:if="{{showTakeCode}}">
             <text>快递取件码</text>
@@ -96,6 +96,48 @@
             </view>
             <view class="popup-option" bindtap="choosePublishMethod" data-method="vip">
                 🌟 使用VIP免费发布
+            </view>
+        </view>
+    </view>
+
+    <!-- 悬浮AI助手按钮 -->
+    <view class="ai-assistant-btn" bindtap="openChatPopup">
+        <text class="ai-icon">🤖</text>
+        <text class="ai-text">AI助手</text>
+    </view>
+
+    <!-- 聊天弹窗 -->
+    <view class="chat-popup" wx:if="{{showChatPopup}}">
+        <view class="chat-mask" bindtap="closeChatPopup"></view>
+        <view class="chat-content">
+            <view class="chat-header">
+                <text class="chat-title">AI任务助手</text>
+                <text class="chat-close" bindtap="closeChatPopup">×</text>
+            </view>
+            
+            <view class="chat-messages">
+                <view wx:for="{{chatMessages}}" wx:key="index" class="message {{item.type}}">
+                    <view class="message-content">{{item.content}}</view>
+                    <view class="message-time">{{item.timestamp}}</view>
+                </view>
+            </view>
+
+            <!-- 帮我填按钮 -->
+            <view wx:if="{{showFillButton}}" class="fill-button-container">
+                <button class="fill-button" bindtap="fillFormWithData">
+                    ✨ 帮我填到表单
+                </button>
+            </view>
+
+            <view class="chat-input-container">
+                <input 
+                    class="chat-input" 
+                    placeholder="描述您的任务需求..." 
+                    value="{{chatInput}}"
+                    bindinput="handleChatInput"
+                    bindconfirm="sendChatMessage"
+                />
+                <button class="send-button" bindtap="sendChatMessage">发送</button>
             </view>
         </view>
     </view>
