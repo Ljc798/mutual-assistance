@@ -14,7 +14,6 @@ router.post("/extract", authMiddleware, async (req, res) => {
     conversation_id
   } = req.body;
   const userId = req.user.id; // 从认证中间件获取用户ID
-  console.log("🧪 AI Extract 请求用户ID:", userId);
 
   if (!text) {
     return res.status(400).json({

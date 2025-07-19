@@ -1,145 +1,154 @@
 <view class="container">
-    <notify-banner/>
-    <!-- 任务分类选择（下拉菜单） -->
-    <view class="field">
-        <text>任务分类</text>
-        <picker mode="selector" range="{{categories}}" bindchange="handleCategoryChange">
-            <view class="picker">
-                {{selectedCategory || '请选择任务分类'}}
-            </view>
-        </picker>
-    </view>
+  <notify-banner />
+  <!-- 任务分类选择（下拉菜单） -->
+  <view class="field">
+    <text>任务分类</text>
+    <picker mode="selector" range="{{categories}}" bindchange="handleCategoryChange">
+      <view class="picker">
+        {{selectedCategory || '请选择任务分类'}}
+      </view>
+    </picker>
+  </view>
 
-    <!-- 标题输入框 -->
-    <view class="field">
-        <text>任务标题</text>
-        <input type="text" placeholder="请输入任务标题(取件请标注大/中/小件)" bindinput="handleTitleInput" />
-    </view>
+  <!-- 标题输入框 -->
+  <view class="field">
+    <text>任务标题</text>
+    <input type="text" placeholder="请输入任务标题(取件请标注大/中/小件)" bindinput="handleTitleInput" data-key="title" value="{{title}}" />
+  </view>
 
-    <!-- 任务分类为"代拿快递"或"代拿外卖"时显示取件码输入框 -->
-    <view class="field">
-        <view wx:if="{{showTakeCode}}">
-            <text>快递取件码</text>
-            <input type="text" placeholder="请输入取件码(仅对接单员可见)" bindinput="handleTakeCodeInput" />
+  <!-- 任务分类为"代拿快递"或"代拿外卖"时显示取件码输入框 -->
+  <view class="field">
+    <view wx:if="{{showTakeCode}}">
+      <text>快递取件码</text>
+      <input type="text" placeholder="请输入取件码(仅对接单员可见)" bindinput="handleTakeCodeInput" data-key="takeCode" value="{{takeCode}}" />
+    </view>
+  </view>
+
+  <view class="field">
+    <view wx:if="{{showTakeAwayCode}}">
+      <text>外卖姓名</text>
+      <input type="text" placeholder="请输入外卖姓名(仅对接单员可见)" bindinput="handleTakeNameInput" data-key="takeName" value="{{takeName}}" />
+    </view>
+  </view>
+
+  <view class="field">
+    <view wx:if="{{showTakeAwayCode}}">
+      <text>手机尾号</text>
+      <input type="text" placeholder="请输入手机尾号(仅对接单员可见)" bindinput="handleTakeTelInput" data-key="takeTel" value="{{takeTel}}" />
+    </view>
+  </view>
+
+  <!-- 截止日期 -->
+  <view class="field">
+    <text class="label">预期完成日期</text>
+    <picker mode="date" bindchange="handleDateInput">
+      <view class="picker">
+        <text>{{date || '请选择预期完成日期'}}</text>
+      </view>
+    </picker>
+  </view>
+
+  <view class="field">
+    <text class="label">选择时间</text>
+    <picker mode="time" bindchange="handleTimeInput">
+      <view class="picker">
+        <text>{{time || '请选择具体时间'}}</text>
+      </view>
+    </picker>
+  </view>
+
+  <view class="field">
+    <text>交易地点</text>
+    <input type="text" placeholder="请输入交易地点/线上交易" bindinput="handlePositionInput" data-key="position" value="{{position}}" />
+  </view>
+
+  <view class="field">
+    <text>送达地点</text>
+    <input type="text" placeholder="请输入交付地点/线上交易" bindinput="handleAddressInput" data-key="address" value="{{address}}" />
+  </view>
+
+  <!-- 任务简介 -->
+  <view class="field">
+    <text>任务简介</text>
+    <textarea placeholder="请输入任务简介并留下联系方式(联系方式仅对接单员可见)" bindinput="handleDetailInput" data-key="detail" value="{{detail}}" />
+  </view>
+
+  <view class="field">
+    <text>报价</text>
+    <input type="text" placeholder="请输入金额" bindinput="handleRewardInput" data-key="reward" value="{{reward}}" />
+  </view>
+
+  <text>当前发布任务所处学校为首页选择的学校</text>
+
+  <!-- 发布按钮 -->
+  <button bindtap="handlePublish" disabled="{{isDisabled}}">发布</button>
+
+  <!-- 悬浮佣金选择弹窗 -->
+  <view class="commission-popup" wx:if="{{showCommissionPopup}}">
+    <view class="popup-mask" bindtap="closeCommissionPopup"></view>
+    <view class="popup-content">
+      <view class="popup-title">请选择发布方式</view>
+      <view class="popup-option" bindtap="choosePublishMethod" data-method="free">
+        🎁 使用免佣金次数
+      </view>
+      <view class="popup-option" bindtap="choosePublishMethod" data-method="pay">
+        💰 支付佣金 ¥{{commissionAmount}}
+      </view>
+      <view class="popup-option" bindtap="choosePublishMethod" data-method="vip">
+        🌟 使用VIP免费发布
+      </view>
+    </view>
+  </view>
+
+  <!-- 悬浮AI助手按钮 -->
+  <view class="ai-assistant-btn" bindtap="openChatPopup">
+    <text class="ai-icon">🤖</text>
+    <text class="ai-text">AI助手</text>
+  </view>
+
+  <!-- 聊天弹窗 -->
+  <view class="chat-popup" wx:if="{{showChatPopup}}">
+    <view class="chat-mask" bindtap="closeChatPopup"></view>
+    <view class="chat-content">
+      <view class="chat-header">
+        <text class="chat-title">AI任务助手</text>
+        <text class="chat-close" bindtap="closeChatPopup">×</text>
+      </view>
+
+      <scroll-view class="chat-messages" scroll-y="true" scroll-into-view="{{scrollIntoView}}" scroll-with-animation="true">
+        <view wx:for="{{chatMessages}}" wx:key="index" class="message {{item.type}}" id="{{index === chatMessages.length - 1 ? 'last-message' : ''}}">
+          <view wx:if="{{item.type === 'user'}}" class="message-content">{{item.content}}</view>
+          <view wx:if="{{item.type === 'ai' && item.isFormatted}}">
+            <rich-text class="message-content" nodes="{{item.content}}"></rich-text>
+          </view>
+          <view wx:if="{{item.type === 'ai' && !item.isFormatted}}" class="message-content">{{item.content}}</view>
+          <view class="message-time">{{item.timestamp}}</view>
         </view>
-    </view>
 
-    <view class="field">
-        <view wx:if="{{showTakeAwayCode}}">
-            <text>外卖姓名</text>
-            <input type="text" placeholder="请输入外卖姓名(仅对接单员可见)" bindinput="handleTakeNameInput" />
+        <!-- 加载动画 -->
+        <view wx:if="{{isLoading}}" class="message ai" id="last-message">
+          <view class="loading-dots">
+            <view class="loading-dot">·</view>
+            <view class="loading-dot">·</view>
+            <view class="loading-dot">·</view>
+          </view>
         </view>
+      </scroll-view>
+
+      <!-- 帮我填按钮 -->
+      <view wx:if="{{showFillButton}}" class="fill-button-container">
+        <button class="fill-button" bindtap="fillFormWithData">
+          ✨ 帮我填到表单
+        </button>
+      </view>
+
+      <view class="chat-input-container">
+        <textarea class="chat-input" placeholder="描述您的任务需求..." value="{{chatInput}}" bindinput="handleChatInput" bindconfirm="sendChatMessage" disabled="{{isLoading}}" auto-height maxlength="500" />
+        <button class="send-button" bindtap="sendChatMessage" disabled="{{isLoading}}">
+          {{isLoading ? '发送中...' : '发送'}}
+        </button>
+      </view>
     </view>
-
-    <view class="field">
-        <view wx:if="{{showTakeAwayCode}}">
-            <text>手机尾号</text>
-            <input type="text" placeholder="请输入手机尾号(仅对接单员可见)" bindinput="handleTakeTelInput" />
-        </view>
-    </view>
-
-    <!-- 截止日期 -->
-    <view class="field">
-        <text class="label">预期完成日期</text>
-        <picker mode="date" bindchange="handleDateInput">
-            <view class="picker">
-                <text>{{date || '请选择预期完成日期'}}</text>
-            </view>
-        </picker>
-    </view>
-
-    <view class="field">
-        <text class="label">选择时间</text>
-        <picker mode="time" bindchange="handleTimeInput">
-            <view class="picker">
-                <text>{{time || '请选择具体时间'}}</text>
-            </view>
-        </picker>
-    </view>
-
-    <view class="field">
-        <text>交易地点</text>
-        <input type="text" placeholder="请输入交易地点/线上交易" bindinput="handlePositionInput" />
-    </view>
-
-    <view class="field">
-        <text>送达地点</text>
-        <input type="text" placeholder="请输入交付地点/线上交易" bindinput="handleAddressInput" />
-    </view>
-
-    <!-- 任务简介 -->
-    <view class="field">
-        <text>任务简介</text>
-        <textarea placeholder="请输入任务简介并留下联系方式(联系方式仅对接单员可见)" bindinput="handleDetailInput" />
-    </view>
-
-    <view class="field">
-        <text>报价</text>
-        <input type="text" placeholder="请输入金额" bindinput="handleRewardInput" />
-    </view>
-
-    <text>当前发布任务所处学校为首页选择的学校</text>
-
-    <!-- 发布按钮 -->
-    <button bindtap="handlePublish" disabled="{{isDisabled}}">发布</button>
-
-    <!-- 悬浮佣金选择弹窗 -->
-    <view class="commission-popup" wx:if="{{showCommissionPopup}}">
-        <view class="popup-mask" bindtap="closeCommissionPopup"></view>
-        <view class="popup-content">
-            <view class="popup-title">请选择发布方式</view>
-            <view class="popup-option" bindtap="choosePublishMethod" data-method="free">
-                🎁 使用免佣金次数
-            </view>
-            <view class="popup-option" bindtap="choosePublishMethod" data-method="pay">
-                💰 支付佣金 ¥{{commissionAmount}}
-            </view>
-            <view class="popup-option" bindtap="choosePublishMethod" data-method="vip">
-                🌟 使用VIP免费发布
-            </view>
-        </view>
-    </view>
-
-    <!-- 悬浮AI助手按钮 -->
-    <view class="ai-assistant-btn" bindtap="openChatPopup">
-        <text class="ai-icon">🤖</text>
-        <text class="ai-text">AI助手</text>
-    </view>
-
-    <!-- 聊天弹窗 -->
-    <view class="chat-popup" wx:if="{{showChatPopup}}">
-        <view class="chat-mask" bindtap="closeChatPopup"></view>
-        <view class="chat-content">
-            <view class="chat-header">
-                <text class="chat-title">AI任务助手</text>
-                <text class="chat-close" bindtap="closeChatPopup">×</text>
-            </view>
-            
-            <view class="chat-messages">
-                <view wx:for="{{chatMessages}}" wx:key="index" class="message {{item.type}}">
-                    <view class="message-content">{{item.content}}</view>
-                    <view class="message-time">{{item.timestamp}}</view>
-                </view>
-            </view>
-
-            <!-- 帮我填按钮 -->
-            <view wx:if="{{showFillButton}}" class="fill-button-container">
-                <button class="fill-button" bindtap="fillFormWithData">
-                    ✨ 帮我填到表单
-                </button>
-            </view>
-
-            <view class="chat-input-container">
-                <input 
-                    class="chat-input" 
-                    placeholder="描述您的任务需求..." 
-                    value="{{chatInput}}"
-                    bindinput="handleChatInput"
-                    bindconfirm="sendChatMessage"
-                />
-                <button class="send-button" bindtap="sendChatMessage">发送</button>
-            </view>
-        </view>
-    </view>
+  </view>
 </view>
 <bottom-nav></bottom-nav>

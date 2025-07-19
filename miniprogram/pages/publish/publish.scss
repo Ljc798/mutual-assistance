@@ -5,314 +5,393 @@ $text-color: #333; // 文字颜色
 $button-background-color: #ff3b30; // 按钮背景色
 
 .container {
-    padding: 20rpx 20rpx 200rpx 20rpx;
-    margin-top: 140rpx;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    width: 100%;
+  padding: 20rpx 20rpx 200rpx 20rpx;
+  margin-top: 140rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  width: 100%;
 }
 
 .field {
-    width: 100%;
+  width: 100%;
 }
 
 .text {
-    font-size: 14px;
-    color: $text-color;
-    margin-bottom: 15rpx;
-    font-weight: bold; // 设置标题文字加粗
+  font-size: 14px;
+  color: $text-color;
+  margin-bottom: 15rpx;
+  font-weight: bold; // 设置标题文字加粗
 }
 
 input,
 textarea {
-    padding: 12rpx; // 增加内边距，提升用户输入体验
-    font-size: 16px; // 设置字体大小
-    border: 1rpx solid $input-border-color;
-    border-radius: 5rpx; // 增加圆角
-    margin-top: 8rpx; // 上边距确保输入框与标题有间隔
+  padding: 12rpx; // 增加内边距，提升用户输入体验
+  font-size: 16px; // 设置字体大小
+  border: 1rpx solid $input-border-color;
+  border-radius: 5rpx; // 增加圆角
+  margin-top: 8rpx; // 上边距确保输入框与标题有间隔
 }
 
 input:focus,
 textarea:focus {
-    border-color: $primary-color;
-    outline: none;
+  border-color: $primary-color;
+  outline: none;
 }
 
 textarea {
-    width: 96.5%; // 明确设置宽度为 100%
-    height: 166rpx;
-    padding: 12rpx;
-    font-size: 16px;
-    border: 1rpx solid $input-border-color;
-    border-radius: 5rpx;
-    margin-top: 8rpx;
-    resize: none;
+  width: 96.5%; // 明确设置宽度为 100%
+  height: 166rpx;
+  padding: 12rpx;
+  font-size: 16px;
+  border: 1rpx solid $input-border-color;
+  border-radius: 5rpx;
+  margin-top: 8rpx;
+  resize: none;
 }
 
 .picker {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12rpx;
-    background-color: #fff;
-    border: 1px solid $input-border-color;
-    border-radius: 5rpx;
-    font-size: 16px;
-    color: $text-color;
-    margin-top: 8rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12rpx;
+  background-color: #fff;
+  border: 1px solid $input-border-color;
+  border-radius: 5rpx;
+  font-size: 16px;
+  color: $text-color;
+  margin-top: 8rpx;
 }
 
 button {
-    width: 100%;
-    padding: 14rpx;
-    background-color: $button-background-color;
-    color: #fff;
-    border: none;
-    border-radius: 5rpx;
-    font-size: 16px;
-    cursor: pointer;
-    margin-top: 20rpx;
-    transition: background-color 0.3s ease;
+  width: 100%;
+  padding: 14rpx;
+  background-color: $button-background-color;
+  color: #fff;
+  border: none;
+  border-radius: 5rpx;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 20rpx;
+  transition: background-color 0.3s ease;
 
-    &:disabled {
-        background-color: #ccc;
-        cursor: not-allowed;
-    }
+  &:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
 
-    &:not(:disabled):hover {
-        background-color: darken($button-background-color, 10%);
-    }
+  &:not(:disabled):hover {
+    background-color: darken($button-background-color, 10%);
+  }
 }
 
 /* 让每个输入框和按钮之间有适当的间距 */
 input,
 textarea,
 .picker {
-    margin-bottom: 20rpx; // 输入框和下拉框之间的间距
+  margin-bottom: 20rpx; // 输入框和下拉框之间的间距
 }
 
 button {
-    margin-top: 30rpx; // 发布按钮与下方的间距
+  margin-top: 30rpx; // 发布按钮与下方的间距
 }
 
 .commission-popup {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 999;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999;
 }
 
 .popup-mask {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
 }
 
 .popup-content {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    border-radius: 20rpx;
-    padding: 40rpx 30rpx;
-    width: 600rpx;
-    box-shadow: 0 10rpx 40rpx rgba(0, 0, 0, 0.1);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border-radius: 20rpx;
+  padding: 40rpx 30rpx;
+  width: 600rpx;
+  box-shadow: 0 10rpx 40rpx rgba(0, 0, 0, 0.1);
 }
 
 .popup-title {
-    font-weight: bold;
-    font-size: 32rpx;
-    text-align: center;
-    margin-bottom: 40rpx;
+  font-weight: bold;
+  font-size: 32rpx;
+  text-align: center;
+  margin-bottom: 40rpx;
 }
 
 .popup-option {
-    background: #f9f9f9;
-    padding: 24rpx;
-    text-align: center;
-    margin-bottom: 20rpx;
-    border-radius: 12rpx;
-    font-size: 28rpx;
+  background: #f9f9f9;
+  padding: 24rpx;
+  text-align: center;
+  margin-bottom: 20rpx;
+  border-radius: 12rpx;
+  font-size: 28rpx;
 }
 
 /* 悬浮AI助手按钮 */
 .ai-assistant-btn {
-    position: fixed;
-    bottom: 200rpx;
-    right: 30rpx;
-    width: 120rpx;
-    height: 120rpx;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 50%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 8rpx 24rpx rgba(102, 126, 234, 0.4);
-    z-index: 100;
-    transition: all 0.3s ease;
+  position: fixed;
+  bottom: 200rpx;
+  right: 30rpx;
+  width: 120rpx;
+  height: 120rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8rpx 24rpx rgba(102, 126, 234, 0.4);
+  z-index: 100;
+  transition: all 0.3s ease;
 
-    &:active {
-        transform: scale(0.95);
-    }
+  &:active {
+    transform: scale(0.95);
+  }
 }
 
 .ai-icon {
-    font-size: 32rpx;
-    margin-bottom: 8rpx;
+  font-size: 32rpx;
+  margin-bottom: 8rpx;
 }
 
 .ai-text {
-    font-size: 20rpx;
-    color: white;
-    font-weight: bold;
+  font-size: 20rpx;
+  color: white;
+  font-weight: bold;
 }
 
 /* 聊天弹窗 */
 .chat-popup {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 1000;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
 }
 
 .chat-mask {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
 }
 
 .chat-content {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 80%;
-    background: white;
-    border-radius: 20rpx 20rpx 0 0;
-    display: flex;
-    flex-direction: column;
-    animation: slideUp 0.3s ease;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 80%;
+  background: white;
+  border-radius: 0 0 20rpx 20rpx;
+  display: flex;
+  flex-direction: column;
+  animation: slideDown 0.3s ease;
 }
 
-@keyframes slideUp {
-    from {
-        transform: translateY(100%);
-    }
-    to {
-        transform: translateY(0);
-    }
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
 }
 
 .chat-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 30rpx;
-    border-bottom: 1rpx solid #eee;
+  display: flex;
+  align-items: center;
+  padding: 100rpx 30rpx 30rpx 30rpx;
+  border-bottom: 1rpx solid #eee;
 }
 
 .chat-title {
-    font-size: 32rpx;
-    font-weight: bold;
-    color: $text-color;
+  font-size: 32rpx;
+  font-weight: bold;
+  color: $text-color;
 }
 
 .chat-close {
-    font-size: 40rpx;
-    color: #999;
-    padding: 10rpx;
+  font-size: 40rpx;
+  color: #999;
+  padding: 10rpx;
 }
 
 .chat-messages {
-    flex: 1;
-    padding: 20rpx;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 20rpx;
+  flex: 1;
+  overflow-y: auto;
+  gap: 20rpx;
+  height: 100%;
+  width: 96%;
+  align-self: center;
 }
 
 .message {
-    max-width: 80%;
-    padding: 20rpx;
-    border-radius: 20rpx;
-    word-wrap: break-word;
-
-    &.user {
-        align-self: flex-end;
-        background: $primary-color;
-        color: white;
-        border-bottom-right-radius: 8rpx;
-    }
-
-    &.ai {
-        align-self: flex-start;
-        background: #f0f0f0;
-        color: $text-color;
-        border-bottom-left-radius: 8rpx;
-    }
+  display: inline-block;
+  clear: both;
+  max-width: 80%;
+  padding: 20rpx;
+  margin-bottom: 20rpx;
+  border-radius: 20rpx;
+  word-break: break-word;
+  white-space: pre-wrap;
+  background: #f0f0f0;
+  font-size: 28rpx;
+  line-height: 1.6;
 }
 
+.message.user {
+  float: right;
+  background: #ff4d4f;
+  color: white;
+  border-bottom-right-radius: 8rpx;
+}
+
+.message.ai {
+  float: left;
+  background: #f0f0f0;
+  color: #333;
+  border-bottom-left-radius: 8rpx;
+}
+
+
 .message-content {
-    font-size: 28rpx;
-    line-height: 1.4;
-    margin-bottom: 8rpx;
+  font-size: 28rpx;
+  line-height: 1.5;
+  margin-bottom: 8rpx;
+  word-wrap: break-word;
+  word-break: break-all;
+  white-space: pre-wrap;
+  width: 100%;
+}
+
+rich-text {
+  font-size: 28rpx;
+  color: #333;
+  line-height: 1.6;
+  word-break: break-word;
+  width: 100%;
+  display: block;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  box-sizing: border-box;
 }
 
 .message-time {
-    font-size: 20rpx;
-    opacity: 0.7;
+  font-size: 20rpx;
+  opacity: 0.7;
+}
+
+/* 加载动画 */
+.loading-dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20rpx;
+  gap: 8rpx;
+}
+
+.loading-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: #999;
+  animation: loadingDot 1.4s infinite ease-in-out both;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20rpx;
+  color: #999;
+}
+
+.loading-dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.loading-dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes loadingDot {
+
+  0%,
+  80%,
+  100% {
+    transform: scale(0.8);
+    opacity: 0.3;
+  }
+
+  40% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
 }
 
 .fill-button-container {
-    padding: 20rpx;
-    border-top: 1rpx solid #eee;
+  padding: 20rpx;
+  border-top: 1rpx solid #eee;
 }
 
 .fill-button {
-    width: 100%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border: none;
-    border-radius: 12rpx;
-    padding: 24rpx;
-    font-size: 28rpx;
-    font-weight: bold;
-    margin: 0;
+  width: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 12rpx;
+  padding: 24rpx;
+  font-size: 28rpx;
+  font-weight: bold;
+  margin: 0;
 }
 
 .chat-input-container {
-    display: flex;
-    padding: 20rpx;
-    gap: 20rpx;
-    border-top: 1rpx solid #eee;
+  display: flex;
+  padding: 20rpx;
+  gap: 20rpx;
+  border-top: 1rpx solid #eee;
+  align-items: center;
 }
 
 .chat-input {
-    width: 70%;
-    padding: 20rpx;
-    border: 1rpx solid #ddd;
-    border-radius: 25rpx;
-    font-size: 28rpx;
-    background: #f9f9f9;
+  flex: 1;
+  padding: 20rpx;
+  border: 1rpx solid #ddd;
+  border-radius: 25rpx;
+  font-size: 28rpx;
+  background: #f9f9f9;
+  min-height: 80rpx;
+  max-height: 200rpx;
+  word-wrap: break-word;
+  word-break: break-all;
+  white-space: pre-wrap;
+  resize: none;
+  overflow-y: auto;
 }
 
 .send-button {
-    width: 30%;
-    padding: 20rpx;
-    background: $primary-color;
-    color: white;
-    border: none;
-    border-radius: 25rpx;
-    font-size: 28rpx;
-    margin: 0;
+  max-width: 20%;
+  padding: 20rpx 30rpx;
+  background: $primary-color;
+  color: white;
+  border: none;
+  border-radius: 25rpx;
+  font-size: 28rpx;
+  margin: 0;
+  white-space: nowrap;
 }
