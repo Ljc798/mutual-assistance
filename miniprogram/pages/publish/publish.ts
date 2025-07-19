@@ -1,5 +1,26 @@
 import { checkTextContent } from "../../utils/security";
 
+// 定义聊天消息类型
+interface ChatMessage {
+    type: 'user' | 'ai';
+    content: string;
+    timestamp: string;
+}
+
+// 定义提取的数据类型
+interface ExtractedData {
+    selectedCategory?: string;
+    title?: string;
+    detail?: string;
+    takeCode?: string;
+    takeName?: string;
+    takeTel?: string;
+    DDL?: string;
+    position?: string;
+    address?: string;
+    reward?: string;
+}
+
 Page({
     data: {
         categories: ['代拿快递', '代拿外卖', '兼职发布', '作业协助', '二手交易', '寻物启事', '代办服务', '万能服务'], // 任务分类选项
@@ -21,6 +42,13 @@ Page({
         time: '',  // 存储选择的时间
         showCommissionPopup: false,
         commissionAmount: 0,
+        // 聊天相关状态
+        showChatPopup: false, // 控制聊天弹窗显示
+        chatMessages: [] as ChatMessage[], // 聊天消息列表
+        chatInput: '', // 聊天输入框内容
+        conversationId: '', // 对话ID
+        extractedData: null as ExtractedData | null, // 提取的数据
+        showFillButton: false, // 是否显示帮我填按钮
     },
 
     // 处理任务分类选择
@@ -289,5 +317,177 @@ Page({
 
     closeCommissionPopup() {
         this.setData({ showCommissionPopup: false });
+    },
+
+    // 打开聊天弹窗
+    openChatPopup() {
+        this.setData({ 
+            showChatPopup: true,
+            chatMessages: [],
+            conversationId: '',
+            extractedData: null,
+            showFillButton: false
+        });
+    },
+
+    // 关闭聊天弹窗
+    closeChatPopup() {
+        this.setData({ showChatPopup: false });
+    },
+
+    // 处理聊天输入
+    handleChatInput(e: any) {
+        this.setData({
+            chatInput: e.detail.value
+        });
+    },
+
+    // 发送聊天消息
+    async sendChatMessage() {
+        const { chatInput, chatMessages, conversationId } = this.data;
+        if (!chatInput.trim()) return;
+
+        const app = getApp();
+        const token = wx.getStorageSync("token");
+
+        if (!token) {
+            wx.showToast({ title: "请先登录", icon: "none" });
+            return;
+        }
+
+        // 添加用户消息到聊天记录
+        const userMessage: ChatMessage = {
+            type: 'user',
+            content: chatInput,
+            timestamp: new Date().toLocaleTimeString()
+        };
+
+        this.setData({
+            chatMessages: [...chatMessages, userMessage],
+            chatInput: ''
+        });
+
+        try {
+            // 调用后端API
+            const response = await new Promise((resolve, reject) => {
+                wx.request({
+                    url: 'https://mutualcampus.top/api/ai/extract',
+                    method: 'POST',
+                    data: {
+                        text: chatInput,
+                        conversation_id: conversationId
+                    },
+                    header: { Authorization: `Bearer ${token}` },
+                    success: resolve,
+                    fail: reject
+                });
+            });
+
+            const { data } = response as any;
+            
+            if (data.status === 'ok') {
+                // 添加AI回复到聊天记录
+                const aiMessage: ChatMessage = {
+                    type: 'ai',
+                    content: data.reply,
+                    timestamp: new Date().toLocaleTimeString()
+                };
+
+                this.setData({
+                    chatMessages: [...this.data.chatMessages, aiMessage],
+                    conversationId: data.conversation_id || conversationId
+                });
+
+                // 检查是否返回了JSON数据
+                this.checkForJsonData(data.reply);
+            } else {
+                wx.showToast({ title: "AI回复失败", icon: "none" });
+            }
+        } catch (error) {
+            console.error('发送消息失败:', error);
+            wx.showToast({ title: "网络错误", icon: "none" });
+        }
+    },
+
+    // 检查AI回复中是否包含JSON数据
+    checkForJsonData(reply: string) {
+        try {
+            // 尝试从回复中提取JSON
+            const jsonMatch = reply.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                const jsonData = JSON.parse(jsonMatch[0]) as ExtractedData;
+                
+                // 验证JSON结构是否符合预期
+                const expectedFields = ['selectedCategory', 'title', 'detail', 'takeCode', 'takeName', 'takeTel', 'DDL', 'position', 'address', 'reward'];
+                const hasValidStructure = expectedFields.some(field => jsonData.hasOwnProperty(field));
+                
+                if (hasValidStructure) {
+                    this.setData({
+                        extractedData: jsonData,
+                        showFillButton: true
+                    });
+                }
+            }
+        } catch (error) {
+            console.log('未检测到有效的JSON数据');
+        }
+    },
+
+    // 帮我填按钮点击事件
+    fillFormWithData() {
+        const { extractedData } = this.data;
+        if (!extractedData) return;
+
+        // 处理日期和时间
+        let date = '';
+        let time = '';
+        if (extractedData.DDL) {
+            const ddlParts = extractedData.DDL.split(' ');
+            if (ddlParts.length >= 2) {
+                date = ddlParts[0];
+                time = ddlParts[1];
+            }
+        }
+
+        // 填充表单数据
+        this.setData({
+            selectedCategory: extractedData.selectedCategory || '',
+            title: extractedData.title || '',
+            detail: extractedData.detail || '',
+            takeCode: extractedData.takeCode || '',
+            takeName: extractedData.takeName || '',
+            takeTel: extractedData.takeTel || '',
+            DDL: extractedData.DDL || '',
+            date: date,
+            time: time,
+            position: extractedData.position || '',
+            address: extractedData.address || '',
+            reward: extractedData.reward || '',
+            extractedData: null,
+            showFillButton: false
+        });
+
+        // 根据选中的任务分类显示不同的输入框
+        if (extractedData.selectedCategory === '代拿快递') {
+            this.setData({
+                showTakeCode: true,
+                showTakeAwayCode: false,
+            });
+        } else if (extractedData.selectedCategory === '代拿外卖') {
+            this.setData({
+                showTakeCode: false,
+                showTakeAwayCode: true,
+            });
+        } else {
+            this.setData({
+                showTakeCode: false,
+                showTakeAwayCode: false,
+            });
+        }
+
+        // 检查表单是否完整，更新发布按钮状态
+        this.checkFormValidity();
+
+        wx.showToast({ title: "已自动填充表单", icon: "success" });
     },
 });
