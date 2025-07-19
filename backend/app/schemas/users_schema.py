@@ -11,6 +11,7 @@ class UserOut(BaseModel):
     points: int
     balance: float
     school_id: int
+    school_name: Optional[str] = None
     phone_number: str
     vip_expire_time: date
     created_time: datetime

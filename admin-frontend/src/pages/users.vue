@@ -118,6 +118,7 @@ const columns = [
   { title: '免佣金次数', key: 'free_counts' },
   { title: '积分余额', key: 'points' },
   { title: '钱包余额', key: 'balance' },
+  { title: '学校', key: 'school_name' },
   { title: 'VIP', key: 'vip_expire_time' },
   {
     title: '注册时间',
