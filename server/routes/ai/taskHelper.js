@@ -9,27 +9,26 @@ const DIFY_API_URL = "https://ai.mutualcampus.top/v1/chat-messages";
 
 // 🌟 提取任务结构字段
 router.post("/extract", authMiddleware, async (req, res) => {
-  const {
-    text,
-    conversation_id
-  } = req.body;
+  const { text, conversation_id, tag } = req.body;
   const userId = req.user.id; // 从认证中间件获取用户ID
 
   if (!text) {
-    return res.status(400).json({
-      error: "text 为必填参数"
-    });
+    return res.status(400).json({ error: "text 为必填参数" });
   }
 
   try {
     const response = await axios.post(
-      DIFY_API_URL, {
+      DIFY_API_URL,
+      {
         query: text,
         user: userId, // 每个用户一条对话线
         conversation_id: conversation_id || "", // 如果为空则为新对话
-        inputs: {}, // 若有额外参数可以填这里
+        inputs: {
+          tag: tag || "字段提取" // 添加tag参数，默认为字段提取
+        }, // 将tag作为输入参数传递给Dify
         response_mode: "blocking" // 或 "streaming"，这里我们直接取完整响应
-      }, {
+      },
+      {
         headers: {
           Authorization: `Bearer ${DIFY_API_KEY}`,
           "Content-Type": "application/json"

@@ -1,143 +1,352 @@
 /* 定义基本的样式变量 */
-$primary-color: #ff3b30; // 主色调，用于按钮和一些高亮部分
-$input-border-color: #ccc; // 输入框边框色
-$text-color: #333; // 文字颜色
-$button-background-color: #ff3b30; // 按钮背景色
+$primary-color: #667eea; // 主色调，改为紫色渐变
+$secondary-color: #764ba2; // 辅助色
+$input-border-color: #e8eaed; // 输入框边框色
+$text-color: #2c3e50; // 文字颜色
+$button-background-color: #667eea; // 按钮背景色
+$background-color: #f8fafc; // 背景色
+$card-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.08); // 卡片阴影
+$gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+$gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
 
 .container {
-  padding: 20rpx 20rpx 200rpx 20rpx;
-  margin-top: 140rpx;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  width: 100%;
+    padding: 20rpx 20rpx 200rpx 20rpx;
+    margin-top: 160rpx;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    width: 100%;
+    background: $background-color;
+    min-height: 100vh;
+    position: relative;
+}
+
+// 添加背景装饰
+.container::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 300rpx;
+    background: $gradient-primary;
+    z-index: -1;
+    border-radius: 0 0 50rpx 50rpx;
 }
 
 .field {
-  width: 100%;
+    width: 100%;
+    background: white;
+    border-radius: 20rpx;
+    padding: 32rpx;
+    margin-bottom: 24rpx;
+    box-shadow: $card-shadow;
+    border: 1rpx solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    
+    // 添加微妙的边框渐变
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4rpx;
+        background: $gradient-primary;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    &:focus-within::before {
+        opacity: 1;
+    }
+    
+    // 隐藏的字段不显示
+    &.hidden {
+        display: none;
+    }
+    
+    // 显示时才添加边距
+    &.visible {
+        margin-bottom: 24rpx;
+    }
 }
 
 .text {
-  font-size: 14px;
-  color: $text-color;
-  margin-bottom: 15rpx;
-  font-weight: bold; // 设置标题文字加粗
+    font-size: 32rpx;
+    color: $text-color;
+    margin-bottom: 20rpx;
+    font-weight: 600;
+    display: block;
+    position: relative;
+    
+    &::after {
+        content: '';
+        position: absolute;
+        bottom: -8rpx;
+        left: 0;
+        width: 40rpx;
+        height: 4rpx;
+        background: $gradient-primary;
+        border-radius: 2rpx;
+    }
 }
 
 input,
 textarea {
-  padding: 12rpx; // 增加内边距，提升用户输入体验
-  font-size: 16px; // 设置字体大小
-  border: 1rpx solid $input-border-color;
-  border-radius: 5rpx; // 增加圆角
-  margin-top: 8rpx; // 上边距确保输入框与标题有间隔
+    padding: 24rpx 0 24rpx 0;
+    font-size: 28rpx;
+    border: 2rpx solid $input-border-color;
+    border-radius: 16rpx;
+    margin-top: 16rpx;
+    background: #fafbfc;
+    transition: all 0.3s ease;
+    width: 100%;
+    color: $text-color;
+    
+    &::placeholder {
+        color: #a0a0a0;
+    }
 }
 
 input:focus,
 textarea:focus {
-  border-color: $primary-color;
-  outline: none;
+    border-color: $primary-color;
+    background: white;
+    box-shadow: 0 0 0 6rpx rgba(102, 126, 234, 0.1);
+    transform: translateY(-2rpx);
 }
 
 textarea {
-  width: 96.5%; // 明确设置宽度为 100%
-  height: 166rpx;
-  padding: 12rpx;
-  font-size: 16px;
-  border: 1rpx solid $input-border-color;
-  border-radius: 5rpx;
-  margin-top: 8rpx;
-  resize: none;
+    height: 200rpx;
+    resize: none;
+    line-height: 1.6;
 }
 
 .picker {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12rpx;
-  background-color: #fff;
-  border: 1px solid $input-border-color;
-  border-radius: 5rpx;
-  font-size: 16px;
-  color: $text-color;
-  margin-top: 8rpx;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24rpx;
+    background: #fafbfc;
+    border: 2rpx solid $input-border-color;
+    border-radius: 16rpx;
+    font-size: 28rpx;
+    color: $text-color;
+    margin-top: 16rpx;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    
+    &:active {
+        background: #f0f2f5;
+        border-color: $primary-color;
+        transform: translateY(-2rpx);
+    }
 }
 
 button {
-  width: 100%;
-  padding: 14rpx;
-  background-color: $button-background-color;
-  color: #fff;
-  border: none;
-  border-radius: 5rpx;
-  font-size: 16px;
-  cursor: pointer;
-  margin-top: 20rpx;
-  transition: background-color 0.3s ease;
+    width: 100%;
+    padding: 28rpx;
+    background: $gradient-primary;
+    color: white;
+    border: none;
+    border-radius: 20rpx;
+    font-size: 32rpx;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 40rpx;
+    transition: all 0.3s ease;
+    box-shadow: 0 12rpx 32rpx rgba(102, 126, 234, 0.3);
+    position: relative;
+    overflow: hidden;
+    
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s ease;
+    }
+    
+    &:active::before {
+        left: 100%;
+    }
 
-  &:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-  }
+    &:disabled {
+        background: #e0e0e0;
+        box-shadow: none;
+        cursor: not-allowed;
+        transform: none;
+    }
 
-  &:not(:disabled):hover {
-    background-color: darken($button-background-color, 10%);
-  }
+    &:not(:disabled):active {
+        transform: translateY(4rpx);
+        box-shadow: 0 6rpx 16rpx rgba(102, 126, 234, 0.3);
+    }
 }
 
-/* 让每个输入框和按钮之间有适当的间距 */
-input,
-textarea,
-.picker {
-  margin-bottom: 20rpx; // 输入框和下拉框之间的间距
+// 添加提示文本样式
+.hint-text {
+    text-align: center;
+    font-size: 26rpx;
+    color: #666;
+    margin: 20rpx 0;
+    padding: 16rpx;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 12rpx;
+    backdrop-filter: blur(10rpx);
 }
 
-button {
-  margin-top: 30rpx; // 发布按钮与下方的间距
+/* Tag选择弹窗 */
+.tag-select-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
 }
 
+.tag-select-mask {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.tag-select-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border-radius: 24rpx;
+    padding: 40rpx;
+    width: 80%;
+    max-width: 600rpx;
+    box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.2);
+    animation: scaleIn 0.3s ease;
+}
+
+@keyframes scaleIn {
+    from {
+        transform: translate(-50%, -50%) scale(0.8);
+        opacity: 0;
+    }
+    to {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+}
+
+.tag-select-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40rpx;
+    padding-bottom: 20rpx;
+    border-bottom: 2rpx solid #f0f0f0;
+}
+
+.tag-select-title {
+    font-size: 36rpx;
+    font-weight: bold;
+    color: $text-color;
+}
+
+.tag-select-close {
+    font-size: 48rpx;
+    color: #999;
+    padding: 10rpx;
+    cursor: pointer;
+}
+
+.tag-options {
+    display: flex;
+    flex-direction: column;
+    gap: 20rpx;
+}
+
+.tag-option {
+    padding: 24rpx;
+    border: 2rpx solid #f0f0f0;
+    border-radius: 16rpx;
+    background: #fafafa;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.tag-option:active {
+    background: #f0f0f0;
+    border-color: $primary-color;
+    transform: translateY(-2rpx);
+    box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
+}
+
+.tag-option-header {
+    margin-bottom: 8rpx;
+}
+
+.tag-option-name {
+    font-size: 32rpx;
+    font-weight: 600;
+    color: $text-color;
+}
+
+.tag-option-desc {
+    font-size: 26rpx;
+    color: #666;
+    line-height: 1.4;
+}
+
+/* 佣金选择弹窗 */
 .commission-popup {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 999;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 999;
 }
 
 .popup-mask {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
 }
 
 .popup-content {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: white;
-  border-radius: 20rpx;
-  padding: 40rpx 30rpx;
-  width: 600rpx;
-  box-shadow: 0 10rpx 40rpx rgba(0, 0, 0, 0.1);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border-radius: 20rpx;
+    padding: 40rpx 30rpx;
+    width: 600rpx;
+    box-shadow: 0 10rpx 40rpx rgba(0, 0, 0, 0.1);
 }
 
 .popup-title {
-  font-weight: bold;
-  font-size: 32rpx;
-  text-align: center;
-  margin-bottom: 40rpx;
+    font-weight: bold;
+    font-size: 32rpx;
+    text-align: center;
+    margin-bottom: 40rpx;
 }
 
 .popup-option {
-  background: #f9f9f9;
-  padding: 24rpx;
-  text-align: center;
-  margin-bottom: 20rpx;
-  border-radius: 12rpx;
-  font-size: 28rpx;
+    background: #f9f9f9;
+    padding: 24rpx;
+    text-align: center;
+    margin-bottom: 20rpx;
+    border-radius: 12rpx;
+    font-size: 28rpx;
 }
 
 /* 悬浮AI助手按钮 */
@@ -214,22 +423,36 @@ button {
 }
 
 .chat-header {
-  display: flex;
-  align-items: center;
-  padding: 100rpx 30rpx 30rpx 30rpx;
-  border-bottom: 1rpx solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 100rpx 30rpx 30rpx 30rpx;
+    border-bottom: 1rpx solid #eee;
+}
+
+.chat-title-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
 }
 
 .chat-title {
-  font-size: 32rpx;
-  font-weight: bold;
-  color: $text-color;
+    font-size: 32rpx;
+    font-weight: bold;
+    color: $text-color;
+    margin-bottom: 4rpx;
+}
+
+.chat-subtitle {
+    font-size: 24rpx;
+    color: #666;
+    font-weight: normal;
 }
 
 .chat-close {
-  font-size: 40rpx;
-  color: #999;
-  padding: 10rpx;
+    font-size: 40rpx;
+    color: #999;
+    padding: 10rpx;
 }
 
 .chat-messages {

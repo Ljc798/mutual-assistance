@@ -1,5 +1,6 @@
 <view class="container">
   <notify-banner />
+  
   <!-- 任务分类选择（下拉菜单） -->
   <view class="field">
     <text>任务分类</text>
@@ -17,21 +18,21 @@
   </view>
 
   <!-- 任务分类为"代拿快递"或"代拿外卖"时显示取件码输入框 -->
-  <view class="field">
+  <view class="field {{showTakeCode ? 'visible' : 'hidden'}}">
     <view wx:if="{{showTakeCode}}">
       <text>快递取件码</text>
       <input type="text" placeholder="请输入取件码(仅对接单员可见)" bindinput="handleTakeCodeInput" data-key="takeCode" value="{{takeCode}}" />
     </view>
   </view>
 
-  <view class="field">
+  <view class="field {{showTakeAwayCode ? 'visible' : 'hidden'}}">
     <view wx:if="{{showTakeAwayCode}}">
       <text>外卖姓名</text>
       <input type="text" placeholder="请输入外卖姓名(仅对接单员可见)" bindinput="handleTakeNameInput" data-key="takeName" value="{{takeName}}" />
     </view>
   </view>
 
-  <view class="field">
+  <view class="field {{showTakeAwayCode ? 'visible' : 'hidden'}}">
     <view wx:if="{{showTakeAwayCode}}">
       <text>手机尾号</text>
       <input type="text" placeholder="请输入手机尾号(仅对接单员可见)" bindinput="handleTakeTelInput" data-key="takeTel" value="{{takeTel}}" />
@@ -78,10 +79,13 @@
     <input type="text" placeholder="请输入金额" bindinput="handleRewardInput" data-key="reward" value="{{reward}}" />
   </view>
 
-  <text>当前发布任务所处学校为首页选择的学校</text>
+  <!-- 美化提示文本 -->
+  <view class="hint-text">
+    📍 当前发布任务所处学校为首页选择的学校
+  </view>
 
   <!-- 发布按钮 -->
-  <button bindtap="handlePublish" disabled="{{isDisabled}}">发布</button>
+  <button bindtap="handlePublish" disabled="{{isDisabled}}">🚀 发布任务</button>
 
   <!-- 悬浮佣金选择弹窗 -->
   <view class="commission-popup" wx:if="{{showCommissionPopup}}">
@@ -106,12 +110,42 @@
     <text class="ai-text">AI助手</text>
   </view>
 
+  <!-- Tag选择弹窗 -->
+  <view class="tag-select-popup" wx:if="{{showTagSelectPopup}}">
+    <view class="tag-select-mask" bindtap="closeTagSelectPopup"></view>
+    <view class="tag-select-content">
+      <view class="tag-select-header">
+        <text class="tag-select-title">选择AI助手功能</text>
+        <text class="tag-select-close" bindtap="closeTagSelectPopup">×</text>
+      </view>
+      
+      <view class="tag-options">
+        <view 
+          wx:for="{{tagOptions}}" 
+          wx:key="tag" 
+          class="tag-option"
+          bindtap="selectTagAndOpenChat"
+          data-tag="{{item.tag}}"
+          data-name="{{item.name}}"
+        >
+          <view class="tag-option-header">
+            <text class="tag-option-name">{{item.name}}</text>
+          </view>
+          <view class="tag-option-desc">{{item.desc}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
   <!-- 聊天弹窗 -->
   <view class="chat-popup" wx:if="{{showChatPopup}}">
     <view class="chat-mask" bindtap="closeChatPopup"></view>
     <view class="chat-content">
       <view class="chat-header">
-        <text class="chat-title">AI任务助手</text>
+        <view class="chat-title-container">
+          <text class="chat-title">AI任务助手</text>
+          <text wx:if="{{currentTagName}}" class="chat-subtitle">{{currentTagName}}</text>
+        </view>
         <text class="chat-close" bindtap="closeChatPopup">×</text>
       </view>
 

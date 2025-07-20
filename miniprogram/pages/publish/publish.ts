@@ -47,6 +47,7 @@ Page({
     commissionAmount: '0', // 改为字符串类型
     // 聊天相关状态
     showChatPopup: false, // 控制聊天弹窗显示
+    showTagSelectPopup: false, // 控制tag选择弹窗显示
     chatMessages: [] as ChatMessage[], // 聊天消息列表
     chatInput: '', // 聊天输入框内容
     conversationId: '', // 对话ID
@@ -54,6 +55,15 @@ Page({
     showFillButton: false, // 是否显示帮我填按钮
     isLoading: false, // 是否正在加载
     scrollIntoView: '', // 滚动到指定消息
+    currentTag: '', // 当前选择的tag
+    currentTagName: '', // 当前选择的tag友好名称
+    // tag映射关系
+    tagOptions: [
+        { tag: '字段提取', name: '📋 智能提取任务信息', desc: '帮我从描述中提取任务的关键信息' },
+        { tag: '字段续写', name: '✍️ 完善任务详情', desc: '帮我补充和完善任务的详细信息' },
+        { tag: '价格估算', name: '💰 智能价格建议', desc: '帮我估算任务的合理价格范围' },
+        { tag: '文本润色', name: '✨ 优化任务描述', desc: '帮我润色和优化任务描述文案' }
+    ],
   },
 
   // 处理任务分类选择
@@ -326,18 +336,35 @@ Page({
 
   // 打开聊天弹窗
   openChatPopup() {
-    this.setData({
-      showChatPopup: true,
-      chatMessages: [],
-      conversationId: '',
-      extractedData: null,
-      showFillButton: false
+    // 先显示tag选择弹窗
+    this.setData({ 
+        showTagSelectPopup: true
     });
+  },
 
-    // 延迟滚动到底部，确保弹窗完全打开
-    setTimeout(() => {
-      this.scrollToBottom();
-    }, 300);
+  // 选择tag后打开聊天窗口
+  selectTagAndOpenChat(e: any) {
+      const { tag, name } = e.currentTarget.dataset;
+      this.setData({
+          showTagSelectPopup: false,
+          currentTag: tag,
+          currentTagName: name,
+          showChatPopup: true,
+          chatMessages: [],
+          conversationId: '',
+          extractedData: null,
+          showFillButton: false
+      });
+
+      // 延迟滚动到底部，确保弹窗完全打开
+      setTimeout(() => {
+          this.scrollToBottom();
+      }, 300);
+  },
+
+  // 关闭tag选择弹窗
+  closeTagSelectPopup() {
+      this.setData({ showTagSelectPopup: false });
   },
 
   // 关闭聊天弹窗
@@ -389,7 +416,8 @@ Page({
           method: 'POST',
           data: {
             text: chatInput,
-            conversation_id: conversationId
+            conversation_id: conversationId,
+            tag: this.data.currentTag // 添加tag参数
           },
           header: { Authorization: `Bearer ${token}` },
           success: resolve,
