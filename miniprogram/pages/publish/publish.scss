@@ -618,3 +618,79 @@ rich-text {
   margin: 0;
   white-space: nowrap;
 }
+
+.icon-suggest {
+    width: 40rpx;
+    height: 40rpx;
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 8rpx;
+    cursor: pointer;
+    transition: filter 0.2s;
+}
+.icon-suggest:active {
+    filter: brightness(0.7);
+}
+.icon-loading {
+    display: flex;
+    align-items: center;
+    margin-left: 8rpx;
+}
+.icon-loading .loading-dot {
+    width: 10rpx;
+    height: 10rpx;
+    border-radius: 50%;
+    background: #999;
+    margin: 0 2rpx;
+    animation: loadingDot 1.4s infinite ease-in-out both;
+}
+.icon-loading .loading-dot:nth-child(1) { animation-delay: -0.32s; }
+.icon-loading .loading-dot:nth-child(2) { animation-delay: -0.16s; }
+@keyframes loadingDot {
+    0%, 80%, 100% { transform: scale(0.8); opacity: 0.3; }
+    40% { transform: scale(1.2); opacity: 1; }
+}
+.icon-confirm {
+    font-size: 32rpx;
+    color: #43a047;
+    margin-left: 16rpx;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.icon-cancel {
+    font-size: 32rpx;
+    color: #e53935;
+    margin-left: 8rpx;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.suggest-reason {
+    font-size: 24rpx;
+    color: #888;
+    margin-left: 8rpx;
+    max-width: 300rpx;
+    white-space: normal;
+    word-break: break-all;
+}
+.highlighted {
+    background: #fffde7 !important;
+    border-color: #ffe082 !important;
+    transition: background 0.5s, border-color 0.5s;
+    animation: highlightFade 1.2s;
+}
+@keyframes highlightFade {
+    0% { background: #fff9c4; }
+    100% { background: #fffde7; }
+}
+
+.ai-question {
+    color: #3f51b5;
+    font-size: 26rpx;
+    margin-top: 12rpx;
+    margin-bottom: 8rpx;
+    background: #f0f4ff;
+    border-radius: 8rpx;
+    padding: 12rpx 20rpx;
+    line-height: 1.6;
+    word-break: break-all;
+}

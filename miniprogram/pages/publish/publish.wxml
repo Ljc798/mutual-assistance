@@ -70,13 +70,36 @@
 
   <!-- 任务简介 -->
   <view class="field">
-    <text>任务简介</text>
-    <textarea placeholder="请输入任务简介并留下联系方式(联系方式仅对接单员可见)" bindinput="handleDetailInput" data-key="detail" value="{{detail}}" />
+    <view style="display: flex; align-items: center; justify-content: space-between;">
+      <text>任务简介</text>
+      <view wx:if="{{showSummaryIcon}}" style="margin-left: 10rpx; display: flex; align-items: center;">
+        <image wx:if="!showSummaryConfirm" class="icon-suggest" src="/assets/icons/bulb-svgrepo-com-2.svg" mode="aspectFit" bindtap="handleSummarySuggest" />
+        <view wx:if="{{summarySuggesting}}" class="icon-loading"><view class="loading-dot">·</view><view class="loading-dot">·</view><view class="loading-dot">·</view></view>
+        <view wx:if="{{showSummaryConfirm}}" style="display: flex; align-items: center;">
+          <text class="icon-confirm" bindtap="confirmSummarySuggest">✔️</text>
+          <text class="icon-cancel" bindtap="cancelSummarySuggest">❌</text>
+        </view>
+      </view>
+    </view>
+    <textarea placeholder="请输入任务简介并留下联系方式(联系方式仅对接单员可见)" bindinput="handleDetailInput" data-key="detail" value="{{detail}}" class="{{highlightDetail ? 'highlighted' : ''}}" />
+    <view wx:if="{{summaryQuestion}}" class="ai-question">{{summaryQuestion}}</view>
   </view>
 
   <view class="field">
-    <text>报价</text>
-    <input type="text" placeholder="请输入金额" bindinput="handleRewardInput" data-key="reward" value="{{reward}}" />
+    <view style="display: flex; align-items: center; justify-content: space-between;">
+      <text>报价</text>
+      <view wx:if="{{showPriceSuggestIcon}}" style="margin-left: 10rpx; display: flex; align-items: center;">
+        <image wx:if="!showPriceConfirm" class="icon-suggest" src="/assets/icons/sparkle.svg" mode="aspectFit" bindtap="handlePriceSuggest" />
+        <view wx:if="{{priceSuggesting}}" class="icon-loading"><view class="loading-dot">·</view><view class="loading-dot">·</view><view class="loading-dot">·</view></view>
+        <view wx:if="{{showPriceConfirm}}" style="display: flex; align-items: center;">
+          <text class="suggest-reason">{{suggestedPriceReason}}</text>
+          <text class="icon-confirm" bindtap="confirmPriceSuggest">✔️</text>
+          <text class="icon-cancel" bindtap="cancelPriceSuggest">❌</text>
+        </view>
+      </view>
+    </view>
+    <input type="text" placeholder="请输入金额" bindinput="handleRewardInput" data-key="reward" value="{{reward}}" class="{{highlightReward ? 'highlighted' : ''}}" />
+    <view wx:if="{{aiQuestion}}" class="ai-question">{{aiQuestion}}</view>
   </view>
 
   <!-- 美化提示文本 -->
@@ -108,33 +131,6 @@
   <view class="ai-assistant-btn" bindtap="openChatPopup">
     <text class="ai-icon">🤖</text>
     <text class="ai-text">AI助手</text>
-  </view>
-
-  <!-- Tag选择弹窗 -->
-  <view class="tag-select-popup" wx:if="{{showTagSelectPopup}}">
-    <view class="tag-select-mask" bindtap="closeTagSelectPopup"></view>
-    <view class="tag-select-content">
-      <view class="tag-select-header">
-        <text class="tag-select-title">选择AI助手功能</text>
-        <text class="tag-select-close" bindtap="closeTagSelectPopup">×</text>
-      </view>
-      
-      <view class="tag-options">
-        <view 
-          wx:for="{{tagOptions}}" 
-          wx:key="tag" 
-          class="tag-option"
-          bindtap="selectTagAndOpenChat"
-          data-tag="{{item.tag}}"
-          data-name="{{item.name}}"
-        >
-          <view class="tag-option-header">
-            <text class="tag-option-name">{{item.name}}</text>
-          </view>
-          <view class="tag-option-desc">{{item.desc}}</view>
-        </view>
-      </view>
-    </view>
   </view>
 
   <!-- 聊天弹窗 -->
