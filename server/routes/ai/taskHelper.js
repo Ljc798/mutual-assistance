@@ -22,7 +22,7 @@ router.post("/extract", authMiddleware, async (req, res) => {
       {
         query: text,
         user: userId, // 每个用户一条对话线
-        conversation_id: conversation_id || "", // 如果为空则为新对话
+        conversation_id: conversation_id, // 如果为空则为新对话
         inputs: {
           tag: tag || "字段提取" // 添加tag参数，默认为字段提取
         }, // 将tag作为输入参数传递给Dify
