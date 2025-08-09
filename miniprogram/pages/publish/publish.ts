@@ -430,7 +430,7 @@ Page({
     };
 
     try {
-        // 调用后端API
+        // 调用后端APItest
         const response = await new Promise((resolve, reject) => {
             wx.request({
                 url: 'https://mutualcampus.top/api/ai/extract',
