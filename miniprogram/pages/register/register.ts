@@ -24,23 +24,79 @@ Page({
         }
     },
 
-    getPhoneNumber(e: any) {
+    // getPhoneNumber(e: any) {
+    //     if (!this.data.hasAgreed) {
+    //         // ✨ 未勾选协议时提示并 shake 动画
+    //         wx.showToast({ title: "请先阅读并同意协议", icon: "none" });
+    //         this.setData({ shakeAgreement: true });
+    //         setTimeout(() => this.setData({ shakeAgreement: false }), 500);
+    //         return;
+    //     }
+
+    //     if (e.detail.errMsg !== "getPhoneNumber:ok") {
+    //         wx.showToast({ title: "用户拒绝授权", icon: "none" });
+    //         return;
+    //     }
+
+    //     wx.login({
+    //         success: (loginRes) => {
+    //             if (!loginRes.code) {
+    //                 wx.showToast({ title: "登录失败", icon: "none" });
+    //                 return;
+    //             }
+
+    //             wx.showLoading({ title: "登录中..." });
+
+    //             wx.request({
+    //                 url: "https://mutualcampus.top/api/user/phone-login",
+    //                 method: "POST",
+    //                 data: {
+    //                     phoneCode: e.detail.code, // 手机号授权的 code
+    //                     loginCode: loginRes.code  // wx.login 拿到的 code，用来换 openid
+    //                 },
+    //                 success: (res: any) => {
+    //                     wx.hideLoading();
+    //                     if (res.data.success) {
+    //                         wx.setStorageSync("token", res.data.token);
+    //                         wx.setStorageSync("user", res.data.user);
+    //                         getApp().setGlobalUserInfo(res.data.user, res.data.token);
+
+    //                         this.setData({
+    //                             isLoggedIn: true,
+    //                             userInfo: res.data.user
+    //                         });
+
+    //                         const targetPage = res.data.isNewUser
+    //                             ? "/pages/edit-profile/edit-profile?new=1"
+    //                             : "/pages/home/home";
+
+    //                         wx.redirectTo({ url: targetPage });
+    //                     } else {
+    //                         wx.showToast({ title: res.data.message, icon: "none" });
+    //                     }
+    //                 },
+    //                 fail: () => {
+    //                     wx.hideLoading();
+    //                     wx.showToast({ title: "登录失败", icon: "none" });
+    //                 }
+    //             });
+    //         }
+    //     });
+    // },
+
+    // 替换旧的手机号登录逻辑，改成微信授权登录
+    loginByWeChat() {
         if (!this.data.hasAgreed) {
-            // ✨ 未勾选协议时提示并 shake 动画
             wx.showToast({ title: "请先阅读并同意协议", icon: "none" });
             this.setData({ shakeAgreement: true });
             setTimeout(() => this.setData({ shakeAgreement: false }), 500);
             return;
         }
 
-        if (e.detail.errMsg !== "getPhoneNumber:ok") {
-            wx.showToast({ title: "用户拒绝授权", icon: "none" });
-            return;
-        }
-
         wx.login({
-            success: (loginRes) => {
-                if (!loginRes.code) {
+            success: (res) => {
+                const code = res.code;
+                if (!code) {
                     wx.showToast({ title: "登录失败", icon: "none" });
                     return;
                 }
@@ -48,12 +104,9 @@ Page({
                 wx.showLoading({ title: "登录中..." });
 
                 wx.request({
-                    url: "https://mutualcampus.top/api/user/phone-login",
+                    url: "https://mutualcampus.top/api/user/wx-login",
                     method: "POST",
-                    data: {
-                        phoneCode: e.detail.code, // 手机号授权的 code
-                        loginCode: loginRes.code  // wx.login 拿到的 code，用来换 openid
-                    },
+                    data: { code },
                     success: (res: any) => {
                         wx.hideLoading();
                         if (res.data.success) {
