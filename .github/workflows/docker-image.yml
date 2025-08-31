@@ -1,4 +1,4 @@
-name: Build & Push Docker Image
+name: Build & Push Docker Images
 
 on:
   push:
@@ -11,9 +11,22 @@ jobs:
       contents: read
       packages: write
 
+    env:
+      # 统一的镜像前缀（全部转小写）
+      IMAGE_PREFIX: ghcr.io/${{ github.repository }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Lowercase IMAGE_PREFIX
+        run: |
+          echo "IMAGE_PREFIX=$(echo "$IMAGE_PREFIX" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+          echo "IMAGE_TAG=master" >> $GITHUB_ENV
+          echo "SHA_TAG=sha-${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -22,17 +35,47 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Prepare image name (lowercase)
+      # ===== 小程序后端（Node） =====
+      - name: Build & Push mini-api
+        uses: docker/build-push-action@v6
+        with:
+          context: ./server
+          file: ./server/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}/mini-api:${{ env.IMAGE_TAG }}
+            ${{ env.IMAGE_PREFIX }}/mini-api:${{ env.SHA_TAG }}
+            ${{ env.IMAGE_PREFIX }}/mini-api:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-        run: |
-          IMAGE="ghcr.io/${{ github.repository }}"
-          echo "IMAGE=$(echo "$IMAGE" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
-          echo "IMAGE_TAG=${GITHUB_REF_NAME}" >> $GITHUB_ENV   # master / main / tag 名
+      # ===== 管理员后端（FastAPI） =====
+      - name: Build & Push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}/backend:${{ env.IMAGE_TAG }}
+            ${{ env.IMAGE_PREFIX }}/backend:${{ env.SHA_TAG }}
+            ${{ env.IMAGE_PREFIX }}/backend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      - name: Build Docker image
-        run: |
-          docker build -t "${IMAGE}:master" ./server
-
-      - name: Push Docker image
-        run: |
-          docker push "${IMAGE}:master"
+      # ===== 管理员前端（Vue 构建后用 Nginx 提供静态） =====
+      - name: Build & Push admin-frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./admin-frontend
+          file: ./admin-frontend/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}/admin-frontend:${{ env.IMAGE_TAG }}
+            ${{ env.IMAGE_PREFIX }}/admin-frontend:${{ env.SHA_TAG }}
+            ${{ env.IMAGE_PREFIX }}/admin-frontend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
