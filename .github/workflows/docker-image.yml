@@ -64,18 +64,3 @@ jobs:
             ${{ env.IMAGE_PREFIX }}/backend:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      # ===== 管理员前端（Vue 构建后用 Nginx 提供静态） =====
-      - name: Build & Push admin-frontend
-        uses: docker/build-push-action@v6
-        with:
-          context: ./admin-frontend
-          file: ./admin-frontend/Dockerfile
-          platforms: linux/amd64
-          push: true
-          tags: |
-            ${{ env.IMAGE_PREFIX }}/admin-frontend:${{ env.IMAGE_TAG }}
-            ${{ env.IMAGE_PREFIX }}/admin-frontend:${{ env.SHA_TAG }}
-            ${{ env.IMAGE_PREFIX }}/admin-frontend:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
