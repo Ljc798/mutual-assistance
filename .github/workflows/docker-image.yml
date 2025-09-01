@@ -34,33 +34,3 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      # ===== 小程序后端（Node） =====
-      - name: Build & Push mini-api
-        uses: docker/build-push-action@v6
-        with:
-          context: ./server
-          file: ./server/Dockerfile
-          platforms: linux/amd64
-          push: true
-          tags: |
-            ${{ env.IMAGE_PREFIX }}/mini-api:${{ env.IMAGE_TAG }}
-            ${{ env.IMAGE_PREFIX }}/mini-api:${{ env.SHA_TAG }}
-            ${{ env.IMAGE_PREFIX }}/mini-api:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      # ===== 管理员后端（FastAPI） =====
-      - name: Build & Push backend
-        uses: docker/build-push-action@v6
-        with:
-          context: ./backend
-          file: ./backend/Dockerfile
-          platforms: linux/amd64
-          push: true
-          tags: |
-            ${{ env.IMAGE_PREFIX }}/backend:${{ env.IMAGE_TAG }}
-            ${{ env.IMAGE_PREFIX }}/backend:${{ env.SHA_TAG }}
-            ${{ env.IMAGE_PREFIX }}/backend:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
