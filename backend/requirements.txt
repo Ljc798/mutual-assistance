@@ -5,9 +5,6 @@ pymysql
 pydantic
 pydantic-settings
 requests
-ddddocr==1.5.6
-onnxruntime==1.16.3
-opencv-python-headless==4.9.0.80
 pycryptodome
 python-jose
 jwt

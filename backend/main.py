@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.api.v1 import users_api, tasks_api, posts_api, withdrawals_api, notifications_api, reports_api, dashboard_api, feedback_api, login_api, scheduleAPI
+from app.api.v1 import users_api, tasks_api, posts_api, withdrawals_api, notifications_api, reports_api, dashboard_api, feedback_api, login_api
 app = FastAPI(
     docs_url=None,        # 禁用 Swagger UI
     redoc_url=None,       # 禁用 Redoc 文档
@@ -15,7 +15,6 @@ app.include_router(reports_api.router, prefix="/api")
 app.include_router(dashboard_api.router, prefix="/api")
 app.include_router(feedback_api.router, prefix="/api")
 app.include_router(login_api.router, prefix="/api")
-app.include_router(scheduleAPI.router, prefix="/schedule", tags=["schedule"])
 
 from fastapi.middleware.cors import CORSMiddleware
 
