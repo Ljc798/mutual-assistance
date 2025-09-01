@@ -1,11 +1,11 @@
 fastapi
-uvicorn
-sqlalchemy
-pydantic
+uvicorn[standard]
+SQLAlchemy
 pymysql
-python-dotenv
-PyJWT
+pydantic
 pydantic-settings
 requests
-ddddocr
+opencv-python-headless==4.9.0.80
+onnxruntime==1.16.3
+ddddocr==1.5.6
 pycryptodome
