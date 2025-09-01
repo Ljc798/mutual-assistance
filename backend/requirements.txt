@@ -7,4 +7,4 @@ pydantic-settings
 requests
 pycryptodome
 python-jose
-jwt
+PyJWT
