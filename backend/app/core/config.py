@@ -1,6 +1,4 @@
 from pydantic_settings import BaseSettings
-from dotenv import load_dotenv
-load_dotenv()
 
 class Settings(BaseSettings):
     SECRET_KEY: str
@@ -9,13 +7,11 @@ class Settings(BaseSettings):
     DB_PASSWORD: str
     DB_HOST: str
     DB_NAME: str
-    admin_username: str
-    admin_password: str
-
-    class Config:
-        env_file = ".env"
+    ADMIN_USERNAME: str
+    ADMIN_PASSWORD: str
 
     @property
     def database_url(self) -> str:
         return f"mysql+pymysql://{self.DB_USERNAME}:{self.DB_PASSWORD}@{self.DB_HOST}/{self.DB_NAME}"
-settings = Settings()
+
+settings = Settings()  # 只从环境变量加载
