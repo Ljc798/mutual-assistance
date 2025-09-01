@@ -1,6 +1,5 @@
 from fastapi import FastAPI
-from app.api.v1 import users_api, tasks_api, posts_api, withdrawals_api, notifications_api, reports_api, dashboard_api, feedback_api, login_api  # 确保 users_schema.py 在 api 文件夹中
-import services.scheduleAPI as scheduleAPI
+from app.api.v1 import users_api, tasks_api, posts_api, withdrawals_api, notifications_api, reports_api, dashboard_api, feedback_api, login_api, scheduleAPI
 app = FastAPI(
     docs_url=None,        # 禁用 Swagger UI
     redoc_url=None,       # 禁用 Redoc 文档
