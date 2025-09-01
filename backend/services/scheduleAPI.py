@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import HTTPException, APIRouter
 from pydantic import BaseModel
 from sqlalchemy import create_engine, Column, Integer, String, text
 from sqlalchemy.orm import sessionmaker, declarative_base
@@ -13,13 +13,13 @@ from Crypto.Cipher import PKCS1_v1_5
 import base64
 import re
 from typing import List
-# 初始化 FastAPI
-app = FastAPI()
+
+router = APIRouter()
 
 # 数据库配置（请填写你的数据库信息）
 DB_USERNAME = "root"
 DB_PASSWORD = "926552ljc"
-DB_HOST = "db-mysql"
+DB_HOST = "mysql"
 DB_PORT = 3306
 DB_NAME = "mutual_assistance"
 
@@ -189,7 +189,7 @@ def save_schedule_to_db(user_id, theory_data, practice_data):
         db.close()
         
 # 📌 课表查询 API
-@app.post("/get_schedule/")
+@router.post("/get_schedule/")
 async def get_schedule(credentials: Credentials):
     session = requests.Session()
 

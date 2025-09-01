@@ -3,6 +3,9 @@ uvicorn
 sqlalchemy
 pydantic
 pymysql
-python-dotenv  # 可选，若你用它读取 env 文件
+python-dotenv
 PyJWT
 pydantic-settings
+requests
+ddddocr
+pycryptodome
