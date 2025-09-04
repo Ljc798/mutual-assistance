@@ -1,5 +1,5 @@
 <view class="course-detail-container">
-    <notify-banner/>
+    <notify-banner />
     <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack" />
 
     <!-- 标题栏 -->
@@ -12,7 +12,7 @@
     <view class="info-section">
         <view class="info-item">
             <text class="label">教师:</text>
-            <input class="value" value="{{course.teacher_name}}" disabled="{{!isEditing}}" bindinput="onInputChange" data-field="teacher_name"/>
+            <input class="value" value="{{course.teacher_name}}" disabled="{{!isEditing}}" bindinput="onInputChange" data-field="teacher_name" />
         </view>
         <view class="info-item">
             <text class="label">上课时间:</text>
@@ -26,11 +26,16 @@
         </view>
         <view class="info-item">
             <text class="label">上课地点:</text>
-            <input class="value" value="{{course.location}}" disabled="{{!isEditing}}" bindinput="onInputChange" data-field="location"/>
+            <input class="value" value="{{course.location}}" disabled="{{!isEditing}}" bindinput="onInputChange" data-field="location" />
         </view>
         <view class="info-item">
-            <text class="label">周次:</text>
-            <input class="value" value="{{course.weeks}}" disabled="{{!isEditing}}" bindinput="onInputChange" data-field="weeks"/>
+            <text class="label">周次：</text>
+
+            <view class="weeks-grid">
+                <view wx:for="{{weeksArray}}" wx:key="week" class="week-btn {{item.selected ? 'active' : ''}} {{!isEditing ? 'disabled' : ''}}" data-index="{{index}}" bindtap="toggleWeek">
+                    {{item.week}}
+                </view>
+            </view>
         </view>
     </view>
 

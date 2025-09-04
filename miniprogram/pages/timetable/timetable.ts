@@ -32,6 +32,7 @@ Page({
         weekDates: [],  // 日期数组
         touchStartX: 0,
         touchEndX: 0,
+        term: "2025-1"
     },
 
     onLoad() {
@@ -132,91 +133,76 @@ Page({
             data: {
                 user_id: this.data.userId,
                 week: this.data.currentWeek,
-                weekday: dayMap[this.data.dayOfWeek]
+                weekday: dayMap[this.data.dayOfWeek],
+                term: this.data.term
             },
             success: (res) => {
                 wx.hideLoading();
 
-                if (res.data.success) {
-
-                    const now = new Date();
-                    const app = getApp();
-                    const config = app.globalData.timetableConfig; // 从全局获取课程设置
-
-                    if (!config) {
-                        wx.showToast({ title: "课表配置未加载", icon: "none" });
-                        return;
-                    }
-
-                    const updatedCourses = res.data.data.map((course) => {
-                        const periods = course.class_period.split("-").map(p => parseInt(p));
-
-
-                        // ✅ 获取课程开始时间
-                        let startTime = config[`period_${periods[0]}`] || "未知";
-                        if (startTime !== "未知") {
-                            startTime = startTime.substring(0, 5); // 只保留 HH:mm
-                        }
-
-                        // ✅ 获取课程结束时间
-                        let endTime = "未知";
-                        if (config[`period_${periods[1]}`]) {
-                            let [endHour, endMinute] = config[`period_${periods[1]}`].split(":").map(Number);
-
-                            // 结束时间 = 下一节课的开始时间 + 课程时长
-                            endMinute += config.class_duration;
-
-                            if (endMinute >= 60) {
-                                endHour += Math.floor(endMinute / 60);
-                                endMinute %= 60;
-                            }
-
-                            endTime = `${String(endHour).padStart(2, "0")}:${String(endMinute).padStart(2, "0")}`;
-                        }
-
-                        // 计算课程状态
-                        let status = "upcoming";
-                        const now = new Date();
-                        const courseDate = new Date(this.data.selectedDate); // 课程对应的日期
-
-                        // 课程当天的时间戳范围比较
-                        const courseDay = new Date(this.data.selectedDate);
-                        const courseDateStr = courseDay.toISOString().split("T")[0]; // e.g. "2025-03-25"
-
-                        const startDateTime = startTime !== "未知" ? new Date(`${courseDateStr}T${startTime}`) : null;
-                        const endDateTime = endTime !== "未知" ? new Date(`${courseDateStr}T${endTime}`) : null;
-
-
-                        if (courseDay < new Date(now.getFullYear(), now.getMonth(), now.getDate())) {
-                            status = "ended"; // 昨天或更早
-                        } else if (courseDateStr === now.toISOString().split("T")[0]) {
-                            // 是今天的课
-                            if (startDateTime && endDateTime) {
-                                if (now >= startDateTime && now < endDateTime) {
-                                    status = "ongoing";
-                                } else if (now >= endDateTime) {
-                                    status = "ended";
-                                }
-                            }
-                        }
-                        return {
-                            id: course.id,
-                            course_name: course.course_name,
-                            teacher: course.teacher_name,
-                            location: course.location,
-                            time_start: startTime,
-                            time_end: endTime,
-                            status
-                        };
-                    });
-
-                    this.setData({ courses: updatedCourses });
-                    this.checkIfNoCourses();
-
-                } else {
+                if (!res.data?.success) {
                     wx.showToast({ title: "暂无课程", icon: "none" });
                     this.setData({ courses: [] });
+                    return;
                 }
+
+                // 工具：把 "HH:mm" / "HH:mm:ss" 统一成 "HH:mm"
+                const norm = (t?: string) => {
+                    if (!t) return "未知";
+                    const s = String(t);
+                    // 可能是 "10:05" / "10:05:00"
+                    const m = s.match(/^(\d{1,2}:\d{2})/);
+                    return m ? m[1] : "未知";
+                };
+
+                // 工具：把日期 + "HH:mm" 合成 Date
+                const toDateTime = (dateStr: string, hhmm: string) => {
+                    if (!hhmm || hhmm === "未知") return null;
+                    // 兼容 iOS：用 "YYYY/MM/DD HH:mm"
+                    return new Date(`${dateStr.replace(/-/g, "/")} ${hhmm}:00`);
+                };
+
+                const today = new Date();
+                const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+                const courseDay = new Date(this.data.selectedDate || todayStr);
+                const courseDateStr = (this.data.selectedDate || todayStr);
+
+                const updatedCourses = (res.data.data || []).map((course: any) => {
+                    const startTime = norm(course.time_start);
+                    const endTime = norm(course.time_end);
+
+                    // 计算状态
+                    let status: "upcoming" | "ongoing" | "ended" = "upcoming";
+                    const startDT = toDateTime(courseDateStr, startTime);
+                    const endDT = toDateTime(courseDateStr, endTime);
+
+                    // 比较只看日期部分
+                    const isPastDay =
+                        courseDay.getFullYear() < today.getFullYear() ||
+                        (courseDay.getFullYear() === today.getFullYear() && (
+                            courseDay.getMonth() < today.getMonth() ||
+                            (courseDay.getMonth() === today.getMonth() && courseDay.getDate() < today.getDate())
+                        ));
+
+                    if (isPastDay) {
+                        status = "ended";
+                    } else if (courseDateStr === todayStr && startDT && endDT) {
+                        if (today >= startDT && today < endDT) status = "ongoing";
+                        else if (today >= endDT) status = "ended";
+                    }
+
+                    return {
+                        id: course.id,
+                        course_name: course.course_name,
+                        teacher: course.teacher_name,
+                        location: course.location,
+                        time_start: startTime,
+                        time_end: endTime,
+                        status
+                    };
+                });
+
+                this.setData({ courses: updatedCourses });
+                this.checkIfNoCourses();
             },
             fail: () => {
                 wx.hideLoading();
@@ -269,7 +255,9 @@ Page({
         wx.request({
             url: `${API_BASE_URL}/practice`,
             method: "GET",
-            data: { user_id: this.data.userId, week: this.data.currentWeek },
+            data: {
+                user_id: this.data.userId, week: this.data.currentWeek, term: this.data.term
+            },
             success: (res) => {
 
                 if (res.data.success && res.data.has_practice) {
@@ -426,7 +414,7 @@ Page({
         wx.showLoading({ title: "导入中..." });
 
         wx.request({
-            url: `https://admin.mutualcampus.top/schedule/get_schedule/`,
+            url: `https://admin.mutualcampus.top/schedule/get_schedule`,
             method: "POST",
             data: {
                 username: this.data.username,
@@ -513,12 +501,13 @@ Page({
             method: "GET",
             data: {
                 user_id: this.data.userId,
-                week: this.data.currentWeek
+                week: this.data.currentWeek,
+                term: this.data.term
             },
             success: (res) => {
                 if (res.data.success && typeof res.data.data === "object") {
                     const weeklyCourses = res.data.data;  // 这是一个对象，key 是星期几
-
+                    
                     // ✅ 处理成数组结构
                     let formattedCourses = [];
                     for (let day in weeklyCourses) {
@@ -570,7 +559,6 @@ Page({
             const { class_period, course_name, teacher_name, location, weekday } = course;
 
             if (!class_period || !weekday) {
-                console.warn("⚠️ 课程缺少 class_period 或 weekday，跳过:", course);
                 return;
             }
 

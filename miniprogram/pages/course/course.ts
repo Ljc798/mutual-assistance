@@ -7,7 +7,8 @@ Page({
         course: {},
         courseId: null,
         userId: null,
-        isEditing: false
+        isEditing: false,
+        weeksArray: [],
     },
 
     onLoad(options) {
@@ -36,9 +37,17 @@ Page({
                     course.time_start = startTime;
                     course.time_end = endTime;
 
-                    this.setData({ course });
+                    const rawWeeks = (course.weeks || "")
+                        .split(",")
+                        .map((w: string) => parseInt(w))
+                        .filter((w: number) => !isNaN(w));
+                    
+                    const weeksArray = Array.from({ length: 16 }, (_, i) => ({
+                        week: i + 1,
+                        selected: rawWeeks.includes(i + 1),
+                    }));
 
-                    this.setData({ course });
+                    this.setData({ course, weeksArray });
                 } else {
                     wx.showToast({ title: "加载失败", icon: "none" });
                 }
@@ -64,6 +73,26 @@ Page({
         const field = e.currentTarget.dataset.field;
         this.setData({
             [`course.${field}`]: e.detail.value
+        });
+    },
+
+    // 周次按钮切换
+    toggleWeek(e: any) {
+        if (!this.data.isEditing) return; // 只在编辑模式下允许操作
+
+        const index = e.currentTarget.dataset.index;
+        const weeksArray = [...this.data.weeksArray];
+        weeksArray[index].selected = !weeksArray[index].selected;
+
+        // 重新生成 weeks 字符串
+        const selectedWeeks = weeksArray
+            .filter(item => item.selected)
+            .map(item => item.week)
+            .join(",");
+
+        this.setData({
+            weeksArray,
+            "course.weeks": selectedWeeks
         });
     },
 
