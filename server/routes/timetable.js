@@ -183,7 +183,7 @@ router.get("/course-detail", async (req, res) => {
 router.post("/update-course", async (req, res) => {
     const {
         user_id,
-        course_id,
+        id,
         course_name,
         teacher_name,
         time_start,
@@ -192,7 +192,7 @@ router.post("/update-course", async (req, res) => {
         weeks
     } = req.body;
 
-    if (!user_id || !course_id) {
+    if (!user_id || !id) {
         return res.status(400).json({
             success: false,
             message: "缺少必要参数"
@@ -201,9 +201,9 @@ router.post("/update-course", async (req, res) => {
 
     try {
         await db.query(
-            "UPDATE timetable_theory SET course_name = ?, teacher_name = ?, time_start = ?, time_end = ?, location = ?, weeks = ? WHERE id = ? AND user_id = ?",
-            [course_name, teacher_name, time_start, time_end, location, weeks, course_id, user_id]
-        );
+            "UPDATE timetable_theory SET course_name=?, teacher_name=?, time_start=?, time_end=?, location=?, weeks=? WHERE id=? AND user_id=?",
+            [course_name, teacher_name, time_start, time_end, location, weeks, id, user_id]
+          );
 
         res.json({
             success: true,
