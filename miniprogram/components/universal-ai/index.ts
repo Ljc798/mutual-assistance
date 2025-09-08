@@ -1,177 +1,188 @@
-// ¶¨ÒåÁÄÌìÏûÏ¢ÀàĞÍ
 interface ChatMessage {
-  type: "user" | "ai";
-  content: string;
-  timestamp: string;
+    type: "user" | "ai";
+    content: string;
+    timestamp: string;
 }
 
+const TAP_MOVE_THRESHOLD = 8;     // å°äº 8px è§†ä¸ºç‚¹å‡»
+const TAP_TIME_THRESHOLD = 300;   // å°äº 300ms è§†ä¸ºç‚¹å‡»
+
 Component({
-  properties: {
-    apiUrl: {
-      type: String,
-      value: "https://mutualcampus.top/api/ai/extract"
-    }
-  },
-
-  data: {
-    ballPosition: { x: 0, y: 0 },
-    isDragging: false,
-    startX: 0,
-    startY: 0,
-    showChatPopup: false,
-    chatMessages: [] as ChatMessage[],
-    chatInput: "",
-    conversationId: "",
-    isLoading: false,
-    scrollIntoView: ""
-  },
-
-  lifetimes: {
-    attached() {
-      const systemInfo = wx.getSystemInfoSync();
-      this.setData({
-        ballPosition: {
-          x: systemInfo.windowWidth - 80,
-          y: systemInfo.windowHeight - 200
-        }
-      });
-    }
-  },
-
-  methods: {
-    onTouchStart(e: any) {
-      if (this.data.showChatPopup) return;
-      const touch = e.touches[0];
-      this.setData({
-        isDragging: true,
-        startX: touch.clientX - this.data.ballPosition.x,
-        startY: touch.clientY - this.data.ballPosition.y
-      });
+    properties: {
+        apiUrl: { type: String, value: "https://mutualcampus.top/api/ai/extract" }
     },
 
-    onTouchMove(e: any) {
-      if (!this.data.isDragging || this.data.showChatPopup) return;
-      const touch = e.touches[0];
-      const systemInfo = wx.getSystemInfoSync();
-      let newX = touch.clientX - this.data.startX;
-      let newY = touch.clientY - this.data.startY;
-      newX = Math.max(0, Math.min(newX, systemInfo.windowWidth - 60));
-      newY = Math.max(0, Math.min(newY, systemInfo.windowHeight - 60));
-      this.setData({ ballPosition: { x: newX, y: newY } });
-    },
+    data: {
+        ballPosition: { x: 0, y: 0 },
+        // æ‹–åŠ¨/ç‚¹å‡»åˆ¤å®š
+        isDragging: false,
+        startX: 0,
+        startY: 0,
+        downX: 0,
+        downY: 0,
+        downTime: 0,
+        moved: false,
 
-    onTouchEnd() {
-      this.setData({ isDragging: false });
-    },
-
-    onBallTap() {
-      console.log("onBallTap called, isDragging:", this.data.isDragging);
-      if (this.data.isDragging) {
-        console.log("Still dragging, ignoring tap");
-        return;
-      }
-      console.log("Opening chat popup");
-      this.openChatPopup();
-    },
-
-    openChatPopup() {
-      console.log("openChatPopup called");
-      this.setData({
-        showChatPopup: true,
-        chatMessages: [],
-        conversationId: "",
-        chatInput: ""
-      });
-      
-      const welcomeMessage: ChatMessage = {
-        type: "ai",
-        content: "?? ÄãºÃ£¡ÎÒÊÇÄãµÄÈ«ÄÜAIÖúÊÖ£¬ÓĞÊ²Ã´¿ÉÒÔ°ïÖúÄãµÄÂğ£¿",
-        timestamp: new Date().toLocaleTimeString()
-      };
-      
-      this.setData({ chatMessages: [welcomeMessage] });
-      setTimeout(() => { this.scrollToBottom(); }, 300);
-    },
-
-    closeChatPopup() {
-      this.setData({ showChatPopup: false });
-    },
-
-    handleChatInput(e: any) {
-      this.setData({ chatInput: e.detail.value });
-    },
-
-    async sendChatMessage() {
-      const { chatInput, chatMessages, conversationId } = this.data;
-      if (!chatInput.trim()) return;
-
-      const token = wx.getStorageSync("token");
-      if (!token) {
-        wx.showToast({ title: "ÇëÏÈµÇÂ¼", icon: "none" });
-        return;
-      }
-
-      const userMessage: ChatMessage = {
-        type: "user",
-        content: chatInput,
-        timestamp: new Date().toLocaleTimeString()
-      };
-
-      this.setData({
-        chatMessages: [...chatMessages, userMessage],
+        showChatPopup: false,
+        chatMessages: [] as ChatMessage[],
         chatInput: "",
-        isLoading: true
-      });
-
-      this.scrollToBottom();
-
-      try {
-        const response = await new Promise((resolve, reject) => {
-          wx.request({
-            url: this.properties.apiUrl,
-            method: "POST",
-            data: {
-              text: chatInput,
-              conversation_id: conversationId
-            },
-            header: { Authorization: `Bearer ${token}` },
-            success: resolve,
-            fail: reject
-          });
-        });
-
-        const { data } = response as any;
-
-        if (data.status === "ok") {
-          const aiMessage: ChatMessage = {
-            type: "ai",
-            content: data.reply,
-            timestamp: new Date().toLocaleTimeString()
-          };
-
-          this.setData({
-            chatMessages: [...this.data.chatMessages, aiMessage],
-            conversationId: data.conversation_id || conversationId,
-            isLoading: false
-          });
-
-          this.scrollToBottom();
-        } else {
-          this.setData({ isLoading: false });
-          wx.showToast({ title: "AI»Ø¸´Ê§°Ü", icon: "none" });
-        }
-      } catch (error) {
-        console.error("·¢ËÍÏûÏ¢Ê§°Ü:", error);
-        this.setData({ isLoading: false });
-        wx.showToast({ title: "ÍøÂç´íÎó", icon: "none" });
-      }
+        conversationId: "",
+        isLoading: false,
+        scrollIntoView: ""
     },
 
-    scrollToBottom() {
-      const that = this;
-      setTimeout(() => {
-        that.setData({ scrollIntoView: "last-message" });
-      }, 100);
+    lifetimes: {
+        attached() {
+            const systemInfo = wx.getSystemInfoSync();
+            this.setData({
+                ballPosition: {
+                    x: systemInfo.windowWidth - 80,
+                    y: systemInfo.windowHeight - 200
+                }
+            });
+        }
+    },
+
+    methods: {
+        // ------- å°çƒäº¤äº’ï¼šä¸å†ç”¨ bindtapï¼Œç»Ÿä¸€åœ¨ touchend åˆ¤å®š -------
+        onTouchStart(e: WechatMiniprogram.TouchEvent) {
+            if (this.data.showChatPopup) return;
+            const t = e.touches[0];
+            this.setData({
+                isDragging: true,
+                moved: false,
+                startX: t.clientX - this.data.ballPosition.x,
+                startY: t.clientY - this.data.ballPosition.y,
+                downX: t.clientX,
+                downY: t.clientY,
+                downTime: Date.now()
+            });
+        },
+
+        onTouchMove(e: WechatMiniprogram.TouchEvent) {
+            if (!this.data.isDragging || this.data.showChatPopup) return;
+
+            const t = e.touches[0];
+            const sys = wx.getSystemInfoSync();
+
+            let newX = t.clientX - this.data.startX;
+            let newY = t.clientY - this.data.startY;
+
+            // è¾¹ç•Œé™åˆ¶
+            newX = Math.max(0, Math.min(newX, sys.windowWidth - 60));
+            newY = Math.max(0, Math.min(newY, sys.windowHeight - 60));
+
+            // åªè¦ç§»åŠ¨è¶…é˜ˆå€¼ï¼Œå°±æ ‡è®°ä¸º moved
+            const dx = Math.abs(t.clientX - this.data.downX);
+            const dy = Math.abs(t.clientY - this.data.downY);
+            if (dx > TAP_MOVE_THRESHOLD || dy > TAP_MOVE_THRESHOLD) {
+                this.setData({ moved: true });
+            }
+
+            this.setData({ ballPosition: { x: newX, y: newY } });
+        },
+
+        onTouchEnd() {
+            const pressTime = Date.now() - this.data.downTime;
+
+            // ç»“æŸæ‹–åŠ¨
+            this.setData({ isDragging: false });
+
+            // â€œç‚¹å‡»â€åˆ¤å®šï¼šæ—¶é—´çŸ­ & å‡ ä¹æ²¡ä½ç§»
+            if (!this.data.moved && pressTime < TAP_TIME_THRESHOLD) {
+                this.openChatPopup();
+            }
+        },
+
+        // ------- å¼¹çª— & èŠå¤© -------
+        openChatPopup() {
+            this.setData({
+                showChatPopup: true,
+                chatMessages: [],
+                conversationId: "",
+                chatInput: ""
+            });
+
+            const welcomeMessage: ChatMessage = {
+                type: "ai",
+                content: "ä½ å¥½ï¼Œæˆ‘æ˜¯å…¨èƒ½ AI åŠ©æ‰‹ï¼Œæœ‰ä»€ä¹ˆå¯ä»¥å¸®ä½ çš„å—ï¼Ÿ",
+                timestamp: new Date().toLocaleTimeString()
+            };
+
+            this.setData({ chatMessages: [welcomeMessage] });
+            setTimeout(() => this.scrollToBottom(), 300);
+        },
+
+        closeChatPopup() {
+            this.setData({ showChatPopup: false });
+        },
+
+        handleChatInput(e: WechatMiniprogram.Input) {
+            this.setData({ chatInput: e.detail.value });
+        },
+
+        async sendChatMessage() {
+            const { chatInput, chatMessages, conversationId } = this.data;
+            if (!chatInput.trim()) return;
+
+            const token = wx.getStorageSync("token");
+            if (!token) {
+                wx.showToast({ title: "è¯·å…ˆç™»å½•", icon: "none" });
+                return;
+            }
+
+            const userMessage: ChatMessage = {
+                type: "user",
+                content: chatInput,
+                timestamp: new Date().toLocaleTimeString()
+            };
+
+            this.setData({
+                chatMessages: [...chatMessages, userMessage],
+                chatInput: "",
+                isLoading: true
+            });
+
+            this.scrollToBottom();
+
+            try {
+                const response: any = await new Promise((resolve, reject) => {
+                    wx.request({
+                        url: this.properties.apiUrl,
+                        method: "POST",
+                        data: { text: chatInput, conversation_id: conversationId },
+                        header: { Authorization: `Bearer ${token}` },
+                        success: resolve,
+                        fail: reject
+                    });
+                });
+
+                const { data } = response;
+                if (data?.status === "ok") {
+                    const aiMessage: ChatMessage = {
+                        type: "ai",
+                        content: data.reply || "ï¼ˆæ²¡æœ‰å¾—åˆ°å›ç­”ï¼‰",
+                        timestamp: new Date().toLocaleTimeString()
+                    };
+                    this.setData({
+                        chatMessages: [...this.data.chatMessages, aiMessage],
+                        conversationId: data.conversation_id || conversationId,
+                        isLoading: false
+                    });
+                    this.scrollToBottom();
+                } else {
+                    this.setData({ isLoading: false });
+                    wx.showToast({ title: "AI å›å¤å¤±è´¥", icon: "none" });
+                }
+            } catch (err) {
+                console.error("å‘é€æ¶ˆæ¯å¤±è´¥:", err);
+                this.setData({ isLoading: false });
+                wx.showToast({ title: "ç½‘ç»œå¼‚å¸¸", icon: "none" });
+            }
+        },
+
+        scrollToBottom() {
+            setTimeout(() => this.setData({ scrollIntoView: "last-message" }), 100);
+        }
     }
-  }
 });

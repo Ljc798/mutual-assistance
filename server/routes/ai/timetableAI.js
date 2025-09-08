@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../../config/db'); // 确保指向你已导出的 mysql2/promise pool
+const db = require('../../config/db'); // 确保指向你已导出的 mysql2/promise db
 
 // --- 简单的安全兜底：只允许只读 SELECT，避免误删表/写库 ---
 function isSafeSelect(sql) {
@@ -53,8 +53,8 @@ router.post('/query', async (req, res) => {
 
     // 并行执行两条查询
     const [[practiceRows], [theoryRows]] = await Promise.all([
-      pool.query(psql),
-      pool.query(tsql),
+      db.query(psql),
+      db.query(tsql),
     ]);
 
     return res.json({

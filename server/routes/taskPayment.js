@@ -35,7 +35,7 @@ router.post("/prepay", authMiddleware, async (req, res) => {
             success: false,
             message: "任务不存在"
         });
-
+        console.log(privateKey.slice(0, 100));
         const commission = Math.floor(task.offer * 100 * 0.02); // 单位分
         const out_trade_no = `TASKFEE_${task_id}_${Date.now()}`;
 

@@ -97,7 +97,7 @@
 
         <!-- 顶部日期栏 -->
         <view class="week-header">
-            <view class="empty-cell"></view> <!-- 占位，确保对齐 -->
+            <view class="empty-cell"></view>
             <block wx:for="{{weekDates}}" wx:key="index">
                 <view class="day-box">
                     <text class="day-name">{{item.weekday}}</text>

@@ -64,6 +64,7 @@ Page({
                 const app = getApp();
                 const currentUserId = app.globalData.userInfo?.id;
                 const isOwner = currentUserId === task.employer_id;
+                
                 const isAuthorizedUser = (
                     currentUserId === task.employer_id ||
                     currentUserId === task.employee_id
