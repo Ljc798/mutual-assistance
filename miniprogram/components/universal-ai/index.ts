@@ -9,7 +9,7 @@ const TAP_TIME_THRESHOLD = 300;   // 小于 300ms 视为点击
 
 Component({
     properties: {
-        apiUrl: { type: String, value: "https://mutualcampus.top/api/ai/extract" }
+        apiUrl: { type: String, value: "https://mutualcampus.top/api/ai/almighty" }
     },
 
     data: {
@@ -84,7 +84,7 @@ Component({
 
         onTouchEnd() {
             const pressTime = Date.now() - this.data.downTime;
-
+            
             // 结束拖动
             this.setData({ isDragging: false });
 
@@ -150,7 +150,11 @@ Component({
                     wx.request({
                         url: this.properties.apiUrl,
                         method: "POST",
-                        data: { text: chatInput, conversation_id: conversationId },
+                        data: {
+                            query: chatInput,                      // ✅ 改成 query
+                            conversation_id: conversationId || "",
+                            user: getApp().globalData?.userInfo?.id || "miniapp-user"
+                        },
                         header: { Authorization: `Bearer ${token}` },
                         success: resolve,
                         fail: reject
@@ -158,7 +162,7 @@ Component({
                 });
 
                 const { data } = response;
-                if (data?.status === "ok") {
+                if (data?.success && data?.data) {
                     const aiMessage: ChatMessage = {
                         type: "ai",
                         content: data.reply || "（没有得到回答）",
