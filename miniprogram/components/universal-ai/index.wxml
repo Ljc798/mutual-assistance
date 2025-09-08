@@ -1,0 +1,34 @@
+<!--components/universal-ai/index.wxml-->
+<view class="ai-ball" style="left: {{ballPosition.x}}px; top: {{ballPosition.y}}px;" catchtouchstart="onTouchStart" catchtouchmove="onTouchMove" catchtouchend="onTouchEnd" bindtap="onBallTap">
+  <text class="ai-ball-icon">🤖</text>
+</view>
+
+<view class="chat-popup" wx:if="{{showChatPopup}}">
+  <view class="chat-mask" bindtap="closeChatPopup"></view>
+  <view class="chat-content">
+    <view class="chat-header">
+      <view class="chat-title">全能AI助手</view>
+      <text class="chat-close" bindtap="closeChatPopup">×</text>
+    </view>
+
+    <scroll-view class="chat-messages" scroll-y="true" scroll-into-view="{{scrollIntoView}}" scroll-with-animation="true">
+      <view wx:for="{{chatMessages}}" wx:key="index" class="message {{item.type}}" id="{{index === chatMessages.length - 1 ? 'last-message' : ''}}">
+        <view class="message-content">{{item.content}}</view>
+        <view class="message-time">{{item.timestamp}}</view>
+      </view>
+
+      <view wx:if="{{isLoading}}" class="message ai" id="last-message">
+        <view class="loading-dots">
+          <view class="loading-dot">·</view>
+          <view class="loading-dot">·</view>
+          <view class="loading-dot">·</view>
+        </view>
+      </view>
+    </scroll-view>
+
+    <view class="chat-input-container">
+      <textarea class="chat-input" placeholder="说点什么..." value="{{chatInput}}" bindinput="handleChatInput" auto-height maxlength="500" />
+      <button class="send-button" bindtap="sendChatMessage" disabled="{{isLoading}}">{{isLoading ? '发送中...' : '发送'}}</button>
+    </view>
+  </view>
+</view>

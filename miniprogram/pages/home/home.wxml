@@ -1,98 +1,99 @@
 <view class="page">
-    <notify-banner />
-    <!-- 上方固定部分 -->
-    <view class="header">
-        <view class="app-name">首页</view>
-        <view class="location-icon">
-            <image src="/assets/icons/ditu.svg" class="location-icon-image" bindtap="handleSchoolClick" />
-            <span class="location-text" bindtap="handleSchoolClick">{{selectedSchoolName || '请选择学校'}}</span>
-        </view>
+  <notify-banner />
+  <!-- 上方固定部分 -->
+  <view class="header">
+    <view class="app-name">首页</view>
+    <view class="location-icon">
+      <image src="/assets/icons/ditu.svg" class="location-icon-image" bindtap="handleSchoolClick" />
+      <span class="location-text" bindtap="handleSchoolClick">{{selectedSchoolName || '请选择学校'}}</span>
     </view>
+  </view>
 
-    <!-- 搜索框 -->
-    <view class="search-container">
-        <view class="search-box">
-            <view class="search">
-                <image src="/assets/icons/search-magnify-magnifier-glass-svgrepo-com.svg" class="search-icon" />
-                <input type="text" class="search-input" placeholder="今天想找点什么呢-_^" bindinput="handleSearchInput" />
-            </view>
-            <!-- 搜索结果 -->
-            <view class="search-results" wx:if="{{searchResults.length > 0}}">
-                <block wx:for="{{searchResults}}" wx:key="id">
-                    <view class="search-item" bindtap="handleTaskClick" data-index="{{index}}" data-id="{{item.id}}">
-                        <text class="search-title">{{item.title}}</text>
-                        <text class="search-meta">¥{{item.offer}}</text>
-                    </view>
-                </block>
-            </view>
-        </view>
-    </view>
-
-    <!-- 分类部分 -->
-    <view class="category-container">
-        <view class="category-item" bindtap="handleCategoryClick" data-category="代拿快递">
-            <image src="/assets/icons/kuaidi.svg" class="category-icon" />
-            <text class="category-text">代拿快递</text>
-        </view>
-        <view class="category-item" bindtap="handleCategoryClick" data-category="代拿外卖">
-            <image src="/assets/icons/tongchengwaimai.svg" class="category-icon" />
-            <text class="category-text">代拿外卖</text>
-        </view>
-        <view class="category-item" bindtap="handleCategoryClick" data-category="兼职发布">
-            <image src="/assets/icons/jianzhi.svg" class="category-icon" />
-            <text class="category-text">兼职发布</text>
-        </view>
-        <view class="category-item" bindtap="handleCategoryClick" data-category="代办服务">
-            <image src="/assets/icons/bangbandaiban.svg" class="category-icon" />
-            <text class="category-text">代办服务</text>
-        </view>
-        <view class="category-item" bindtap="handleTimetableClick">
-            <image src="/assets/icons/kebiao.svg" class="category-icon" />
-            <text class="category-text">我的课表</text>
-        </view>
-        <view class="category-item" bindtap="handleCategoryClick" data-category="二手交易">
-            <image src="/assets/icons/lanling-ershoujiaoyi.svg" class="category-icon" />
-            <text class="category-text">二手交易</text>
-        </view>
-        <view class="category-item" bindtap="handleCategoryClick" data-category="寻物启事">
-            <image src="/assets/icons/shiwuzhaoling.svg" class="category-icon" />
-            <text class="category-text">寻物启事</text>
-        </view>
-        <view class="category-item" bindtap="handleCategoryClick" data-category="作业协助">
-            <image src="/assets/icons/zuoye.svg" class="category-icon" />
-            <text class="category-text">作业协助</text>
-        </view>
-        <view class="category-item" bindtap="handleCategoryClick" data-category="万能服务">
-            <image src="/assets/icons/fuwu.svg" class="category-icon" />
-            <text class="category-text">万能服务</text>
-        </view>
-        <view class="category-item" bindtap="handleOrderClick">
-            <image src="/assets/icons/dingdanrizhi-.svg" class="category-icon" />
-            <text class="category-text">我的任务</text>
-        </view>
-    </view>
-
-    <!-- 任务列表 -->
-    <view class="task-list-container">
-        <block wx:for="{{tasks}}" wx:key="id">
-            <view class="task-item" bindtap="handleTaskClick" data-id="{{item.id}}">
-                <view class="task-left">
-                    <text class="task-title">{{item.title}}</text>
-                    <view class="task-details">
-                        <view class="task-time">期望完成时间：{{item.formattedDDL}}前</view>
-                        <view class="task-location">交易地点：{{item.position}}</view>
-                        <view class="task-address">送达地点：{{item.address}}</view>
-                    </view>
-                </view>
-                <view class="task-right">
-                    <view wx:if="{{item.status === 0}}" class="task-status status-pending">{{item.formattedStatus}}</view>
-                    <view wx:if="{{item.status === 1}}" class="task-status status-ongoing">{{item.formattedStatus}}</view>
-                    <view wx:if="{{item.status === 2}}" class="task-status status-finished">{{item.formattedStatus}}</view>
-                    <text class="task-reward">¥{{item.displayPrice}}</text>
-                </view>
-            </view>
+  <!-- 搜索框 -->
+  <view class="search-container">
+    <view class="search-box">
+      <view class="search">
+        <image src="/assets/icons/search-magnify-magnifier-glass-svgrepo-com.svg" class="search-icon" />
+        <input type="text" class="search-input" placeholder="今天想找点什么呢-_^" bindinput="handleSearchInput" />
+      </view>
+      <!-- 搜索结果 -->
+      <view class="search-results" wx:if="{{searchResults.length > 0}}">
+        <block wx:for="{{searchResults}}" wx:key="id">
+          <view class="search-item" bindtap="handleTaskClick" data-index="{{index}}" data-id="{{item.id}}">
+            <text class="search-title">{{item.title}}</text>
+            <text class="search-meta">¥{{item.offer}}</text>
+          </view>
         </block>
+      </view>
     </view>
+  </view>
 
-    <bottom-nav></bottom-nav>
+  <!-- 分类部分 -->
+  <view class="category-container">
+    <view class="category-item" bindtap="handleCategoryClick" data-category="代拿快递">
+      <image src="/assets/icons/kuaidi.svg" class="category-icon" />
+      <text class="category-text">代拿快递</text>
+    </view>
+    <view class="category-item" bindtap="handleCategoryClick" data-category="代拿外卖">
+      <image src="/assets/icons/tongchengwaimai.svg" class="category-icon" />
+      <text class="category-text">代拿外卖</text>
+    </view>
+    <view class="category-item" bindtap="handleCategoryClick" data-category="兼职发布">
+      <image src="/assets/icons/jianzhi.svg" class="category-icon" />
+      <text class="category-text">兼职发布</text>
+    </view>
+    <view class="category-item" bindtap="handleCategoryClick" data-category="代办服务">
+      <image src="/assets/icons/bangbandaiban.svg" class="category-icon" />
+      <text class="category-text">代办服务</text>
+    </view>
+    <view class="category-item" bindtap="handleTimetableClick">
+      <image src="/assets/icons/kebiao.svg" class="category-icon" />
+      <text class="category-text">我的课表</text>
+    </view>
+    <view class="category-item" bindtap="handleCategoryClick" data-category="二手交易">
+      <image src="/assets/icons/lanling-ershoujiaoyi.svg" class="category-icon" />
+      <text class="category-text">二手交易</text>
+    </view>
+    <view class="category-item" bindtap="handleCategoryClick" data-category="寻物启事">
+      <image src="/assets/icons/shiwuzhaoling.svg" class="category-icon" />
+      <text class="category-text">寻物启事</text>
+    </view>
+    <view class="category-item" bindtap="handleCategoryClick" data-category="作业协助">
+      <image src="/assets/icons/zuoye.svg" class="category-icon" />
+      <text class="category-text">作业协助</text>
+    </view>
+    <view class="category-item" bindtap="handleCategoryClick" data-category="万能服务">
+      <image src="/assets/icons/fuwu.svg" class="category-icon" />
+      <text class="category-text">万能服务</text>
+    </view>
+    <view class="category-item" bindtap="handleOrderClick">
+      <image src="/assets/icons/dingdanrizhi-.svg" class="category-icon" />
+      <text class="category-text">我的任务</text>
+    </view>
+  </view>
+
+  <!-- 任务列表 -->
+  <view class="task-list-container">
+    <block wx:for="{{tasks}}" wx:key="id">
+      <view class="task-item" bindtap="handleTaskClick" data-id="{{item.id}}">
+        <view class="task-left">
+          <text class="task-title">{{item.title}}</text>
+          <view class="task-details">
+            <view class="task-time">期望完成时间：{{item.formattedDDL}}前</view>
+            <view class="task-location">交易地点：{{item.position}}</view>
+            <view class="task-address">送达地点：{{item.address}}</view>
+          </view>
+        </view>
+        <view class="task-right">
+          <view wx:if="{{item.status === 0}}" class="task-status status-pending">{{item.formattedStatus}}</view>
+          <view wx:if="{{item.status === 1}}" class="task-status status-ongoing">{{item.formattedStatus}}</view>
+          <view wx:if="{{item.status === 2}}" class="task-status status-finished">{{item.formattedStatus}}</view>
+          <text class="task-reward">¥{{item.displayPrice}}</text>
+        </view>
+      </view>
+    </block>
+  </view>
+
+  <bottom-nav></bottom-nav>
+  <universal-ai></universal-ai>
 </view>

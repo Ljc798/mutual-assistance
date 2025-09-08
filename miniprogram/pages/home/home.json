@@ -1,7 +1,8 @@
 {
     "usingComponents": {
       "bottom-nav": "/components/bottom-nav/bottom-nav",
-      "notify-banner": "/components/notify-banner/index"
+      "notify-banner": "/components/notify-banner/index",
+      "universal-ai": "/components/universal-ai/index"
     },
     "enablePullDownRefresh": true
 }
