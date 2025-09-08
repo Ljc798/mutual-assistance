@@ -9,7 +9,10 @@ const appid = process.env.WX_APPID;
 const mchid = process.env.WX_MCHID;
 const serial_no = process.env.WX_SERIAL_NO;
 const notify_url = "https://mutualcampus.top/api/vip/notify";
-const privateKey = process.env.WX_PRIVATE_KEY.replace(/\\n/g, '\n');
+const fs = require('fs');
+const path = process.env.WX_PRIVATE_KEY_PATH;
+if (!path) throw new Error('WX_PRIVATE_KEY_PATH not set');
+const privateKey = fs.readFileSync(path, 'utf8');
 const apiV3Key = process.env.WX_API_V3_KEY;
 const SECRET = process.env.JWT_SECRET;
 
