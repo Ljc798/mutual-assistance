@@ -21,7 +21,8 @@ const notificationRouter = require("./routes/notification");
 const taskPaymentRouter = require("./routes/taskPayment");
 const orderRouter = require("./routes/order");
 const schoolRouter = require("./routes/school");
-const aiRouter = require("./routes/ai/aiRouter");   
+const aiRouter = require("./routes/ai/aiRouter");
+const wechatRouter = require("./routes/wechat");
 
 const { registerUser, unregisterUser, sendToUser, broadcastNotify } = require("./routes/ws-helper");
 
@@ -58,6 +59,7 @@ app.use("/api/taskPayment", taskPaymentRouter);
 app.use("/api/order", orderRouter);
 app.use("/api/school", schoolRouter);
 app.use("/api/ai", aiRouter);
+app.use("/api/wechat", wechatRouter);
 
 app.get("/", (req, res) => {
     res.redirect("https://admin.mutualcampus.top");
