@@ -24,6 +24,7 @@
     <view wx:if="{{showMenu}}" class="menu-popup">
         <view class="menu-item" bindtap="openImportModal">📥 导入课表</view>
         <view class="menu-item" bindtap="openSettings">⚙️ 设置</view>
+        <view class="menu-item" bindtap="subscribeClassReminder">⏰ 上课提醒</view>
         <view class="menu-item" bindtap="closeMenu">❌ 关闭</view>
     </view>
 

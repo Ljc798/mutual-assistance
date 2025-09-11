@@ -1,4 +1,5 @@
 const API_BASE_URL = "https://mutualcampus.top/api/timetable";
+const TMP_CLASS_REMINDER = 'ftmEuFBPPKO2R6cX121BzQEcN2uom-iGy4pdKYPhqB0';
 
 const dayMap = {
     "周一": 1,
@@ -644,5 +645,67 @@ Page({
             this.getWeekDates(newWeek);
             this.loadWeeklyCourses();
         });
-    }
+    },
+
+    async subscribeClassReminder() {
+        try {
+          const subRes = await new Promise<WechatMiniprogram.RequestSubscribeMessageSuccessCallbackResult>((resolve, reject) => {
+            wx.requestSubscribeMessage({
+              tmplIds: [TMP_CLASS_REMINDER],
+              success: resolve,
+              fail: reject
+            });
+          });
+      
+          const result = subRes[TMP_CLASS_REMINDER]; // 'accept' | 'reject' | 'ban'
+      
+          if (result === 'accept') {
+            // ✅ 正常逻辑：保存到后端
+            const app = getApp();
+            const token = wx.getStorageSync('token');
+            const userId = app?.globalData?.userInfo?.id;
+      
+            if (token && userId) {
+              await new Promise((resolve, reject) => {
+                wx.request({
+                  url: 'https://mutualcampus.top/api/notify/subscribe',
+                  method: 'POST',
+                  header: { Authorization: `Bearer ${token}` },
+                  data: { user_id: userId, tmpl_id: TMP_CLASS_REMINDER, scene: 'class_reminder' },
+                  success: resolve,
+                  fail: reject
+                });
+              });
+            }
+      
+            wx.showToast({ title: '订阅成功', icon: 'success' });
+            return;
+          }
+      
+          // ❌ 被拒绝或禁用
+          if (result === 'reject') {
+            wx.showModal({
+              title: '订阅未开启',
+              content: '您拒绝了订阅提醒。如需重新开启，请到小程序右上角「… → 设置 → 订阅消息」里开启。',
+              showCancel: false,
+              confirmText: '知道了'
+            });
+          } else if (result === 'ban') {
+            wx.showModal({
+              title: '订阅被禁用',
+              content: '您已在小程序里关闭了消息订阅。可在「微信 → 我 → 设置 → 订阅消息」里重新开启。',
+              showCancel: false,
+              confirmText: '去设置',
+              success: (res) => {
+                if (res.confirm) {
+                  wx.openSetting({});
+                }
+              }
+            });
+          }
+        } catch (err) {
+          console.error('订阅失败：', err);
+          wx.showToast({ title: '订阅失败', icon: 'none' });
+        }
+      }
 });

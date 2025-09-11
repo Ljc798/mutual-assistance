@@ -1,27 +1,45 @@
 import { checkTextContent } from "../../utils/security";
 
+const TMP = {
+    DISPATCH: "7AvTKCi4G4YPpqhacTUAckeYCRnL2ggbwjaNDy1j7tw",  // 派单通知
+    STATUS: "znl18Tnml_MV9WzFyKJjCxA6WAQKs26ktWXrXiauzH4",  // 订单状态通知
+    DONE: "Aeu_BXdMd6xmgSBGrZptUgGdGbT5HTmwDbapPomy3QU",   // 订单完成通知
+    BID: "thyNDiwx5-813OHNsvoYrrtAP9HMrNrU9TMSym14yjw"   //报价通知
+} as const
+
+// 订阅弹窗（一次性）——就放这一个函数，哪里需要哪里调用
+function requestSubscribe(tmplIds: string[]) {
+    return new Promise<Record<string, 'accept' | 'reject' | 'ban'>>((resolve) => {
+        wx.requestSubscribeMessage({
+            tmplIds,
+            success: (res) => resolve(res as any),
+            fail: () => resolve({} as any),
+        });
+    });
+}
+
 // 定义聊天消息类型
 interface ChatMessage {
-  type: 'user' | 'ai';
-  content: string;
-  timestamp: string;
-  isFormatted?: boolean; // 是否为格式化消息
+    type: 'user' | 'ai';
+    content: string;
+    timestamp: string;
+    isFormatted?: boolean; // 是否为格式化消息
 }
 
 // 定义提取的数据类型
 interface ExtractedData {
-  category?: string;
-  title?: string;
-  detail?: string;
-  takeCode?: string;
-  takeName?: string;
-  takeTel?: string;
-  date?: string;
-  time?: string;
-  DDL?: string;
-  position?: string;
-  address?: string;
-  reward?: string;
+    category?: string;
+    title?: string;
+    detail?: string;
+    takeCode?: string;
+    takeName?: string;
+    takeTel?: string;
+    date?: string;
+    time?: string;
+    DDL?: string;
+    position?: string;
+    address?: string;
+    reward?: string;
 }
 
 Page({
@@ -44,34 +62,34 @@ Page({
         date: '',  // 存储选择的日期
         time: '',  // 存储选择的时间
         showCommissionPopup: false,
-    commissionAmount: '0', // 改为字符串类型
-    // 聊天相关状态
-    showChatPopup: false, // 控制聊天弹窗显示
-    // 删除showTagSelectPopup等tag选择相关
-    chatMessages: [] as ChatMessage[], // 聊天消息列表
-    chatInput: '', // 聊天输入框内容
-    conversationId: '', // 对话ID
-    extractedData: null as ExtractedData | null, // 提取的数据
-    showFillButton: false, // 是否显示帮我填按钮
-    isLoading: false, // 是否正在加载
-    scrollIntoView: '', // 滚动到指定消息
-    currentTag: '', // 当前选择的tag
-    currentTagName: '', // 当前选择的tag友好名称
-    showPriceSuggestIcon: false,
-    showSummaryIcon: false,
-    priceSuggesting: false,
-    summarySuggesting: false,
-    suggestedPrice: '',
-    suggestedPriceReason: '',
-    suggestedDetail: '',
-    showPriceConfirm: false,
-    showSummaryConfirm: false,
-    originalReward: '',
-    originalDetail: '',
-    highlightReward: false,
-    highlightDetail: false,
-    aiQuestion: '', // 价格估算AI问题
-    summaryQuestion: '', // 简介生成AI问题
+        commissionAmount: '0', // 改为字符串类型
+        // 聊天相关状态
+        showChatPopup: false, // 控制聊天弹窗显示
+        // 删除showTagSelectPopup等tag选择相关
+        chatMessages: [] as ChatMessage[], // 聊天消息列表
+        chatInput: '', // 聊天输入框内容
+        conversationId: '', // 对话ID
+        extractedData: null as ExtractedData | null, // 提取的数据
+        showFillButton: false, // 是否显示帮我填按钮
+        isLoading: false, // 是否正在加载
+        scrollIntoView: '', // 滚动到指定消息
+        currentTag: '', // 当前选择的tag
+        currentTagName: '', // 当前选择的tag友好名称
+        showPriceSuggestIcon: false,
+        showSummaryIcon: false,
+        priceSuggesting: false,
+        summarySuggesting: false,
+        suggestedPrice: '',
+        suggestedPriceReason: '',
+        suggestedDetail: '',
+        showPriceConfirm: false,
+        showSummaryConfirm: false,
+        originalReward: '',
+        originalDetail: '',
+        highlightReward: false,
+        highlightDetail: false,
+        aiQuestion: '', // 价格估算AI问题
+        summaryQuestion: '', // 简介生成AI问题
     },
 
     // 处理任务分类选择
@@ -234,42 +252,51 @@ Page({
         const app = getApp();
         const token = wx.getStorageSync("token");
         const user_id = app.globalData?.userInfo?.id;
+
         if (!user_id || !token) {
             wx.showToast({ title: "请先登录", icon: "none" });
             return;
         }
 
         const { reward, title, detail } = this.data;
-        if (!reward || isNaN(parseFloat(reward))) {
+
+        const offer = parseFloat(reward);
+        if (!reward || Number.isNaN(offer)) {
             wx.showToast({ title: "请填写正确的金额", icon: "none" });
             return;
         }
 
-        // ✅ 检查标题和详情是否合规
-        const isTitleSafe = await checkTextContent(title);
-        if (!isTitleSafe) return;
+        wx.showLoading({ title: "审核中..." });
+        try {
+            const [isTitleSafe, isDetailSafe] = await Promise.all([
+                checkTextContent(title),
+                checkTextContent(detail),
+            ]);
 
-        // ✅ 审核 address
-        const isAddressSafe = await checkTextContent(this.data.address);
-        if (!isAddressSafe) return;
+            if (!isTitleSafe) {
+                wx.showToast({ title: "标题含违规内容", icon: "none" });
+                return;
+            }
+            if (!isDetailSafe) {
+                wx.showToast({ title: "详情含违规内容", icon: "none" });
+                return;
+            }
 
-        // ✅ 审核 position
-        const isPositionSafe = await checkTextContent(this.data.position);
-        if (!isPositionSafe) return;
-
-        const isDetailSafe = await checkTextContent(detail);
-        if (!isDetailSafe) return;
-
-        const offer = parseFloat(reward);
-        const commission = this.calculateCommissionInFen(offer);
-
-        this.setData({
-            commissionAmount: (commission / 100).toFixed(2),
-            showCommissionPopup: true
-        });
+            // ✅ 校验通过后再计算并弹出佣金确认
+            const commission = this.calculateCommissionInFen(offer);
+            this.setData({
+                commissionAmount: (commission / 100).toFixed(2),
+                showCommissionPopup: true,
+            });
+        } catch (e) {
+            console.error("内容校验失败：", e);
+            wx.showToast({ title: "网络异常，请稍后重试", icon: "none" });
+        } finally {
+            wx.hideLoading();
+        }
     },
 
-  choosePublishMethod(e: any) {
+    async choosePublishMethod(e: any) {
         const method = e.currentTarget.dataset.method;
         this.setData({ showCommissionPopup: false });
 
@@ -281,7 +308,7 @@ Page({
             detail, takeCode, takeTel, takeName
         } = this.data;
         const schoolId = app.globalData?.selectedTaskSchoolId || app.globalData?.userInfo?.school_id || null;
-        
+
         const offer = parseFloat(reward);
         const payload = {
             employer_id: userId,
@@ -300,355 +327,377 @@ Page({
             status: method === 'pay' ? -1 : 0
         };
 
-        wx.request({
-            url: 'https://mutualcampus.top/api/task/create',
-            method: 'POST',
-            data: payload,
-            header: { Authorization: `Bearer ${token}` },
-            success: (res: any) => {
-                if (res.data.success) {
-                    if (method === 'pay') {
-                        const taskId = res.data.task_id;
-                        wx.request({
-                            url: 'https://mutualcampus.top/api/taskPayment/prepay',
-                            method: 'POST',
-                            data: { task_id: taskId },
-                            header: { Authorization: `Bearer ${token}` },
-                            success: (payRes: any) => {
-                                if (payRes.data.success) {
-                                    wx.requestPayment({
-                                        ...payRes.data.paymentParams,
-                                        success: () => {
-                                            wx.showToast({ title: "支付成功", icon: "success" });
-                                            wx.redirectTo({ url: "/pages/home/home" });
-                                        },
-                                        fail: () => {
-                                            wx.showToast({ title: "支付失败或取消", icon: "none" });
-                                        }
-                                    });
-                                }
-                            }
-                        });
-                    } else {
-                        wx.showToast({ title: '发布成功', icon: 'success' });
-                        wx.redirectTo({ url: "/pages/home/home" });
-                    }
-                } else {
-                    wx.showToast({ title: res.data.message || '发布失败', icon: 'none' });
-                }
-            },
-            fail: () => {
-                wx.showToast({ title: '网络错误', icon: 'none' });
+        try {
+            // ① 创建任务
+            const createRes: any = await new Promise((resolve, reject) => {
+                wx.request({
+                    url: 'https://mutualcampus.top/api/task/create',
+                    method: 'POST',
+                    data: payload,
+                    header: { Authorization: `Bearer ${token}` },
+                    success: resolve,
+                    fail: reject
+                });
+            });
+
+            if (!createRes?.data?.success) {
+                wx.showToast({ title: createRes?.data?.message || '发布失败', icon: 'none' });
+                return;
             }
-        });
+
+            if (method === 'pay') {
+                // ② 预下单
+                const taskId = createRes.data.task_id;
+                const prepayRes: any = await new Promise((resolve, reject) => {
+                    wx.request({
+                        url: 'https://mutualcampus.top/api/taskPayment/prepay',
+                        method: 'POST',
+                        data: { task_id: taskId },
+                        header: { Authorization: `Bearer ${token}` },
+                        success: resolve,
+                        fail: reject
+                    });
+                });
+
+                if (!prepayRes?.data?.success) {
+                    wx.showToast({ title: prepayRes?.data?.message || '下单失败', icon: 'none' });
+                    return;
+                }
+
+                // ③ 拉起支付
+                await new Promise<void>((resolve, reject) => {
+                    wx.requestPayment({
+                        ...prepayRes.data.paymentParams,
+                        success: () => resolve(),
+                        fail: () => reject(new Error('支付失败或取消'))
+                    });
+                });
+
+                // ④ 支付成功 → 拉起订阅弹窗（一次性订阅）
+                await requestSubscribe([TMP.DISPATCH, TMP.STATUS, TMP.DONE, TMP.BID]);
+
+                wx.showToast({ title: "支付成功", icon: "success" });
+                wx.redirectTo({ url: "/pages/home/home" });
+            } else {
+                // 免费发布成功 → 拉起订阅弹窗
+                wx.showToast({ title: '发布成功', icon: 'success' });
+
+                await requestSubscribe([TMP.DISPATCH, TMP.STATUS, TMP.DONE, TMP.BID]);
+
+                wx.redirectTo({ url: "/pages/home/home" });
+            }
+        } catch (err: any) {
+            console.error('发布流程异常：', err);
+            wx.showToast({ title: err?.message || '网络错误', icon: 'none' });
+        }
     },
 
     closeCommissionPopup() {
         this.setData({ showCommissionPopup: false });
     },
 
-  // 打开聊天弹窗
-  openChatPopup() {
-    // 移除tag选择弹窗
-    this.setData({ 
-        showChatPopup: true,
-        chatMessages: [],
-        conversationId: '',
-        extractedData: null,
-        showFillButton: false,
-        currentTag: 'field_filling',
-        currentTagName: '智能提取任务信息',
-    });
-    setTimeout(() => {
-        this.scrollToBottom();
-    }, 300);
-  },
+    // 打开聊天弹窗
+    openChatPopup() {
+        // 移除tag选择弹窗
+        this.setData({
+            showChatPopup: true,
+            chatMessages: [],
+            conversationId: '',
+            extractedData: null,
+            showFillButton: false,
+            currentTag: 'field_filling',
+            currentTagName: '智能提取任务信息',
+        });
+        setTimeout(() => {
+            this.scrollToBottom();
+        }, 300);
+    },
 
-  // 关闭聊天弹窗
-  closeChatPopup() {
-    this.setData({ showChatPopup: false });
-  },
+    // 关闭聊天弹窗
+    closeChatPopup() {
+        this.setData({ showChatPopup: false });
+    },
 
-  // 处理聊天输入
-  handleChatInput(e: any) {
-    this.setData({
-      chatInput: e.detail.value
-    });
-  },
+    // 处理聊天输入
+    handleChatInput(e: any) {
+        this.setData({
+            chatInput: e.detail.value
+        });
+    },
 
-  // 发送聊天消息
-  async sendChatMessage() {
-    const { chatInput, chatMessages, conversationId } = this.data;
-    if (!chatInput.trim()) return;
+    // 发送聊天消息
+    async sendChatMessage() {
+        const { chatInput, chatMessages, conversationId } = this.data;
+        if (!chatInput.trim()) return;
 
-    const app = getApp();
-    const token = wx.getStorageSync("token");
+        const app = getApp();
+        const token = wx.getStorageSync("token");
 
-    if (!token) {
-      wx.showToast({ title: "请先登录", icon: "none" });
-      return;
-    }
+        if (!token) {
+            wx.showToast({ title: "请先登录", icon: "none" });
+            return;
+        }
 
-    // 添加用户消息到聊天记录
-    const userMessage: ChatMessage = {
-      type: 'user',
-      content: chatInput,
-      timestamp: new Date().toLocaleTimeString()
-    };
+        // 添加用户消息到聊天记录
+        const userMessage: ChatMessage = {
+            type: 'user',
+            content: chatInput,
+            timestamp: new Date().toLocaleTimeString()
+        };
 
-    this.setData({
-      chatMessages: [...chatMessages, userMessage],
-      chatInput: '',
-      isLoading: true
-    });
-
-    // 滚动到底部
-    this.scrollToBottom();
-
-    function getBeijingTimeISO() {
-      const now = new Date();
-      const offsetTime = new Date(now.getTime() + 8 * 60 * 60 * 1000); // 加8小时
-      const iso = offsetTime.toISOString().replace('Z', '+08:00'); // 替换 Z 为 +08:00
-      return iso;
-    }
-
-    // 构造payload，所有字段+user_input
-    const payload = {
-        category: this.data.selectedCategory || '',
-        title: this.data.title || '',
-        detail: this.data.detail || '',
-        takeCode: this.data.takeCode || '',
-        takeName: this.data.takeName || '',
-        takeTel: this.data.takeTel || '',
-        position: this.data.position || '',
-        address: this.data.address || '',
-        reward: this.data.reward || '',
-        date: this.data.date || '',
-        time: this.data.time || '',
-        current_time: getBeijingTimeISO(),
-        user_input: chatInput
-    };
-
-    try {
-        // 调用后端APItest
-        const response = await new Promise((resolve, reject) => {
-            wx.request({
-                url: 'https://mutualcampus.top/api/ai/extract',
-                method: 'POST',
-                data: {
-                    text: JSON.stringify(payload),
-                    tag: 'field_filling',
-                    conversation_id: this.data.conversationId
-                },
-                header: { Authorization: `Bearer ${token}` },
-                success: resolve,
-                fail: reject
-            });
+        this.setData({
+            chatMessages: [...chatMessages, userMessage],
+            chatInput: '',
+            isLoading: true
         });
 
-        const { data } = response as any;
+        // 滚动到底部
+        this.scrollToBottom();
 
-        if (data.status === 'ok') {
-            // 检查是否返回了JSON数据
-            const hasJsonData = this.checkForJsonData(data.reply);
+        function getBeijingTimeISO() {
+            const now = new Date();
+            const offsetTime = new Date(now.getTime() + 8 * 60 * 60 * 1000); // 加8小时
+            const iso = offsetTime.toISOString().replace('Z', '+08:00'); // 替换 Z 为 +08:00
+            return iso;
+        }
 
-            if (!hasJsonData) {
-                // 如果没有JSON数据，才添加AI的原始回复
-                const aiMessage: ChatMessage = {
-                    type: 'ai',
-                    content: data.reply,
-                    timestamp: new Date().toLocaleTimeString()
-                };
+        // 构造payload，所有字段+user_input
+        const payload = {
+            category: this.data.selectedCategory || '',
+            title: this.data.title || '',
+            detail: this.data.detail || '',
+            takeCode: this.data.takeCode || '',
+            takeName: this.data.takeName || '',
+            takeTel: this.data.takeTel || '',
+            position: this.data.position || '',
+            address: this.data.address || '',
+            reward: this.data.reward || '',
+            date: this.data.date || '',
+            time: this.data.time || '',
+            current_time: getBeijingTimeISO(),
+            user_input: chatInput
+        };
 
-                this.setData({
-                    chatMessages: [...this.data.chatMessages, aiMessage],
-                    conversationId: data.conversation_id || conversationId,
-                    isLoading: false
+        try {
+            // 调用后端APItest
+            const response = await new Promise((resolve, reject) => {
+                wx.request({
+                    url: 'https://mutualcampus.top/api/ai/extract',
+                    method: 'POST',
+                    data: {
+                        text: JSON.stringify(payload),
+                        tag: 'field_filling',
+                        conversation_id: this.data.conversationId
+                    },
+                    header: { Authorization: `Bearer ${token}` },
+                    success: resolve,
+                    fail: reject
                 });
+            });
 
-                // 滚动到底部
-                this.scrollToBottom();
-            } else {
-                // 如果有JSON数据，只更新conversationId和loading状态
-                this.setData({
-                    conversationId: data.conversation_id || conversationId,
-                    isLoading: false
-                });
+            const { data } = response as any;
 
-                // 滚动到底部（格式化消息会在checkForJsonData中添加）
-                setTimeout(() => {
+            if (data.status === 'ok') {
+                // 检查是否返回了JSON数据
+                const hasJsonData = this.checkForJsonData(data.reply);
+
+                if (!hasJsonData) {
+                    // 如果没有JSON数据，才添加AI的原始回复
+                    const aiMessage: ChatMessage = {
+                        type: 'ai',
+                        content: data.reply,
+                        timestamp: new Date().toLocaleTimeString()
+                    };
+
+                    this.setData({
+                        chatMessages: [...this.data.chatMessages, aiMessage],
+                        conversationId: data.conversation_id || conversationId,
+                        isLoading: false
+                    });
+
+                    // 滚动到底部
                     this.scrollToBottom();
-                }, 100);
+                } else {
+                    // 如果有JSON数据，只更新conversationId和loading状态
+                    this.setData({
+                        conversationId: data.conversation_id || conversationId,
+                        isLoading: false
+                    });
+
+                    // 滚动到底部（格式化消息会在checkForJsonData中添加）
+                    setTimeout(() => {
+                        this.scrollToBottom();
+                    }, 100);
+                }
+            } else {
+                this.setData({ isLoading: false });
+                wx.showToast({ title: "AI回复失败", icon: "none" });
             }
-        } else {
+        } catch (error) {
+            console.error('发送消息失败:', error);
             this.setData({ isLoading: false });
-            wx.showToast({ title: "AI回复失败", icon: "none" });
+            wx.showToast({ title: "网络错误", icon: "none" });
         }
-    } catch (error) {
-        console.error('发送消息失败:', error);
-        this.setData({ isLoading: false });
-        wx.showToast({ title: "网络错误", icon: "none" });
-    }
-  },
+    },
 
-  // 检查AI回复中是否包含JSON数据
-  checkForJsonData(reply: string) {
-    try {
-      const jsonMatch = reply.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const jsonData = JSON.parse(jsonMatch[0]);
-        const expectedFields = ['category', 'title', 'detail', 'takeCode', 'takeName', 'takeTel', 'DDL', 'position', 'address', 'reward'];
-        const hasValidStructure = expectedFields.some(field => jsonData.hasOwnProperty(field));
-        if (hasValidStructure) {
-          this.setData({
-            extractedData: jsonData,
-            showFillButton: true
-          });
-  
-          // 生成格式化内容
-          let readableText = this.formatExtractedData(jsonData);
-  
-          // 拼接提问（如果有）
-          const rest = reply.replace(jsonMatch[0], '').replace(/^[\s\n]+/, '');
-          if (rest) {
-            const questions = rest.split('\n').map(q => q.trim()).filter(q => q);
-            if (questions.length > 0) {
-              const questionsText = questions.map(q => `🤖 ${q}`).join('<br>');
-              readableText += '<br><br>' + questionsText;
+    // 检查AI回复中是否包含JSON数据
+    checkForJsonData(reply: string) {
+        try {
+            const jsonMatch = reply.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                const jsonData = JSON.parse(jsonMatch[0]);
+                const expectedFields = ['category', 'title', 'detail', 'takeCode', 'takeName', 'takeTel', 'DDL', 'position', 'address', 'reward'];
+                const hasValidStructure = expectedFields.some(field => jsonData.hasOwnProperty(field));
+                if (hasValidStructure) {
+                    this.setData({
+                        extractedData: jsonData,
+                        showFillButton: true
+                    });
+
+                    // 生成格式化内容
+                    let readableText = this.formatExtractedData(jsonData);
+
+                    // 拼接提问（如果有）
+                    const rest = reply.replace(jsonMatch[0], '').replace(/^[\s\n]+/, '');
+                    if (rest) {
+                        const questions = rest.split('\n').map(q => q.trim()).filter(q => q);
+                        if (questions.length > 0) {
+                            const questionsText = questions.map(q => `🤖 ${q}`).join('<br>');
+                            readableText += '<br><br>' + questionsText;
+                        }
+                    }
+
+                    // 统一加入一条富文本消息
+                    const newMessage: ChatMessage = {
+                        type: 'ai',
+                        content: readableText,
+                        timestamp: new Date().toLocaleTimeString(),
+                        isFormatted: true
+                    };
+
+                    this.setData({
+                        chatMessages: [...this.data.chatMessages, newMessage]
+                    });
+                    this.scrollToBottom();
+                    return true;
+                }
             }
-          }
-  
-          // 统一加入一条富文本消息
-          const newMessage: ChatMessage = {
-            type: 'ai',
-            content: readableText,
-            timestamp: new Date().toLocaleTimeString(),
-            isFormatted: true
-          };
-  
-          this.setData({
-            chatMessages: [...this.data.chatMessages, newMessage]
-          });
-          this.scrollToBottom();
-          return true;
+            return false;
+        } catch (error) {
+            return false;
         }
-      }
-      return false;
-    } catch (error) {
-      return false;
-    }
-  },
+    },
 
-  formatExtractedData(data: ExtractedData): string {
-    const lines = [];
+    formatExtractedData(data: ExtractedData): string {
+        const lines = [];
 
-    // 必填字段
-    if (data.category) lines.push(`📋 <strong>任务分类：</strong>${data.category}`);
-    if (data.title) lines.push(`📝 <strong>任务标题：</strong>${data.title}`);
-    if (data.detail) lines.push(`📄 <strong>任务详情：</strong>${data.detail}`);
-    if (data.position) lines.push(`📍 <strong>交易地点：</strong>${data.position}`);
-    if (data.address) lines.push(`🏠 <strong>送达地址：</strong>${data.address}`);
-    if (data.reward) lines.push(`💰 <strong>任务奖励：</strong>${data.reward}元`);
+        // 必填字段
+        if (data.category) lines.push(`📋 <strong>任务分类：</strong>${data.category}`);
+        if (data.title) lines.push(`📝 <strong>任务标题：</strong>${data.title}`);
+        if (data.detail) lines.push(`📄 <strong>任务详情：</strong>${data.detail}`);
+        if (data.position) lines.push(`📍 <strong>交易地点：</strong>${data.position}`);
+        if (data.address) lines.push(`🏠 <strong>送达地址：</strong>${data.address}`);
+        if (data.reward) lines.push(`💰 <strong>任务奖励：</strong>${data.reward}元`);
 
-    // 可选字段 - 根据任务类型显示
-    if (data.category === '代拿快递' && data.takeCode) {
-      lines.push(`📦 <strong>取件码：</strong>${data.takeCode}`);
-    }
+        // 可选字段 - 根据任务类型显示
+        if (data.category === '代拿快递' && data.takeCode) {
+            lines.push(`📦 <strong>取件码：</strong>${data.takeCode}`);
+        }
 
-    if (data.category === '代拿外卖') {
-      if (data.takeName) lines.push(`👤 <strong>外卖姓名：</strong>${data.takeName}`);
-      if (data.takeTel) lines.push(`📱 <strong>手机尾号：</strong>${data.takeTel}`);
-    }
+        if (data.category === '代拿外卖') {
+            if (data.takeName) lines.push(`👤 <strong>外卖姓名：</strong>${data.takeName}`);
+            if (data.takeTel) lines.push(`📱 <strong>手机尾号：</strong>${data.takeTel}`);
+        }
 
-    // 时间字段
-    if (data.DDL) {
-      lines.push(`⏰ <strong>截止时间：</strong>${data.DDL}`);
-    } else if (data.date && data.time) {
-      lines.push(`⏰ <strong>截止时间：</strong>${data.date} ${data.time}`);
-    }
+        // 时间字段
+        if (data.DDL) {
+            lines.push(`⏰ <strong>截止时间：</strong>${data.DDL}`);
+        } else if (data.date && data.time) {
+            lines.push(`⏰ <strong>截止时间：</strong>${data.date} ${data.time}`);
+        }
 
-    // 添加分隔线和提示
-    lines.push('━━━━━━━━━━━━━━━━━━━━━━━━');
-    lines.push('✅ 请检查以上信息是否正确');
-    lines.push('📝 如有问题请告诉我进行修改');
-    lines.push('🎯 确认无误后点击下方【帮我填到表单】按钮');
+        // 添加分隔线和提示
+        lines.push('━━━━━━━━━━━━━━━━━━━━━━━━');
+        lines.push('✅ 请检查以上信息是否正确');
+        lines.push('📝 如有问题请告诉我进行修改');
+        lines.push('🎯 确认无误后点击下方【帮我填到表单】按钮');
 
-    return lines.join('<br>');
-  },
+        return lines.join('<br>');
+    },
 
-  // 帮我填按钮点击事件
-  fillFormWithData() {
-    const { extractedData } = this.data;
+    // 帮我填按钮点击事件
+    fillFormWithData() {
+        const { extractedData } = this.data;
 
-    if (!extractedData) {
-      wx.showToast({ title: "没有可填充的数据", icon: "none" });
-      return;
-    }
+        if (!extractedData) {
+            wx.showToast({ title: "没有可填充的数据", icon: "none" });
+            return;
+        }
 
-    // 先关闭聊天弹窗
-    this.setData({
-      showChatPopup: false,
-      extractedData: null,
-      showFillButton: false
-    });
+        // 先关闭聊天弹窗
+        this.setData({
+            showChatPopup: false,
+            extractedData: null,
+            showFillButton: false
+        });
 
-    // 根据选中的任务分类显示不同的输入框
-    if (extractedData.category === '代拿快递') {
-      this.setData({
-        showTakeCode: true,
-        showTakeAwayCode: false,
-      });
-    } else if (extractedData.category === '代拿外卖') {
-      this.setData({
-        showTakeCode: false,
-        showTakeAwayCode: true,
-      });
-    } else {
-      this.setData({
-        showTakeCode: false,
-        showTakeAwayCode: false,
-      });
-    }
+        // 根据选中的任务分类显示不同的输入框
+        if (extractedData.category === '代拿快递') {
+            this.setData({
+                showTakeCode: true,
+                showTakeAwayCode: false,
+            });
+        } else if (extractedData.category === '代拿外卖') {
+            this.setData({
+                showTakeCode: false,
+                showTakeAwayCode: true,
+            });
+        } else {
+            this.setData({
+                showTakeCode: false,
+                showTakeAwayCode: false,
+            });
+        }
 
-    // 使用setTimeout确保弹窗关闭后再填充数据
-    setTimeout(() => {
+        // 使用setTimeout确保弹窗关闭后再填充数据
+        setTimeout(() => {
 
-      // 准备要填充的数据
-      const formData = {
-        selectedCategory: extractedData.category || '',
-        title: extractedData.title || '',
-        detail: extractedData.detail || '',
-        takeCode: extractedData.takeCode || '',
-        takeName: extractedData.takeName || '',
-        takeTel: extractedData.takeTel || '',
-        date: extractedData.date || '',
-        time: extractedData.time || '',
-        position: extractedData.position || '',
-        address: extractedData.address || '',
-        reward: extractedData.reward || ''
-      };
+            // 准备要填充的数据
+            const formData = {
+                selectedCategory: extractedData.category || '',
+                title: extractedData.title || '',
+                detail: extractedData.detail || '',
+                takeCode: extractedData.takeCode || '',
+                takeName: extractedData.takeName || '',
+                takeTel: extractedData.takeTel || '',
+                date: extractedData.date || '',
+                time: extractedData.time || '',
+                position: extractedData.position || '',
+                address: extractedData.address || '',
+                reward: extractedData.reward || ''
+            };
 
-      // 填充表单数据
-      this.setData(formData);
+            // 填充表单数据
+            this.setData(formData);
 
-      this.updateDatetime();
+            this.updateDatetime();
 
-      // 检查表单是否完整，更新发布按钮状态
-      this.checkFormValidity();
+            // 检查表单是否完整，更新发布按钮状态
+            this.checkFormValidity();
 
-      wx.showToast({ title: "已自动填充表单", icon: "success" });
-    }, 500); // 增加延迟时间确保弹窗完全关闭
-  },
+            wx.showToast({ title: "已自动填充表单", icon: "success" });
+        }, 500); // 增加延迟时间确保弹窗完全关闭
+    },
 
-  // 滚动到底部
-  scrollToBottom() {
-    const that = this;
-    setTimeout(() => {
-      that.setData({
-        scrollIntoView: 'last-message'
-      });
-    }, 100); // 增加延迟确保DOM更新完成
-  },
+    // 滚动到底部
+    scrollToBottom() {
+        const that = this;
+        setTimeout(() => {
+            that.setData({
+                scrollIntoView: 'last-message'
+            });
+        }, 100); // 增加延迟确保DOM更新完成
+    },
 
     // 价格估算icon点击
     async handlePriceSuggest() {

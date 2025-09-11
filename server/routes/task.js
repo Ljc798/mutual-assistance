@@ -6,6 +6,9 @@ const authMiddleware = require("./authMiddleware"); // 引入中间件
 const {
     sendToUser
 } = require("./ws-helper");
+const {
+    sendTaskBidNotify
+} = require("../utils/wechat");
 
 // ===== 1. 发布任务 =====
 router.post("/create", authMiddleware, async (req, res) => {
@@ -356,8 +359,7 @@ router.post("/bid", authMiddleware, async (req, res) => {
         task_id,
         user_id,
         price,
-        advantage,
-        can_finish_time
+        advantage
     } = req.body;
 
     if (!task_id || !user_id || !price) {
@@ -368,39 +370,60 @@ router.post("/bid", authMiddleware, async (req, res) => {
     }
 
     try {
-        const sql = `INSERT INTO task_bids (task_id, user_id, price, advantage, status) VALUES (?, ?, ?, ?, 0)`;
-        await db.query(sql, [task_id, user_id, price, advantage || '', can_finish_time]);
+        // ✅ 1. 保存投标
+        const sql = `INSERT INTO task_bids (task_id, user_id, price, advantage, status)
+                 VALUES (?, ?, ?, ?, 0)`;
+        await db.query(sql, [task_id, user_id, price, advantage || '']);
 
-        // 🔔 发通知给雇主
+        // ✅ 2. 查任务、雇主 openid、投标人昵称
         const [
             [task]
-        ] = await db.query(`SELECT title, employer_id FROM tasks WHERE id = ?`, [task_id]);
+        ] = await db.query(
+            `SELECT id, title, employer_id FROM tasks WHERE id = ?`,
+            [task_id]
+        );
         if (task?.employer_id && task.employer_id !== user_id) {
             const [
                 [bidder]
             ] = await db.query(`SELECT username FROM users WHERE id = ?`, [user_id]);
+            const [
+                [employer]
+            ] = await db.query(`SELECT openid FROM users WHERE id = ?`, [task.employer_id]);
+
             const bidderName = bidder?.username || '有人';
+
+            // ✅ 3. 站内通知（可选）
             await db.query(
-                `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
+                `INSERT INTO notifications (user_id, type, title, content)
+         VALUES (?, 'task', ?, ?)`,
                 [
                     task.employer_id,
                     '📬 有人投标你的任务',
-                    `${bidder?.username || '有人'}对《${task.title}》提交了投标，请尽快查看。`
+                    `${bidderName}对《${task.title}》提交了投标，请尽快查看。`
                 ]
             );
 
-            // ✅ 日志：即将推送 WebSocket
-            console.log(`📡 推送 WebSocket 通知给用户 ${task.employer_id}`);
-
-            const notifySent = sendToUser(task.employer_id, {
+            // ✅ 4. WebSocket（可选）
+            const sent = sendToUser(task.employer_id, {
                 type: 'notify',
                 content: `📬 ${bidderName}刚刚投标了你的任务《${task.title}》，请尽快查看~`,
                 created_time: new Date().toISOString()
             });
+            console.log(`WS 推送：${sent ? '成功' : '未在线'}`);
 
-            // ✅ 日志：推送是否成功
-            console.log(`✅ 推送状态: ${notifySent ? '成功 ✅' : '失败 ❌（用户未在线）'}`);
+            // ✅ 5. 订阅消息（不阻断主流程，失败只记录）
+            if (employer?.openid) {
+                sendTaskBidNotify({
+                    openid: employer.openid,
+                    page: `pages/taskDetail/taskDetail?id=${task.id}`, // 你的小程序任务详情页路径
+                    taskTitle: task.title,
+                    bidderName,
+                    price, // 数字或字符串，工具内会拼接“元”
+                    remark: advantage || '—' // 留言
+                }).catch(err => console.warn('订阅消息发送失败：', err?.response?.data || err));
+            }
         }
+
         res.json({
             success: true,
             message: "投标成功，等待雇主选择"
@@ -415,7 +438,10 @@ router.post("/bid", authMiddleware, async (req, res) => {
 });
 
 router.post("/bid/cancel", authMiddleware, async (req, res) => {
-    const { bid_id, user_id } = req.body;
+    const {
+        bid_id,
+        user_id
+    } = req.body;
 
     if (!bid_id || !user_id) {
         return res.status(400).json({
@@ -426,7 +452,9 @@ router.post("/bid/cancel", authMiddleware, async (req, res) => {
 
     try {
         // 查询出价记录
-        const [[bid]] = await db.query(`SELECT * FROM task_bids WHERE id = ?`, [bid_id]);
+        const [
+            [bid]
+        ] = await db.query(`SELECT * FROM task_bids WHERE id = ?`, [bid_id]);
 
         if (!bid) {
             return res.status(404).json({
@@ -444,7 +472,9 @@ router.post("/bid/cancel", authMiddleware, async (req, res) => {
         }
 
         // 查询任务雇主
-        const [[task]] = await db.query(`SELECT id, title, employer_id FROM tasks WHERE id = ?`, [bid.task_id]);
+        const [
+            [task]
+        ] = await db.query(`SELECT id, title, employer_id FROM tasks WHERE id = ?`, [bid.task_id]);
 
         if (!task) {
             return res.status(404).json({
@@ -493,36 +523,36 @@ router.post("/bid/cancel", authMiddleware, async (req, res) => {
 // 查询本月取消次数
 router.get('/cancel/count', async (req, res) => {
     const user_id = req.query.user_id;
-    
+
     if (!user_id) {
-      return res.status(400).json({
-        success: false,
-        message: '缺少 user_id'
-      });
+        return res.status(400).json({
+            success: false,
+            message: '缺少 user_id'
+        });
     }
-  
+
     try {
-      const firstDayOfMonth = dayjs().startOf('month').format('YYYY-MM-DD HH:mm:ss');
-      const [result] = await db.query(
-        `SELECT COUNT(*) as count FROM task_cancel_records WHERE user_id = ? AND cancel_time >= ?`,
-        [user_id, firstDayOfMonth]
-      );
-  
-      const cancelCount = result[0].count || 0;
-      const freeCancelCount = Math.max(3 - cancelCount, 0);
-  
-      res.json({
-        success: true,
-        freeCancelCount: freeCancelCount
-      });
+        const firstDayOfMonth = dayjs().startOf('month').format('YYYY-MM-DD HH:mm:ss');
+        const [result] = await db.query(
+            `SELECT COUNT(*) as count FROM task_cancel_records WHERE user_id = ? AND cancel_time >= ?`,
+            [user_id, firstDayOfMonth]
+        );
+
+        const cancelCount = result[0].count || 0;
+        const freeCancelCount = Math.max(3 - cancelCount, 0);
+
+        res.json({
+            success: true,
+            freeCancelCount: freeCancelCount
+        });
     } catch (err) {
-      console.error('❌ 查询取消次数失败:', err);
-      res.status(500).json({
-        success: false,
-        message: '服务器错误'
-      });
+        console.error('❌ 查询取消次数失败:', err);
+        res.status(500).json({
+            success: false,
+            message: '服务器错误'
+        });
     }
-  });
+});
 
 router.post('/cancel', async (req, res) => {
     const {

@@ -13,6 +13,7 @@ Page({
         isAuthorizedUser: false,
         canLeaveMessage: false,
         userId: null,
+        isSubmitting: false,
     },
 
     onLoad(options: any) {
@@ -64,7 +65,7 @@ Page({
                 const app = getApp();
                 const currentUserId = app.globalData.userInfo?.id;
                 const isOwner = currentUserId === task.employer_id;
-                
+
                 const isAuthorizedUser = (
                     currentUserId === task.employer_id ||
                     currentUserId === task.employee_id
@@ -183,51 +184,64 @@ Page({
         this.setData({ commentPrice: e.detail.value });
     },
 
-    async submitMessage() {
-        const app = getApp();
-        const userId = app.globalData.userInfo?.id;
-        const { commentContent, commentPrice, task } = this.data;
+    async submitMessage(e?: any) {
+        // 避免事件冒泡带来的重复
+        if (e && typeof e.stopPropagation === "function") e.stopPropagation();
 
-        if (!commentContent.trim() || !commentPrice) {
-            wx.showToast({ title: '请填写留言和出价', icon: 'none' });
-            return;
-        }
+        if (this.data.isSubmitting) return; // ✅ 防连点
+        this.setData({ isSubmitting: true });
 
-        const token = wx.getStorageSync("token");  // 获取 token
-        if (!token) {
-            wx.showToast({ title: "请先登录", icon: "none" });
-            return;
-        }
+        try {
+            const app = getApp();
+            const userId = app.globalData.userInfo?.id;
+            const { commentContent, commentPrice, task } = this.data;
 
-        const isSafe = await checkTextContent(commentContent);
-        if (!isSafe) return;
-
-        wx.request({
-            url: 'https://mutualcampus.top/api/task/bid',
-            method: 'POST',
-            header: {
-                Authorization: `Bearer ${token}`,  // 添加 token
-            },
-            data: {
-                task_id: task.id,
-                user_id: userId,
-                price: commentPrice,
-                advantage: commentContent,
-            },
-            success: (res) => {
-                if (res.data.success) {
-                    wx.showToast({ title: '投标成功', icon: 'success' });
-                    this.setData({
-                        showPopup: false,
-                        commentContent: '',
-                        commentPrice: ''
-                    });
-                    this.loadBids(task.id);
-                } else {
-                    wx.showToast({ title: res.data.message || '提交失败', icon: 'none' });
-                }
+            if (!commentContent.trim() || !commentPrice) {
+                wx.showToast({ title: '请填写留言和出价', icon: 'none' });
+                return;
             }
-        });
+
+            const token = wx.getStorageSync("token");
+            if (!token) {
+                wx.showToast({ title: "请先登录", icon: "none" });
+                return;
+            }
+
+            const isSafe = await checkTextContent(commentContent);
+            if (!isSafe) return;
+
+            await new Promise((resolve, reject) => {
+                wx.request({
+                    url: 'https://mutualcampus.top/api/task/bid',
+                    method: 'POST',
+                    header: { Authorization: `Bearer ${token}` },
+                    data: {
+                        task_id: task.id,
+                        user_id: userId,
+                        price: commentPrice,
+                        advantage: commentContent,
+                    },
+                    success: (res) => {
+                        if (res.data.success) {
+                            wx.showToast({ title: '投标成功', icon: 'success' });
+                            this.setData({ showPopup: false, commentContent: '', commentPrice: '' });
+                            this.loadBids(task.id);
+                            resolve(null);
+                        } else {
+                            wx.showToast({ title: res.data.message || '提交失败', icon: 'none' });
+                            reject(new Error('submit failed'));
+                        }
+                    },
+                    fail: reject
+                });
+            });
+        } catch (err) {
+            console.error('提交异常：', err);
+            // 这里的 toast 已在 success 分支里处理过失败信息，可保留一个兜底
+            // wx.showToast({ title: '网络错误', icon: 'none' });
+        } finally {
+            this.setData({ isSubmitting: false }); // ✅ 无论成功失败都解锁
+        }
     },
 
     handleCancelBid(e) {
