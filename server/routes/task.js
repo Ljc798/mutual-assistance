@@ -7,7 +7,10 @@ const {
     sendToUser
 } = require("./ws-helper");
 const {
-    sendTaskBidNotify
+    sendTaskBidNotify,
+    sendOrderStatusNotify,
+    sendTaskCompletedToEmployer,
+    sendPayoutArrivedToEmployee
 } = require("../utils/wechat");
 
 // ===== 1. 发布任务 =====
@@ -507,6 +510,28 @@ router.post("/bid/cancel", authMiddleware, async (req, res) => {
             console.log(`📡 通知推送给雇主ID：${task.employer_id}`);
         }
 
+        try {
+            const [
+                [emp]
+            ] = await db.query(
+                `SELECT openid FROM users WHERE id = ?`,
+                [task.employer_id]
+            );
+
+            if (emp?.openid) {
+                await sendTaskBidNotify({
+                    openid: emp.openid,
+                    taskName: task.title,
+                    bidder: '投标人',
+                    price: bid.price,
+                    remark: '⚡ 该投标人已撤回出价',
+                    taskId: task.id
+                });
+            }
+        } catch (wxErr) {
+            console.warn('❌ 撤回出价订阅消息失败:', wxErr?.message || wxErr);
+        }
+
         return res.json({
             success: true,
             message: "出价已撤回"
@@ -655,6 +680,30 @@ router.post('/cancel', async (req, res) => {
                 created_time: new Date().toISOString()
             });
         }
+        try {
+            const [
+                [recvUser]
+            ] = await db.query(
+                `SELECT openid FROM users WHERE id = ?`,
+                [receiverId]
+            );
+
+            const orderNo = task_id;
+
+            if (recvUser?.openid) {
+                await sendOrderStatusNotify({
+                    openid: recvUser.openid,
+                    orderNo,
+                    title: task.title,
+                    status: '已取消',
+                    time: dayjs().format('YYYY-MM-DD HH:mm'),
+                    taskId: task_id
+                });
+            }
+        } catch (wxErr) {
+            // 忽略 43101 等错误，只打日志
+            console.warn('❗取消任务-订阅消息发送失败：', wxErr?.message || wxErr);
+        }
 
         return res.json({
             success: true,
@@ -762,25 +811,19 @@ router.post("/:id/confirm-done", authMiddleware, async (req, res) => {
         const [
             [task]
         ] = await db.query("SELECT * FROM tasks WHERE id = ?", [taskId]);
+        if (!task) return res.status(404).json({
+            success: false,
+            message: "任务不存在"
+        });
+        if (task.status !== 1) return res.status(400).json({
+            success: false,
+            message: "任务不是进行中，无法确认完成"
+        });
 
-        if (!task) {
-            return res.status(404).json({
-                success: false,
-                message: "任务不存在"
-            });
-        }
-
-        if (task.status !== 1) {
-            return res.status(400).json({
-                success: false,
-                message: "任务不是进行中，无法确认完成"
-            });
-        }
-
-        let fieldToUpdate = null;
-        let targetId = null;
-        let role = '';
-
+        // 判定角色 & 对方ID
+        let fieldToUpdate = null,
+            targetId = null,
+            role = '';
         if (task.employer_id === userId) {
             fieldToUpdate = "employer_done";
             targetId = task.employee_id;
@@ -796,29 +839,21 @@ router.post("/:id/confirm-done", authMiddleware, async (req, res) => {
             });
         }
 
-        // ✅ 更新自己已完成状态
+        // 更新自己 DONE
         await db.query(`UPDATE tasks SET ${fieldToUpdate} = 1 WHERE id = ?`, [taskId]);
 
-        if (!(
-                (fieldToUpdate === "employer_done" && task.employee_done === 1) ||
-                (fieldToUpdate === "employee_done" && task.employer_done === 1)
-            )) {
-            // ✅ 第一个确认方发通知
-            await db.query(
-                `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
-                [
-                    userId,
-                    '✅ 你已确认完成任务',
-                    `你已确认任务《${task.title}》完成，等待对方确认。`
-                ]
-            );
+        // 第一个确认人 → 站内 & WS 提醒对方
+        if (!((fieldToUpdate === "employer_done" && task.employee_done === 1) ||
+                (fieldToUpdate === "employee_done" && task.employer_done === 1))) {
 
             await db.query(
-                `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
+                `INSERT INTO notifications (user_id, type, title, content)
+           VALUES
+           (?, 'task', '✅ 你已确认完成任务', ?),
+           (?, 'task', ?, ?)`,
                 [
-                    targetId,
-                    `📩 ${role}已确认任务完成`,
-                    `任务《${task.title}》对方已确认完成，请尽快确认。`
+                    userId, `你已确认任务《${task.title}》完成，等待对方确认。`,
+                    targetId, `📩 ${role}已确认任务完成`, `任务《${task.title}》对方已确认完成，请尽快确认。`
                 ]
             );
 
@@ -827,49 +862,82 @@ router.post("/:id/confirm-done", authMiddleware, async (req, res) => {
                 content: `📩 ${role}已确认任务《${task.title}》完成，请你也尽快确认`,
                 created_time: new Date().toISOString()
             });
-        }
 
-        // ✅ 如果双方都已确认
-        const bothConfirmed =
-            (fieldToUpdate === "employer_done" && task.employee_done === 1) ||
-            (fieldToUpdate === "employee_done" && task.employer_done === 1);
-
-        if (bothConfirmed) {
-            await db.query(`
-                  UPDATE tasks SET status = 2, completed_time = NOW() WHERE id = ?
-                `, [taskId]);
-
-            await db.query(`
-                  UPDATE users SET balance = balance + ? WHERE id = ?
-                `, [task.pay_amount, task.employee_id]);
-
-            // 发通知：任务完成，余额到账
-            await db.query(`
-                  INSERT INTO notifications (user_id, type, title, content) VALUES 
-                  (?, 'task', '✅ 任务完成', '你参与的任务《${task.title}》已圆满完成，期待与您的下一次相遇 🎉'),
-                  (?, 'task', '💰 打款通知', '任务《${task.title}》已完成，报酬 ¥${task.pay_amount} 已到账你的钱包')
-                `, [task.employer_id, task.employee_id]);
-
-            // ✅ 通知雇主任务完成
-            sendToUser(task.employer_id, {
-                type: 'notify',
-                content: `✅ 任务《${task.title}》已圆满完成，感谢参与`,
-                created_time: new Date().toISOString()
-            });
-
-            // ✅ 通知接单人打款到账
-            sendToUser(task.employee_id, {
-                type: 'notify',
-                content: `💰 任务《${task.title}》已结单，报酬 ¥${task.pay_amount} 已到账钱包`,
-                created_time: new Date().toISOString()
+            return res.json({
+                success: true,
+                message: "已确认，等待对方确认"
             });
         }
+
+        // ✅ 双方都确认
+        await db.query(`UPDATE tasks SET status = 2, completed_time = NOW() WHERE id = ?`, [taskId]);
+        await db.query(`UPDATE users SET balance = balance + ? WHERE id = ?`, [task.pay_amount, task.employee_id]);
+
+        await db.query(
+            `INSERT INTO notifications (user_id, type, title, content) VALUES
+         (?, 'task', '✅ 任务完成', '你参与的任务《${task.title}》已圆满完成，期待与您的下一次相遇 🎉'),
+         (?, 'task', '💰 打款通知', '任务《${task.title}》已完成，报酬 ¥${task.pay_amount} 已到账你的钱包')`,
+            [task.employer_id, task.employee_id]
+        );
+
+        sendToUser(task.employer_id, {
+            type: 'notify',
+            content: `✅ 任务《${task.title}》已圆满完成，感谢参与`,
+            created_time: new Date().toISOString()
+        });
+        sendToUser(task.employee_id, {
+            type: 'notify',
+            content: `💰 任务《${task.title}》已结单，报酬 ¥${task.pay_amount} 已到账钱包`,
+            created_time: new Date().toISOString()
+        });
+
+        // ==== 新增：订阅消息（双方确认后）====
+        try {
+            // 查询双方 openid
+            const [
+                [empUser]
+            ] = await db.query(`SELECT openid FROM users WHERE id = ?`, [task.employer_id]);
+            const [
+                [emplUser]
+            ] = await db.query(`SELECT openid FROM users WHERE id = ?`, [task.employee_id]);
+
+            const orderNo = `TASK-${taskId}`; // 用任务ID当“订单号”
+            const amount = task.pay_amount;
+            const doneAt = new Date(); // 也可用 tasks.completed_time
+
+            // 给雇主：订单完成通知
+            if (empUser?.openid) {
+                await sendTaskCompletedToEmployer({
+                    openid: empUser.openid,
+                    orderNo,
+                    amount,
+                    finishedAt: doneAt,
+                    taskType: '跑腿',
+                    statusText: '雇员已完成任务，请前往确认完成'
+                });
+            }
+
+            // 给接单人：打款到账通知（也使用“订单完成通知”模板，状态文案不同）
+            if (emplUser?.openid) {
+                await sendPayoutArrivedToEmployee({
+                    openid: emplUser.openid,
+                    orderNo,
+                    amount,
+                    finishedAt: doneAt,
+                    taskType: '跑腿',
+                    statusText: '任务已完成，报酬已入账'
+                });
+            }
+        } catch (wxErr) {
+            // 这里常见 43101（用户未订阅）可忽略
+            console.warn('⚠️ 订阅消息发送失败（忽略不中断）：', wxErr?.message || wxErr);
+        }
+        // ===================================
 
         return res.json({
             success: true,
-            message: bothConfirmed ? "双方确认，任务完成，余额已到账" : "已确认，等待对方确认"
+            message: "双方确认，任务完成，余额已到账"
         });
-
     } catch (err) {
         console.error("❌ 确认完成失败:", err);
         res.status(500).json({

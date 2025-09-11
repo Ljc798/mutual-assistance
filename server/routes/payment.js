@@ -6,6 +6,10 @@ const db = require('../config/db'); // ⬅️ 确保你有引入数据库配置
 const {
     sendToUser
 } = require("./ws-helper");
+const {
+    sendTaskAssignedToEmployee,
+    sendOrderStatusNotify
+} = require('../utils/wechat');
 
 // ==== 微信支付配置 ====
 const appid = process.env.WX_APPID;
@@ -154,35 +158,32 @@ router.post('/notify', express.raw({
 }), async (req, res) => {
     try {
         const rawBody = req.body;
-
-        // 🧪 Buffer 判断：确保只有在是 Buffer 时才转字符串
         const bodyStr = Buffer.isBuffer(rawBody) ? rawBody.toString('utf8') : rawBody;
         const notifyData = typeof bodyStr === 'string' ? JSON.parse(bodyStr) : bodyStr;
 
         const {
             resource
         } = notifyData;
+        if (!resource || !apiV3Key) throw new Error('缺少 resource 或 apiV3Key');
 
-        if (!resource || !apiV3Key) {
-            throw new Error('缺少 resource 或 apiV3Key');
-        }
-
-        // ✅ 解密、更新数据库、响应微信
         const decryptedData = decryptResource(resource, apiV3Key);
         const outTradeNo = decryptedData.out_trade_no;
         const transactionId = decryptedData.transaction_id;
-        const amount = parseFloat(decryptedData.amount.total) / 100; // 💰 元，保留精度
+        const amount = parseFloat(decryptedData.amount.total) / 100;
 
+        // ✅ 更新支付表
         await db.query(
             `UPDATE task_payments SET status = 'paid', paid_at = NOW(), transaction_id = ? WHERE out_trade_no = ?`,
             [transactionId, outTradeNo]
         );
 
+        // ✅ 匹配任务和雇员
         const match = outTradeNo.match(/^TASK_(\d+)_EMP_(\d+)_/);
         if (match) {
             const taskId = parseInt(match[1]);
             const employeeId = parseInt(match[2]);
 
+            // ✅ 更新任务表：委派
             await db.query(
                 `UPDATE tasks SET employee_id = ?, status = 1, has_paid = 1, pay_amount = ?, payment_transaction_id = ? WHERE id = ?`,
                 [employeeId, amount, transactionId, taskId]
@@ -191,41 +192,74 @@ router.post('/notify', express.raw({
             const [
                 [task]
             ] = await db.query(
-                `SELECT title, employer_id FROM tasks WHERE id = ?`,
+                `SELECT title, employer_id, position, address FROM tasks WHERE id = ?`,
                 [taskId]
             );
 
-            // ✅ 通知接单人
+            // ========== 通知雇员 ==========
             await db.query(
                 `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
                 [
                     employeeId,
-                    '🎉 你的投标被采纳啦',
-                    `任务《${task.title}》已经指派给你，记得去查看！`
+                    '🎉 任务委派成功',
+                    `任务《${task.title}》已经指派给你，快去完成吧！`
                 ]
             );
-
             sendToUser(employeeId, {
                 type: 'notify',
-                content: `🎉 你的投标被采纳啦！任务《${task.title}》已指派给你，快去查看吧！`,
+                content: `🎉 你的投标被采纳！任务《${task.title}》已委派给你～`,
                 created_time: new Date().toISOString()
             });
 
-            // ✅ 通知雇主：支付成功
+            // 发微信订阅消息给雇员（派单通知）
+            const [
+                [emplUser]
+            ] = await db.query(`SELECT openid FROM users WHERE id = ?`, [employeeId]);
+            if (emplUser?.openid) {
+                await sendTaskAssignedToEmployee({
+                    openid: emplUser.openid,
+                    serviceType: task.title,
+                    pickupAddr: task.position,
+                    deliveryAddr: task.address,
+                    fee: amount,
+                    assignTime: new Date()
+                });
+            }
+
+            // ========== 通知雇主 ==========
             if (task.employer_id) {
                 await db.query(
                     `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
                     [
                         task.employer_id,
                         '💰 支付成功',
-                        `你已成功支付任务《${task.title}》，等待对方接单完成任务～`
+                        `你已成功支付任务《${task.title}》，订单已委派给接单人～`
                     ]
                 );
                 sendToUser(task.employer_id, {
                     type: 'notify',
-                    content: `💰 你已成功支付任务《${task.title}》，等待对方完成任务～`,
+                    content: `💰 你已成功支付任务《${task.title}》，等待接单人完成任务～`,
                     created_time: new Date().toISOString()
                 });
+
+                // 发微信订阅消息给雇主（支付成功通知）
+                const [
+                    [empUser]
+                ] = await db.query(
+                    `SELECT openid FROM users WHERE id = ?`,
+                    [task.employer_id]
+                );
+
+                if (empUser?.openid) {
+                    await sendOrderStatusNotify({
+                        openid: empUser.openid, // 雇主 openid
+                        orderNo: taskId, // 订单号
+                        title: task.title, // 任务标题
+                        status: `已支付，任务进行中`, // 状态文字
+                        time: new Date().toISOString().slice(0, 16).replace('T', ' '), // 2025-09-11 15:33
+                        taskId: taskId // 跳转任务详情
+                    });
+                }
             }
         }
 
@@ -233,7 +267,6 @@ router.post('/notify', express.raw({
             code: 'SUCCESS',
             message: 'OK'
         });
-
     } catch (err) {
         console.error('❌ 微信支付回调处理失败:', err);
         res.status(500).json({
@@ -242,5 +275,4 @@ router.post('/notify', express.raw({
         });
     }
 });
-
 module.exports = router;
