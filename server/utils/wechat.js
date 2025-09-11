@@ -152,39 +152,51 @@ async function sendTaskAssignedToEmployee({
     fee,
     assignTime,
     taskId,
-  }) {
+}) {
     if (!openid) throw new Error('sendTaskAssignedToEmployee: openid missing');
     const trunc = (s = '', n) => (s + '').slice(0, n);
     const fmtAmount = (n) => `￥${Number(n || 0).toFixed(2)}`;
     const fmtTime = (d) => {
-      const dt = d instanceof Date ? d : new Date(d || Date.now());
-      const pad = (x) => (x < 10 ? '0' + x : '' + x);
-      return `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())} ${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+        const dt = d instanceof Date ? d : new Date(d || Date.now());
+        const pad = (x) => (x < 10 ? '0' + x : '' + x);
+        return `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())} ${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
     };
-  
+
     const token = await getAccessToken();
     const url = `https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token=${token}`;
-  
+
     const payload = {
-      touser: openid,
-      template_id: '7AvTKCi4G4YPpqhacTUAckeYCRnL2ggbwjaNDy1j7tw',
-      page: taskId ? `pages/task/detail?id=${taskId}` : undefined,
-      data: {
-        thing2:  { value: trunc(serviceType || '跑腿', 20) },
-        thing7:  { value: trunc(pickupAddr || '取货地未填', 20) },
-        thing8:  { value: trunc(deliveryAddr || '收货地未填', 20) },
-        amount6: { value: fmtAmount(fee) },
-        time9:   { value: fmtTime(assignTime) },
-      },
+        touser: openid,
+        template_id: '7AvTKCi4G4YPpqhacTUAckeYCRnL2ggbwjaNDy1j7tw',
+        page: taskId ? `pages/task/detail?id=${taskId}` : undefined,
+        data: {
+            thing2: {
+                value: trunc(serviceType || '跑腿', 20)
+            },
+            thing7: {
+                value: trunc(pickupAddr || '取货地未填', 20)
+            },
+            thing8: {
+                value: trunc(deliveryAddr || '收货地未填', 20)
+            },
+            amount6: {
+                value: fmtAmount(fee)
+            },
+            time9: {
+                value: fmtTime(assignTime)
+            },
+        },
     };
-  
-    const { data } = await axios.post(url, payload);
+
+    const {
+        data
+    } = await axios.post(url, payload);
     // 43101 = 用户未订阅 -> 忽略
     if (data.errcode && data.errcode !== 0 && data.errcode !== 43101) {
-      throw new Error('sendTaskAssignedToEmployee failed: ' + JSON.stringify(data));
+        throw new Error('sendTaskAssignedToEmployee failed: ' + JSON.stringify(data));
     }
     return data;
-  }
+}
 
 /** 订单完成通知（发给雇主） */
 async function sendTaskCompletedToEmployer({
@@ -279,11 +291,67 @@ async function sendPayoutArrivedToEmployee({
     return data;
 }
 
+
+/**
+ * 上课提醒模板（你的模板ID）
+ * 模板字段（示例）：courseName(thing6)、address(thing10)、teacher(thing13)、time(thing19)、tip(thing9)
+ */
+async function sendClassReminder({
+    openid,
+    courseName,
+    address,
+    teacher,
+    timeText,
+    tip = '请提前出发，别迟到哦～',
+    page = 'pages/timetable/timetable'
+}) {
+    if (!openid) throw new Error('sendClassReminder: openid missing');
+
+    const trunc = (s = '', n) => (s + '').slice(0, n);
+    const token = await getAccessToken();
+    const url = `https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token=${token}`;
+
+    const payload = {
+        touser: openid,
+        template_id: 'ftmEuFBPPKO2R6cX12lBzQEcN2uom-iGy4pdKYPhqB0', // ← 你的“上课提醒”模板ID
+        page, // e.g. 'pages/timetable/timetable'
+        data: {
+            thing6: {
+                value: trunc(courseName, 20)
+            },
+            thing10: {
+                value: trunc(address || '无', 20)
+            },
+            thing13: {
+                value: trunc(teacher || '老师', 20)
+            },
+            thing19: {
+                value: trunc(timeText, 20)
+            }, // 如 “10:00-11:30”
+            thing9: {
+                value: trunc(tip, 20)
+            }
+        }
+    };
+
+    const {
+        data
+    } = await axios.post(url, payload);
+    // 43101 = 用户未订阅，忽略不抛错
+    if (data.errcode && data.errcode !== 0 && data.errcode !== 43101) {
+        throw new Error('sendClassReminder failed: ' + JSON.stringify(data));
+    }
+    return data;
+}
+
+
+
 module.exports = {
     getAccessToken,
     sendTaskBidNotify,
     sendOrderStatusNotify,
     sendTaskCompletedToEmployer,
     sendPayoutArrivedToEmployee,
-    sendTaskAssignedToEmployee
+    sendTaskAssignedToEmployee,
+    sendClassReminder
 };
