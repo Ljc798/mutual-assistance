@@ -255,7 +255,7 @@ router.post('/notify', express.raw({
                         openid: empUser.openid, // 雇主 openid
                         orderNo: taskId, // 订单号
                         title: task.title, // 任务标题
-                        status: `已支付，任务进行中`, // 状态文字
+                        status: `进行中`, // 状态文字
                         time: new Date().toISOString().slice(0, 16).replace('T', ' '), // 2025-09-11 15:33
                         taskId: taskId // 跳转任务详情
                     });
