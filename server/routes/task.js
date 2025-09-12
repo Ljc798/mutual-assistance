@@ -373,67 +373,91 @@ router.post("/bid", authMiddleware, async (req, res) => {
     }
 
     try {
-        // ✅ 1. 保存投标
-        const sql = `INSERT INTO task_bids (task_id, user_id, price, advantage, status)
-                 VALUES (?, ?, ?, ?, 0)`;
-        await db.query(sql, [task_id, user_id, price, advantage || '']);
-
-        // ✅ 2. 查任务、雇主 openid、投标人昵称
-        const [
-            [task]
-        ] = await db.query(
-            `SELECT id, title, employer_id FROM tasks WHERE id = ?`,
-            [task_id]
+        // 1) 先写入出价（只这一件事是阻塞的）
+        await db.query(
+            `INSERT INTO task_bids (task_id, user_id, price, advantage, status)
+         VALUES (?, ?, ?, ?, 0)`,
+            [task_id, user_id, price, advantage || ""]
         );
-        if (task?.employer_id && task.employer_id !== user_id) {
-            const [
-                [bidder]
-            ] = await db.query(`SELECT username FROM users WHERE id = ?`, [user_id]);
-            const [
-                [employer]
-            ] = await db.query(`SELECT openid FROM users WHERE id = ?`, [task.employer_id]);
 
-            const bidderName = bidder?.username || '有人';
-
-            // ✅ 3. 站内通知（可选）
-            await db.query(
-                `INSERT INTO notifications (user_id, type, title, content)
-         VALUES (?, 'task', ?, ?)`,
-                [
-                    task.employer_id,
-                    '📬 有人投标你的任务',
-                    `${bidderName}对《${task.title}》提交了投标，请尽快查看。`
-                ]
-            );
-
-            // ✅ 4. WebSocket（可选）
-            const sent = sendToUser(task.employer_id, {
-                type: 'notify',
-                content: `📬 ${bidderName}刚刚投标了你的任务《${task.title}》，请尽快查看~`,
-                created_time: new Date().toISOString()
-            });
-            console.log(`WS 推送：${sent ? '成功' : '未在线'}`);
-
-            // ✅ 5. 订阅消息（不阻断主流程，失败只记录）
-            if (employer?.openid) {
-                sendTaskBidNotify({
-                    openid: employer.openid,
-                    page: `pages/taskDetail/taskDetail?id=${task.id}`, // 你的小程序任务详情页路径
-                    taskTitle: task.title,
-                    bidderName,
-                    price, // 数字或字符串，工具内会拼接“元”
-                    remark: advantage || '—' // 留言
-                }).catch(err => console.warn('订阅消息发送失败：', err?.response?.data || err));
-            }
-        }
-
+        // 2) 立刻返回给前端（体感立刻成功）
         res.json({
             success: true,
             message: "投标成功，等待雇主选择"
         });
+
+        // 3) 后续重活异步做：不阻塞 HTTP
+        setImmediate(async () => {
+            try {
+                // 合并查询：任务标题、雇主 id/openid、投标人昵称
+                const [rows] = await db.query(
+                    `
+            SELECT t.id AS task_id, t.title, t.employer_id,
+                   ue.openid AS employer_openid,
+                   ub.username AS bidder_name
+            FROM tasks t
+            LEFT JOIN users ue ON ue.id = t.employer_id
+            LEFT JOIN users ub ON ub.id = ?
+            WHERE t.id = ?
+            LIMIT 1
+          `,
+                    [user_id, task_id]
+                );
+
+                const row = rows && rows[0];
+                if (!row) return;
+
+                // 自己给自己投标就不提醒
+                if (!row.employer_id || row.employer_id === user_id) return;
+
+                const bidderName = row.bidder_name || "有人";
+
+                // 站内通知（雇主）
+                await db.query(
+                    `INSERT INTO notifications (user_id, type, title, content)
+             VALUES (?, 'task', ?, ?)`,
+                    [
+                        row.employer_id,
+                        "📬 有人投标你的任务",
+                        `${bidderName}对《${row.title}》提交了投标，请尽快查看。`,
+                    ]
+                );
+
+                // WebSocket（雇主在线才有）
+                try {
+                    const ok = sendToUser(row.employer_id, {
+                        type: "notify",
+                        content: `📬 ${bidderName}刚刚投标了你的任务《${row.title}》，请尽快查看~`,
+                        created_time: new Date().toISOString(),
+                    });
+                    console.log(`[bid] WS 推送给 ${row.employer_id}：${ok ? "成功" : "未在线"}`);
+                } catch (e) {
+                    console.warn("[bid] WS 推送失败：", e?.message || e);
+                }
+
+                // 订阅消息（雇主曾授权才会成功；失败不抛错）
+                if (row.employer_openid) {
+                    sendTaskBidNotify({
+                        openid: row.employer_openid,
+                        taskName: row.title,
+                        bidder: bidderName,
+                        price,
+                        remark: advantage || "—",
+                        taskId: row.task_id,
+                    }).catch((e) => {
+                        console.warn(
+                            "[bid] 订阅消息失败：",
+                            e?.response?.data || e?.message || e
+                        );
+                    });
+                }
+            } catch (e) {
+                console.error("[bid] 异步处理失败：", e);
+            }
+        });
     } catch (err) {
         console.error("❌ 投标失败:", err);
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: "服务器错误"
         });

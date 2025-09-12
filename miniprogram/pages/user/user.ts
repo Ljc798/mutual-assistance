@@ -103,37 +103,35 @@ Page({
             wx.navigateTo({ url: "/pages/edit-profile/edit-profile" });
         });
     },
-    
+
     goToShop() {
-        this.checkLoginAndGo(() => {
-            wx.navigateTo({ url: "/pages/shop/shop" });
-        });
+        wx.navigateTo({ url: "/pages/shop/shop" });
     },
-    
+
     handleOrderClick() {
         this.checkLoginAndGo(() => {
             wx.navigateTo({ url: "/pages/order/other-orders" });
         });
     },
-    
+
     handleSpaceClick() {
         this.checkLoginAndGo(() => {
             wx.navigateTo({ url: "/pages/mysquare/mysquare" });
         });
     },
-    
+
     goToWallet() {
         this.checkLoginAndGo(() => {
             wx.navigateTo({ url: '/pages/wallet/wallet' });
         });
     },
-    
+
     goToVipPage() {
         this.checkLoginAndGo(() => {
             wx.navigateTo({ url: '/pages/vip/vip' });
         });
     },
-    
+
     onFeedbackClick() {
         this.checkLoginAndGo(() => {
             this.openFeedbackPopup();

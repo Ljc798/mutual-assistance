@@ -1,14 +1,37 @@
 Page({
     data: {
         items: [],
+        isLoggedIn: false,
     },
 
     onLoad() {
         this.fetchItems();
     },
 
+    onShow() {
+        // ✅ 每次回到页面刷新登录态
+        const app = getApp();
+        const token = wx.getStorageSync("token");
+        const hasUser = !!app?.globalData?.userInfo?.id;
+        this.setData({ isLoggedIn: !!token && hasUser });
+    },
+
     goBack() {
         wx.navigateBack({ delta: 1 });
+    },
+
+    ensureLoggedIn(): boolean {
+        const app = getApp();
+        const token = wx.getStorageSync("token");
+        const userId = app?.globalData?.userInfo?.id;
+
+        if (!token || !userId) {
+            wx.showToast({ title: "请先登录", icon: "none" });
+            // 这里按你的项目跳转逻辑改路径
+            // wx.navigateTo({ url: "/pages/login/login" });
+            return false;
+        }
+        return true;
     },
 
     fetchItems() {
@@ -28,6 +51,7 @@ Page({
 
     // ✅ 积分兑换
     redeemByPoint(itemId: number) {
+        if (!this.ensureLoggedIn()) return;
         const app = getApp();
         const token = wx.getStorageSync("token");
 
@@ -64,6 +88,7 @@ Page({
 
     // ✅ 微信支付兑换（安全模式）
     redeemByMoney(itemId: number) {
+        if (!this.ensureLoggedIn()) return;
         const app = getApp();
         const user = app.globalData.userInfo;
         const token = wx.getStorageSync("token");
@@ -108,6 +133,7 @@ Page({
 
     // ✅ 点击统一处理兑换逻辑
     handleRedeem(e: any) {
+        if (!this.ensureLoggedIn()) return;
         const itemId = e.currentTarget.dataset.id;
         const type = e.currentTarget.dataset.type;
 
