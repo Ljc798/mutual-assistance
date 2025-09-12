@@ -9,8 +9,7 @@ const {
 const {
     sendTaskBidNotify,
     sendOrderStatusNotify,
-    sendTaskCompletedToEmployer,
-    sendPayoutArrivedToEmployee
+    sendTaskStatusNotify
 } = require("../utils/wechat");
 
 // ===== 1. 发布任务 =====
@@ -887,6 +886,24 @@ router.post("/:id/confirm-done", authMiddleware, async (req, res) => {
                 created_time: new Date().toISOString()
             });
 
+            try {
+                const [
+                    [targetUser]
+                ] = await db.query(`SELECT openid FROM users WHERE id = ?`, [targetId]);
+                if (targetUser?.openid) {
+                    await sendTaskStatusNotify({
+                        openid: targetUser.openid,
+                        orderNo: `TASK-${taskId}`,
+                        amount: task.pay_amount,
+                        finishedAt: new Date(),
+                        taskType: '跑腿',
+                        statusText: `对方已完成`
+                    });
+                }
+            } catch (wxErr) {
+                console.warn('⚠️ 订阅消息发送失败（忽略不中断）：', wxErr?.message || wxErr);
+            }
+
             return res.json({
                 success: true,
                 message: "已确认，等待对方确认"
@@ -917,7 +934,6 @@ router.post("/:id/confirm-done", authMiddleware, async (req, res) => {
 
         // ==== 新增：订阅消息（双方确认后）====
         try {
-            // 查询双方 openid
             const [
                 [empUser]
             ] = await db.query(`SELECT openid FROM users WHERE id = ?`, [task.employer_id]);
@@ -925,26 +941,13 @@ router.post("/:id/confirm-done", authMiddleware, async (req, res) => {
                 [emplUser]
             ] = await db.query(`SELECT openid FROM users WHERE id = ?`, [task.employee_id]);
 
-            const orderNo = `TASK-${taskId}`; // 用任务ID当“订单号”
+            const orderNo = `TASK-${taskId}`;
             const amount = task.pay_amount;
-            const doneAt = new Date(); // 也可用 tasks.completed_time
+            const doneAt = new Date();
 
-            // 给雇主：订单完成通知
             if (empUser?.openid) {
-                await sendTaskCompletedToEmployer({
+                await sendTaskStatusNotify({
                     openid: empUser.openid,
-                    orderNo,
-                    amount,
-                    finishedAt: doneAt,
-                    taskType: '跑腿',
-                    statusText: '雇员已完成'
-                });
-            }
-
-            // 给接单人：打款到账通知（也使用“订单完成通知”模板，状态文案不同）
-            if (emplUser?.openid) {
-                await sendPayoutArrivedToEmployee({
-                    openid: emplUser.openid,
                     orderNo,
                     amount,
                     finishedAt: doneAt,
@@ -952,11 +955,20 @@ router.post("/:id/confirm-done", authMiddleware, async (req, res) => {
                     statusText: '任务已完成'
                 });
             }
+
+            if (emplUser?.openid) {
+                await sendTaskStatusNotify({
+                    openid: emplUser.openid,
+                    orderNo,
+                    amount,
+                    finishedAt: doneAt,
+                    taskType: '跑腿',
+                    statusText: '报酬已入账'
+                });
+            }
         } catch (wxErr) {
-            // 这里常见 43101（用户未订阅）可忽略
             console.warn('⚠️ 订阅消息发送失败（忽略不中断）：', wxErr?.message || wxErr);
         }
-        // ===================================
 
         return res.json({
             success: true,

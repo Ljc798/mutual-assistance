@@ -200,88 +200,42 @@ async function sendTaskAssignedToEmployee({
 }
 
 /**
- * D. 订单完成/到账通知（共用一个模板，两个包装）
+ * D. 通用的订单完成/到账通知
  * 模板ID：Aeu_BXdMd6xmgSBGrZptUgGdGbT5HTmwDbapPomy3QU
  * 字段：character_string1(订单号)、amount2(金额)、time3(完成时间)、thing5(类型)、phrase7(状态)
  */
-async function sendTaskCompletedToEmployer({
+async function sendTaskStatusNotify({
     openid,
     orderNo,
     amount,
     finishedAt,
     taskType = '跑腿',
-    statusText = '雇员已完成'
+    statusText = '任务已完成',
+    page = 'pages/home/home'
 }) {
-    if (!openid) throw new Error('sendTaskCompletedToEmployer: openid missing');
+    if (!openid) throw new Error('sendTaskStatusNotify: openid missing');
 
     const payload = {
         touser: openid,
         template_id: 'Aeu_BXdMd6xmgSBGrZptUgGdGbT5HTmwDbapPomy3QU',
-        page: 'pages/home/home',
+        page,
         data: {
-            character_string1: {
-                value: trunc(orderNo, 32)
-            },
-            amount2: {
-                value: fmtAmount(amount)
-            },
-            time3: {
-                value: fmtTime(finishedAt)
-            },
-            thing5: {
-                value: trunc(taskType, 20)
-            },
-            phrase7: {
-                value: trunc(statusText, 20)
-            },
+            character_string1: { value: trunc(orderNo, 32) },
+            amount2: { value: fmtAmount(amount) },
+            time3: { value: fmtTime(finishedAt) },
+            thing5: { value: trunc(taskType, 20) },
+            phrase7: { value: trunc(statusText, 20) },
         },
     };
 
-    const data = await callWeChatWithToken('POST', 'https://api.weixin.qq.com/cgi-bin/message/subscribe/send', payload);
-    logWeChatResult('sendTaskCompletedToEmployer', payload, data);
+    const data = await callWeChatWithToken(
+        'POST',
+        'https://api.weixin.qq.com/cgi-bin/message/subscribe/send',
+        payload
+    );
+    logWeChatResult('sendTaskStatusNotify', payload, data);
     if (data.errcode && data.errcode !== 0 && data.errcode !== 43101) {
-        throw new Error('sendTaskCompletedToEmployer failed: ' + JSON.stringify(data));
-    }
-    return data;
-}
-
-async function sendPayoutArrivedToEmployee({
-    openid,
-    orderNo,
-    amount,
-    finishedAt,
-    taskType = '跑腿',
-    statusText = '任务已完成'
-}) {
-    if (!openid) throw new Error('sendPayoutArrivedToEmployee: openid missing');
-
-    const payload = {
-        touser: openid,
-        template_id: 'Aeu_BXdMd6xmgSBGrZptUgGdGbT5HTmwDbapPomy3QU',
-        page: 'pages/home/home',
-        data: {
-            character_string1: {
-                value: trunc(orderNo, 32)
-            },
-            amount2: {
-                value: fmtAmount(amount)
-            },
-            time3: {
-                value: fmtTime(finishedAt)
-            },
-            thing5: {
-                value: trunc(taskType, 20)
-            },
-            phrase7: {
-                value: trunc(statusText, 20)
-            },
-        },
-    };
-
-    const data = await callWeChatWithToken('POST', 'https://api.weixin.qq.com/cgi-bin/message/subscribe/send', payload);
-    logWeChatResult('sendPayoutArrivedToEmployee', payload, data);
-    if (data.errcode && data.errcode !== 0 && data.errcode !== 43101) {
-        throw new Error('sendPayoutArrivedToEmployee failed: ' + JSON.stringify(data));
+        throw new Error('sendTaskStatusNotify failed: ' + JSON.stringify(data));
     }
     return data;
 }
@@ -347,7 +301,6 @@ module.exports = {
     sendTaskBidNotify,
     sendOrderStatusNotify,
     sendTaskAssignedToEmployee,
-    sendTaskCompletedToEmployer,
-    sendPayoutArrivedToEmployee,
+    sendTaskStatusNotify,
     sendClassReminder,
 };
