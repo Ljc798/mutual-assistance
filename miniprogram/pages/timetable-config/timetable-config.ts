@@ -5,7 +5,7 @@ Page({
         userId: null, // **从全局存储获取用户ID**
         totalWeeks: 16, // 默认教学周
         weeksRange: Array.from({ length: 25 }, (_, i) => i + 1), // 1~25
-        startDate: "2025-02-17",
+        startDate: "2025-09-01",
         classSchedule: [
             { startTime: "08:00" },
             { startTime: "08:50" },
