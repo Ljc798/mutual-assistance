@@ -210,7 +210,7 @@ async function sendTaskCompletedToEmployer({
     amount,
     finishedAt,
     taskType = '跑腿',
-    statusText = '雇员已完成任务，请前往确认完成'
+    statusText = '雇员已完成'
 }) {
     if (!openid) throw new Error('sendTaskCompletedToEmployer: openid missing');
 
@@ -251,7 +251,7 @@ async function sendPayoutArrivedToEmployee({
     amount,
     finishedAt,
     taskType = '跑腿',
-    statusText = '任务已完成，报酬已入账'
+    statusText = '任务已完成'
 }) {
     if (!openid) throw new Error('sendPayoutArrivedToEmployee: openid missing');
 
