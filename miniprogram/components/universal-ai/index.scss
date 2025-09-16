@@ -60,8 +60,8 @@
 
 .chat-header {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column;
+    align-items: flex-start;
     padding: 80rpx 24rpx 24rpx 24rpx;
     border-bottom: 1rpx solid #eee;
 }
@@ -72,10 +72,10 @@
     color: #333;
 }
 
-.chat-close {
-    font-size: 40rpx;
-    color: #999;
-    padding: 10rpx;
+.chat-subtitle {
+    font-size: 24rpx;
+    color: #666;
+    font-weight: normal;
 }
 
 .chat-messages {

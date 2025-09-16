@@ -147,7 +147,8 @@ router.get("/tasks", async (req, res) => {
         category,
         page = 1,
         pageSize = 10,
-        school_id
+        school_id,
+        status // ★ 新增：可选，'all' | 0 | 1 | 2
     } = req.query;
 
     category = decodeURIComponent(category || "全部");
@@ -156,6 +157,14 @@ router.get("/tasks", async (req, res) => {
 
     let query = `SELECT * FROM tasks WHERE status >= 0`;
     const queryParams = [];
+
+    // ★ 状态筛选（当 status 为 0/1/2 时才加条件；空串或 'all' 不加）
+    const parsedStatus = Number(status);
+    const hasStatusFilter = status !== undefined && status !== '' && !Number.isNaN(parsedStatus);
+    if (hasStatusFilter && [0, 1, 2].includes(parsedStatus)) {
+        query += " AND status = ?";
+        queryParams.push(parsedStatus);
+    }
 
     if (category && category !== "全部") {
         query += " AND category = ?";
@@ -167,7 +176,7 @@ router.get("/tasks", async (req, res) => {
         queryParams.push(school_id);
     }
 
-    query += " ORDER BY DDL DESC LIMIT ? OFFSET ?";
+    query += " ORDER BY DDL ASC LIMIT ? OFFSET ?";
     queryParams.push(limit, offset);
 
     try {

@@ -8,7 +8,7 @@
     <view class="chat-content">
         <view class="chat-header">
             <view class="chat-title">全能AI助手</view>
-            <text class="chat-close" bindtap="closeChatPopup">×</text>
+            <text class="chat-subtitle">AI生成，请自行甄别</text>
         </view>
 
         <scroll-view class="chat-messages" scroll-y scroll-into-view="{{scrollIntoView}}" scroll-with-animation>

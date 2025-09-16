@@ -158,15 +158,18 @@
 
 /* 状态不同，颜色不同 */
 .status-pending {
-    color: #ffcc00; /* 橙色，待接单 */
+    color: #ffcc00;
+    /* 橙色，待接单 */
 }
 
 .status-ongoing {
-    color: #4caf50; /* 绿色，进行中 */
+    color: #4caf50;
+    /* 绿色，进行中 */
 }
 
 .status-finished {
-    color: #999999; /* 灰色，已完成 */
+    color: #999999;
+    /* 灰色，已完成 */
 }
 
 .search-results {
@@ -193,4 +196,38 @@
 .search-meta {
     font-size: 24rpx;
     color: red;
+}
+
+.filter-bar {
+    display: flex;
+    gap: 16rpx;
+    padding: 16rpx 24rpx;
+    background: #fff;
+    position: sticky;
+    top: 0;
+    z-index: 9;
+    border-bottom: 1rpx solid #f2f2f2;
+}
+
+.filter-item {
+    flex: 1;
+    height: 68rpx;
+    border-radius: 34rpx;
+    border: 2rpx solid #ffd1dc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+}
+
+.filter-item.is-active {
+    background: #ff6b8b;
+    color: #fff;
+    border-color: #ff6b8b;
+    font-weight: 600;
+}
+
+.filter-text {
+    font-size: 26rpx;
+    line-height: 1;
 }

@@ -454,12 +454,6 @@ Page({
         // 滚动到底部
         this.scrollToBottom();
 
-        function getBeijingTimeISO() {
-            const now = new Date();
-            const offsetTime = new Date(now.getTime() + 8 * 60 * 60 * 1000); // 加8小时
-            const iso = offsetTime.toISOString().replace('Z', '+08:00'); // 替换 Z 为 +08:00
-            return iso;
-        }
 
         // 构造payload，所有字段+user_input
         const payload = {
@@ -474,7 +468,6 @@ Page({
             reward: this.data.reward || '',
             date: this.data.date || '',
             time: this.data.time || '',
-            current_time: getBeijingTimeISO(),
             user_input: chatInput
         };
 

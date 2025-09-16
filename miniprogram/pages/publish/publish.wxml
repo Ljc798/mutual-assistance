@@ -140,7 +140,7 @@
       <view class="chat-header">
         <view class="chat-title-container">
           <text class="chat-title">AI任务助手</text>
-          <text wx:if="{{currentTagName}}" class="chat-subtitle">{{currentTagName}}</text>
+          <text class="chat-subtitle">AI生成，请自行甄别</text>
         </view>
         <text class="chat-close" bindtap="closeChatPopup">×</text>
       </view>

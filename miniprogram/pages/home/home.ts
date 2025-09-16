@@ -28,6 +28,14 @@ Page({
         pageSize: 10,
         hasMore: true,
         selectedSchoolName: '',
+
+        filters: [
+            { label: '全部', value: 'all' },
+            { label: '待接单', value: 0 },
+            { label: '进行中', value: 1 },
+            { label: '已完成', value: 2 },
+        ],
+        activeFilter: 'all',
     },
 
     onLoad() {
@@ -38,14 +46,14 @@ Page({
         const app = getApp();
         const userSchoolName = app.globalData.selectedTaskSchoolName || app.globalData.userInfo?.school_name || '';
         const userSchoolId = app.globalData.selectedTaskSchoolId || app.globalData.userInfo?.school_id || null;
-    
+
         this.setData({
             selectedSchoolName: userSchoolName
         });
-    
+
         app.globalData.selectedTaskSchoolName = userSchoolName;
         app.globalData.selectedTaskSchoolId = userSchoolId;
-    
+
         this.loadTasks(); // 加载任务
     },
 
@@ -54,6 +62,15 @@ Page({
         this.loadTasks();
         wx.stopPullDownRefresh();
     },
+
+    onFilterTap(e: any) {
+        const value = e.currentTarget.dataset.value;  // 'all' | 0 | 1 | 2
+        // 重置分页并刷新
+        this.setData({ activeFilter: value, currentPage: 1, hasMore: true }, () => {
+          wx.showLoading({ title: '加载中' });
+          this.loadTasks(false);
+        });
+      },
 
     loadTasks(isLoadMore = false) {
         const { selectedCategory, currentPage, pageSize, tasks } = this.data;
