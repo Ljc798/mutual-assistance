@@ -72,55 +72,59 @@ Page({
         });
       },
 
-    loadTasks(isLoadMore = false) {
-        const { selectedCategory, currentPage, pageSize, tasks } = this.data;
+      loadTasks(isLoadMore = false) {
+        const { selectedCategory, currentPage, pageSize, tasks, activeFilter } = this.data;
         const app = getApp();
-        let school = app.globalData.selectedTaskSchoolId;
-
-        if (!school) {
-            // 🛟 自动兜底用自己学校
-            school = app.globalData.userInfo?.school_id || null;
-        }
-
+        let school = app.globalData.selectedTaskSchoolId || app.globalData.userInfo?.school_id || null;
+      
+        // 触底加载下一页：这里即时计算下一页页码；刷新则用当前 1
+        const nextPage = isLoadMore ? currentPage + 1 : 1;
+      
+        // 将 activeFilter 映射为后端可读的 status：all 传空，0/1/2 传数字
+        const statusParam = activeFilter === 'all' ? '' : Number(activeFilter);
+      
         wx.request({
-            url: "https://mutualcampus.top/api/task/tasks",
-            method: "GET",
-            data: {
-                category: selectedCategory,
-                page: currentPage,
-                pageSize,
-                school_id: school || '',
-            },
-            header: {
-                "Accept": "application/json"
-            },
-            success: (res: any) => {
-                if (Array.isArray(res.data)) {
-                    const newTasks = res.data.map((task: Task) => ({
-                        ...task,
-                        displayPrice: task.status >= 1 ? Number(task.pay_amount || 0).toFixed(2) : Number(task.offer).toFixed(2),
-                        formattedDDL: this.formatTime(task.DDL),
-                        formattedStatus: this.formatStatus(task.status),
-                    }));
-
-                    this.setData({
-                        tasks: isLoadMore ? [...tasks, ...newTasks] : newTasks,
-                        hasMore: newTasks.length === pageSize
-                    });
-                } else {
-                    wx.showToast({ title: "任务数据异常", icon: "none" });
-                    console.error("❌ 返回的数据异常：", res.data);
-                }
-            },
-            fail: (err: any) => {
-                console.error("❌ 请求失败:", err);
-                wx.showToast({ title: "请求失败", icon: "none" });
-            },
-            complete: () => {
-                wx.hideLoading();
+          url: "https://mutualcampus.top/api/task/tasks",
+          method: "GET",
+          data: {
+            category: selectedCategory,
+            page: nextPage,
+            pageSize,
+            school_id: school || '',
+            status: statusParam,          // ★ 新增：状态筛选
+          },
+          header: { "Accept": "application/json" },
+          success: (res: any) => {
+            if (Array.isArray(res.data)) {
+              const newTasks = res.data.map((task: Task) => ({
+                ...task,
+                displayPrice: task.status >= 1
+                  ? Number(task.pay_amount || 0).toFixed(2)
+                  : Number(task.offer).toFixed(2),
+                formattedDDL: this.formatTime(task.DDL),
+                formattedStatus: this.formatStatus(task.status),
+              }));
+      
+              this.setData({
+                tasks: isLoadMore ? [...tasks, ...newTasks] : newTasks,
+                hasMore: newTasks.length === pageSize,
+                currentPage: nextPage,     // ★ 成功后再推进页码
+              });
+            } else {
+              wx.showToast({ title: "任务数据异常", icon: "none" });
+              console.error("❌ 返回的数据异常：", res.data);
             }
+          },
+          fail: (err: any) => {
+            console.error("❌ 请求失败:", err);
+            wx.showToast({ title: "请求失败", icon: "none" });
+          },
+          complete: () => {
+            wx.hideLoading();
+            wx.stopPullDownRefresh?.();
+          }
         });
-    },
+      },
 
     handleCategoryClick(e: any) {
         const category = e.currentTarget.dataset.category;

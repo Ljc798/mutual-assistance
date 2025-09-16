@@ -148,7 +148,7 @@ router.get("/tasks", async (req, res) => {
         page = 1,
         pageSize = 10,
         school_id,
-        status // ★ 新增：可选，'all' | 0 | 1 | 2
+        status // 'all' | 0 | 1 | 2
     } = req.query;
 
     category = decodeURIComponent(category || "全部");
@@ -158,7 +158,7 @@ router.get("/tasks", async (req, res) => {
     let query = `SELECT * FROM tasks WHERE status >= 0`;
     const queryParams = [];
 
-    // ★ 状态筛选（当 status 为 0/1/2 时才加条件；空串或 'all' 不加）
+    // 状态筛选
     const parsedStatus = Number(status);
     const hasStatusFilter = status !== undefined && status !== '' && !Number.isNaN(parsedStatus);
     if (hasStatusFilter && [0, 1, 2].includes(parsedStatus)) {
@@ -176,7 +176,31 @@ router.get("/tasks", async (req, res) => {
         queryParams.push(school_id);
     }
 
-    query += " ORDER BY DDL ASC LIMIT ? OFFSET ?";
+    // ------------------ 排序规则 ------------------
+    if (hasStatusFilter) {
+        // 单一状态：待接单(0) 用 ASC，其它(1/2) 用 DESC
+        if (parsedStatus === 0) {
+            query += " ORDER BY DDL ASC, id DESC";
+        } else {
+            query += " ORDER BY DDL DESC, id DESC";
+        }
+    } else {
+        // 全部：先按状态优先级 0→1→2，
+        // 然后 0 用 DDL ASC，1/2 用 DDL DESC
+        // 说明：
+        // - FIELD(status,0,1,2) 定义状态优先级
+        // - CASE WHEN 的 NULL 在 ASC 时会排前，在 DESC 时会排后；这里搭配两条保证各自只影响本状态
+        query += `
+        ORDER BY 
+          FIELD(status, 0, 1, 2) ASC,                     -- 状态优先级：待接单→进行中→已完成
+          CASE WHEN status = 0 THEN DDL END ASC,          -- 待接单：紧急优先（DDL 越小越前）
+          CASE WHEN status IN (1,2) THEN DDL END DESC,    -- 进行中/已完成：时间越近的排后（新近的在前）
+          id DESC                                         -- 稳定排序，避免顺序抖动
+      `;
+    }
+    // ------------------------------------------------
+
+    query += " LIMIT ? OFFSET ?";
     queryParams.push(limit, offset);
 
     try {
@@ -185,7 +209,7 @@ router.get("/tasks", async (req, res) => {
         const formattedTasks = results.map(task => ({
             ...task,
             status: parseInt(task.status),
-            offer: parseFloat(task.offer).toFixed(2),
+            offer: task.offer != null ? parseFloat(task.offer).toFixed(2) : "0.00",
         }));
 
         res.json(formattedTasks);
