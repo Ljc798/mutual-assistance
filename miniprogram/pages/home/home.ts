@@ -128,7 +128,7 @@ Page({
 
     formatTime(DDL: string) {
         const date = new Date(DDL);
-        date.setHours(date.getHours() - 8);
+        date.setHours(date.getHours());
         const month = date.getMonth() + 1;
         const day = date.getDate();
         const hours = date.getHours();

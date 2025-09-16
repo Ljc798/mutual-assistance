@@ -118,7 +118,7 @@ Page({
 
         const date = new Date(DDL);
         if (isNaN(date.getTime())) return "时间错误"; // 解析失败的处理
-        date.setHours(date.getHours() - 8);
+        date.setHours(date.getHours());
 
         const month = date.getMonth() + 1; // 获取月份（从 0 开始）
         const day = date.getDate(); // 获取日期

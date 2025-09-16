@@ -124,14 +124,14 @@ Page({
     // ✅ 格式化时间（YYYY-MM-DD HH:mm）
     formatTime(timeStr: string): string {
         const date = new Date(timeStr);
-        date.setHours(date.getHours() - 8);
+        date.setHours(date.getHours());
         return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, "0")}-${date.getDate().toString().padStart(2, "0")} ${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
     },
 
     // ✅ 格式化时间（MM-DD HH:mm）
     formatTime2(timeStr: string): string {
         const date = new Date(timeStr);
-        date.setHours(date.getHours() - 8);
+        date.setHours(date.getHours());
         return `${(date.getMonth() + 1).toString().padStart(2, "0")}-${date.getDate().toString().padStart(2, "0")} ${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
     },
 

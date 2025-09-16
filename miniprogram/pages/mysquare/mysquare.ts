@@ -29,7 +29,7 @@ Page({
 
     formatTime(timeStr: string): string {
         const date = new Date(timeStr);
-        date.setHours(date.getHours() - 8);
+        date.setHours(date.getHours());
         return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, "0")}-${date.getDate().toString().padStart(2, "0")} ${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
     },
 

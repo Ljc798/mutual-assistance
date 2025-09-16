@@ -33,7 +33,7 @@ Page({
                     if (DDL) {
                         const rawDate = new Date(DDL);
                         // 减去 8 小时（转换为本地时间）
-                        rawDate.setHours(rawDate.getHours() - 8);
+                        rawDate.setHours(rawDate.getHours());
                     
                         const year = rawDate.getFullYear();
                         const month = String(rawDate.getMonth() + 1).padStart(2, '0');

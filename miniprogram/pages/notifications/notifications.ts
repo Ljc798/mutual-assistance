@@ -42,7 +42,7 @@ Page({
     formatTime(datetimeStr) {
         const date = new Date(datetimeStr);
         const pad = (n) => n.toString().padStart(2, '0');
-        date.setHours(date.getHours() - 8);
+        date.setHours(date.getHours());
         const month = pad(date.getMonth() + 1);
         const day = pad(date.getDate());
         const hour = pad(date.getHours());

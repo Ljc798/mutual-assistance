@@ -64,7 +64,7 @@ Page({
                 if (res.data.success && Array.isArray(res.data.messages)) {
                     const history = res.data.messages.map((msg) => {
                         const date = new Date(msg.created_time);
-                        date.setHours(date.getHours() - 8);
+                        date.setHours(date.getHours());
                         const hours = date.getHours().toString().padStart(2, '0');
                         const minutes = date.getMinutes().toString().padStart(2, '0');
                         return {
