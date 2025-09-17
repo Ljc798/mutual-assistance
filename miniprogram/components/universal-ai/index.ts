@@ -4,12 +4,14 @@ interface ChatMessage {
     timestamp: string;
 }
 
+import { BASE_URL } from '../../config/env';
+
 const TAP_MOVE_THRESHOLD = 8;     // 小于 8px 视为点击
 const TAP_TIME_THRESHOLD = 300;   // 小于 300ms 视为点击
 
 Component({
     properties: {
-        apiUrl: { type: String, value: "https://mutualcampus.top/api/ai/almighty" }
+        apiUrl: { type: String, value: `${BASE_URL}/ai/almighty` }
     },
 
     data: {
@@ -84,7 +86,7 @@ Component({
 
         onTouchEnd() {
             const pressTime = Date.now() - this.data.downTime;
-            
+
             // 结束拖动
             this.setData({ isDragging: false });
 
