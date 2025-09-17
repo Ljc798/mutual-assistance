@@ -258,7 +258,7 @@ async function sendClassReminder({
 
     const payload = {
         touser: openid,
-        template_id: 'ftmEuFBPPKO2R6cX12lBzQEcN2uom-iGy4pdKYPhqB0',
+        template_id: 'ftmEuFBPPKO2R6cX121BzQEcN2uom-iGy4pdKYPhqB0',
         page,
         data: {
             thing6: {

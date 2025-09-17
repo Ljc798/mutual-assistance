@@ -3,8 +3,7 @@ const cors = require("cors");
 const http = require("http");
 const WebSocket = require("ws");
 const dayjs = require("dayjs");
-const { start: startClassReminder } = require("./routes/classReminder");
-startClassReminder;
+require('./routes/classReminder').start();
 
 const taskRouter = require("./routes/task");
 const userRouter = require("./routes/user");
