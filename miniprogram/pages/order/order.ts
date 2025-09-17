@@ -1,4 +1,6 @@
-// ✅ pages/order/order.ts
+// pages/order/order.ts
+import { BASE_URL } from '../../config/env';
+
 Page({
     data: {
         filterOptions1: ["全部", "我帮助的", "我发布的"],
@@ -62,7 +64,7 @@ Page({
         const { userId, activeFilter1, activeFilter2 } = this.data;
         const token = wx.getStorageSync("token");
         wx.request({
-            url: `https://mutualcampus.top/api/task/my`,
+            url: `${BASE_URL}/task/my`,
             method: "GET",
             header: { Authorization: `Bearer ${token}`, },
             data: { userId },
@@ -172,7 +174,7 @@ Page({
         }
 
         wx.request({
-            url: `https://mutualcampus.top/api/task/${taskId}/confirm-done`,
+            url: `${BASE_URL}/task/${taskId}/confirm-done`,
             method: "POST",
             header: {
                 Authorization: `Bearer ${token}`
@@ -214,7 +216,7 @@ Page({
       
         // 2. 调用后端查剩余免费取消次数
         wx.request({
-          url: `https://mutualcampus.top/api/task/cancel/count`,
+          url: `${BASE_URL}/task/cancel/count`,
           method: "GET",
           header: {
             Authorization: `Bearer ${token}`
@@ -275,7 +277,7 @@ Page({
         wx.showLoading({ title: "取消中..." });
     
         wx.request({
-            url: "https://mutualcampus.top/api/task/cancel",
+            url: `${BASE_URL}/task/cancel`,
             method: "POST",
             header: {
                 Authorization: `Bearer ${token}`

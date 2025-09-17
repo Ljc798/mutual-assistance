@@ -1,4 +1,5 @@
 import { checkTextContent } from "../../utils/security";
+import { BASE_URL } from '../../config/env';
 
 Page({
     data: {
@@ -50,7 +51,7 @@ Page({
         wx.showLoading({ title: "加载任务..." });
 
         wx.request({
-            url: `https://mutualcampus.top/api/task/${taskId}`,
+            url: `${BASE_URL}/task/${taskId}`,
             method: "GET",
             success: (res: any) => {
                 if (!res.data || !res.data.id) {
@@ -136,7 +137,7 @@ Page({
         }
 
         wx.request({
-            url: `https://mutualcampus.top/api/task/${taskId}/bids`,
+            url: `${BASE_URL}/task/${taskId}/bids`,
             method: 'GET',
             header: {
                 Authorization: `Bearer ${token}`  // 添加 token
@@ -212,7 +213,7 @@ Page({
 
             await new Promise((resolve, reject) => {
                 wx.request({
-                    url: 'https://mutualcampus.top/api/task/bid',
+                    url: `${BASE_URL}/task/bid`,
                     method: 'POST',
                     header: { Authorization: `Bearer ${token}` },
                     data: {
@@ -256,7 +257,7 @@ Page({
             success: (res) => {
                 if (res.confirm) {
                     wx.request({
-                        url: "https://mutualcampus.top/api/task/bid/cancel",
+                        url: `${BASE_URL}/task/bid/cancel`,
                         method: "POST",
                         header: { Authorization: `Bearer ${token}` },
                         data: { bid_id: bidId, user_id: userId },
@@ -313,7 +314,7 @@ Page({
                 if (!res.confirm) return;
 
                 wx.request({
-                    url: 'https://mutualcampus.top/api/payment/create',
+                    url: `${BASE_URL}/payment/create`,
                     method: 'POST',
                     data: {
                         openid,

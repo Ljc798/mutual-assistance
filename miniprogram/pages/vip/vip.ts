@@ -1,3 +1,4 @@
+import { BASE_URL } from '../../config/env';
 Page({
     data: {
         selectedPlanId: 1
@@ -7,7 +8,7 @@ Page({
         const token = wx.getStorageSync("token");
       
         wx.request({
-          url: "https://mutualcampus.top/api/vip/plans",
+          url: `${BASE_URL}/vip/plans`,
           method: "GET",
           header: {
             Authorization: `Bearer ${token}`
@@ -50,7 +51,7 @@ Page({
         }
 
         wx.request({
-            url: 'https://mutualcampus.top/api/vip/create-order',
+            url: `${BASE_URL}/vip/create-order`,
             method: 'POST',
             header: {
                 Authorization: `Bearer ${token}`

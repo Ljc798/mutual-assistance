@@ -1,6 +1,6 @@
 import { getCourseTime } from '../../utils/courseTimeUtil';
 
-const API_BASE_URL = "https://mutualcampus.top/api/timetable";
+import { BASE_URL } from '../../config/env';
 
 Page({
     data: {
@@ -22,7 +22,7 @@ Page({
 
     loadCourseDetails() {
         wx.request({
-            url: `${API_BASE_URL}/course-detail`,
+            url: `${BASE_URL}/course-detail`,
             method: "GET",
             data: {
                 user_id: this.data.userId,
@@ -99,7 +99,7 @@ Page({
     // 保存修改
     saveChanges() {
         wx.request({
-            url: `${API_BASE_URL}/update-course`,
+            url: `${BASE_URL}/timetable/update-course`,
             method: "POST",
             data: {
                 user_id: this.data.userId,
@@ -125,7 +125,7 @@ Page({
             success: (res) => {
                 if (res.confirm) {
                     wx.request({
-                        url: `${API_BASE_URL}/delete-course`,
+                        url: `${BASE_URL}/timetable/delete-course`,
                         method: "POST",
                         data: { user_id: this.data.userId, course_id: this.data.courseId },
                         success: (res) => {

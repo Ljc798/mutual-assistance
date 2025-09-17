@@ -14,6 +14,7 @@ interface Task {
     formattedDDL?: string;
     formattedStatus?: string;
 }
+import { BASE_URL } from '../../config/env';
 
 Page({
     data: {
@@ -55,7 +56,7 @@ Page({
         const school = app.globalData.selectedTaskSchoolId;
 
         wx.request({
-            url: `https://mutualcampus.top/api/task/tasks`,
+            url: `${BASE_URL}/task/tasks`,
             method: "GET",
             data: {
                 category: encodeURIComponent(category),

@@ -1,4 +1,6 @@
 // pages/edit-task/edit-task.ts
+import { BASE_URL } from '../../config/env';
+
 Page({
     data: {
         taskId: null,
@@ -25,7 +27,7 @@ Page({
 
     loadTaskDetail(taskId) {
         wx.request({
-            url: `https://mutualcampus.top/api/task/${taskId}`,
+            url: `${BASE_URL}/task/${taskId}`,
             method: 'GET',
             success: (res) => {
                 if (res.data && res.data.id) {
@@ -86,7 +88,7 @@ Page({
         const DDL = `${DDL_date} ${DDL_time}`;
 
         wx.request({
-            url: "https://mutualcampus.top/api/task/update",
+            url: `${BASE_URL}/task/update`,
             method: "POST",
             header: { Authorization: `Bearer ${token}` },
             data: {

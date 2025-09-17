@@ -1,3 +1,5 @@
+import { BASE_URL } from '../../config/env';
+
 Page({
     data: {
         mode: 'task',
@@ -27,7 +29,7 @@ Page({
 
     loadProvinces() {
         wx.request({
-            url: 'https://mutualcampus.top/api/school/provinces',
+            url: `${BASE_URL}/school/provinces`,
             success: (res) => {
                 if (res.data.success) {
                     this.setData({ provinces: res.data.provinces });
@@ -44,7 +46,7 @@ Page({
 
     loadCities(province: string) {
         wx.request({
-            url: `https://mutualcampus.top/api/school/cities?province=${encodeURIComponent(province)}`,
+            url: `${BASE_URL}/school/cities?province=${encodeURIComponent(province)}`,
             success: (res) => {
                 if (res.data.success) {
                     this.setData({ cities: res.data.cities });
@@ -74,7 +76,7 @@ Page({
 
     searchSchools() {
         wx.request({
-            url: `https://mutualcampus.top/api/school/search?keyword=${encodeURIComponent(this.data.searchKeyword)}`,
+            url: `${BASE_URL}/school/search?keyword=${encodeURIComponent(this.data.searchKeyword)}`,
             success: (res) => {
                 if (res.data.success) {
                     this.setData({ schoolList: res.data.schools, hasMore: false });
@@ -88,7 +90,7 @@ Page({
         if (!selectedCity) return;
 
         wx.request({
-            url: `https://mutualcampus.top/api/school/list?city=${encodeURIComponent(selectedCity)}&page=${page}&pageSize=${pageSize}`,
+            url: `${BASE_URL}/school/list?city=${encodeURIComponent(selectedCity)}&page=${page}&pageSize=${pageSize}`,
             success: (res) => {
                 if (res.data.success) {
                     const newSchools = res.data.schools;
@@ -170,7 +172,7 @@ Page({
         try {
             const token = wx.getStorageSync('token');
             await wx.request({
-                url: 'https://mutualcampus.top/api/school/feedback',
+                url: `${BASE_URL}/school/feedback`,
                 method: 'POST',
                 header: { Authorization: `Bearer ${token}` },
                 data: {

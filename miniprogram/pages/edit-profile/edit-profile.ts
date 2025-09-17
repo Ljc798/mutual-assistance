@@ -1,4 +1,6 @@
 import { checkTextContent } from "../../utils/security";
+import { BASE_URL } from '../../config/env';
+
 Page({
     data: {
         userInfo: {}, // 全局用户信息
@@ -62,7 +64,7 @@ Page({
                         const compressedPath = compressed.tempFilePath;
     
                         wx.uploadFile({
-                            url: "https://mutualcampus.top/api/uploads/upload-image",
+                            url: `${BASE_URL}/uploads/upload-image`,
                             filePath: compressedPath,
                             name: "image",
                             formData: {
@@ -108,7 +110,7 @@ Page({
         if (!newUsername || newUsername === oldUsername) return;
 
         wx.request({
-            url: "https://mutualcampus.top/api/user/check-username",
+            url: `${BASE_URL}/user/check-username`,
             method: "POST",
             data: { username: newUsername },
             success: (res: any) => {
@@ -127,7 +129,7 @@ Page({
         if (!newWxid || newWxid === oldWxid) return;
 
         wx.request({
-            url: "https://mutualcampus.top/api/user/check-wxid",
+            url: `${BASE_URL}/user/check-wxid`,
             method: "POST",
             data: { wxid: newWxid },
             success: (res: any) => {
@@ -197,7 +199,7 @@ Page({
         }
 
         wx.request({
-            url: "https://mutualcampus.top/api/user/update",
+            url: `${BASE_URL}/user/update`,
             method: "POST",
             header: { Authorization: `Bearer ${token}` },
             data: {
@@ -228,7 +230,7 @@ Page({
     uploadAvatarToCOS(filePath: string, username: string): Promise<string | null> {
         return new Promise((resolve) => {
             wx.uploadFile({
-                url: "https://mutualcampus.top/api/uploads/upload-image",
+                url: `${BASE_URL}/uploads/upload-image`,
                 filePath,
                 name: "image",
                 formData: {

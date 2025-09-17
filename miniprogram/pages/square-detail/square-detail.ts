@@ -1,4 +1,5 @@
 import { checkTextContent } from "../../utils/security";
+import { BASE_URL } from '../../config/env';
 
 Page({
     data: {
@@ -48,7 +49,7 @@ Page({
         const token = wx.getStorageSync("token");
 
         wx.request({
-            url: `https://mutualcampus.top/api/square/detail`,
+            url: `${BASE_URL}/square/detail`,
             method: "GET",
             header: { Authorization: `Bearer ${token}` },
             data: { post_id: postId, user_id },
@@ -90,8 +91,8 @@ Page({
         }
 
         const url = post.isLiked
-            ? "https://mutualcampus.top/api/square/unlike"
-            : "https://mutualcampus.top/api/square/like";
+            ? `${BASE_URL}/square/unlik`
+            : `${BASE_URL}/square/like`;
 
         wx.request({
             url,
@@ -153,7 +154,7 @@ Page({
         const token = wx.getStorageSync("token");
 
         wx.request({
-            url: "https://mutualcampus.top/api/square/comments",
+            url: `${BASE_URL}/square/comments`,
             method: "GET",
             header: { Authorization: `Bearer ${token}` },
             data: { square_id: postId, user_id },
@@ -252,7 +253,7 @@ Page({
         }
 
         wx.request({
-            url: "https://mutualcampus.top/api/square/comments/create",
+            url: `${BASE_URL}/square/comments/create`,
             method: "POST",
             header: { Authorization: `Bearer ${token}` }, // 加入 token 认证
             data: commentData,
@@ -308,7 +309,7 @@ Page({
             return;
         }
 
-        const url = isliked ? "https://mutualcampus.top/api/square/comments/unlike" : "https://mutualcampus.top/api/square/comments/like";
+        const url = isliked ? `${BASE_URL}/square/comments/unlike" : `${BASE_URL}/square/comments/like`;
 
         wx.request({
             url,

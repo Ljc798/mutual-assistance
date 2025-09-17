@@ -1,3 +1,5 @@
+import { BASE_URL } from '../../config/env';
+
 Page({
     data: {
         phoneNumber: "",
@@ -48,7 +50,7 @@ Page({
     //             wx.showLoading({ title: "登录中..." });
 
     //             wx.request({
-    //                 url: "https://mutualcampus.top/api/user/phone-login",
+    //                 url: `${BASE_URL}/user/phone-login`,
     //                 method: "POST",
     //                 data: {
     //                     phoneCode: e.detail.code, // 手机号授权的 code
@@ -104,7 +106,7 @@ Page({
                 wx.showLoading({ title: "登录中..." });
 
                 wx.request({
-                    url: "https://mutualcampus.top/api/user/wx-login",
+                    url: `${BASE_URL}/user/wx-login`,
                     method: "POST",
                     data: { code },
                     success: (res: any) => {
@@ -157,7 +159,7 @@ Page({
         }
 
         wx.request({
-            url: "https://mutualcampus.top/api/user/info",
+            url: `${BASE_URL}/user/info`,
             method: "GET",
             header: { Authorization: `Bearer ${token}` },
             success: (res: any) => {
@@ -206,7 +208,7 @@ Page({
     submitAdminLogin() {
         const { adminPhone, adminPwd } = this.data;
         wx.request({
-            url: "https://mutualcampus.top/api/user/admin-login",
+            url: `${BASE_URL}/user/admin-login`,
             method: "POST",
             data: { phone: adminPhone, password: adminPwd },
             success: (res: any) => {

@@ -1,3 +1,5 @@
+import { BASE_URL } from '../../config/env';
+
 Page({
     data: {
       postId: null,
@@ -17,7 +19,7 @@ Page({
     fetchPostDetail(postId) {
       const token = wx.getStorageSync('token');
       wx.request({
-        url: `https://mutualcampus.top/api/square/detail?post_id=${postId}`,
+        url: `${BASE_URL}/square/detail?post_id=${postId}`,
         method: 'GET',
         header: {
           Authorization: `Bearer ${token}`,
@@ -54,7 +56,7 @@ Page({
       }
   
       wx.request({
-        url: `https://mutualcampus.top/api/square/edit`,
+        url: `${BASE_URL}/square/edit`,
         method: 'POST',
         header: {
           Authorization: `Bearer ${token}`,

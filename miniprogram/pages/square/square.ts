@@ -1,4 +1,5 @@
 import { checkTextContent } from "../../utils/security";
+import { BASE_URL } from '../../config/env';
 
 Page({
     data: {
@@ -70,7 +71,7 @@ Page({
         const token = wx.getStorageSync("token");
 
         wx.request({
-            url: "https://mutualcampus.top/api/checkins/status",
+            url: `${BASE_URL}/checkins/status`,
             method: "GET",
             header: { Authorization: `Bearer ${token}` }, // 添加 token
             data: { user_id },
@@ -98,7 +99,7 @@ Page({
         }
 
         wx.request({
-            url: "https://mutualcampus.top/api/checkins/checkin",
+            url: `${BASE_URL}/checkins/checkin`,
             method: "POST",
             header: { Authorization: `Bearer ${token}` }, // 添加 token
             data: { user_id },
@@ -175,7 +176,7 @@ Page({
         }
     
         wx.request({
-            url: "https://mutualcampus.top/api/square/posts",
+            url: `${BASE_URL}/square/posts`,
             method: "GET",
             data: requestData,
             success: (res: any) => {
@@ -257,8 +258,8 @@ Page({
         }
 
         const url = post.isLiked
-            ? "https://mutualcampus.top/api/square/unlike"
-            : "https://mutualcampus.top/api/square/like";
+            ? `${BASE_URL}/square/unlik`
+            : `${BASE_URL}/square/like`;
 
         wx.request({
             url,
@@ -357,7 +358,7 @@ Page({
     uploadImageToCOS(filePath: string, square_id: number): Promise<string | null> {
         return new Promise((resolve) => {
             wx.uploadFile({
-                url: "https://mutualcampus.top/api/uploads/upload-image",
+                url: `${BASE_URL}/uploads/upload-image`,
                 filePath,
                 name: "image",
                 formData: {
@@ -410,7 +411,7 @@ Page({
 
         // 🚀 先创建帖子（无图片）
         wx.request({
-            url: "https://mutualcampus.top/api/square/create",
+            url: `${BASE_URL}/square/create`,
             method: "POST",
             header: { Authorization: `Bearer ${token}` }, // 添加 token
             data: {
@@ -445,7 +446,7 @@ Page({
 
                     // 🚀 更新帖子，添加图片
                     wx.request({
-                        url: "https://mutualcampus.top/api/square/update-images",
+                        url: `${BASE_URL}/square/update-images`,
                         method: "POST",
                         header: { Authorization: `Bearer ${token}` }, // 添加 token
                         data: {
@@ -524,7 +525,7 @@ Page({
         }
 
         wx.request({
-            url: "https://mutualcampus.top/api/square/report",
+            url: `${BASE_URL}/square/report`,
             method: "POST",
             header: { Authorization: `Bearer ${token}` },
             data: {

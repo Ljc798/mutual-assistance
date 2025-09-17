@@ -1,5 +1,5 @@
-const API_BASE_URL = "https://mutualcampus.top/api/timetable";
 const TMP_CLASS_REMINDER = 'ftmEuFBPPKO2R6cX121BzQEcN2uom-iGy4pdKYPhqB0';
+import { BASE_URL } from '../../config/env';
 
 const dayMap = {
     "周一": 1,
@@ -42,7 +42,7 @@ Page({
         this.setData({ userId });
 
         wx.request({
-            url: `${API_BASE_URL}/get-timetable-config`,
+            url: `${BASE_URL}/timetable/get-timetable-config`,
             method: "GET",
             data: { user_id: userId },
             success: (res) => {
@@ -129,7 +129,7 @@ Page({
         if (!this.data.userId) return;
 
         wx.request({
-            url: `${API_BASE_URL}/daily`,
+            url: `${BASE_URL}/timetable/daily`,
             method: "GET",
             data: {
                 user_id: this.data.userId,
@@ -254,7 +254,7 @@ Page({
     // 获取实践课
     loadPracticeCourses() {
         wx.request({
-            url: `${API_BASE_URL}/practice`,
+            url: `${BASE_URL}/timetable/practice`,
             method: "GET",
             data: {
                 user_id: this.data.userId, week: this.data.currentWeek, term: this.data.term
@@ -498,7 +498,7 @@ Page({
     // 加载周课表数据
     loadWeeklyCourses() {
         wx.request({
-            url: `${API_BASE_URL}/weekly`,
+            url: `${BASE_URL}/timetable/weekly`,
             method: "GET",
             data: {
                 user_id: this.data.userId,
@@ -668,7 +668,7 @@ Page({
             if (token && userId) {
               await new Promise((resolve, reject) => {
                 wx.request({
-                  url: 'https://mutualcampus.top/api/notify/subscribe',
+                  url: `${BASE_URL}/notify/subscribe`,
                   method: 'POST',
                   header: { Authorization: `Bearer ${token}` },
                   data: { user_id: userId, tmpl_id: TMP_CLASS_REMINDER, scene: 'class_reminder' },

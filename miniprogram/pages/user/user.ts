@@ -1,3 +1,4 @@
+import { BASE_URL } from '../../config/env';
 Page({
     data: {
         userInfo: null, // 用户信息
@@ -55,7 +56,7 @@ Page({
         }
 
         wx.request({
-            url: "https://mutualcampus.top/api/user/info",
+            url: `${BASE_URL}/user/info`,
             method: "GET",
             header: { Authorization: `Bearer ${token}` },
             success: (res: any) => {
@@ -165,7 +166,7 @@ Page({
         }
 
         wx.request({
-            url: "https://mutualcampus.top/api/feedback/submit",
+            url: `${BASE_URL}/feedback/submit`,
             method: "POST",
             header: { Authorization: `Bearer ${token}` },
             data: {

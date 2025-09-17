@@ -1,4 +1,5 @@
 import { format } from "path";
+import { BASE_URL } from '../../config/env';
 
 interface ChatItem {
     target_id: number;
@@ -49,7 +50,7 @@ Page({
         }
 
         wx.request({
-            url: `https://mutualcampus.top/api/messages/list?userId=${this.data.userId}`,
+            url: `${BASE_URL}/messages/list?userId=${this.data.userId}`,
             method: "GET",
             header: {
                 Authorization: `Bearer ${token}`
@@ -112,7 +113,7 @@ Page({
         const token = wx.getStorageSync('token');
 
         wx.request({
-            url: 'https://mutualcampus.top/api/notification/latest',
+            url: `${BASE_URL}/notification/latest`,
             method: 'GET',
             header: {
                 Authorization: `Bearer ${token}`

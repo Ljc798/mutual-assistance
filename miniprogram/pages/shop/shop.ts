@@ -1,3 +1,5 @@
+import { BASE_URL } from '../../config/env';
+
 Page({
     data: {
         items: [],
@@ -36,7 +38,7 @@ Page({
 
     fetchItems() {
         wx.request({
-            url: 'https://mutualcampus.top/api/shop/items',
+            url: `${BASE_URL}/shop/items`,
             method: 'GET',
             success: (res) => {
                 if (res.data.success) {
@@ -56,7 +58,7 @@ Page({
         const token = wx.getStorageSync("token");
 
         wx.request({
-            url: 'https://mutualcampus.top/api/shop/redeem-point',
+            url: `${BASE_URL}/shop/redeem-point`,
             method: 'POST',
             header: {
                 Authorization: `Bearer ${token}`,
@@ -94,7 +96,7 @@ Page({
         const token = wx.getStorageSync("token");
 
         wx.request({
-            url: "https://mutualcampus.top/api/shop/create-order",
+            url: `${BASE_URL}/shop/create-order`,
             method: "POST",
             header: {
                 Authorization: `Bearer ${token}`,

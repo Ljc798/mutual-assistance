@@ -1,5 +1,6 @@
 // pages/chat/chat.ts
 import { on, off, sendMessage } from '../../utils/ws';
+import { BASE_URL } from '../../config/env';
 
 Page({
     data: {
@@ -57,7 +58,7 @@ Page({
     fetchHistoryMessages() {
         const { room_id, userId } = this.data;
         wx.request({
-            url: `https://mutualcampus.top/api/messages/history`,
+            url: `${BASE_URL}/messages/history`,
             method: 'GET',
             data: { room_id },
             success: (res) => {
@@ -143,7 +144,7 @@ Page({
     checkReadStatus() {
         const { room_id } = this.data;
         wx.request({
-            url: `https://mutualcampus.top/api/messages/read-status`,
+            url: `${BASE_URL}/messages/read-status`,
             method: 'GET',
             data: { room_id },
             success: (res) => {
@@ -156,7 +157,7 @@ Page({
     markMessagesAsRead() {
         const { room_id, userId } = this.data;
         wx.request({
-            url: 'https://mutualcampus.top/api/messages/mark-read',
+            url: `${BASE_URL}/messages/mark-read`,
             method: 'POST',
             data: { room_id, user_id: userId }
         });

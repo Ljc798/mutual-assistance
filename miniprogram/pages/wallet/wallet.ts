@@ -1,3 +1,4 @@
+import { BASE_URL } from '../../config/env';
 Page({
     data: {
         balance: 0.00,
@@ -57,7 +58,7 @@ Page({
             if (res.confirm) {
               // 用户确认提现
               wx.request({
-                url: 'https://mutualcampus.top/api/wallet/withdraw',
+                url: `${BASE_URL}/wallet/withdraw`,
                 method: 'POST',
                 data: {
                   amount: amountNum.toFixed(2),

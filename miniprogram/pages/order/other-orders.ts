@@ -1,4 +1,6 @@
 // other-orders.ts
+import { BASE_URL } from '../../config/env';
+
 Page({
     data: {
         activeFilter: 'all',
@@ -16,7 +18,7 @@ Page({
         if (!user?.id) return;
 
         wx.request({
-            url: `https://mutualcampus.top/api/order/records?userId=${user.id}`,
+            url: `${BASE_URL}/order/records?userId=${user.id}`,
             method: "GET",
             header: {
                 Authorization: `Bearer ${token}`,

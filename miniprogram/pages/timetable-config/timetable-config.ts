@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://mutualcampus.top/api/timetableConfig"; // 本地调试模式
+import { BASE_URL } from '../../config/env';
 
 Page({
     data: {
@@ -43,7 +43,7 @@ Page({
     /** **🔄 获取用户的课表设置** */
     fetchTimetableConfig(userId) {
         wx.request({
-            url: `${API_BASE_URL}/get-timetable-config`,
+            url: `${BASE_URL}/timetableConfig/get-timetable-config`,
             method: "GET",
             data: { user_id: userId },
             success: (res) => {
@@ -67,7 +67,7 @@ Page({
 
                     this.setData({
                         totalWeeks: data.total_weeks || 16,
-                        startDate: data.start_date || "2025-02-17",
+                        startDate: data.start_date || "2025-09-01",
                         classSchedule: classSchedule,
                         classDuration: data.classDuration || 45
                     });
@@ -145,7 +145,7 @@ Page({
         };
 
         wx.request({
-            url: `${API_BASE_URL}/save-timetable-config`,
+            url: `${BASE_URL}/timetableConfig/save-timetable-config`,
             method: "POST",
             data: requestData,
             header: {

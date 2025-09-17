@@ -1,3 +1,5 @@
+import { BASE_URL } from '../../config/env';
+
 Page({
     data: {
         notifications: []
@@ -10,7 +12,7 @@ Page({
     fetchNotifications() {
         const token = wx.getStorageSync('token');
         wx.request({
-            url: 'https://mutualcampus.top/api/notification/all',
+            url: `${BASE_URL}/notification/all`,
             method: 'GET',
             header: {
                 Authorization: `Bearer ${token}`
@@ -59,7 +61,7 @@ Page({
         const token = wx.getStorageSync('token');
 
         wx.request({
-            url: `https://mutualcampus.top/api/notification/mark-read`,
+            url: `${BASE_URL}/notification/mark-read`,
             method: 'POST',
             header: {
                 Authorization: `Bearer ${token}`

@@ -17,6 +17,8 @@ interface Task {
     displayPrice?: string; // 显示价格字段（新增）
 }
 
+import { BASE_URL } from '../../config/env';
+
 Page({
     data: {
         tasks: [] as Task[], // 存储所有任务
@@ -84,7 +86,7 @@ Page({
         const statusParam = activeFilter === 'all' ? '' : Number(activeFilter);
       
         wx.request({
-          url: "https://mutualcampus.top/api/task/tasks",
+          url: `${BASE_URL}/task/tasks`,
           method: "GET",
           data: {
             category: selectedCategory,
@@ -199,7 +201,7 @@ Page({
         }
 
         wx.request({
-            url: "https://mutualcampus.top/api/task/search",
+            url: `${BASE_URL}/task/search`,
             method: "GET",
             data: {
                 q: keyword,

@@ -1,4 +1,5 @@
 import { checkTextContent } from "../../utils/security";
+import { BASE_URL } from '../../config/env';
 
 const TMP = {
     DISPATCH: "7AvTKCi4G4YPpqhacTUAckeYCRnL2ggbwjaNDy1j7tw",  // 派单通知
@@ -331,7 +332,7 @@ Page({
             // ① 创建任务
             const createRes: any = await new Promise((resolve, reject) => {
                 wx.request({
-                    url: 'https://mutualcampus.top/api/task/create',
+                    url: `${BASE_URL}/task/create`,
                     method: 'POST',
                     data: payload,
                     header: { Authorization: `Bearer ${token}` },
@@ -350,7 +351,7 @@ Page({
                 const taskId = createRes.data.task_id;
                 const prepayRes: any = await new Promise((resolve, reject) => {
                     wx.request({
-                        url: 'https://mutualcampus.top/api/taskPayment/prepay',
+                        url: `${BASE_URL}/taskPayment/prepay`,
                         method: 'POST',
                         data: { task_id: taskId },
                         header: { Authorization: `Bearer ${token}` },
@@ -475,7 +476,7 @@ Page({
             // 调用后端APItest
             const response = await new Promise((resolve, reject) => {
                 wx.request({
-                    url: 'https://mutualcampus.top/api/ai/extract',
+                    url: `${BASE_URL}/ai/extract`,
                     method: 'POST',
                     data: {
                         text: JSON.stringify(payload),
@@ -714,7 +715,7 @@ Page({
             time: this.data.time || ''
         };
         wx.request({
-            url: 'https://mutualcampus.top/api/ai/extract',
+            url: `${BASE_URL}/ai/extract`,
             method: 'POST',
             data: {
                 text: JSON.stringify(payload),
@@ -785,7 +786,7 @@ Page({
             time: this.data.time || ''
         };
         wx.request({
-            url: 'https://mutualcampus.top/api/ai/extract',
+            url: `${BASE_URL}/ai/extract`,
             method: 'POST',
             data: {
                 text: JSON.stringify(payload),
