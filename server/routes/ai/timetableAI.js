@@ -38,6 +38,7 @@ router.post('/query', async (req, res) => {
       return res.status(400).json({ message: 'practice_sql 和 theory_sql 都是必填的' });
     }
 
+    console.log("req", req.body);
     console.log("1", practice_sql);
 
     const psql = fixFindInSet(practice_sql);
