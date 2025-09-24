@@ -17,8 +17,7 @@ router.post("/", authMiddleware, async (req, res) => {
     try {
         const {
             query,
-            conversation_id,
-            files
+            conversation_id
         } = req.body || {};
         if (!query) {
             return res.status(400).json({
@@ -30,11 +29,13 @@ router.post("/", authMiddleware, async (req, res) => {
         const difyUserId = req.user.id;
 
         const payload = {
-            inputs: {},
+            inputs: {
+                user_id: difyUserId
+            },
             query,
             response_mode: "blocking", // 阻塞拿结构化结果
             conversation_id: conversation_id || null, // 空用 null，别传 ""
-            user: difyUserId,
+            user: difyUserId
         };
 
         const {
