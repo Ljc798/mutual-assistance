@@ -15,6 +15,16 @@ function isSafeSelect(sql) {
   return !forbidden.some(k => s.includes(k));
 }
 
+// 兜底：把 “FIND_IN_SET(4 weeks)” / “FIND_IN_SET(4)” 修成 “FIND_IN_SET(4, weeks)”
+function fixFindInSet(sql) {
+    if (!sql) return '';
+    let t = String(sql);
+    // 把遗漏逗号/字段的情况修掉
+    t = t.replace(/FIND_IN_SET\s*\(\s*([0-9]+)\s*(?:,\s*weeks)?\s*\)/gi, 'FIND_IN_SET($1, weeks)');
+    // 把多余第三个参数修掉
+    t = t.replace(/FIND_IN_SET\s*\(\s*([^,()]+)\s*,\s*weeks\s*,\s*weeks\s*\)/gi, 'FIND_IN_SET($1, weeks)');
+    return t;
+  }
 
 /**
  * POST /api/ai/timetable/query
@@ -30,8 +40,8 @@ router.post('/query', async (req, res) => {
 
     console.log("1", practice_sql);
 
-    const psql = ensureLimit(normalize(practice_sql));
-    const tsql = ensureLimit(normalize(theory_sql));
+    const psql = ensureLimit(fixFindInSet(normalize(practice_sql)));
+    const tsql = ensureLimit(fixFindInSet(normalize(theory_sql)));
 
     if (!isSafeSelect(psql) || !isSafeSelect(tsql)) {
       return res.status(400).json({ message: '仅允许只读 SELECT 语句' });
