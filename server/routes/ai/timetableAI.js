@@ -40,8 +40,9 @@ router.post('/query', async (req, res) => {
 
     console.log("1", practice_sql);
 
-    const psql = ensureLimit(fixFindInSet(normalize(practice_sql)));
-    const tsql = ensureLimit(fixFindInSet(normalize(theory_sql)));
+    const psql = fixFindInSet(practice_sql);
+    const tsql = fixFindInSet(theory_sql);
+    console.log("2", practice_sql);
 
     if (!isSafeSelect(psql) || !isSafeSelect(tsql)) {
       return res.status(400).json({ message: '仅允许只读 SELECT 语句' });
