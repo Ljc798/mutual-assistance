@@ -19,9 +19,9 @@
 
             <view wx:if="{{isLoading}}" class="message ai" id="last-message">
                 <view class="loading-dots">
-                    <view class="loading-dot">·</view>
-                    <view class="loading-dot">·</view>
-                    <view class="loading-dot">·</view>
+                    <view class="loading-dot"></view>
+                    <view class="loading-dot"></view>
+                    <view class="loading-dot"></view>
                 </view>
             </view>
         </scroll-view>

@@ -155,7 +155,6 @@ Component({
                         data: {
                             query: chatInput,                      // ✅ 改成 query
                             conversation_id: conversationId || "",
-                            user: getApp().globalData?.userInfo?.id || "miniapp-user"
                         },
                         header: { Authorization: `Bearer ${token}` },
                         success: resolve,
@@ -164,6 +163,8 @@ Component({
                 });
 
                 const { data } = response;
+                console.log(response);
+                
                 if (data?.success && data?.data) {
                     const aiMessage: ChatMessage = {
                         type: "ai",
