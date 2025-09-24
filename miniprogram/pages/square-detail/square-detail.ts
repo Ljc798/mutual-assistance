@@ -91,7 +91,7 @@ Page({
         }
 
         const url = post.isLiked
-            ? `${BASE_URL}/square/unlik`
+            ? `${BASE_URL}/square/unlike`
             : `${BASE_URL}/square/like`;
 
         wx.request({
@@ -309,7 +309,7 @@ Page({
             return;
         }
 
-        const url = isliked ? `${BASE_URL}/square/comments/unlike" : `${BASE_URL}/square/comments/like`;
+        const url = isliked ? `${BASE_URL}/square/comments/unlike"` : `${BASE_URL}/square/comments/like`;
 
         wx.request({
             url,
