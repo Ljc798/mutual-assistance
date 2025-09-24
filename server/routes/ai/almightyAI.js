@@ -15,71 +15,57 @@ if (!API_KEY) {
 // 转发到 Dify
 router.post("/", authMiddleware, async (req, res) => {
     try {
-        const {
-            query,
-            conversation_id
-        } = req.body || {};
-        if (!query) {
-            return res.status(400).json({
-                success: false,
-                message: "缺少 query 参数"
-            });
-        }
-
-        const difyUserId = req.user.id;
-
-        const payload = {
-            inputs: {
-                user_id: difyUserId
-            },
-            query,
-            response_mode: "blocking", // 阻塞拿结构化结果
-            conversation_id: conversation_id || null, // 空用 null，别传 ""
-            user: difyUserId
-        };
-
-        const {
-            data
-        } = await axios.post(DIFY_URL, payload, {
-            headers: {
-                Authorization: `Bearer ${API_KEY}`,
-                "Content-Type": "application/json",
-            },
-            timeout: 20000,
+      const { query, conversation_id } = req.body || {};
+      if (!query) {
+        return res.status(400).json({ success: false, message: "缺少 query 参数" });
+      }
+  
+      const difyUserId = req.user.id;
+      const payload = {
+        inputs: { user_id: difyUserId },
+        query,
+        response_mode: "blocking",
+        conversation_id: conversation_id || null,
+        user: difyUserId,
+      };
+  
+      const { data } = await axios.post(DIFY_URL, payload, {
+        headers: {
+          Authorization: `Bearer ${API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        timeout: 20000,
+      });
+  
+      const outputs = data?.data?.outputs ?? data?.outputs ?? {};
+      const conversationId =
+        data?.data?.conversation_id ?? data?.conversation_id ?? conversation_id ?? null;
+  
+      // 兼容不同字段名
+      const answer =
+        data?.data?.answer ??
+        data?.answer ??
+        outputs?.answer ??
+        data?.output_text ??
+        data?.message ??
+        outputs?.final_answer ??
+        null;
+  
+      if (!answer || typeof answer !== "string") {
+        return res.status(502).json({
+          success: false,
+          message: "Dify 未返回 answer",
+          debug: { topLevelKeys: Object.keys(data || {}), outputs },
+          conversation_id: conversationId,
         });
-
-        // 兼容不同形态的返回（托管 / 私有版本可能略有不同）
-        const outputs = data?.data?.outputs || data?.outputs || {};
-        const conversationId =
-            data?.data?.conversation_id || data?.conversation_id || conversation_id || null;
-
-        const practice_sql = outputs.practice_sql;
-        const theory_sql = outputs.theory_sql;
-
-        if (!practice_sql || !theory_sql) {
-            return res.status(400).json({
-                success: false,
-                message: "Dify 未返回完整的 SQL（practice_sql / theory_sql）",
-                debug: {
-                    outputs
-                },
-            });
-        }
-
-        return res.json({
-            success: true,
-            practice_sql,
-            theory_sql,
-            conversation_id: conversationId,
-        });
+      }
+  
+      return res.json({ success: true, answer, conversation_id: conversationId });
     } catch (error) {
-        console.error("❌ 调用 Dify 失败:", error.response?.data || error.message);
-        return res.status(500).json({
-            success: false,
-            message: "调用 Dify 失败",
-            error: error.response?.data || error.message,
-        });
+      const errPayload = error.response?.data || error.message || String(error);
+      console.error("❌ 调用 Dify 失败:", errPayload);
+      return res.status(500).json({ success: false, message: "调用 Dify 失败", error: errPayload });
     }
-});
+  });
 
 module.exports = router;

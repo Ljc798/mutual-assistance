@@ -122,7 +122,6 @@ Component({
         handleChatInput(e: WechatMiniprogram.Input) {
             this.setData({ chatInput: e.detail.value });
         },
-
         async sendChatMessage() {
             const { chatInput, chatMessages, conversationId } = this.data;
             if (!chatInput.trim()) return;
@@ -144,42 +143,44 @@ Component({
                 chatInput: "",
                 isLoading: true
             });
-
             this.scrollToBottom();
 
             try {
                 const response: any = await new Promise((resolve, reject) => {
                     wx.request({
-                        url: this.properties.apiUrl,
+                        url: this.properties.apiUrl,     // 指向刚才这个后端路由
                         method: "POST",
                         data: {
-                            query: chatInput,                      // ✅ 改成 query
-                            conversation_id: conversationId || "",
+                            query: chatInput,
+                            conversation_id: conversationId || null,
                         },
-                        header: { Authorization: `Bearer ${token}` },
+                        header: {
+                            Authorization: `Bearer ${token}`,
+                            "Content-Type": "application/json",
+                        },
                         success: resolve,
                         fail: reject
                     });
                 });
 
                 const { data } = response;
-                console.log(response);
-                
-                if (data?.success && data?.data) {
+                console.log("AI接口响应:", data);
+
+                if (data?.success && typeof data?.answer === "string") {
                     const aiMessage: ChatMessage = {
                         type: "ai",
-                        content: data.reply || "（没有得到回答）",
+                        content: data.answer || "（没有得到回答）",
                         timestamp: new Date().toLocaleTimeString()
                     };
                     this.setData({
                         chatMessages: [...this.data.chatMessages, aiMessage],
-                        conversationId: data.conversation_id || conversationId,
+                        conversationId: data.conversation_id || conversationId || null,
                         isLoading: false
                     });
                     this.scrollToBottom();
                 } else {
                     this.setData({ isLoading: false });
-                    wx.showToast({ title: "AI 回复失败", icon: "none" });
+                    wx.showToast({ title: data?.message || "AI 回复失败", icon: "none" });
                 }
             } catch (err) {
                 console.error("发送消息失败:", err);
