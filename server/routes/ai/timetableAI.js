@@ -36,9 +36,13 @@ router.post('/query', async (req, res) => {
     if (!practice_sql || !theory_sql) {
       return res.status(400).json({ message: 'practice_sql 和 theory_sql 都是必填的' });
     }
+    console.log("1", practice_sql);
+    console.log(theory_sql);
 
     const psql = ensureLimit(normalize(practice_sql));
     const tsql = ensureLimit(normalize(theory_sql));
+    console.log("2", practice_sql);
+    console.log(theory_sql);
 
     if (!isSafeSelect(psql) || !isSafeSelect(tsql)) {
       return res.status(400).json({ message: '仅允许只读 SELECT 语句' });
