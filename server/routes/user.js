@@ -8,6 +8,10 @@ const {
     v4: uuidv4
 } = require("uuid");
 require("dotenv").config();
+const {
+    getAccessToken
+} = require('../utils/wechat');
+
 
 const fs = require("fs");
 const FormData = require("form-data");
@@ -20,7 +24,7 @@ const upload = multer({
 // 引入 authMiddleware
 const authMiddleware = require("./authMiddleware");
 
-// 🧩 手机号登录 API（使用微信云托管的容器内调用）
+// 🧩 手机号登录 API
 router.post("/phone-login", async (req, res) => {
     const {
         phoneCode,
@@ -57,13 +61,16 @@ router.post("/phone-login", async (req, res) => {
         }
 
         // ✅ 获取手机号（用云调用）
-        const wxRes = await axios.post("http://api.weixin.qq.com/wxa/business/getuserphonenumber", {
-            code: phoneCode
-        }, {
-            headers: {
-                "Content-Type": "application/json"
+        const accessToken = await getAccessToken(); // ✅ 从 utils/wechat 拿 token
+        const wxRes = await axios.post(
+            `https://api.weixin.qq.com/wxa/business/getuserphonenumber?access_token=${accessToken}`, {
+                code: phoneCode
+            }, {
+                headers: {
+                    "Content-Type": "application/json"
+                }
             }
-        });
+        );
 
         if (!wxRes.data?.phone_info?.phoneNumber) {
             return res.status(400).json({
@@ -135,7 +142,7 @@ router.post("/phone-login", async (req, res) => {
 //         message: "缺少 code"
 //       });
 //     }
-  
+
 //     try {
 //       const { data } = await axios.get("https://api.weixin.qq.com/sns/jscode2session", {
 //         params: {
@@ -145,7 +152,7 @@ router.post("/phone-login", async (req, res) => {
 //           grant_type: "authorization_code"
 //         }
 //       });
-  
+
 //       const { openid } = data;
 //       if (!openid) {
 //         return res.status(400).json({
@@ -154,12 +161,12 @@ router.post("/phone-login", async (req, res) => {
 //           raw: data
 //         });
 //       }
-  
+
 //       // 查找或创建用户
 //       const [results] = await db.query("SELECT * FROM users WHERE openid = ?", [openid]);
 //       let user = results[0];
 //       let isNewUser = false;
-  
+
 //       if (!user) {
 //         const now = new Date();
 //         now.setHours(now.getHours() + 8); // 补时区
@@ -177,16 +184,16 @@ router.post("/phone-login", async (req, res) => {
 //         user = newUser;
 //         isNewUser = true;
 //       }
-  
+
 //       const token = jwt.sign({ id: user.id }, SECRET_KEY, { expiresIn: "7d" });
-  
+
 //       res.json({
 //         success: true,
 //         token,
 //         user,
 //         isNewUser
 //       });
-  
+
 //     } catch (err) {
 //       console.error("❌ 登录失败:", err.response?.data || err.message);
 //       res.status(500).json({

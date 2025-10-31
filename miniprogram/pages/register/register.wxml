@@ -2,7 +2,7 @@
     <!-- 未登录时显示一键登录按钮 -->
     <view wx:if="{{!isLoggedIn}}">
         <view wx:if="{{hasAgreed}}">
-            <button class="phone-btn" bindtap="loginByWeChat">
+            <button class="phone-btn" bindtap="getPhoneNumber">
                 一键登录
             </button>
         </view>

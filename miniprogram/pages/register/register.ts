@@ -27,64 +27,78 @@ Page({
     },
 
     getPhoneNumber(e: any) {
+        console.log("getPhoneNumber event:", e);
+    
+        // 检查是否同意协议
         if (!this.data.hasAgreed) {
-            // ✨ 未勾选协议时提示并 shake 动画
             wx.showToast({ title: "请先阅读并同意协议", icon: "none" });
             this.setData({ shakeAgreement: true });
             setTimeout(() => this.setData({ shakeAgreement: false }), 500);
             return;
         }
-
-        if (e.detail.errMsg !== "getPhoneNumber:ok") {
-            wx.showToast({ title: "用户拒绝授权", icon: "none" });
+    
+        // 判断用户是否允许手机号授权
+        if (!e.detail.code) {
+            wx.showToast({ title: "获取手机号失败，请重试", icon: "none" });
+            console.warn("❌ getPhoneNumber failed:", e.detail.errMsg);
             return;
         }
-
+    
+        // 获取微信临时登录 code（换 openid/session_key）
         wx.login({
             success: (loginRes) => {
                 if (!loginRes.code) {
                     wx.showToast({ title: "登录失败", icon: "none" });
                     return;
                 }
-
+    
                 wx.showLoading({ title: "登录中..." });
-
+    
+                // 调用你自己的后端 API
                 wx.request({
                     url: `${BASE_URL}/user/phone-login`,
                     method: "POST",
                     data: {
-                        phoneCode: e.detail.code, // 手机号授权的 code
-                        loginCode: loginRes.code  // wx.login 拿到的 code，用来换 openid
+                        phoneCode: e.detail.code, // 微信手机号临时code
+                        loginCode: loginRes.code  // wx.login code
                     },
                     success: (res: any) => {
                         wx.hideLoading();
+                        console.log("✅ login response:", res.data);
+    
                         if (res.data.success) {
+                            // 保存 token 与用户信息
                             wx.setStorageSync("token", res.data.token);
                             wx.setStorageSync("user", res.data.user);
                             getApp().setGlobalUserInfo(res.data.user, res.data.token);
-
+    
                             this.setData({
                                 isLoggedIn: true,
                                 userInfo: res.data.user
                             });
-
+    
                             const targetPage = res.data.isNewUser
                                 ? "/pages/edit-profile/edit-profile?new=1"
                                 : "/pages/home/home";
-
+    
                             wx.redirectTo({ url: targetPage });
                         } else {
-                            wx.showToast({ title: res.data.message, icon: "none" });
+                            wx.showToast({ title: res.data.message || "登录失败", icon: "none" });
                         }
                     },
-                    fail: () => {
+                    fail: (err) => {
                         wx.hideLoading();
-                        wx.showToast({ title: "登录失败", icon: "none" });
+                        console.error("❌ login request error:", err);
+                        wx.showToast({ title: "网络错误，请重试", icon: "none" });
                     }
                 });
+            },
+            fail: () => {
+                wx.showToast({ title: "登录失败", icon: "none" });
             }
         });
     },
+    
 
     // 替换旧的手机号登录逻辑，改成微信授权登录
     // loginByWeChat() {
