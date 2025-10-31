@@ -108,6 +108,15 @@ router.post("/phone-login", async (req, res) => {
             newUser.id = insertResult.insertId;
             user = newUser;
             isNewUser = true;
+
+            const [repCheck] = await db.query("SELECT id FROM user_reputation WHERE user_id = ?", [user.id]);
+            if (repCheck.length === 0) {
+                await db.query(`
+                    INSERT INTO user_reputation (user_id, total_score, completed_tasks, canceled_tasks, reports_received, average_rating, reliability_index)
+                    VALUES (?, 80.00, 0, 0, 0, 0.00, 1.0000)
+                `, [user.id]);
+            }
+
         }
 
         const token = jwt.sign({
