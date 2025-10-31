@@ -17,40 +17,62 @@ const fmtTime = (d) => {
 async function fetchAccessToken() {
     const {
         WX_APPID,
-        WX_SECRET
+        WX_SECRET,
+        NODE_ENV
     } = process.env;
     if (!WX_APPID || !WX_SECRET) {
         throw new Error("WX_APPID / WX_SECRET 未配置");
     }
 
-    const url = "https://api.weixin.qq.com/cgi-bin/stable_token";
-    const {
-        data
-    } = await axios.post(url, {
-        grant_type: "client_credential",
-        appid: WX_APPID,
-        secret: WX_SECRET,
-        force_refresh: false,
-    });
+    // ✅ Redis key 按环境区分，避免多环境冲突
+    const TOKEN_KEY = `wx:access_token:${NODE_ENV || "dev"}`;
 
-    if (!data.access_token) {
-        throw new Error("fetchAccessToken failed: " + JSON.stringify(data));
+    try {
+        // 🚀 尝试使用稳定 token 接口
+        const {
+            data
+        } = await axios.post("https://api.weixin.qq.com/cgi-bin/stable_token", {
+            grant_type: "client_credential",
+            appid: WX_APPID,
+            secret: WX_SECRET,
+            force_refresh: false,
+        });
+
+        // 🚨 stable_token 失败则 fallback 到旧接口
+        if (!data.access_token) {
+            console.warn("⚠️ stable_token 获取失败，退回旧接口:", data);
+            const legacy = await axios.get(
+                `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${WX_APPID}&secret=${WX_SECRET}`
+            );
+            if (!legacy.data.access_token) {
+                throw new Error("fetchAccessToken failed: " + JSON.stringify(legacy.data));
+            }
+            await redis.set(TOKEN_KEY, legacy.data.access_token, "EX", (legacy.data.expires_in || 7200) - 120);
+            return legacy.data.access_token;
+        }
+
+        // ✅ 正常写入 Redis（留 120 秒缓冲）
+        const ttl = Math.max(60, (data.expires_in || 7200) - 120);
+        await redis.set(TOKEN_KEY, data.access_token, "EX", ttl);
+        console.log("✅ 获取到稳定 access_token:", data.access_token.slice(0, 10), "...");
+
+        return data.access_token;
+    } catch (err) {
+        console.error("❌ fetchAccessToken 异常:", err.response?.data || err.message);
+        throw err;
     }
-
-    const ttl = Math.max(60, (data.expires_in || 7200) - 120);
-    await redis.set(TOKEN_KEY, data.access_token, "EX", ttl);
-    return data.access_token;
 }
-
 
 /** 优先从 Redis 拿 token，缺失/过期再向微信刷新；force=true 强刷 */
 async function getAccessToken(force = false) {
+    const TOKEN_KEY = `wx:access_token:${process.env.NODE_ENV || "dev"}`;
     if (!force) {
         const token = await redis.get(TOKEN_KEY);
         if (token) return token;
     }
     return fetchAccessToken();
 }
+
 
 /** 统一封装微信 API 调用：自动附带 token，并在 40001/42001/40014 时强刷重试一次 */
 async function callWeChatWithToken(method, baseUrl, payload) {
