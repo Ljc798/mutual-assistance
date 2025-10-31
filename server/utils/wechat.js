@@ -20,22 +20,28 @@ async function fetchAccessToken() {
         WX_SECRET
     } = process.env;
     if (!WX_APPID || !WX_SECRET) {
-        throw new Error('WX_APPID / WX_SECRET 未配置');
+        throw new Error("WX_APPID / WX_SECRET 未配置");
     }
 
-    const url = `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${WX_APPID}&secret=${WX_SECRET}`;
+    const url = "https://api.weixin.qq.com/cgi-bin/stable_token";
     const {
         data
-    } = await axios.get(url);
+    } = await axios.post(url, {
+        grant_type: "client_credential",
+        appid: WX_APPID,
+        secret: WX_SECRET,
+        force_refresh: false,
+    });
 
     if (!data.access_token) {
-        throw new Error('fetchAccessToken failed: ' + JSON.stringify(data));
+        throw new Error("fetchAccessToken failed: " + JSON.stringify(data));
     }
 
-    const ttl = Math.max(60, (data.expires_in || 7200) - 120); // 留 120s 缓冲
-    await redis.set(TOKEN_KEY, data.access_token, 'EX', ttl);
+    const ttl = Math.max(60, (data.expires_in || 7200) - 120);
+    await redis.set(TOKEN_KEY, data.access_token, "EX", ttl);
     return data.access_token;
 }
+
 
 /** 优先从 Redis 拿 token，缺失/过期再向微信刷新；force=true 强刷 */
 async function getAccessToken(force = false) {
@@ -220,11 +226,21 @@ async function sendTaskStatusNotify({
         template_id: 'Aeu_BXdMd6xmgSBGrZptUgGdGbT5HTmwDbapPomy3QU',
         page,
         data: {
-            character_string1: { value: trunc(orderNo, 32) },
-            amount2: { value: fmtAmount(amount) },
-            time3: { value: fmtTime(finishedAt) },
-            thing5: { value: trunc(taskType, 20) },
-            phrase7: { value: trunc(statusText, 20) },
+            character_string1: {
+                value: trunc(orderNo, 32)
+            },
+            amount2: {
+                value: fmtAmount(amount)
+            },
+            time3: {
+                value: fmtTime(finishedAt)
+            },
+            thing5: {
+                value: trunc(taskType, 20)
+            },
+            phrase7: {
+                value: trunc(statusText, 20)
+            },
         },
     };
 
@@ -290,7 +306,7 @@ async function sendClassReminder({
 function logWeChatResult(tag, payload, data) {
     console.log(`[${tag}] 发送参数:`, JSON.stringify(payload));
     console.log(`[${tag}] 微信返回:`, JSON.stringify(data));
-  }
+}
 
 module.exports = {
     // token
