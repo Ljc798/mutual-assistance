@@ -1,6 +1,6 @@
 <view class="reputation-page">
     <view class="sticky-reputation-header">
-        <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="goBack" />
+        <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack" />
         <view class="reputation-header">信誉系统</view>
     </view>
     <!-- 顶部信誉总览 -->
@@ -40,7 +40,7 @@
             <view class="rule-item">
                 <view class="rule-left">
                     <text class="event">{{item.description}}</text>
-                    <text class="severity">级别：{{item.severity}}</text>
+                    <text class="severity">影响：{{item.severity}}</text>
                 </view>
                 <text class="score-delta" style="color: {{item.score_delta > 0 ? '#00b26a' : '#ff4d4f'}}">
                     {{item.score_delta > 0 ? '+' : ''}}{{item.score_delta}}

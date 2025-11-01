@@ -3,6 +3,7 @@ Page({
     data: {
         reputation: {},
         logs: [],
+        rules: [],
         starCount: 0,
         creditLevel: ''
     },
@@ -10,6 +11,7 @@ Page({
     onLoad() {
         this.loadReputation();
         this.loadReputationLogs();
+        this.loadReputationRules();
     },
 
     async loadReputation() {
@@ -48,16 +50,16 @@ Page({
 
     loadReputationRules() {
         wx.request({
-          url: `${BASE_URL}/reputation/rules`,
-          success: (res: any) => {
-            if (res.data.success) {
-              this.setData({ rules: res.data.data });
+            url: `${BASE_URL}/user/reputation/rules`,
+            success: (res: any) => {
+                if (res.data.success) {
+                    this.setData({ rules: res.data.data });
+                }
             }
-          }
         });
-      },
+    },
     
     handleBack() {
-        wx.navigateBack({delta: 1});
+        wx.navigateBack({ delta: 1 });
     }
 });

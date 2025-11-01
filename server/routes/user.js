@@ -426,7 +426,30 @@ router.get("/reputation/rules", async (req, res) => {
     });
 });
 
+router.get("/reputation/logs", authMiddleware, async (req, res) => {
+    const userId = req.user.id;
 
+    try {
+        const [logs] = await db.query(
+            `SELECT id, change_type, score_delta, reason, created_at
+         FROM reputation_logs 
+         WHERE user_id = ?
+         ORDER BY created_at DESC`,
+            [userId]
+        );
+
+        res.json({
+            success: true,
+            data: logs
+        });
+    } catch (err) {
+        console.error("❌ 查询信誉日志失败:", err);
+        res.status(500).json({
+            success: false,
+            message: "数据库查询错误"
+        });
+    }
+});
 
 router.post("/check-username", async (req, res) => {
     const {
