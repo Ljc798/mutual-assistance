@@ -354,3 +354,47 @@
     color: white;
     border-radius: 8rpx;
 }
+
+.credit-badge {
+    display: flex;
+    align-items: center;
+    background-color: #fff6f7;
+    border-radius: 30rpx;
+    padding: 8rpx 20rpx;
+    width: fit-content;
+    box-shadow: 0 4rpx 8rpx rgba(255, 107, 129, 0.15);
+    transition: 0.2s;
+}
+
+.credit-badge:active {
+    transform: scale(0.97);
+}
+
+.star-icon {
+    width: 30rpx;
+    height: 30rpx;
+    margin-right: 10rpx;
+}
+
+.credit-text {
+    font-size: 26rpx;
+    color: #ff6b81;
+    margin-right: 8rpx;
+}
+
+.credit-level {
+    font-size: 26rpx;
+    color: #ffa07a;
+    font-weight: 500;
+}
+
+.stars {
+    display: flex;
+    margin-left: 10rpx;
+}
+
+.star-small {
+    width: 28rpx;
+    height: 28rpx;
+    margin-right: 4rpx;
+}

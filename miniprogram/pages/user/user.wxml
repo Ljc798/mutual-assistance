@@ -20,6 +20,18 @@
         </view>
     </view>
 
+    <view class="credit-badge" bindtap="goToReputation">
+        <image class="star-icon" src="/assets/icons/star-1-svgrepo-com.svg"></image>
+        <text class="credit-text">信誉 {{userInfo.credit_score || 80}}分</text>
+        <text class="credit-level">{{creditLevel}}</text>
+
+        <view class="stars">
+            <block wx:for="{{5}}" wx:key="*this">
+                <image class="star-small" src="{{index < starCount ? '/assets/icons/star-fill.svg' : '/assets/icons/star-empty.svg'}}" />
+            </block>
+        </view>
+    </view>
+
     <!-- 免费次数和钱包余额 -->
     <view class="info-box">
         <view class="box" bindtap="goToShop">

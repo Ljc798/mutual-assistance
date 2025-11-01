@@ -370,6 +370,52 @@ router.get("/info", authMiddleware, async (req, res) => {
     }
 });
 
+/**
+ * 获取用户信誉信息
+ * GET /user/reputation
+ */
+router.get("/reputation", authMiddleware, async (req, res) => {
+    const userId = req.user.id;
+  
+    try {
+      const [results] = await db.query(
+        `SELECT 
+            total_score,
+            completed_tasks,
+            canceled_tasks,
+            reports_received,
+            average_rating,
+            reliability_index,
+            created_at,
+            updated_at
+         FROM user_reputation
+         WHERE user_id = ?`,
+        [userId]
+      );
+  
+      if (results.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "未找到该用户的信誉记录"
+        });
+      }
+  
+      // 返回信誉信息
+      return res.json({
+        success: true,
+        data: results[0]
+      });
+  
+    } catch (err) {
+      console.error("❌ 查询用户信誉失败:", err);
+      return res.status(500).json({
+        success: false,
+        message: "数据库查询出错"
+      });
+    }
+  });
+  
+
 router.post("/check-username", async (req, res) => {
     const {
         username,

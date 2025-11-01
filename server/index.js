@@ -29,7 +29,8 @@ const { registerUser, unregisterUser, sendToUser, broadcastNotify } = require(".
 
 const app = express();
 const server = http.createServer(app);
-const PORT = process.env.PORT || 80;
+const PORT = process.env.NODE_ENV === "development" ? "8888" : process.env.PORT;
+const HOST = process.env.NODE_ENV === "development" ? "localhost" : "0.0.0.0";
 
 // =======================
 // 🧹 中间件配置
@@ -69,8 +70,8 @@ app.get("/", (req, res) => {
 // =======================
 // 🌐 启动 HTTP 服务
 // =======================
-server.listen(PORT, "0.0.0.0", () => {
-    console.log(`✅ HTTP 服务运行中: http://0.0.0.0:${PORT}`);
+server.listen(PORT, HOST, () => {
+    console.log(`✅ HTTP 服务运行中: http://${HOST}:${PORT}`);
 });
 
 // =======================
