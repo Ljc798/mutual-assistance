@@ -1,3 +1,5 @@
+const db = require('../config/db')
+
 async function addReputationLog(userId, changeType, delta, reason) {
     const conn = await db.getConnection();
     try {
