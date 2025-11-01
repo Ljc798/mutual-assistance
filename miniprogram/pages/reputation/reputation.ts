@@ -58,7 +58,7 @@ Page({
             }
         });
     },
-    
+
     handleBack() {
         wx.navigateBack({ delta: 1 });
     }

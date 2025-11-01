@@ -55,12 +55,9 @@
         <text class="section-title">信誉变动记录</text>
         <block wx:for="{{logs}}" wx:key="id">
             <view class="log-item">
-                <view class="log-left">
-                    <text class="event">{{item.event}}</text>
-                    <text class="desc">{{item.description}}</text>
-                </view>
-                <text class="delta" style="color: {{item.score_delta >= 0 ? '#00b26a' : '#ff4d4f'}}">
-                    {{item.score_delta >= 0 ? '+' : ''}}{{item.score_delta}}
+                <text class="log-reason">{{item.reason}}</text>
+                <text class="log-delta" style="color: {{item.score_delta >= 0 ? '#00b26a' : '#ff4d4f'}}">
+                    {{item.score_delta >= 0 ? '+' : '-'}}{{item.score_delta}}
                 </text>
             </view>
         </block>

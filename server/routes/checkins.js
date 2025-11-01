@@ -107,10 +107,10 @@ router.post("/checkin", authMiddleware, async (req, res) => {
                 "daily_checkin",
                 reputationDelta,
                 isVip ?
-                `VIP 签到加信誉 +${reputationDelta.toFixed(1)}` :
-                `每日签到加信誉 +${reputationDelta.toFixed(1)}`
+                `VIP签到加信誉+${reputationDelta.toFixed(1)}` :
+                `每日签到加信誉+${reputationDelta.toFixed(1)}`
             );
-            console.log(`⭐ 用户 #${user_id} 签到成功，信誉 +${reputationDelta}`);
+            console.log(`⭐ 用户#${user_id}签到成功，信誉+${reputationDelta}`);
         } catch (repErr) {
             console.warn("⚠️ 更新信誉失败（忽略不中断）:", repErr.message);
         }

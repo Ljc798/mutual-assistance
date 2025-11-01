@@ -56,29 +56,72 @@
     color: #555;
 }
 
+/* 整个区块容器 */
 .log-section {
-    background: #fff;
+    background-color: #ffffff;
+    border-radius: 12rpx;
     margin-top: 20rpx;
-    border-radius: 16rpx;
-    padding: 20rpx;
+    padding: 24rpx 28rpx;
+    box-shadow: 0 4rpx 8rpx rgba(59, 130, 246, 0.05);
+    /* 校园蓝淡阴影 */
 }
 
+/* 标题样式 */
 .section-title {
-    font-weight: bold;
-    margin-bottom: 10rpx;
+    display: block;
     font-size: 30rpx;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 20rpx;
+    border-left: 8rpx solid #3b82f6;
+    /* 蓝色主色 */
+    padding-left: 16rpx;
 }
 
+/* 单条记录项 */
 .log-item {
     display: flex;
     justify-content: space-between;
-    padding: 10rpx 0;
-    border-bottom: 1rpx solid #f0f0f0;
+    align-items: center;
+    padding: 20rpx 0;
+    border-bottom: 1rpx solid #f2f2f2;
 }
 
-.log-left {
-    display: flex;
-    flex-direction: column;
+/* 去掉最后一条的下划线 */
+.log-item:last-child {
+    border-bottom: none;
+}
+
+/* 记录文字部分 */
+.log-reason {
+    font-size: 26rpx;
+    color: #555;
+    flex: 1;
+    line-height: 1.5;
+}
+
+/* 加减分数字部分 */
+.log-delta {
+    font-size: 28rpx;
+    font-weight: 600;
+    text-align: right;
+    min-width: 100rpx;
+}
+
+/* 加分绿色，扣分红色 */
+.log-delta[positive="true"] {
+    color: #10b981;
+    /* Campus 绿色 */
+}
+
+.log-delta[positive="false"] {
+    color: #ef4444;
+    /* 扣分红 */
+}
+
+/* hover / 触感反馈 */
+.log-item:active {
+    background-color: #f9fafb;
 }
 
 .event {
@@ -100,42 +143,42 @@
     border-radius: 16rpx;
     margin-top: 20rpx;
     padding: 20rpx;
-  }
-  
-  .section-title {
+}
+
+.section-title {
     font-size: 30rpx;
     font-weight: 700;
     margin-bottom: 16rpx;
-  }
-  
-  .rule-item {
+}
+
+.rule-item {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
     border-bottom: 1rpx solid #f2f2f2;
     padding: 12rpx 0;
-  }
-  
-  .rule-left {
+}
+
+.rule-left {
     display: flex;
     flex-direction: column;
-  }
-  
-  .event {
+}
+
+.event {
     font-size: 26rpx;
     color: #333;
-  }
-  
-  .severity {
+}
+
+.severity {
     font-size: 24rpx;
     color: #999;
-  }
-  
-  .score-delta {
+}
+
+.score-delta {
     font-size: 28rpx;
     font-weight: 600;
-  }
-  
+}
+
 
 .sticky-reputation-header {
     position: fixed;

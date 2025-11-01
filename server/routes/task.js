@@ -771,7 +771,13 @@ router.post('/cancel', async (req, res) => {
                 -3,
                 `主动取消任务《${task.title}》，信誉-3`
             );
-            console.log(`⚠️ 用户 #${user_id} 因取消任务被扣 3 分`);
+
+            await db.query(
+                `UPDATE user_reputation
+                 SET canceled_tasks = canceled_tasks + 1
+                 WHERE user_id = ?`,
+                [user_id]
+            );
         } catch (repErr) {
             console.warn("⚠️ 扣信誉分失败（忽略不中断）:", repErr.message);
         }
@@ -976,7 +982,13 @@ router.post("/:id/confirm-done", authMiddleware, async (req, res) => {
                 2,
                 `完成任务《${task.title}》，信誉+2`
             );
-            console.log(`⭐ 接单者 #${task.employee_id} 完成任务信誉+2`);
+
+            await db.query(
+                `UPDATE user_reputation
+                 SET completed_tasks = completed_tasks + 1
+                 WHERE user_id = ?`,
+                [task.employee_id]
+            );
         } catch (repErr) {
             console.warn("⚠️ 更新信誉失败（忽略不中断）:", repErr.message);
         }
@@ -988,7 +1000,7 @@ router.post("/:id/confirm-done", authMiddleware, async (req, res) => {
         });
         sendToUser(task.employee_id, {
             type: 'notify',
-            content: `💰 任务《${task.title}》已结单，报酬 ¥${task.pay_amount} 已到账钱包，信誉分+2`,
+            content: `💰 任务《${task.title}》已结单，报酬¥${task.pay_amount}已到账钱包，信誉分+2`,
             created_time: new Date().toISOString()
         });
 
