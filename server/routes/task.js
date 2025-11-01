@@ -4,6 +4,9 @@ const db = require("../config/db");
 const dayjs = require("dayjs");
 const authMiddleware = require("./authMiddleware"); // 引入中间件
 const {
+    addReputationLog
+} = require("../utils/reputation");
+const {
     sendToUser
 } = require("./ws-helper");
 const {
@@ -761,6 +764,18 @@ router.post('/cancel', async (req, res) => {
             console.warn('❗取消任务-订阅消息发送失败：', wxErr?.message || wxErr);
         }
 
+        try {
+            await addReputationLog(
+                user_id,
+                "cancel_task",
+                -3,
+                `主动取消任务《${task.title}》，信誉-3`
+            );
+            console.log(`⚠️ 用户 #${user_id} 因取消任务被扣 3 分`);
+        } catch (repErr) {
+            console.warn("⚠️ 扣信誉分失败（忽略不中断）:", repErr.message);
+        }
+
         return res.json({
             success: true,
             message: `取消成功${needPenalty ? `，本次扣除违约金 ¥${penalty}` : ''}`,
@@ -954,6 +969,18 @@ router.post("/:id/confirm-done", authMiddleware, async (req, res) => {
             [task.employer_id, task.employee_id]
         );
 
+        try {
+            await addReputationLog(
+                task.employee_id,
+                "complete_task",
+                2,
+                `完成任务《${task.title}》，信誉+2`
+            );
+            console.log(`⭐ 接单者 #${task.employee_id} 完成任务信誉+2`);
+        } catch (repErr) {
+            console.warn("⚠️ 更新信誉失败（忽略不中断）:", repErr.message);
+        }
+
         sendToUser(task.employer_id, {
             type: 'notify',
             content: `✅ 任务《${task.title}》已圆满完成，感谢参与`,
@@ -961,7 +988,7 @@ router.post("/:id/confirm-done", authMiddleware, async (req, res) => {
         });
         sendToUser(task.employee_id, {
             type: 'notify',
-            content: `💰 任务《${task.title}》已结单，报酬 ¥${task.pay_amount} 已到账钱包`,
+            content: `💰 任务《${task.title}》已结单，报酬 ¥${task.pay_amount} 已到账钱包，信誉分+2`,
             created_time: new Date().toISOString()
         });
 

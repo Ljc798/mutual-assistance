@@ -3,6 +3,9 @@ const router = express.Router();
 const db = require("../config/db");
 const moment = require("moment");
 const authMiddleware = require("./authMiddleware"); // 引入中间件
+const {
+    addReputationLog
+} = require("../utils/reputation");
 
 // 🧩 积分奖励规则
 const CHECKIN_POINTS = 10;
@@ -97,12 +100,27 @@ router.post("/checkin", authMiddleware, async (req, res) => {
             [totalPoints, user_id]
         );
 
+        const reputationDelta = isVip ? 0.2 : 0.1;
+        try {
+            await addReputationLog(
+                user_id,
+                "daily_checkin",
+                reputationDelta,
+                isVip ?
+                `VIP 签到加信誉 +${reputationDelta.toFixed(1)}` :
+                `每日签到加信誉 +${reputationDelta.toFixed(1)}`
+            );
+            console.log(`⭐ 用户 #${user_id} 签到成功，信誉 +${reputationDelta}`);
+        } catch (repErr) {
+            console.warn("⚠️ 更新信誉失败（忽略不中断）:", repErr.message);
+        }
+
         // 提交事务
         await conn.commit();
 
         res.json({
             success: true,
-            message: `签到成功，+${totalPoints} 积分`,
+            message: `签到成功，+${totalPoints} 积分，信誉 +${reputationDelta}`,
             consecutive_days,
             total_days,
             earned_points: totalPoints,
