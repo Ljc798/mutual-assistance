@@ -7,10 +7,14 @@ Page({
         showFeedbackPopup: false,
         feedbackTitle: '',
         feedbackContent: '',
+        reputation: null,      // 后端信誉数据
+        starCount: 0,          // 星星数量
+        creditLevel: '',       // 等级文案
     },
 
     onLoad() {
         this.loadUserInfo(); // 页面加载时获取用户信息
+        this.fetchReputation();
     },
 
     onShow() {
@@ -157,6 +161,56 @@ Page({
         this.setData({ feedbackContent: e.detail.value });
     },
 
+    fetchReputation() {
+        const token = wx.getStorageSync('token');
+        wx.request({
+            url: `${BASE_URL}/user/reputation`,
+            method: 'GET',
+            header: { Authorization: `Bearer ${token}` },
+            success: (res: any) => {
+                if (!res.data.success) {
+                    wx.showToast({ title: '获取信誉失败', icon: 'none' });
+                    return;
+                }
+                const data = res.data.data;
+                this.setReputationDisplay(data);
+            },
+            fail: () => {
+                wx.showToast({ title: '请求失败', icon: 'none' });
+            }
+        });
+    },
+
+    // ✅ 根据信誉分映射星级 & 等级
+    setReputationDisplay(data: any) {
+        const score = data.total_score;
+        let stars = 4;
+        let level = '良好';
+
+        if (score >= 90) {
+            stars = 5;
+            level = '优秀';
+        } else if (score >= 80) {
+            stars = 4;
+            level = '良好';
+        } else if (score >= 70) {
+            stars = 3;
+            level = '中等';
+        } else if (score >= 60){
+            stars = 2;
+            level = '一般';
+        } else {
+            stars = 1;
+            level = '差';
+        }
+
+        this.setData({
+            reputation: data,
+            starCount: stars,
+            creditLevel: level
+        });
+    },
+
     submitFeedback() {
         const { feedbackTitle, feedbackContent } = this.data;
         const token = wx.getStorageSync("token");
@@ -182,6 +236,12 @@ Page({
                 }
             }
         });
+    },
+
+    goToReputation() {
+        wx.navigateTo({
+            url: '/pages/reputation/reputation'
+        })
     },
 
     goToLoginPage() {

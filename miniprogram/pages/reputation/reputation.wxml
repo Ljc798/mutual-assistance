@@ -1,0 +1,73 @@
+<view class="reputation-page">
+    <view class="sticky-reputation-header">
+        <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="goBack" />
+        <view class="reputation-header">信誉系统</view>
+    </view>
+    <!-- 顶部信誉总览 -->
+    <view class="header-card">
+        <text class="title">我的信誉分</text>
+        <text class="score">{{reputation.total_score}}</text>
+        <text class="level">（{{creditLevel}}）</text>
+
+        <view class="stars">
+            <block wx:for="{{5}}" wx:key="*this">
+                <image class="star" src="{{index < starCount ? '/assets/icons/star-fill.svg' : '/assets/icons/star-empty.svg'}}" />
+            </block>
+        </view>
+    </view>
+
+    <!-- 基本统计 -->
+    <view class="stats-section">
+        <view class="stat-item">
+            <text>✅ 完成任务</text>
+            <text>{{reputation.completed_tasks}}</text>
+        </view>
+        <view class="stat-item">
+            <text>❌ 取消任务</text>
+            <text>{{reputation.canceled_tasks}}</text>
+        </view>
+        <view class="stat-item">
+            <text>🚨 被举报次数</text>
+            <text>{{reputation.reports_received}}</text>
+        </view>
+    </view>
+
+    <!-- 信誉积分细则 -->
+    <view class="rules-section">
+        <text class="section-title">📜 信誉积分细则</text>
+
+        <block wx:for="{{rules}}" wx:key="id">
+            <view class="rule-item">
+                <view class="rule-left">
+                    <text class="event">{{item.description}}</text>
+                    <text class="severity">级别：{{item.severity}}</text>
+                </view>
+                <text class="score-delta" style="color: {{item.score_delta > 0 ? '#00b26a' : '#ff4d4f'}}">
+                    {{item.score_delta > 0 ? '+' : ''}}{{item.score_delta}}
+                </text>
+            </view>
+        </block>
+    </view>
+
+
+    <!-- 明细记录 -->
+    <view class="log-section">
+        <text class="section-title">信誉变动记录</text>
+        <block wx:for="{{logs}}" wx:key="id">
+            <view class="log-item">
+                <view class="log-left">
+                    <text class="event">{{item.event}}</text>
+                    <text class="desc">{{item.description}}</text>
+                </view>
+                <text class="delta" style="color: {{item.score_delta >= 0 ? '#00b26a' : '#ff4d4f'}}">
+                    {{item.score_delta >= 0 ? '+' : ''}}{{item.score_delta}}
+                </text>
+            </view>
+        </block>
+    </view>
+
+    <!-- 底部提示 -->
+    <view class="tips">
+        <text>保持良好行为，多完成任务可提升信誉等级～</text>
+    </view>
+</view>

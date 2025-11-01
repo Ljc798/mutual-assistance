@@ -113,7 +113,7 @@ router.post("/phone-login", async (req, res) => {
             if (repCheck.length === 0) {
                 await db.query(`
                     INSERT INTO user_reputation (user_id, total_score, completed_tasks, canceled_tasks, reports_received, average_rating, reliability_index)
-                    VALUES (?, 80.00, 0, 0, 0, 0.00, 1.0000)
+                    VALUES (?, 80.00, 0, 0, 0, 4.00, 1.0000)
                 `, [user.id]);
             }
 
@@ -141,6 +141,7 @@ router.post("/phone-login", async (req, res) => {
         });
     }
 });
+
 
 // 新版登录：只用 loginCode 换 openid，放弃手机号逻辑
 // router.post("/wx-login", async (req, res) => {
@@ -376,10 +377,10 @@ router.get("/info", authMiddleware, async (req, res) => {
  */
 router.get("/reputation", authMiddleware, async (req, res) => {
     const userId = req.user.id;
-  
+
     try {
-      const [results] = await db.query(
-        `SELECT 
+        const [results] = await db.query(
+            `SELECT 
             total_score,
             completed_tasks,
             canceled_tasks,
@@ -390,31 +391,42 @@ router.get("/reputation", authMiddleware, async (req, res) => {
             updated_at
          FROM user_reputation
          WHERE user_id = ?`,
-        [userId]
-      );
-  
-      if (results.length === 0) {
-        return res.status(404).json({
-          success: false,
-          message: "未找到该用户的信誉记录"
+            [userId]
+        );
+
+        if (results.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "未找到该用户的信誉记录"
+            });
+        }
+
+        // 返回信誉信息
+        return res.json({
+            success: true,
+            data: results[0]
         });
-      }
-  
-      // 返回信誉信息
-      return res.json({
-        success: true,
-        data: results[0]
-      });
-  
+
     } catch (err) {
-      console.error("❌ 查询用户信誉失败:", err);
-      return res.status(500).json({
-        success: false,
-        message: "数据库查询出错"
-      });
+        console.error("❌ 查询用户信誉失败:", err);
+        return res.status(500).json({
+            success: false,
+            message: "数据库查询出错"
+        });
     }
-  });
-  
+});
+
+router.get("/reputation/rules", async (req, res) => {
+    const [rows] = await db.query(
+        "SELECT id, event, score_delta, severity, trigger_action, description FROM reputation_rules ORDER BY id"
+    );
+    res.json({
+        success: true,
+        data: rows
+    });
+});
+
+
 
 router.post("/check-username", async (req, res) => {
     const {

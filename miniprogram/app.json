@@ -25,7 +25,8 @@
     "pages/order/other-orders",
     "pages/agreements/terms",
     "pages/agreements/privacy",
-    "pages/schools/schools"
+    "pages/schools/schools",
+    "pages/reputation/reputation"
   ],
   "window": {
     "navigationBarTextStyle": "black",
