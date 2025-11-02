@@ -10,11 +10,18 @@ Page({
     },
 
     fetchMyPosts() {
-        const token = wx.getStorageSync("token");
+        const app = getApp();
+        const userId = app.globalData.userInfo?.id; // ✅ 从全局拿 user id
+      
+        if (!userId) {
+          wx.showToast({ title: "未登录", icon: "none" });
+          return;
+        }
+        
+
         wx.request({
-            url: `${BASE_URL}/square/mine`,
+            url: `${BASE_URL}/user/public/${userId}/posts`,
             method: "GET",
-            header: { Authorization: `Bearer ${token}` },
             success: (res) => {
                 if (res.data.success) {
                     const formattedPosts = res.data.posts.map(post => ({
@@ -23,11 +30,21 @@ Page({
                     }));
                     this.setData({ posts: formattedPosts });
                 } else {
-                    wx.showToast({ title: "获取失败", icon: "none" });
+                    wx.showToast({
+                        title: "获取帖子失败",
+                        icon: "none"
+                    });
                 }
+            },
+            fail: () => {
+                wx.showToast({
+                    title: "网络错误",
+                    icon: "none"
+                });
             }
         });
     },
+
 
     formatTime(timeStr: string): string {
         const date = new Date(timeStr);

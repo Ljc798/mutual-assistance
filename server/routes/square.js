@@ -221,7 +221,7 @@ router.post("/create", authMiddleware, async (req, res) => { // 添加了认证�
         user_id,
         category,
         content,
-        school_id 
+        school_id
     } = req.body;
     if (!user_id || !category || !content || !school_id) {
         return res.status(400).json({
@@ -674,8 +674,8 @@ router.post('/report', authMiddleware, async (req, res) => {
     }
 });
 
-router.get("/mine", authMiddleware, async (req, res) => {
-    const userId = req.user.id;
+router.get("/public/:id/posts", async (req, res) => {
+    const userId = req.params.id;
 
     try {
         const [posts] = await db.query(
@@ -685,6 +685,13 @@ router.get("/mine", authMiddleware, async (req, res) => {
              ORDER BY created_time DESC`,
             [userId]
         );
+
+        if (posts.length === 0) {
+            return res.json({
+              success: true,
+              posts: []
+            });
+          }
 
         const postIds = posts.map(p => p.id);
         const [images] = await db.query(
@@ -702,7 +709,7 @@ router.get("/mine", authMiddleware, async (req, res) => {
             posts: postsWithImages
         });
     } catch (err) {
-        console.error("❌ 获取我的帖子失败:", err);
+        console.error("❌ 获取用户帖子失败:", err);
         res.status(500).json({
             success: false,
             message: "服务器错误"

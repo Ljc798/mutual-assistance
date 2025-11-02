@@ -1,0 +1,55 @@
+<view class="profile-page">
+
+<!-- 顶部信息卡 -->
+<view class="user-card">
+  <image class="avatar" src="{{user.avatar_url || '/assets/default-avatar.png'}}" mode="aspectFill" />
+  <view class="user-info">
+    <text class="name">{{user.name}}</text>
+    <text class="uid">ID：{{user.id}}</text>
+
+    <view class="reputation">
+      <rating star-size="32" stars="{{user.stars}}" />
+      <text class="reputation-text">{{user.total_score}}分</text>
+    </view>
+  </view>
+</view>
+
+<!-- Tab 切换栏 -->
+<view class="tab-bar">
+  <view class="tab-item" wx:for="{{tabs}}" wx:key="name" 
+        bindtap="switchTab" data-index="{{index}}">
+    <text class="{{activeTab === index ? 'active' : ''}}">{{item}}</text>
+  </view>
+</view>
+
+<!-- 内容区 -->
+<view class="tab-content">
+
+  <!-- 帖子列表 -->
+  <block wx:if="{{activeTab === 0}}">
+    <block wx:for="{{posts}}" wx:key="id">
+      <view class="post-card" bindtap="goPostDetail" data-id="{{item.id}}">
+        <text class="title">{{item.title}}</text>
+        <text class="desc">{{item.content}}</text>
+        <text class="time">{{item.created_at}}</text>
+      </view>
+    </block>
+    <view wx:if="{{posts.length === 0}}" class="empty">暂无帖子</view>
+  </block>
+
+  <!-- 评价列表 -->
+  <block wx:elif="{{activeTab === 1}}">
+    <block wx:for="{{reviews}}" wx:key="id">
+      <view class="review-card">
+        <text class="review-text">“{{item.comment}}”</text>
+        <view class="review-meta">
+          <text class="reviewer">{{item.reviewer_name}}</text>
+          <rating star-size="24" stars="{{item.rating}}" />
+        </view>
+      </view>
+    </block>
+    <view wx:if="{{reviews.length === 0}}" class="empty">暂无评价</view>
+  </block>
+
+</view>
+</view>

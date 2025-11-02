@@ -103,6 +103,12 @@ Page({
         return `${y}-${m}-${d}`;
     },
 
+    goToProfile() {
+        this.checkLoginAndGo(() => {
+            wx.navigateTo({ url: "/pages/user/profile" });
+        });
+    },
+
     goToEditProfile() {
         this.checkLoginAndGo(() => {
             wx.navigateTo({ url: "/pages/edit-profile/edit-profile" });
@@ -162,11 +168,17 @@ Page({
     },
 
     fetchReputation() {
-        const token = wx.getStorageSync('token');
+        const app = getApp();
+        const userId = app.globalData.userInfo?.id;
+    
+        if (!userId) {
+            wx.showToast({ title: '未登录', icon: 'none' });
+            return;
+        }
+    
         wx.request({
-            url: `${BASE_URL}/user/reputation`,
+            url: `${BASE_URL}/user/reputation/${userId}`, // ✅ 改为带 ID 的公开接口
             method: 'GET',
-            header: { Authorization: `Bearer ${token}` },
             success: (res: any) => {
                 if (!res.data.success) {
                     wx.showToast({ title: '获取信誉失败', icon: 'none' });
@@ -180,6 +192,7 @@ Page({
             }
         });
     },
+    
 
     // ✅ 根据信誉分映射星级 & 等级
     setReputationDisplay(data: any) {

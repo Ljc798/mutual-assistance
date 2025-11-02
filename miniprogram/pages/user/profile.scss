@@ -1,0 +1,136 @@
+.profile-page {
+    padding: 20rpx;
+    background: #f7f9fc;
+    min-height: 100vh;
+  }
+  
+  /* 顶部卡片 */
+  .user-card {
+    display: flex;
+    align-items: center;
+    background: linear-gradient(135deg, #3b82f6, #60a5fa);
+    color: white;
+    border-radius: 20rpx;
+    padding: 30rpx;
+    box-shadow: 0 4rpx 8rpx rgba(59, 130, 246, 0.25);
+  }
+  
+  .avatar {
+    width: 120rpx;
+    height: 120rpx;
+    border-radius: 50%;
+    margin-right: 20rpx;
+    border: 4rpx solid rgba(255, 255, 255, 0.4);
+  }
+  
+  .user-info {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .name {
+    font-size: 34rpx;
+    font-weight: bold;
+  }
+  
+  .uid {
+    font-size: 24rpx;
+    opacity: 0.8;
+  }
+  
+  .reputation {
+    display: flex;
+    align-items: center;
+    margin-top: 6rpx;
+  }
+  
+  .reputation-text {
+    margin-left: 10rpx;
+    font-size: 26rpx;
+  }
+  
+  /* Tab 切换栏 */
+  .tab-bar {
+    display: flex;
+    justify-content: space-around;
+    background: white;
+    border-radius: 12rpx;
+    margin-top: 20rpx;
+    box-shadow: 0 2rpx 6rpx rgba(0,0,0,0.05);
+    padding: 16rpx 0;
+  }
+  
+  .tab-item text {
+    font-size: 28rpx;
+    color: #666;
+    padding: 10rpx 0;
+  }
+  
+  .tab-item .active {
+    color: #3b82f6;
+    font-weight: 600;
+    border-bottom: 4rpx solid #3b82f6;
+  }
+  
+  /* 内容区 */
+  .tab-content {
+    margin-top: 20rpx;
+  }
+  
+  /* 帖子卡片 */
+  .post-card {
+    background: #fff;
+    border-radius: 16rpx;
+    margin-bottom: 16rpx;
+    padding: 20rpx;
+    box-shadow: 0 4rpx 6rpx rgba(0,0,0,0.05);
+  }
+  
+  .title {
+    font-weight: 600;
+    color: #333;
+    font-size: 30rpx;
+  }
+  
+  .desc {
+    color: #666;
+    margin-top: 10rpx;
+    font-size: 26rpx;
+  }
+  
+  .time {
+    text-align: right;
+    font-size: 22rpx;
+    color: #999;
+    margin-top: 10rpx;
+  }
+  
+  /* 评价卡片 */
+  .review-card {
+    background: #fff;
+    border-radius: 16rpx;
+    padding: 20rpx;
+    margin-bottom: 16rpx;
+  }
+  
+  .review-text {
+    font-size: 26rpx;
+    color: #444;
+  }
+  
+  .review-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10rpx;
+    font-size: 24rpx;
+    color: #777;
+  }
+  
+  .empty {
+    text-align: center;
+    color: #aaa;
+    margin-top: 100rpx;
+    font-size: 26rpx;
+  }
+  

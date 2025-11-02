@@ -26,7 +26,8 @@
     "pages/agreements/terms",
     "pages/agreements/privacy",
     "pages/schools/schools",
-    "pages/reputation/reputation"
+    "pages/reputation/reputation",
+    "pages/user/profile"
   ],
   "window": {
     "navigationBarTextStyle": "black",

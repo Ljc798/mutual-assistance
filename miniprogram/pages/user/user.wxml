@@ -5,7 +5,7 @@
     </view>
 
     <!-- 个人信息区域 -->
-    <view class="user-info" bindtap="goToEditProfile">
+    <view class="user-info" bindtap="goToProfile">
         <view class="avatar">
             <image src="{{userInfo.avatar_url}}" class="avatar-img" mode="aspectFill" />
         </view>

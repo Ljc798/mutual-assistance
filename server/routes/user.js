@@ -371,26 +371,72 @@ router.get("/info", authMiddleware, async (req, res) => {
     }
 });
 
+// 获取他人信息
+router.get("/public/:id", async (req, res) => {
+    const userId = req.params.id;
+
+    try {
+        const [
+            [user]
+        ] = await db.query(
+            `SELECT 
+            u.wxid,
+            u.name, 
+            u.avatar_url,
+            s.name AS school_name,
+         FROM users u
+         LEFT JOIN schools s ON u.school_id = s.id
+         WHERE u.id = ?`,
+            [userId]
+        );
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "用户不存在"
+            });
+        }
+
+        res.json({
+            success: true,
+            data: user
+        });
+    } catch (err) {
+        console.error("❌ 获取公开用户信息失败:", err);
+        res.status(500).json({
+            success: false,
+            message: "服务器错误"
+        });
+    }
+});
+
 /**
  * 获取用户信誉信息
  * GET /user/reputation
  */
-router.get("/reputation", authMiddleware, async (req, res) => {
-    const userId = req.user.id;
+router.get("/reputation/:userId", async (req, res) => {
+    const userId = parseInt(req.params.userId);
+
+    if (isNaN(userId)) {
+        return res.status(400).json({
+            success: false,
+            message: "用户 ID 非法"
+        });
+    }
 
     try {
         const [results] = await db.query(
             `SELECT 
-            total_score,
-            completed_tasks,
-            canceled_tasks,
-            reports_received,
-            average_rating,
-            reliability_index,
-            created_at,
-            updated_at
-         FROM user_reputation
-         WHERE user_id = ?`,
+                total_score,
+                completed_tasks,
+                canceled_tasks,
+                reports_received,
+                average_rating,
+                reliability_index,
+                created_at,
+                updated_at
+             FROM user_reputation
+             WHERE user_id = ?`,
             [userId]
         );
 
@@ -401,12 +447,10 @@ router.get("/reputation", authMiddleware, async (req, res) => {
             });
         }
 
-        // 返回信誉信息
         return res.json({
             success: true,
             data: results[0]
         });
-
     } catch (err) {
         console.error("❌ 查询用户信誉失败:", err);
         return res.status(500).json({
@@ -415,6 +459,7 @@ router.get("/reputation", authMiddleware, async (req, res) => {
         });
     }
 });
+
 
 router.get("/reputation/rules", async (req, res) => {
     const [rows] = await db.query(
