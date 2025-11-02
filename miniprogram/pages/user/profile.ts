@@ -8,7 +8,14 @@ Page({
         posts: [],                // 帖子数据
         weightedScore: 0,         // 加权星级
         creditLevel: '',          // 信誉等级文本
-        activeTab: "posts",       // 当前选中的 tab：'posts' | 'reviews'
+        tabs: ["帖子", "评价"],
+        activeTab: 0, // 默认显示“帖子”
+        isVip: 0,
+        showReportModal: false,
+        selectedPostId: null,
+        reportReasons: ["骚扰辱骂", "不实信息", "违规广告", "违法内容", "色情低俗", "其他"],
+        selectedReasonIndex: -1,
+        reportDetail: '',
     },
 
     onLoad(options) {
@@ -89,6 +96,8 @@ Page({
                         ...post,
                         formattedTime: this.formatTime(post.created_time),
                     }));
+                    console.log(formattedPosts);
+                    
                     this.setData({ posts: formattedPosts });
                 } else {
                     wx.showToast({ title: "获取帖子失败", icon: "none" });
@@ -101,21 +110,132 @@ Page({
         });
     },
 
-    /** ✅ 切换帖子 / 评价 tab */
-    onTabChange(e) {
-        const tab = e.currentTarget.dataset.tab;
-        this.setData({ activeTab: tab });
-        // 如果切换到“评价”，后续可以再加 loadReviews()
+    switchTab(e: any) {
+        const index = e.currentTarget.dataset.index;
+        this.setData({ activeTab: index });
+
+        if (index === 0) {
+            // 切换到帖子
+            this.loadUserPosts();
+        } else if (index === 1) {
+            // 切换到评价
+            //   this.fetchEvaluations(this.data.userId);
+        }
     },
 
-    /** ✅ 时间格式化函数 */
-    formatTime(dateStr: string) {
-        const date = new Date(dateStr);
-        const now = new Date();
-        const diff = (now.getTime() - date.getTime()) / 1000;
-        if (diff < 60) return "刚刚";
-        if (diff < 3600) return `${Math.floor(diff / 60)}分钟前`;
-        if (diff < 86400) return `${Math.floor(diff / 3600)}小时前`;
-        return date.toLocaleDateString().replace(/\//g, "-");
+    formatTime(timeStr: string): string {
+        const date = new Date(timeStr);
+        date.setHours(date.getHours());
+        const month = (date.getMonth() + 1).toString().padStart(2, "0");
+        const day = date.getDate().toString().padStart(2, "0");
+        const hours = date.getHours().toString().padStart(2, "0");
+        const minutes = date.getMinutes().toString().padStart(2, "0");
+        return `${month}-${day} ${hours}:${minutes}`;
     },
+
+    handleBack() {
+        wx.navigateBack({ delta: 1 });
+    },
+
+        // ✅ 点赞/取消点赞
+        toggleLike(e: any) {
+            const index = e.currentTarget.dataset.index;
+            let posts = [...this.data.posts];
+            let post = posts[index];
+    
+            const app = getApp();
+            const user_id = app.globalData.userInfo?.id;
+    
+            if (!user_id) {
+                wx.showToast({ title: "请先登录", icon: "none" });
+                return;
+            }
+    
+            const url = post.isLiked
+                ? `${BASE_URL}/square/unlike`
+                : `${BASE_URL}/square/like`;
+    
+            wx.request({
+                url,
+                method: "POST",
+                header: { Authorization: `Bearer ${app.globalData.token}` },
+                data: { user_id, square_id: post.id },
+                success: (res: any) => {
+                    if (res.data.success) {
+                        post.isLiked = !post.isLiked;
+                        post.likes_count += post.isLiked ? 1 : -1;
+                        this.setData({ posts });
+                    }
+                },
+                fail: (err) => {
+                    console.error("❌ 点赞/取消点赞失败:", err);
+                }
+            });
+        },
+    
+        // 跳转到帖子详情页
+        goToDetail(e: any) {
+            const postId = e.currentTarget.dataset.postid;
+            wx.navigateTo({
+                url: `/pages/square-detail/square-detail?post_id=${postId}`
+            });
+        },
+
+    // 点击三个点触发
+    onReportTap(e) {
+        const postId = e.currentTarget.dataset.postid;
+        this.setData({
+            selectedPostId: postId,
+            showReportModal: true,
+            selectedReasonIndex: -1,
+            reportDetail: ''
+        });
+    },
+
+    onReasonChange(e) {
+        this.setData({
+            selectedReasonIndex: e.detail.value
+        });
+    },
+
+    onReportDetailInput(e) {
+        this.setData({
+            reportDetail: e.detail.value
+        });
+    },
+
+    cancelReport() {
+        this.setData({
+            showReportModal: false
+        });
+    },
+
+    submitReport() {
+        const token = wx.getStorageSync("token");
+        const { selectedPostId, selectedReasonIndex, reportReasons, reportDetail } = this.data;
+
+        if (selectedReasonIndex === -1) {
+            return wx.showToast({ title: "请选择举报原因", icon: "none" });
+        }
+
+        wx.request({
+            url: `${BASE_URL}/square/report`,
+            method: "POST",
+            header: { Authorization: `Bearer ${token}` },
+            data: {
+                post_id: selectedPostId,
+                reason: reportReasons[selectedReasonIndex],
+                description: reportDetail
+            },
+            success: (res) => {
+                if (res.data.success) {
+                    wx.showToast({ title: "举报成功", icon: "success" });
+                } else {
+                    wx.showToast({ title: res.data.message || "举报失败", icon: "none" });
+                }
+                this.setData({ showReportModal: false });
+            }
+        });
+    },
+
 });

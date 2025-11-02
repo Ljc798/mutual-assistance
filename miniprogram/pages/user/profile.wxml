@@ -11,26 +11,23 @@
 
         <!-- 右侧信息 -->
         <view class="user-info">
-            <view class="name-row">
-                <text class="name">{{userInfo.username}}</text>
-
-                <!-- VIP 标识 -->
-                <view wx:if="{{userInfo.is_vip}}" class="vip-badge">
-                    <image src="/assets/icons/vip-crown.svg" class="vip-icon" mode="aspectFit" />
-                    <text class="vip-text">VIP</text>
-                </view>
+            <view class="username-area">
+                <text class="username {{userInfo.isVip ? 'vip-username' : ''}}">{{userInfo.username}}</text>
+                <image wx:if="{{userInfo.isVip}}" src="/assets/icons/vip-2.svg" class="vip-badge" />
             </view>
 
-            <!-- ID -->
-            <text class="uid">ID：{{userInfo.wxid}}</text>
+            <view class="meta">
+                <!-- ID -->
+                <text class="uid">ID：{{userInfo.wxid}}｜</text>
 
-            <!-- 学校 -->
-            <text class="school">{{userInfo.school_name}}</text>
+                <!-- 学校 -->
+                <text class="school">{{userInfo.school_name}}</text>
+            </view>
 
             <!-- 信誉评分 -->
             <view class="reputation">
                 <text class="reputation-text">{{reputation.total_score}}分 信用{{creditLevel}}</text>
-                <rating size="40" star="{{weightedScore}}" animated="true"/>
+                <rating size="50" star="{{weightedScore}}" animated="true" />
             </view>
         </view>
     </view>
@@ -61,16 +58,50 @@
 
     <!-- 内容区 -->
     <view class="tab-content">
-
         <!-- 帖子列表 -->
         <block wx:if="{{activeTab === 0}}">
-            <block wx:for="{{posts}}" wx:key="id">
-                <view class="post-card" bindtap="goPostDetail" data-id="{{posts.id}}">
-                    <text class="title">{{posts.title}}</text>
-                    <text class="desc">{{posts.content}}</text>
-                    <text class="time">{{posts.created_at}}</text>
-                </view>
-            </block>
+            <view class="content">
+                <block wx:for="{{posts}}" wx:key="post_id">
+                    <view class="post-card" bindtap="goToDetail" data-postid="{{item.id}}">
+
+                        <view class="post-text">
+                            {{item.content}}
+                        </view>
+
+                        <block wx:if="{{item.images.length > 0}}">
+                            <scroll-view class="image-scroll" scroll-x="true">
+                                <block wx:for="{{item.images}}" wx:for-item="image" wx:key="index">
+                                    <block wx:if="{{image.status === 'pass'}}">
+                                        <image src="{{image.url}}" class="post-image" mode="aspectFill" />
+                                    </block>
+                                    <block wx:else>
+                                        <view class="post-image audit-placeholder">
+                                            图片审核中
+                                        </view>
+                                    </block>
+                                </block>
+                            </scroll-view>
+                        </block>
+
+                        <view class="post-footer">
+                            <text class="post-time">{{item.formattedTime}}</text>
+                            <view class="post-footer-right">
+                                <view class="likes" catchtap="toggleLike" data-index="{{index}}">
+                                    <image src="{{item.isLiked ? '/assets/icons/heart-fill.svg' : '/assets/icons/heart-line.svg'}}" />
+                                    <text>{{item.likes_count}}</text>
+                                </view>
+                                <view class="comments">
+                                    <image src="/assets/icons/comment-3-svgrepo-com.svg" />
+                                    <text>{{item.comments_count}}</text>
+                                </view>
+                                <view class="more-button" catchtap="onReportTap" data-postid="{{item.id}}">
+                                    <image src="/assets/icons/menu-dots-svgrepo-com.svg" class="more-icon" />
+                                </view>
+                            </view>
+                        </view>
+                    </view>
+                </block>
+            </view>
             <view wx:if="{{posts.length === 0}}" class="empty">暂无帖子</view>
         </block>
 
@@ -87,6 +118,25 @@
             </block>
             <view wx:if="{{reviews.length === 0}}" class="empty">暂无评价</view>
         </block>
+    </view>
 
+    <!-- 举报弹窗 -->
+    <view wx:if="{{showReportModal}}" class="modal-overlay">
+        <view class="modal">
+            <text class="modal-title">举报该帖子</text>
+
+            <picker mode="selector" value="{{selectedReasonIndex}}" range="{{reportReasons}}" bindchange="onReasonChange">
+                <view class="picker-box">
+                    <text>{{reportReasons[selectedReasonIndex] || '请选择举报原因'}}</text>
+                </view>
+            </picker>
+
+            <textarea class="report-textarea" placeholder="请补充说明" bindinput="onReportDetailInput" />
+
+            <view class="modal-actions">
+                <button class="cancel-btn2" bindtap="cancelReport">取消</button>
+                <button class="submit-btn2" bindtap="submitReport">提交</button>
+            </view>
+        </view>
     </view>
 </view>

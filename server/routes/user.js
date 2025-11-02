@@ -414,6 +414,40 @@ router.get("/public/:id", async (req, res) => {
     }
 });
 
+router.get("/reputation/rules", async (req, res) => {
+    const [rows] = await db.query(
+        "SELECT id, event, score_delta, severity, trigger_action, description FROM reputation_rules ORDER BY id"
+    );
+    res.json({
+        success: true,
+        data: rows
+    });
+});
+
+router.get("/reputation/logs", authMiddleware, async (req, res) => {
+    const userId = req.user.id;
+
+    try {
+        const [logs] = await db.query(
+            `SELECT id, change_type, score_delta, reason, created_at
+         FROM reputation_logs 
+         WHERE user_id = ?
+         ORDER BY created_at DESC`,
+            [userId]
+        );
+
+        res.json({
+            success: true,
+            data: logs
+        });
+    } catch (err) {
+        console.error("❌ 查询信誉日志失败:", err);
+        res.status(500).json({
+            success: false,
+            message: "数据库查询错误"
+        });
+    }
+});
 
 /**
  * 获取用户信誉信息
@@ -461,42 +495,6 @@ router.get("/reputation/:userId", async (req, res) => {
         return res.status(500).json({
             success: false,
             message: "数据库查询出错"
-        });
-    }
-});
-
-
-router.get("/reputation/rules", async (req, res) => {
-    const [rows] = await db.query(
-        "SELECT id, event, score_delta, severity, trigger_action, description FROM reputation_rules ORDER BY id"
-    );
-    res.json({
-        success: true,
-        data: rows
-    });
-});
-
-router.get("/reputation/logs", authMiddleware, async (req, res) => {
-    const userId = req.user.id;
-
-    try {
-        const [logs] = await db.query(
-            `SELECT id, change_type, score_delta, reason, created_at
-         FROM reputation_logs 
-         WHERE user_id = ?
-         ORDER BY created_at DESC`,
-            [userId]
-        );
-
-        res.json({
-            success: true,
-            data: logs
-        });
-    } catch (err) {
-        console.error("❌ 查询信誉日志失败:", err);
-        res.status(500).json({
-            success: false,
-            message: "数据库查询错误"
         });
     }
 });
