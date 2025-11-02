@@ -1,8 +1,13 @@
 <view class="profile-page">
 
+    <view class="sticky-profile-header">
+        <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack" />
+        <view class="profile-header">个人空间</view>
+    </view>
+
 <!-- 顶部信息卡 -->
 <view class="user-card">
-  <image class="avatar" src="{{user.avatar_url || '/assets/default-avatar.png'}}" mode="aspectFill" />
+  <image class="avatar" src="{{user.avatar_url}}" mode="aspectFill" />
   <view class="user-info">
     <text class="name">{{user.name}}</text>
     <text class="uid">ID：{{user.id}}</text>

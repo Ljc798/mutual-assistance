@@ -105,10 +105,19 @@ Page({
 
     goToProfile() {
         this.checkLoginAndGo(() => {
-            wx.navigateTo({ url: "/pages/user/profile" });
+            const app = getApp();
+            const userId = app.globalData.userInfo?.id;
+    
+            if (!userId) {
+                wx.showToast({ title: "未登录", icon: "none" });
+                return;
+            }
+    
+            // ✅ 带上 userId 参数跳转
+            wx.navigateTo({ url: `/pages/user/profile?userId=${userId}` });
         });
     },
-
+    
     goToEditProfile() {
         this.checkLoginAndGo(() => {
             wx.navigateTo({ url: "/pages/edit-profile/edit-profile" });

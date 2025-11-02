@@ -20,7 +20,7 @@ Page({
         
 
         wx.request({
-            url: `${BASE_URL}/user/public/${userId}/posts`,
+            url: `${BASE_URL}/square/public/${userId}/posts`,
             method: "GET",
             success: (res) => {
                 if (res.data.success) {

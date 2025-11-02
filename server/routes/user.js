@@ -381,9 +381,9 @@ router.get("/public/:id", async (req, res) => {
         ] = await db.query(
             `SELECT 
             u.wxid,
-            u.name, 
+            u.username, 
             u.avatar_url,
-            s.name AS school_name,
+            s.name AS school_name
          FROM users u
          LEFT JOIN schools s ON u.school_id = s.id
          WHERE u.id = ?`,
