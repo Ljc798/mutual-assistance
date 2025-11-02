@@ -160,21 +160,21 @@ Page({
         const app = getApp();
         const user_id = app.globalData.userInfo?.id;
         const { currentPage, pageSize, selectedCategory, selectedSchoolId } = this.data;
-    
+
         const requestData: any = {
             category: selectedCategory,
             page: currentPage,
             pageSize
         };
-    
+
         if (user_id) {
             requestData.user_id = user_id;
         }
-    
+
         if (selectedSchoolId) {
             requestData.school_id = selectedSchoolId;
         }
-    
+
         wx.request({
             url: `${BASE_URL}/square/posts`,
             method: "GET",
@@ -184,14 +184,14 @@ Page({
                     let newPosts = res.data.posts || [];
                     const isVip = (vipTime) =>
                         vipTime && new Date(vipTime).getTime() > Date.now();
-    
+
                     newPosts = newPosts.map(post => {
                         const approvedImages = (post.images || []).filter(img => img.status === "pass");
                         const reviewedImages = (post.images || []).map(img => ({
                             url: img.url,
                             status: img.status || "checking"
                         }));
-    
+
                         return {
                             ...post,
                             images: reviewedImages,
@@ -201,7 +201,7 @@ Page({
                             created_time: this.formatTime(post.created_time)
                         };
                     });
-    
+
                     this.setData({
                         posts: isLoadMore ? [...this.data.posts, ...newPosts] : newPosts,
                         hasMore: newPosts.length === pageSize
@@ -540,6 +540,13 @@ Page({
                 }
                 this.setData({ showReportModal: false });
             }
+        });
+    },
+
+    goToProfile(e) {
+        const userId = e.currentTarget.dataset.userid; // 从点击的头像取出被点击者id
+        wx.navigateTo({
+            url: `/pages/user/profile?userId=${userId}`
         });
     },
 

@@ -47,9 +47,9 @@
             <block wx:for="{{bids}}" wx:key="id">
                 <view class="comment-card">
                     <view class="comment-header">
-                        <image class="comment-avatar" src="{{item.avatar_url}}" mode="aspectFill" />
+                        <image class="comment-avatar" src="{{item.avatar_url}}" mode="aspectFill"  catchtap="goToProfile" data-userid="{{item.user_id}}"/>
                         <view class="comment-user">
-                            <text class="username">{{item.username}}</text>
+                            <text class="username" catchtap="goToProfile" data-userid="{{item.user_id}}">{{item.username}}</text>
                             <text class="price">¥{{item.price}}</text>
                         </view>
                     </view>

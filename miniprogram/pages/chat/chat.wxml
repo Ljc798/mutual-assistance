@@ -5,7 +5,7 @@
             <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack" />
         </view>
         <view class="header-center">
-            <text class="chat-title">{{targetName}}</text>
+            <text class="chat-title" bindtap="goToProfile">{{targetName}}</text>
         </view>
         <view class="header-right"></view> <!-- 用来平衡布局，防止偏左 -->
     </view>

@@ -204,4 +204,10 @@ Page({
     handleBack() {
         wx.navigateBack({ delta: 1 });
     },
+
+    goToProfile() {
+        wx.navigateTo({
+            url: `/pages/user/profile?userId=${this.data.targetId}`
+        });
+    },
 });

@@ -343,5 +343,12 @@ Page({
             newComment: '',
             replyPlaceholder: '发布你的评论...'
         });
-    }
+    },
+
+    goToProfile(e) {
+        const userId = e.currentTarget.dataset.userid; // 从点击的头像取出被点击者id
+        wx.navigateTo({
+            url: `/pages/user/profile?userId=${userId}`
+        });
+    },
 });

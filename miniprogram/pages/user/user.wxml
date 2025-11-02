@@ -72,6 +72,9 @@
         <view class="action-item" bindtap="goToShop">
             <text>商城</text>
         </view>
+        <view class="action-item" bindtap="goToEditProfile">
+            <text>个人信息</text>
+        </view>
         <view class="action-item" bindtap="onFeedbackClick">
             <text>意见反馈</text>
         </view>

@@ -27,9 +27,9 @@
             <view class="post-card {{item.is_pinned ? 'pinned-post' : ''}}" bindtap="goToDetail" data-postid="{{item.id}}">
                 <!-- 用户信息 -->
                 <view class="post-header">
-                    <image class="user-avatar" src="{{item.avatar_url}}" mode="aspectFill" />
+                    <image class="user-avatar" src="{{item.avatar_url}}" mode="aspectFill" catchtap="goToProfile" data-userid="{{item.user_id}}"/>
                     <view class="username-area">
-                        <text class="username {{item.isVip ? 'vip-username' : ''}}">{{item.username}}</text>
+                        <text class="username {{item.isVip ? 'vip-username' : ''}}" catchtap="goToProfile" data-userid="{{item.user_id}}">{{item.username}}</text>
                         <image wx:if="{{item.isVip}}" src="/assets/icons/vip-2.svg" class="vip-badge" />
                     </view>
                     <view class="more-button" catchtap="onReportTap" data-postid="{{item.id}}">
