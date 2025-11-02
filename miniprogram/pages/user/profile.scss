@@ -32,50 +32,112 @@
     text-align: center;
 }
 
-/* 顶部卡片 */
 .user-card {
     display: flex;
     align-items: center;
-    background: linear-gradient(135deg, #3b82f6, #60a5fa);
-    color: white;
-    border-radius: 20rpx;
-    padding: 30rpx;
-    box-shadow: 0 4rpx 8rpx rgba(59, 130, 246, 0.25);
+    background: linear-gradient(180deg, #b4e0ff, #e6f3ff);
+    border-radius: 24rpx;
+    padding: 24rpx;
+    margin: 20rpx;
+    box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.08);
 }
 
 .avatar {
-    width: 120rpx;
-    height: 120rpx;
+    width: 140rpx;
+    height: 140rpx;
     border-radius: 50%;
-    margin-right: 20rpx;
-    border: 4rpx solid rgba(255, 255, 255, 0.4);
+    margin-right: 24rpx;
+    border: 4rpx solid #fff;
+    box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
 }
 
 .user-info {
     display: flex;
     flex-direction: column;
+    flex: 1;
+}
+
+.name-row {
+    display: flex;
+    align-items: center;
+    gap: 10rpx;
 }
 
 .name {
     font-size: 34rpx;
-    font-weight: bold;
+    font-weight: 700;
+    color: #333;
 }
 
-.uid {
-    font-size: 24rpx;
-    opacity: 0.8;
+.uid,
+.school {
+    font-size: 26rpx;
+    color: #777;
+    margin-top: 6rpx;
+}
+
+.vip-badge {
+    display: flex;
+    align-items: center;
+    background: linear-gradient(90deg, #ffe97f, #ffc107);
+    border-radius: 20rpx;
+    padding: 4rpx 10rpx;
+}
+
+.vip-icon {
+    width: 28rpx;
+    height: 28rpx;
+    margin-right: 6rpx;
+}
+
+.vip-text {
+    font-size: 22rpx;
+    color: #8b5a00;
+    font-weight: 600;
 }
 
 .reputation {
     display: flex;
+    display: inline;
     align-items: center;
-    margin-top: 6rpx;
+    margin-top: 10rpx;
 }
 
 .reputation-text {
+    font-size: 28rpx;
+    color: #444;
     margin-left: 10rpx;
-    font-size: 26rpx;
 }
+
+/* 下方任务统计区 */
+.task-stats {
+    display: flex;
+    justify-content: space-around;
+    background: #fff;
+    border-radius: 20rpx;
+    margin: 20rpx;
+    padding: 20rpx 0;
+    box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.05);
+}
+
+.stat-item {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-value {
+    font-size: 36rpx;
+    font-weight: bold;
+    color: #3b82f6;
+}
+
+.stat-label {
+    font-size: 26rpx;
+    color: #888;
+    margin-top: 6rpx;
+}
+
 
 /* Tab 切换栏 */
 .tab-bar {

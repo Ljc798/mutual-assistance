@@ -4,57 +4,89 @@
         <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack" />
         <view class="profile-header">个人空间</view>
     </view>
+    <!-- 顶部信息卡 -->
+    <view class="user-card">
+        <!-- 用户头像 -->
+        <image class="avatar" src="{{userInfo.avatar_url}}" mode="aspectFill" />
 
-<!-- 顶部信息卡 -->
-<view class="user-card">
-  <image class="avatar" src="{{user.avatar_url}}" mode="aspectFill" />
-  <view class="user-info">
-    <text class="name">{{user.name}}</text>
-    <text class="uid">ID：{{user.id}}</text>
+        <!-- 右侧信息 -->
+        <view class="user-info">
+            <view class="name-row">
+                <text class="name">{{userInfo.username}}</text>
 
-    <view class="reputation">
-      <rating star-size="32" stars="{{user.stars}}" />
-      <text class="reputation-text">{{user.total_score}}分</text>
-    </view>
-  </view>
-</view>
+                <!-- VIP 标识 -->
+                <view wx:if="{{userInfo.is_vip}}" class="vip-badge">
+                    <image src="/assets/icons/vip-crown.svg" class="vip-icon" mode="aspectFit" />
+                    <text class="vip-text">VIP</text>
+                </view>
+            </view>
 
-<!-- Tab 切换栏 -->
-<view class="tab-bar">
-  <view class="tab-item" wx:for="{{tabs}}" wx:key="name" 
-        bindtap="switchTab" data-index="{{index}}">
-    <text class="{{activeTab === index ? 'active' : ''}}">{{item}}</text>
-  </view>
-</view>
+            <!-- ID -->
+            <text class="uid">ID：{{userInfo.wxid}}</text>
 
-<!-- 内容区 -->
-<view class="tab-content">
+            <!-- 学校 -->
+            <text class="school">{{userInfo.school_name}}</text>
 
-  <!-- 帖子列表 -->
-  <block wx:if="{{activeTab === 0}}">
-    <block wx:for="{{posts}}" wx:key="id">
-      <view class="post-card" bindtap="goPostDetail" data-id="{{item.id}}">
-        <text class="title">{{item.title}}</text>
-        <text class="desc">{{item.content}}</text>
-        <text class="time">{{item.created_at}}</text>
-      </view>
-    </block>
-    <view wx:if="{{posts.length === 0}}" class="empty">暂无帖子</view>
-  </block>
-
-  <!-- 评价列表 -->
-  <block wx:elif="{{activeTab === 1}}">
-    <block wx:for="{{reviews}}" wx:key="id">
-      <view class="review-card">
-        <text class="review-text">“{{item.comment}}”</text>
-        <view class="review-meta">
-          <text class="reviewer">{{item.reviewer_name}}</text>
-          <rating star-size="24" stars="{{item.rating}}" />
+            <!-- 信誉评分 -->
+            <view class="reputation">
+                <text class="reputation-text">{{reputation.total_score}}分 信用{{creditLevel}}</text>
+                <rating size="40" star="{{weightedScore}}" animated="true"/>
+            </view>
         </view>
-      </view>
-    </block>
-    <view wx:if="{{reviews.length === 0}}" class="empty">暂无评价</view>
-  </block>
+    </view>
 
-</view>
+    <!-- 任务统计区 -->
+    <view class="task-stats">
+        <view class="stat-item">
+            <text class="stat-label">完成任务</text>
+            <text class="stat-value">{{reputation.completed_tasks}}</text>
+        </view>
+        <view class="stat-item">
+            <text class="stat-label">取消任务</text>
+            <text class="stat-value">{{reputation.canceled_tasks}}</text>
+        </view>
+        <view class="stat-item">
+            <text class="stat-label">被举报</text>
+            <text class="stat-value">{{reputation.reports_received}}</text>
+        </view>
+    </view>
+
+
+    <!-- Tab 切换栏 -->
+    <view class="tab-bar">
+        <view class="tab-item" wx:for="{{tabs}}" wx:key="name" bindtap="switchTab" data-index="{{index}}">
+            <text class="{{activeTab === index ? 'active' : ''}}">{{item}}</text>
+        </view>
+    </view>
+
+    <!-- 内容区 -->
+    <view class="tab-content">
+
+        <!-- 帖子列表 -->
+        <block wx:if="{{activeTab === 0}}">
+            <block wx:for="{{posts}}" wx:key="id">
+                <view class="post-card" bindtap="goPostDetail" data-id="{{posts.id}}">
+                    <text class="title">{{posts.title}}</text>
+                    <text class="desc">{{posts.content}}</text>
+                    <text class="time">{{posts.created_at}}</text>
+                </view>
+            </block>
+            <view wx:if="{{posts.length === 0}}" class="empty">暂无帖子</view>
+        </block>
+
+        <!-- 评价列表 -->
+        <block wx:elif="{{activeTab === 1}}">
+            <block wx:for="{{reviews}}" wx:key="id">
+                <view class="review-card">
+                    <text class="review-text">“{{item.comment}}”</text>
+                    <view class="review-meta">
+                        <text class="reviewer">{{item.reviewer_name}}</text>
+                        <rating star-size="24" stars="{{item.rating}}" />
+                    </view>
+                </view>
+            </block>
+            <view wx:if="{{reviews.length === 0}}" class="empty">暂无评价</view>
+        </block>
+
+    </view>
 </view>

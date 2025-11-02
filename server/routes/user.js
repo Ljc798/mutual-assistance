@@ -383,7 +383,11 @@ router.get("/public/:id", async (req, res) => {
             u.wxid,
             u.username, 
             u.avatar_url,
-            s.name AS school_name
+            s.name AS school_name,
+            CASE 
+                WHEN u.vip_expire_time IS NOT NULL AND u.vip_expire_time > NOW() THEN TRUE 
+                ELSE FALSE 
+            END AS isVip
          FROM users u
          LEFT JOIN schools s ON u.school_id = s.id
          WHERE u.id = ?`,
@@ -409,6 +413,7 @@ router.get("/public/:id", async (req, res) => {
         });
     }
 });
+
 
 /**
  * 获取用户信誉信息

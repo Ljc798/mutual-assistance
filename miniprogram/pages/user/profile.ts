@@ -13,7 +13,6 @@ Page({
 
     onLoad(options) {
         const app = getApp();
-        // ✅ 如果有传别人 id，则是查看他人主页，否则默认自己
         const userId = options.userId ? parseInt(options.userId) : app.globalData.user?.id;
         if (!userId) {
             wx.showToast({ title: "用户不存在", icon: "none" });
@@ -67,7 +66,7 @@ Page({
 
                 this.setData({
                     reputation: data,
-                    weightedScore: weighted.toFixed(2),
+                    weightedScore: Number(weighted.toFixed(2)),
                     creditLevel: level,
                 });
             },
