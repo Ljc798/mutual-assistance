@@ -29,7 +29,7 @@ router.post("/checkin", authMiddleware, async (req, res) => {
         });
     }
 
-    const conn = await db.getConnection(); // ✅ 获取连接
+    const conn = await db.getConnection();
 
     try {
         const today = moment().format("YYYY-MM-DD");
@@ -40,8 +40,8 @@ router.post("/checkin", authMiddleware, async (req, res) => {
         // 查询最后签到记录
         const [rows] = await conn.query(
             `SELECT checkin_date, consecutive_days, total_days 
-       FROM checkins WHERE user_id = ? 
-       ORDER BY checkin_date DESC LIMIT 1`,
+             FROM checkins WHERE user_id = ? 
+             ORDER BY checkin_date DESC LIMIT 1`,
             [user_id]
         );
 
@@ -65,13 +65,13 @@ router.post("/checkin", authMiddleware, async (req, res) => {
             total_days = lastCheckin.total_days + 1;
         }
 
-        // 计算积分
+        // 基础积分
         let totalPoints = CHECKIN_POINTS;
         if (BONUS_REWARDS[consecutive_days]) {
             totalPoints += BONUS_REWARDS[consecutive_days];
         }
 
-        // ✅ 判断是否 VIP，给予双倍积分
+        // 判断 VIP
         const [
             [user]
         ] = await conn.query(
@@ -81,7 +81,6 @@ router.post("/checkin", authMiddleware, async (req, res) => {
 
         const now = new Date();
         const isVip = user && user.vip_expire_time && new Date(user.vip_expire_time) > now;
-
         if (isVip) {
             totalPoints *= 2;
             console.log(`🎖️ 用户 ${user_id} 是 VIP，积分翻倍：${totalPoints}`);
@@ -90,7 +89,7 @@ router.post("/checkin", authMiddleware, async (req, res) => {
         // 插入签到记录
         await conn.query(
             `INSERT INTO checkins (user_id, checkin_date, consecutive_days, total_days)
-       VALUES (?, CURDATE(), ?, ?)`,
+             VALUES (?, CURDATE(), ?, ?)`,
             [user_id, consecutive_days, total_days]
         );
 
@@ -100,24 +99,27 @@ router.post("/checkin", authMiddleware, async (req, res) => {
             [totalPoints, user_id]
         );
 
+        // ✅ 提交事务（先释放锁）
+        await conn.commit();
+
+        // ✅ 提交后再执行信誉逻辑（避免死锁）
         const reputationDelta = isVip ? 0.2 : 0.1;
-        try {
-            await addReputationLog(
+        addReputationLog(
                 user_id,
                 "daily_checkin",
                 reputationDelta,
                 isVip ?
                 `VIP签到加信誉+${reputationDelta.toFixed(1)}` :
                 `每日签到加信誉+${reputationDelta.toFixed(1)}`
-            );
-            console.log(`⭐ 用户#${user_id}签到成功，信誉+${reputationDelta}`);
-        } catch (repErr) {
-            console.warn("⚠️ 更新信誉失败（忽略不中断）:", repErr.message);
-        }
+            )
+            .then(() => {
+                console.log(`⭐ 用户#${user_id} 签到成功，信誉+${reputationDelta}`);
+            })
+            .catch((repErr) => {
+                console.warn("⚠️ 更新信誉失败（忽略不中断）:", repErr.message);
+            });
 
-        // 提交事务
-        await conn.commit();
-
+        // ✅ 响应客户端
         res.json({
             success: true,
             message: `签到成功，+${totalPoints} 积分，信誉 +${reputationDelta}`,
@@ -127,7 +129,7 @@ router.post("/checkin", authMiddleware, async (req, res) => {
             is_vip: isVip,
         });
     } catch (err) {
-        await conn.rollback(); // ❗失败就回滚事务
+        await conn.rollback();
         console.error("❌ 签到失败:", err);
         res.status(500).json({
             success: false,
@@ -135,7 +137,7 @@ router.post("/checkin", authMiddleware, async (req, res) => {
             error: err
         });
     } finally {
-        conn.release(); // ✅ 无论成功失败都释放连接
+        conn.release();
     }
 });
 
