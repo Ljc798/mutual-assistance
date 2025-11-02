@@ -25,11 +25,7 @@
         <text class="credit-text">信誉{{reputation.total_score}}分</text>
         <text class="credit-level">{{creditLevel}}</text>
 
-        <view class="stars">
-            <block wx:for="{{5}}" wx:key="*this">
-                <image class="star-small" src="{{index < starCount ? '/assets/icons/star-fill.svg' : '/assets/icons/star-empty.svg'}}" />
-            </block>
-        </view>
+        <rating class="stars" star="{{ weightedScore }}" size="{{40}}" animated="true"></rating>
     </view>
 
     <!-- 免费次数和钱包余额 -->

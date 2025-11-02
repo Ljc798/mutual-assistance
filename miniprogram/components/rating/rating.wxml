@@ -1,0 +1,13 @@
+<view class="rating {{animated ? 'animated' : ''}} {{isPerfect ? 'perfect' : ''}}">
+    <block wx:for="{{5}}" wx:key="index">
+        <view class="star-wrapper" style="width: {{size}}rpx; height: {{size}}rpx;">
+            <view wx:if="{{isPerfect}}" class="glow-ring"></view>
+            <!-- 灰星 -->
+            <image class="star-bg" src="/assets/icons/star-empty.svg" mode="aspectFit" style="width: {{size}}rpx; height: {{size}}rpx;" />
+            <!-- 黄星 -->
+            <view class="clip" style="width: {{fillPx[index]}}rpx;">
+                <image class="star-fill" src="/assets/icons/star-fill.svg" mode="aspectFit" style="width: {{size}}rpx; height: {{size}}rpx;" />
+            </view>
+        </view>
+    </block>
+</view>

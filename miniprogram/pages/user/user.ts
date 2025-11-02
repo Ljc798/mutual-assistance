@@ -183,33 +183,24 @@ Page({
 
     // ✅ 根据信誉分映射星级 & 等级
     setReputationDisplay(data: any) {
-        const score = data.total_score;
-        let stars = 4;
-        let level = '良好';
+        const weightedScore = data.average_rating * 0.7 + (data.total_score / 20) * 0.3;
 
-        if (score >= 90) {
-            stars = 5;
-            level = '优秀';
-        } else if (score >= 80) {
-            stars = 4;
-            level = '良好';
-        } else if (score >= 70) {
-            stars = 3;
-            level = '中等';
-        } else if (score >= 60){
-            stars = 2;
-            level = '一般';
-        } else {
-            stars = 1;
-            level = '差';
-        }
+        let level = '';
+        if (weightedScore >= 4.5) level = '极好';
+        else if (weightedScore >= 4.0) level = '良好';
+        else if (weightedScore >= 3.0) level = '中等';
+        else if (weightedScore >= 2.0) level = '一般';
+        else if (weightedScore >= 1.0) level = '较差'
+        else level = '极差';
+
 
         this.setData({
             reputation: data,
-            starCount: stars,
-            creditLevel: level
+            weightedScore,
+            creditLevel: level,
         });
     },
+
 
     submitFeedback() {
         const { feedbackTitle, feedbackContent } = this.data;

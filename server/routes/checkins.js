@@ -53,7 +53,7 @@ router.post("/checkin", authMiddleware, async (req, res) => {
             const lastCheckinDate = moment(lastCheckin.checkin_date).format("YYYY-MM-DD");
 
             if (moment(lastCheckinDate).isSame(today)) {
-                await conn.release(); // ⚠️ 如果提前返回也要记得释放连接！
+                await conn.release();
                 return res.json({
                     success: false,
                     message: "今日已签到"

@@ -9,11 +9,7 @@
         <text class="score">{{reputation.total_score}}</text>
         <text class="level">（{{creditLevel}}）</text>
 
-        <view class="stars">
-            <block wx:for="{{5}}" wx:key="*this">
-                <image class="star" src="{{index < starCount ? '/assets/icons/star-fill.svg' : '/assets/icons/star-empty.svg'}}" />
-            </block>
-        </view>
+        <rating class="stars" star="{{weightedScore}}" size="{{70}}" animated="true"/>
     </view>
 
     <!-- 基本统计 -->

@@ -1,3 +1,5 @@
 {
-  "navigationBarTitleText": "信誉分"
+    "usingComponents": {
+        "rating": "/components/rating/rating"
+    }
 }
