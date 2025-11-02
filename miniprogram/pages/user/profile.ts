@@ -85,23 +85,34 @@ Page({
 
     /** ✅ 加载用户帖子 */
     loadUserPosts() {
+        const app = getApp();
+        const viewer_id = app.globalData.userInfo?.id;
         const { userId } = this.data;
+
         wx.showLoading({ title: "加载中..." });
+
         wx.request({
             url: `${BASE_URL}/square/public/${userId}/posts`,
+            method: "GET",
+            data: {
+                viewer_id: viewer_id || 0,
+                page: 1,
+                pageSize: 10
+            },
             success: (res: any) => {
                 wx.hideLoading();
-                if (res.data.success) {
-                    const formattedPosts = res.data.posts.map((post) => ({
-                        ...post,
-                        formattedTime: this.formatTime(post.created_time),
-                    }));
-                    console.log(formattedPosts);
-                    
-                    this.setData({ posts: formattedPosts });
-                } else {
+
+                if (!res.data.success) {
                     wx.showToast({ title: "获取帖子失败", icon: "none" });
+                    return;
                 }
+
+                const posts = res.data.posts.map(post => ({
+                    ...post,
+                    formattedTime: this.formatTime(post.created_time),
+                }));
+
+                this.setData({ posts });
             },
             fail: () => {
                 wx.hideLoading();
@@ -109,6 +120,7 @@ Page({
             },
         });
     },
+
 
     switchTab(e: any) {
         const index = e.currentTarget.dataset.index;
@@ -137,49 +149,49 @@ Page({
         wx.navigateBack({ delta: 1 });
     },
 
-        // ✅ 点赞/取消点赞
-        toggleLike(e: any) {
-            const index = e.currentTarget.dataset.index;
-            let posts = [...this.data.posts];
-            let post = posts[index];
-    
-            const app = getApp();
-            const user_id = app.globalData.userInfo?.id;
-    
-            if (!user_id) {
-                wx.showToast({ title: "请先登录", icon: "none" });
-                return;
-            }
-    
-            const url = post.isLiked
-                ? `${BASE_URL}/square/unlike`
-                : `${BASE_URL}/square/like`;
-    
-            wx.request({
-                url,
-                method: "POST",
-                header: { Authorization: `Bearer ${app.globalData.token}` },
-                data: { user_id, square_id: post.id },
-                success: (res: any) => {
-                    if (res.data.success) {
-                        post.isLiked = !post.isLiked;
-                        post.likes_count += post.isLiked ? 1 : -1;
-                        this.setData({ posts });
-                    }
-                },
-                fail: (err) => {
-                    console.error("❌ 点赞/取消点赞失败:", err);
+    // ✅ 点赞/取消点赞
+    toggleLike(e: any) {
+        const index = e.currentTarget.dataset.index;
+        let posts = [...this.data.posts];
+        let post = posts[index];
+
+        const app = getApp();
+        const user_id = app.globalData.userInfo?.id;
+
+        if (!user_id) {
+            wx.showToast({ title: "请先登录", icon: "none" });
+            return;
+        }
+
+        const url = post.isLiked
+            ? `${BASE_URL}/square/unlike`
+            : `${BASE_URL}/square/like`;
+
+        wx.request({
+            url,
+            method: "POST",
+            header: { Authorization: `Bearer ${app.globalData.token}` },
+            data: { user_id, square_id: post.id },
+            success: (res: any) => {
+                if (res.data.success) {
+                    post.isLiked = !post.isLiked;
+                    post.likes_count += post.isLiked ? 1 : -1;
+                    this.setData({ posts });
                 }
-            });
-        },
-    
-        // 跳转到帖子详情页
-        goToDetail(e: any) {
-            const postId = e.currentTarget.dataset.postid;
-            wx.navigateTo({
-                url: `/pages/square-detail/square-detail?post_id=${postId}`
-            });
-        },
+            },
+            fail: (err) => {
+                console.error("❌ 点赞/取消点赞失败:", err);
+            }
+        });
+    },
+
+    // 跳转到帖子详情页
+    goToDetail(e: any) {
+        const postId = e.currentTarget.dataset.postid;
+        wx.navigateTo({
+            url: `/pages/square-detail/square-detail?post_id=${postId}`
+        });
+    },
 
     // 点击三个点触发
     onReportTap(e) {

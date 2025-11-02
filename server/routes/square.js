@@ -676,46 +676,79 @@ router.post('/report', authMiddleware, async (req, res) => {
 
 router.get("/public/:id/posts", async (req, res) => {
     const userId = req.params.id;
+    const { viewer_id, page = 1, pageSize = 10 } = req.query;
+
+    const offset = (parseInt(page) - 1) * parseInt(pageSize);
+    const limit = parseInt(pageSize);
+
+    // 🧩 构建点赞状态子查询（如果传入 viewer_id）
+    const likeSubquery = viewer_id
+        ? `(SELECT COUNT(*) FROM square_likes WHERE square_id = s.id AND user_id = ${db.escape(viewer_id)})`
+        : `0`;
+
+    const query = `
+        SELECT 
+            s.id, 
+            s.content, 
+            s.category, 
+            s.likes_count, 
+            s.comments_count, 
+            s.created_time,
+            u.username, 
+            u.avatar_url, 
+            u.vip_expire_time,
+            ${likeSubquery} AS isLiked
+        FROM square s
+        LEFT JOIN users u ON s.user_id = u.id
+        WHERE s.user_id = ?
+        ORDER BY s.created_time DESC
+        LIMIT ?, ?
+    `;
 
     try {
-        const [posts] = await db.query(
-            `SELECT id, content, category, likes_count, comments_count, created_time 
-             FROM square 
-             WHERE user_id = ? 
-             ORDER BY created_time DESC`,
-            [userId]
-        );
+        const [posts] = await db.query(query, [userId, offset, limit]);
 
         if (posts.length === 0) {
-            return res.json({
-              success: true,
-              posts: []
-            });
-          }
+            return res.json({ success: true, posts: [] });
+        }
 
+        // 🖼️ 查询图片
         const postIds = posts.map(p => p.id);
         const [images] = await db.query(
-            `SELECT square_id, image_url FROM square_images WHERE square_id IN (?)`,
-            [postIds.length ? postIds : [0]]
+            `SELECT square_id, image_url, audit_status 
+             FROM square_images 
+             WHERE square_id IN (?)`,
+            [postIds]
         );
 
+        const now = new Date();
         const postsWithImages = posts.map(post => ({
             ...post,
-            images: images.filter(img => img.square_id === post.id).map(img => img.image_url)
+            images: images
+                .filter(img => img.square_id === post.id)
+                .map(img => ({
+                    url: img.image_url,
+                    status: img.audit_status
+                })),
+            isLiked: Boolean(post.isLiked),
+            isVip: post.vip_expire_time && new Date(post.vip_expire_time) > now
         }));
 
         res.json({
             success: true,
             posts: postsWithImages
         });
+
     } catch (err) {
         console.error("❌ 获取用户帖子失败:", err);
         res.status(500).json({
             success: false,
-            message: "服务器错误"
+            message: "服务器错误",
+            error: err
         });
     }
 });
+
 
 router.post("/delete", authMiddleware, async (req, res) => {
     const userId = req.user.id;
