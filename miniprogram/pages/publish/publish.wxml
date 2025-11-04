@@ -191,8 +191,18 @@
 
                 <image src="/assets/icons/send-svgrepo-com.svg" class="send-icon" bindtap="sendChatMessage" mode="aspectFit" />
             </view>
-
         </view>
+        <view wx:if="{{showVoicePreview}}" class="voice-preview-mask">
+            <view class="voice-preview-box">
+                <text class="preview-title">🎧 语音预览</text>
+                <audio src="{{voiceFilePath}}" controls></audio>
+                <view class="preview-actions">
+                    <button class="cancel-btn" bindtap="cancelVoiceSend">取消</button>
+                    <button class="send-btn" bindtap="confirmVoiceSend">发送</button>
+                </view>
+            </view>
+        </view>
+
     </view>
 </view>
 <bottom-nav></bottom-nav>

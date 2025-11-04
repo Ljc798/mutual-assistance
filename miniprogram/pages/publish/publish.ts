@@ -92,7 +92,6 @@ Page({
         aiQuestion: '', // 价格估算AI问题
         summaryQuestion: '', // 简介生成AI问题
         isRecording: false,
-        voiceLevel: 1, // 模拟音量大小
         voiceFilePath: '', // 存储录音后的文件路径
     },
 
@@ -431,9 +430,9 @@ Page({
 
     // 发送聊天消息
     async sendChatMessage() {
-        const { chatInput, chatMessages, conversationId, voiceFilePath } = this.data;
-        if (!chatInput.trim() && !voiceFilePath) {
-            wx.showToast({ title: "请输入内容或录制语音", icon: "none" });
+        const { chatInput, chatMessages, conversationId } = this.data;
+        if (!chatInput.trim()) {
+            wx.showToast({ title: "请输入内容", icon: "none" });
             return;
         }
 
@@ -478,37 +477,6 @@ Page({
             user_input: chatInput
         };
 
-        // 如果有录音文件则上传
-        let voiceUrl = '';
-        if (voiceFilePath) {
-            try {
-                wx.showLoading({ title: '上传语音中...' });
-                const uploadRes = await new Promise((resolve, reject) => {
-                    wx.uploadFile({
-                        url: `${BASE_URL}/upload/audio`, // 你自己后端接口
-                        filePath: voiceFilePath,
-                        name: 'file',
-                        header: { Authorization: `Bearer ${token}` },
-                        success: resolve,
-                        fail: reject,
-                    });
-                });
-                const uploadData = JSON.parse((uploadRes as any).data);
-                voiceUrl = uploadData.url || '';
-                wx.hideLoading();
-            } catch (err) {
-                wx.hideLoading();
-                wx.showToast({ title: '语音上传失败', icon: 'none' });
-                console.error('语音上传失败:', err);
-            }
-        }
-
-        // 附加 voice_url 字段
-        if (voiceUrl) {
-            payload.voice_url = voiceUrl;
-        }
-
-
         try {
             // 调用后端APItest
             const response = await new Promise((resolve, reject) => {
@@ -544,7 +512,6 @@ Page({
                         chatMessages: [...this.data.chatMessages, aiMessage],
                         conversationId: data.conversation_id || conversationId,
                         isLoading: false,
-                        voiceFilePath: '', // 清空语音
                     });
 
                     // 滚动到底部
@@ -554,7 +521,6 @@ Page({
                     this.setData({
                         conversationId: data.conversation_id || conversationId,
                         isLoading: false,
-                        voiceFilePath: '', // 清空语音
                     });
 
                     // 滚动到底部（格式化消息会在checkForJsonData中添加）
@@ -875,11 +841,14 @@ Page({
 
     toggleRecording() {
         const recorderManager = wx.getRecorderManager();
+
         if (this.data.isRecording) {
+            // ✅ 停止录音
             recorderManager.stop();
             this.setData({ isRecording: false });
-            wx.showToast({ title: '录音结束，准备发送...', icon: 'none' });
+            wx.showToast({ title: '录音结束', icon: 'none' });
         } else {
+            // ✅ 开始录音
             recorderManager.start({
                 duration: 60000,
                 sampleRate: 44100,
@@ -889,13 +858,123 @@ Page({
             this.setData({ isRecording: true });
             wx.showToast({ title: '开始录音', icon: 'none' });
 
+            // ✅ 录音结束回调
             recorderManager.onStop((res) => {
-                console.log('录音文件:', res.tempFilePath);
-                this.setData({ voiceFilePath: res.tempFilePath });
-                // 可选：自动触发发送
-                // this.sendChatMessage();
+                console.log('录音完成:', res.tempFilePath);
+                this.setData({
+                    voiceFilePath: res.tempFilePath,
+                    showVoicePreview: true, // 打开预览弹窗
+                });
             });
         }
-    }
+    },
+
+    // 取消发送
+    cancelVoiceSend() {
+        this.setData({
+            showVoicePreview: false,
+            voiceFilePath: '',
+        });
+        wx.showToast({ title: '已取消发送', icon: 'none' });
+    },
+
+    // 确认发送语音
+    async confirmVoiceSend() {
+        this.setData({ showVoicePreview: false });
+        wx.showLoading({ title: '上传语音中...' });
+
+        try {
+            const token = wx.getStorageSync('token');
+            const userId = wx.getStorageSync('userId');
+
+            const uploadRes = await new Promise((resolve, reject) => {
+                wx.uploadFile({
+                    url: `${BASE_URL}/uploads/upload-voice`,
+                    filePath: this.data.voiceFilePath,
+                    name: 'voice',
+                    formData: { userId },
+                    header: { Authorization: `Bearer ${token}` },
+                    success: resolve,
+                    fail: reject,
+                });
+            });
+
+            const result = JSON.parse(uploadRes.data);
+            if (result.success) {
+                wx.showToast({ title: '语音上传成功', icon: 'success' });
+
+                // ✅ 上传成功后发给 Dify
+                const voiceUrl = result.voiceUrl;
+                this.sendChatMessageWithVoice(voiceUrl);
+            } else {
+                wx.showToast({ title: '上传失败', icon: 'none' });
+            }
+        } catch (err) {
+            console.error('上传语音失败:', err);
+            wx.showToast({ title: '网络错误', icon: 'none' });
+        } finally {
+            wx.hideLoading();
+        }
+    },
+
+    // ✅ 将语音 URL 发送到 Dify
+    async sendChatMessageWithVoice(voiceUrl: string) {
+        const token = wx.getStorageSync('token');
+        const { chatMessages, conversationId } = this.data;
+
+        const userMessage = {
+            type: 'user',
+            content: '[语音消息]',
+            timestamp: new Date().toLocaleTimeString(),
+        };
+
+        this.setData({
+            chatMessages: [...chatMessages, userMessage],
+            isLoading: true,
+        });
+
+        // 构造 payload
+        const payload = {
+            tag: 'field_filling',
+            voice: voiceUrl,
+            user_input: '根据我的语音填充字段', // 语音消息没有文本
+            conversation_id: this.data.conversationId,
+        };
+
+        try {
+            const res = await new Promise((resolve, reject) => {
+                wx.request({
+                    url: `${BASE_URL}/ai/extract`,
+                    method: 'POST',
+                    data: payload,
+                    header: { Authorization: `Bearer ${token}` },
+                    success: resolve,
+                    fail: reject,
+                });
+            });
+
+            const { data } = res as any;
+            if (data.status === 'ok') {
+                const aiMessage = {
+                    type: 'ai',
+                    content: data.reply,
+                    timestamp: new Date().toLocaleTimeString(),
+                };
+                this.setData({
+                    chatMessages: [...this.data.chatMessages, aiMessage],
+                    conversationId: data.conversation_id || conversationId,
+                    isLoading: false,
+                });
+            } else {
+                wx.showToast({ title: 'AI回复失败', icon: 'none' });
+                this.setData({ isLoading: false });
+            }
+        } catch (err) {
+            console.error('发送语音到 Dify 失败:', err);
+            wx.showToast({ title: '请求错误', icon: 'none' });
+            this.setData({ isLoading: false });
+        }
+    },
+
 
 });

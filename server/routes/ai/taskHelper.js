@@ -9,49 +9,65 @@ const DIFY_API_URL = "https://ai.mutualcampus.top/v1/chat-messages";
 
 // 🌟 提取任务结构字段
 router.post("/extract", authMiddleware, async (req, res) => {
-  const { text, conversation_id, tag } = req.body;
-  const userId = req.user.id; // 从认证中间件获取用户ID
+    try {
+        let {
+            text,
+            voice,
+            conversation_id,
+            tag,
+            user_input
+        } = req.body;
+        const userId = req.user.id; // 从认证中间件获取用户ID
 
-  if (!text) {
-    return res.status(400).json({ error: "text 为必填参数" });
-  }
-
-  try {
-    const response = await axios.post(
-      DIFY_API_URL,
-      {
-        query: text,
-        user: userId, // 每个用户一条对话线
-        conversation_id: conversation_id, // 如果为空则为新对话
-        inputs: {
-          tag: tag || "字段提取" // 添加tag参数，默认为字段提取
-        }, // 将tag作为输入参数传递给Dify
-        response_mode: "blocking" // 或 "streaming"，这里我们直接取完整响应
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${DIFY_API_KEY}`,
-          "Content-Type": "application/json"
+        // ✅ 如果 text 为空，但有 voice，就用语音作为内容
+        if (!text && voice) {
+            text = `[语音消息] ${voice}`;
         }
-      }
-    );
 
-    const data = response.data;
+        // ❌ 如果两者都为空，才报错
+        if (!text) {
+            return res.status(400).json({
+                error: "text 或 voice 必须至少一个"
+            });
+        }
 
-    res.json({
-      status: "ok",
-      reply: data.answer || "", // AI 的原始回答
-      conversation_id: data.conversation_id || "",
-      usage: data.usage || {},
-      raw: data
-    });
-  } catch (error) {
-    console.error("❌ 调用 Dify 失败:", error.message, error.response?.data || {});
-    res.status(500).json({
-      error: "调用 AI 服务失败",
-      detail: error.response?.data || error.message
-    });
-  }
+        // ✅ 调用 Dify 工作流
+        const response = await axios.post(
+            DIFY_API_URL, {
+                query: text, // Dify 主输入
+                user: userId, // 每个用户一条独立对话线
+                conversation_id: conversation_id || null,
+                inputs: {
+                    tag: tag || "字段提取",
+                    voice: voice || "", // ✅ 把语音 URL 一起传给 workflow
+                    user_input: user_input || "" // ✅ 用户描述（比如“根据语音填充字段”）
+                },
+                response_mode: "blocking"
+            }, {
+                headers: {
+                    Authorization: `Bearer ${DIFY_API_KEY}`,
+                    "Content-Type": "application/json"
+                }
+            }
+        );
+
+        const data = response.data;
+
+        res.json({
+            status: "ok",
+            reply: data.answer || "",
+            conversation_id: data.conversation_id || "",
+            usage: data.usage || {},
+            raw: data
+        });
+    } catch (error) {
+        console.error("❌ 调用 Dify 失败:", error.message, error.response?.data || {});
+        res.status(500).json({
+            error: "调用 AI 服务失败",
+            detail: error.response?.data || error.message
+        });
+    }
 });
+
 
 module.exports = router;

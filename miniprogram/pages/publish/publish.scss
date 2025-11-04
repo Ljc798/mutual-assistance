@@ -797,3 +797,62 @@ rich-text {
     line-height: 1.6;
     word-break: break-all;
 }
+
+.voice-preview-mask {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+
+.voice-preview-box {
+    background: #fff;
+    padding: 40rpx;
+    border-radius: 24rpx;
+    width: 80%;
+    text-align: center;
+    box-shadow: 0 4rpx 30rpx rgba(0, 0, 0, 0.2);
+}
+
+.preview-title {
+    font-size: 32rpx;
+    font-weight: bold;
+    margin-bottom: 20rpx;
+}
+
+audio {
+    width: 100%;
+    margin: 20rpx 0;
+}
+
+.preview-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20rpx;
+    gap: 30rpx;
+}
+
+.cancel-btn {
+    flex: 1;
+    background: #eee;
+    color: #666;
+}
+
+.send-btn {
+    flex: 1;
+    background: #4CAF50;
+    color: #fff;
+}
+
+.cancel-btn:active,
+.send-btn:active {
+    opacity: 0.7;
+    transform: scale(0.95);
+    transition: all 0.1s ease;
+}
