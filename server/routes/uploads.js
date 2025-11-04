@@ -102,6 +102,52 @@ router.post("/upload-image", upload.single("image"), async (req, res) => {
     }
 });
 
+router.post("/upload-voice", upload.single("voice"), async (req, res) => {
+    try {
+        const file = req.file;
+        if (!file) {
+            return res.status(400).json({
+                success: false,
+                message: "未上传文件",
+            });
+        }
+
+        const userId = req.body.userId || "anonymous";
+        const taskId = req.body.taskId || "temp";
+        const extension = path.extname(file.originalname) || ".mp3";
+
+        // 生成文件名
+        const fileName = `voice/${userId}/${taskId}_${Date.now()}_${Math.random()
+            .toString(36)
+            .substr(2, 8)}${extension}`;
+
+        // ✅ 上传到 COS
+        await uploadToCOS({
+            Bucket: bucketName,
+            Region: region,
+            Key: fileName,
+            Body: file.buffer,
+            ContentType: file.mimetype,
+        });
+
+        // 拼接公网访问 URL
+        const voiceUrl = `https://${bucketName}.cos.${region}.myqcloud.com/${fileName}`;
+        console.log("✅ 语音上传成功:", voiceUrl);
+
+        return res.json({
+            success: true,
+            voiceUrl,
+        });
+    } catch (err) {
+        console.error("❌ 语音上传失败:", err);
+        return res.status(500).json({
+            success: false,
+            message: "上传失败",
+            error: err.message,
+        });
+    }
+});
+
 // COS 审核结果回调接口
 router.post("/image-review", express.json(), async (req, res) => {
     // ✅ 立即返回 200

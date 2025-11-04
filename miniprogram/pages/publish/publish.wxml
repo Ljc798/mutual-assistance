@@ -1,184 +1,198 @@
 <view class="container">
-  <notify-banner />
-  
-  <!-- 任务分类选择（下拉菜单） -->
-  <view class="field">
-    <text>任务分类</text>
-    <picker mode="selector" range="{{categories}}" bindchange="handleCategoryChange">
-      <view class="picker">
-        {{selectedCategory || '请选择任务分类'}}
-      </view>
-    </picker>
-  </view>
+    <notify-banner />
 
-  <!-- 标题输入框 -->
-  <view class="field">
-    <text>任务标题</text>
-    <input type="text" placeholder="请输入任务标题(取件请标注大/中/小件)" bindinput="handleTitleInput" data-key="title" value="{{title}}" />
-  </view>
-
-  <!-- 任务分类为"代拿快递"或"代拿外卖"时显示取件码输入框 -->
-  <view class="field {{showTakeCode ? 'visible' : 'hidden'}}">
-    <view wx:if="{{showTakeCode}}">
-      <text>快递取件码</text>
-      <input type="text" placeholder="请输入取件码(仅对接单员可见)" bindinput="handleTakeCodeInput" data-key="takeCode" value="{{takeCode}}" />
+    <!-- 任务分类选择（下拉菜单） -->
+    <view class="field">
+        <text>任务分类</text>
+        <picker mode="selector" range="{{categories}}" bindchange="handleCategoryChange">
+            <view class="picker">
+                {{selectedCategory || '请选择任务分类'}}
+            </view>
+        </picker>
     </view>
-  </view>
 
-  <view class="field {{showTakeAwayCode ? 'visible' : 'hidden'}}">
-    <view wx:if="{{showTakeAwayCode}}">
-      <text>外卖姓名</text>
-      <input type="text" placeholder="请输入外卖姓名(仅对接单员可见)" bindinput="handleTakeNameInput" data-key="takeName" value="{{takeName}}" />
+    <!-- 标题输入框 -->
+    <view class="field">
+        <text>任务标题</text>
+        <input type="text" placeholder="请输入任务标题(取件请标注大/中/小件)" bindinput="handleTitleInput" data-key="title" value="{{title}}" />
     </view>
-  </view>
 
-  <view class="field {{showTakeAwayCode ? 'visible' : 'hidden'}}">
-    <view wx:if="{{showTakeAwayCode}}">
-      <text>手机尾号</text>
-      <input type="text" placeholder="请输入手机尾号(仅对接单员可见)" bindinput="handleTakeTelInput" data-key="takeTel" value="{{takeTel}}" />
-    </view>
-  </view>
-
-  <!-- 截止日期 -->
-  <view class="field">
-    <text class="label">预期完成日期</text>
-    <picker mode="date" bindchange="handleDateInput">
-      <view class="picker">
-        <text>{{date || '请选择预期完成日期'}}</text>
-      </view>
-    </picker>
-  </view>
-
-  <view class="field">
-    <text class="label">选择时间</text>
-    <picker mode="time" bindchange="handleTimeInput">
-      <view class="picker">
-        <text>{{time || '请选择具体时间'}}</text>
-      </view>
-    </picker>
-  </view>
-
-  <view class="field">
-    <text>交易地点</text>
-    <input type="text" placeholder="请输入交易地点/线上交易" bindinput="handlePositionInput" data-key="position" value="{{position}}" />
-  </view>
-
-  <view class="field">
-    <text>送达地点</text>
-    <input type="text" placeholder="请输入交付地点/线上交易" bindinput="handleAddressInput" data-key="address" value="{{address}}" />
-  </view>
-
-  <!-- 任务简介 -->
-  <view class="field">
-    <view style="display: flex; align-items: center; justify-content: space-between;">
-      <text>任务简介</text>
-      <view wx:if="{{showSummaryIcon}}" style="margin-left: 10rpx; display: flex; align-items: center;">
-        <image wx:if="!showSummaryConfirm" class="icon-suggest" src="/assets/icons/bulb-svgrepo-com-2.svg" mode="aspectFit" bindtap="handleSummarySuggest" />
-        <view wx:if="{{summarySuggesting}}" class="icon-loading"><view class="loading-dot">·</view><view class="loading-dot">·</view><view class="loading-dot">·</view></view>
-        <view wx:if="{{showSummaryConfirm}}" style="display: flex; align-items: center;">
-          <text class="icon-confirm" bindtap="confirmSummarySuggest">✔️</text>
-          <text class="icon-cancel" bindtap="cancelSummarySuggest">❌</text>
+    <!-- 任务分类为"代拿快递"或"代拿外卖"时显示取件码输入框 -->
+    <view class="field {{showTakeCode ? 'visible' : 'hidden'}}">
+        <view wx:if="{{showTakeCode}}">
+            <text>快递取件码</text>
+            <input type="text" placeholder="请输入取件码(仅对接单员可见)" bindinput="handleTakeCodeInput" data-key="takeCode" value="{{takeCode}}" />
         </view>
-      </view>
     </view>
-    <textarea placeholder="请输入任务简介并留下联系方式(联系方式仅对接单员可见)" bindinput="handleDetailInput" data-key="detail" value="{{detail}}" class="{{highlightDetail ? 'highlighted' : ''}}" />
-    <view wx:if="{{summaryQuestion}}" class="ai-question">{{summaryQuestion}}</view>
-  </view>
 
-  <view class="field">
-    <view style="display: flex; align-items: center; justify-content: space-between;">
-      <text>报价</text>
-      <view wx:if="{{showPriceSuggestIcon}}" style="margin-left: 10rpx; display: flex; align-items: center;">
-        <image wx:if="!showPriceConfirm" class="icon-suggest" src="/assets/icons/sparkle.svg" mode="aspectFit" bindtap="handlePriceSuggest" />
-        <view wx:if="{{priceSuggesting}}" class="icon-loading"><view class="loading-dot">·</view><view class="loading-dot">·</view><view class="loading-dot">·</view></view>
-        <view wx:if="{{showPriceConfirm}}" style="display: flex; align-items: center;">
-          <text class="suggest-reason">{{suggestedPriceReason}}</text>
-          <text class="icon-confirm" bindtap="confirmPriceSuggest">✔️</text>
-          <text class="icon-cancel" bindtap="cancelPriceSuggest">❌</text>
+    <view class="field {{showTakeAwayCode ? 'visible' : 'hidden'}}">
+        <view wx:if="{{showTakeAwayCode}}">
+            <text>外卖姓名</text>
+            <input type="text" placeholder="请输入外卖姓名(仅对接单员可见)" bindinput="handleTakeNameInput" data-key="takeName" value="{{takeName}}" />
         </view>
-      </view>
     </view>
-    <input type="text" placeholder="请输入金额" bindinput="handleRewardInput" data-key="reward" value="{{reward}}" class="{{highlightReward ? 'highlighted' : ''}}" />
-    <view wx:if="{{aiQuestion}}" class="ai-question">{{aiQuestion}}</view>
-  </view>
 
-  <!-- 美化提示文本 -->
-  <view class="hint-text">
-    📍 当前发布任务所处学校为首页选择的学校
-  </view>
-
-  <!-- 发布按钮 -->
-  <button bindtap="handlePublish" disabled="{{isDisabled}}">🚀 发布任务</button>
-
-  <!-- 悬浮佣金选择弹窗 -->
-  <view class="commission-popup" wx:if="{{showCommissionPopup}}">
-    <view class="popup-mask" bindtap="closeCommissionPopup"></view>
-    <view class="popup-content">
-      <view class="popup-title">请选择发布方式</view>
-      <view class="popup-option" bindtap="choosePublishMethod" data-method="free">
-        🎁 使用免佣金次数
-      </view>
-      <view class="popup-option" bindtap="choosePublishMethod" data-method="pay">
-        💰 支付佣金 ¥{{commissionAmount}}
-      </view>
-      <view class="popup-option" bindtap="choosePublishMethod" data-method="vip">
-        🌟 使用VIP免费发布
-      </view>
+    <view class="field {{showTakeAwayCode ? 'visible' : 'hidden'}}">
+        <view wx:if="{{showTakeAwayCode}}">
+            <text>手机尾号</text>
+            <input type="text" placeholder="请输入手机尾号(仅对接单员可见)" bindinput="handleTakeTelInput" data-key="takeTel" value="{{takeTel}}" />
+        </view>
     </view>
-  </view>
 
-  <!-- 悬浮AI助手按钮 -->
-  <view class="ai-assistant-btn" bindtap="openChatPopup">
-    <text class="ai-icon">🤖</text>
-    <text class="ai-text">AI助手</text>
-  </view>
-
-  <!-- 聊天弹窗 -->
-  <view class="chat-popup" wx:if="{{showChatPopup}}">
-    <view class="chat-mask" bindtap="closeChatPopup"></view>
-    <view class="chat-content">
-      <view class="chat-header">
-        <view class="chat-title-container">
-          <text class="chat-title">AI任务助手</text>
-          <text class="chat-subtitle">AI生成，请自行甄别</text>
-        </view>
-        <text class="chat-close" bindtap="closeChatPopup">×</text>
-      </view>
-
-      <scroll-view class="chat-messages" scroll-y="true" scroll-into-view="{{scrollIntoView}}" scroll-with-animation="true">
-        <view wx:for="{{chatMessages}}" wx:key="index" class="message {{item.type}}" id="{{index === chatMessages.length - 1 ? 'last-message' : ''}}">
-          <view wx:if="{{item.type === 'user'}}" class="message-content">{{item.content}}</view>
-          <view wx:if="{{item.type === 'ai' && item.isFormatted}}">
-            <rich-text class="message-content" nodes="{{item.content}}"></rich-text>
-          </view>
-          <view wx:if="{{item.type === 'ai' && !item.isFormatted}}" class="message-content">{{item.content}}</view>
-          <view class="message-time">{{item.timestamp}}</view>
-        </view>
-
-        <!-- 加载动画 -->
-        <view wx:if="{{isLoading}}" class="message ai" id="last-message">
-          <view class="loading-dots">
-            <view class="loading-dot">·</view>
-            <view class="loading-dot">·</view>
-            <view class="loading-dot">·</view>
-          </view>
-        </view>
-      </scroll-view>
-
-      <!-- 帮我填按钮 -->
-      <view wx:if="{{showFillButton}}" class="fill-button-container">
-        <button class="fill-button" bindtap="fillFormWithData">
-          ✨ 帮我填到表单
-        </button>
-      </view>
-
-      <view class="chat-input-container">
-        <textarea class="chat-input" placeholder="描述您的任务需求..." value="{{chatInput}}" bindinput="handleChatInput" bindconfirm="sendChatMessage" disabled="{{isLoading}}" auto-height maxlength="500" />
-        <button class="send-button" bindtap="sendChatMessage" disabled="{{isLoading}}">
-          {{isLoading ? '发送中...' : '发送'}}
-        </button>
-      </view>
+    <!-- 截止日期 -->
+    <view class="field">
+        <text class="label">预期完成日期</text>
+        <picker mode="date" bindchange="handleDateInput">
+            <view class="picker">
+                <text>{{date || '请选择预期完成日期'}}</text>
+            </view>
+        </picker>
     </view>
-  </view>
+
+    <view class="field">
+        <text class="label">选择时间</text>
+        <picker mode="time" bindchange="handleTimeInput">
+            <view class="picker">
+                <text>{{time || '请选择具体时间'}}</text>
+            </view>
+        </picker>
+    </view>
+
+    <view class="field">
+        <text>交易地点</text>
+        <input type="text" placeholder="请输入交易地点/线上交易" bindinput="handlePositionInput" data-key="position" value="{{position}}" />
+    </view>
+
+    <view class="field">
+        <text>送达地点</text>
+        <input type="text" placeholder="请输入交付地点/线上交易" bindinput="handleAddressInput" data-key="address" value="{{address}}" />
+    </view>
+
+    <!-- 任务简介 -->
+    <view class="field">
+        <view style="display: flex; align-items: center; justify-content: space-between;">
+            <text>任务简介</text>
+            <view wx:if="{{showSummaryIcon}}" style="margin-left: 10rpx; display: flex; align-items: center;">
+                <image wx:if="!showSummaryConfirm" class="icon-suggest" src="/assets/icons/bulb-svgrepo-com-2.svg" mode="aspectFit" bindtap="handleSummarySuggest" />
+                <view wx:if="{{summarySuggesting}}" class="icon-loading">
+                    <view class="loading-dot">·</view>
+                    <view class="loading-dot">·</view>
+                    <view class="loading-dot">·</view>
+                </view>
+                <view wx:if="{{showSummaryConfirm}}" style="display: flex; align-items: center;">
+                    <text class="icon-confirm" bindtap="confirmSummarySuggest">✔️</text>
+                    <text class="icon-cancel" bindtap="cancelSummarySuggest">❌</text>
+                </view>
+            </view>
+        </view>
+        <textarea placeholder="请输入任务简介并留下联系方式(联系方式仅对接单员可见)" bindinput="handleDetailInput" data-key="detail" value="{{detail}}" class="{{highlightDetail ? 'highlighted' : ''}}" />
+        <view wx:if="{{summaryQuestion}}" class="ai-question">{{summaryQuestion}}</view>
+    </view>
+
+    <view class="field">
+        <view style="display: flex; align-items: center; justify-content: space-between;">
+            <text>报价</text>
+            <view wx:if="{{showPriceSuggestIcon}}" style="margin-left: 10rpx; display: flex; align-items: center;">
+                <image wx:if="!showPriceConfirm" class="icon-suggest" src="/assets/icons/sparkle.svg" mode="aspectFit" bindtap="handlePriceSuggest" />
+                <view wx:if="{{priceSuggesting}}" class="icon-loading">
+                    <view class="loading-dot">·</view>
+                    <view class="loading-dot">·</view>
+                    <view class="loading-dot">·</view>
+                </view>
+                <view wx:if="{{showPriceConfirm}}" style="display: flex; align-items: center;">
+                    <text class="suggest-reason">{{suggestedPriceReason}}</text>
+                    <text class="icon-confirm" bindtap="confirmPriceSuggest">✔️</text>
+                    <text class="icon-cancel" bindtap="cancelPriceSuggest">❌</text>
+                </view>
+            </view>
+        </view>
+        <input type="text" placeholder="请输入金额" bindinput="handleRewardInput" data-key="reward" value="{{reward}}" class="{{highlightReward ? 'highlighted' : ''}}" />
+        <view wx:if="{{aiQuestion}}" class="ai-question">{{aiQuestion}}</view>
+    </view>
+
+    <!-- 美化提示文本 -->
+    <view class="hint-text">
+        📍 当前发布任务所处学校为首页选择的学校
+    </view>
+
+    <!-- 发布按钮 -->
+    <button bindtap="handlePublish" disabled="{{isDisabled}}">🚀 发布任务</button>
+
+    <!-- 悬浮佣金选择弹窗 -->
+    <view class="commission-popup" wx:if="{{showCommissionPopup}}">
+        <view class="popup-mask" bindtap="closeCommissionPopup"></view>
+        <view class="popup-content">
+            <view class="popup-title">请选择发布方式</view>
+            <view class="popup-option" bindtap="choosePublishMethod" data-method="free">
+                🎁 使用免佣金次数
+            </view>
+            <view class="popup-option" bindtap="choosePublishMethod" data-method="pay">
+                💰 支付佣金 ¥{{commissionAmount}}
+            </view>
+            <view class="popup-option" bindtap="choosePublishMethod" data-method="vip">
+                🌟 使用VIP免费发布
+            </view>
+        </view>
+    </view>
+
+    <!-- 悬浮AI助手按钮 -->
+    <view class="ai-assistant-btn" bindtap="openChatPopup">
+        <text class="ai-icon">🤖</text>
+        <text class="ai-text">AI助手</text>
+    </view>
+
+    <!-- 聊天弹窗 -->
+    <view class="chat-popup" wx:if="{{showChatPopup}}">
+        <view class="chat-mask" bindtap="closeChatPopup"></view>
+        <view class="chat-content">
+            <view class="chat-header">
+                <view class="chat-title-container">
+                    <text class="chat-title">AI任务助手</text>
+                    <text class="chat-subtitle">AI生成，请自行甄别</text>
+                </view>
+                <text class="chat-close" bindtap="closeChatPopup">×</text>
+            </view>
+
+            <scroll-view class="chat-messages" scroll-y="true" scroll-into-view="{{scrollIntoView}}" scroll-with-animation="true">
+                <view wx:for="{{chatMessages}}" wx:key="index" class="message {{item.type}}" id="{{index === chatMessages.length - 1 ? 'last-message' : ''}}">
+                    <view wx:if="{{item.type === 'user'}}" class="message-content">{{item.content}}</view>
+                    <view wx:if="{{item.type === 'ai' && item.isFormatted}}">
+                        <rich-text class="message-content" nodes="{{item.content}}"></rich-text>
+                    </view>
+                    <view wx:if="{{item.type === 'ai' && !item.isFormatted}}" class="message-content">{{item.content}}</view>
+                    <view class="message-time">{{item.timestamp}}</view>
+                </view>
+
+                <!-- 加载动画 -->
+                <view wx:if="{{isLoading}}" class="message ai" id="last-message">
+                    <view class="loading-dots">
+                        <view class="loading-dot">·</view>
+                        <view class="loading-dot">·</view>
+                        <view class="loading-dot">·</view>
+                    </view>
+                </view>
+            </scroll-view>
+
+            <!-- 帮我填按钮 -->
+            <view wx:if="{{showFillButton}}" class="fill-button-container">
+                <button class="fill-button" bindtap="fillFormWithData">
+                    ✨ 帮我填到表单
+                </button>
+            </view>
+
+            <view class="chat-input-container">
+                <view class="input-wrapper">
+                    <textarea class="chat-input" placeholder="描述您的任务需求..." value="{{chatInput}}" bindinput="handleChatInput" disabled="{{isLoading}}" auto-height maxlength="500" />
+                    <view class="voice-wrapper" bindtap="toggleRecording">
+                        <view wx:if="{{isRecording}}" class="voice-bg {{isRecording ? 'voice-bg-active' : ''}}"></view>
+                        <image src="/assets/icons/microphone-svgrepo-com.svg" class="voice-icon" mode="aspectFit" />
+                    </view>
+                </view>
+
+                <image src="/assets/icons/send-svgrepo-com.svg" class="send-icon" bindtap="sendChatMessage" mode="aspectFit" />
+            </view>
+
+        </view>
+    </view>
 </view>
 <bottom-nav></bottom-nav>

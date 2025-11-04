@@ -45,7 +45,7 @@ $gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
-    
+
     // 添加微妙的边框渐变
     &::before {
         content: '';
@@ -58,16 +58,16 @@ $gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         opacity: 0;
         transition: opacity 0.3s ease;
     }
-    
+
     &:focus-within::before {
         opacity: 1;
     }
-    
+
     // 隐藏的字段不显示
     &.hidden {
         display: none;
     }
-    
+
     // 显示时才添加边距
     &.visible {
         margin-bottom: 24rpx;
@@ -81,7 +81,7 @@ $gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
     font-weight: 600;
     display: block;
     position: relative;
-    
+
     &::after {
         content: '';
         position: absolute;
@@ -105,7 +105,7 @@ textarea {
     transition: all 0.3s ease;
     width: 100%;
     color: $text-color;
-    
+
     &::placeholder {
         color: #a0a0a0;
     }
@@ -138,7 +138,7 @@ textarea {
     margin-top: 16rpx;
     transition: all 0.3s ease;
     cursor: pointer;
-    
+
     &:active {
         background: #f0f2f5;
         border-color: $primary-color;
@@ -161,7 +161,7 @@ button {
     box-shadow: 0 12rpx 32rpx rgba(102, 126, 234, 0.3);
     position: relative;
     overflow: hidden;
-    
+
     &::before {
         content: '';
         position: absolute;
@@ -172,7 +172,7 @@ button {
         background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
         transition: left 0.5s ease;
     }
-    
+
     &:active::before {
         left: 100%;
     }
@@ -238,6 +238,7 @@ button {
         transform: translate(-50%, -50%) scale(0.8);
         opacity: 0;
     }
+
     to {
         transform: translate(-50%, -50%) scale(1);
         opacity: 1;
@@ -351,75 +352,75 @@ button {
 
 /* 悬浮AI助手按钮 */
 .ai-assistant-btn {
-  position: fixed;
-  bottom: 200rpx;
-  right: 30rpx;
-  width: 120rpx;
-  height: 120rpx;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 50%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 8rpx 24rpx rgba(102, 126, 234, 0.4);
-  z-index: 100;
-  transition: all 0.3s ease;
+    position: fixed;
+    bottom: 200rpx;
+    right: 30rpx;
+    width: 120rpx;
+    height: 120rpx;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8rpx 24rpx rgba(102, 126, 234, 0.4);
+    z-index: 100;
+    transition: all 0.3s ease;
 
-  &:active {
-    transform: scale(0.95);
-  }
+    &:active {
+        transform: scale(0.95);
+    }
 }
 
 .ai-icon {
-  font-size: 32rpx;
-  margin-bottom: 8rpx;
+    font-size: 32rpx;
+    margin-bottom: 8rpx;
 }
 
 .ai-text {
-  font-size: 20rpx;
-  color: white;
-  font-weight: bold;
+    font-size: 20rpx;
+    color: white;
+    font-weight: bold;
 }
 
 /* 聊天弹窗 */
 .chat-popup {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 1000;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
 }
 
 .chat-mask {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
 }
 
 .chat-content {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 80%;
-  background: white;
-  border-radius: 0 0 20rpx 20rpx;
-  display: flex;
-  flex-direction: column;
-  animation: slideDown 0.3s ease;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 80%;
+    background: white;
+    border-radius: 0 0 20rpx 20rpx;
+    display: flex;
+    flex-direction: column;
+    animation: slideDown 0.3s ease;
 }
 
 @keyframes slideDown {
-  from {
-    transform: translateY(-100%);
-  }
+    from {
+        transform: translateY(-100%);
+    }
 
-  to {
-    transform: translateY(0);
-  }
+    to {
+        transform: translateY(0);
+    }
 }
 
 .chat-header {
@@ -456,168 +457,240 @@ button {
 }
 
 .chat-messages {
-  flex: 1;
-  overflow-y: auto;
-  gap: 20rpx;
-  height: 100%;
-  width: 96%;
-  align-self: center;
+    flex: 1;
+    overflow-y: auto;
+    gap: 20rpx;
+    height: 100%;
+    width: 96%;
+    align-self: center;
 }
 
 .message {
-  display: inline-block;
-  clear: both;
-  max-width: 80%;
-  padding: 20rpx;
-  margin-bottom: 20rpx;
-  border-radius: 20rpx;
-  word-break: break-word;
-  white-space: pre-wrap;
-  background: #f0f0f0;
-  font-size: 28rpx;
-  line-height: 1.6;
+    display: inline-block;
+    clear: both;
+    max-width: 80%;
+    padding: 20rpx;
+    margin-bottom: 20rpx;
+    border-radius: 20rpx;
+    word-break: break-word;
+    white-space: pre-wrap;
+    background: #f0f0f0;
+    font-size: 28rpx;
+    line-height: 1.6;
 }
 
 .message.user {
-  float: right;
-  background: #ff4d4f;
-  color: white;
-  border-bottom-right-radius: 8rpx;
+    float: right;
+    background: #ff4d4f;
+    color: white;
+    border-bottom-right-radius: 8rpx;
 }
 
 .message.ai {
-  float: left;
-  background: #f0f0f0;
-  color: #333;
-  border-bottom-left-radius: 8rpx;
+    float: left;
+    background: #f0f0f0;
+    color: #333;
+    border-bottom-left-radius: 8rpx;
 }
 
 
 .message-content {
-  font-size: 28rpx;
-  line-height: 1.5;
-  margin-bottom: 8rpx;
-  word-wrap: break-word;
-  word-break: break-all;
-  white-space: pre-wrap;
-  width: 100%;
+    font-size: 28rpx;
+    line-height: 1.5;
+    margin-bottom: 8rpx;
+    word-wrap: break-word;
+    word-break: break-all;
+    white-space: pre-wrap;
+    width: 100%;
 }
 
 rich-text {
-  font-size: 28rpx;
-  color: #333;
-  line-height: 1.6;
-  word-break: break-word;
-  width: 100%;
-  display: block;
-  max-width: 100%;
-  overflow-wrap: break-word;
-  word-wrap: break-word;
-  box-sizing: border-box;
+    font-size: 28rpx;
+    color: #333;
+    line-height: 1.6;
+    word-break: break-word;
+    width: 100%;
+    display: block;
+    max-width: 100%;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    box-sizing: border-box;
 }
 
 .message-time {
-  font-size: 20rpx;
-  opacity: 0.7;
+    font-size: 20rpx;
+    opacity: 0.7;
 }
 
 /* 加载动画 */
 .loading-dots {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20rpx;
-  gap: 8rpx;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20rpx;
+    gap: 8rpx;
 }
 
 .loading-dot {
-  width: 12rpx;
-  height: 12rpx;
-  border-radius: 50%;
-  background: #999;
-  animation: loadingDot 1.4s infinite ease-in-out both;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20rpx;
-  color: #999;
+    width: 12rpx;
+    height: 12rpx;
+    border-radius: 50%;
+    background: #999;
+    animation: loadingDot 1.4s infinite ease-in-out both;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20rpx;
+    color: #999;
 }
 
 .loading-dot:nth-child(1) {
-  animation-delay: -0.32s;
+    animation-delay: -0.32s;
 }
 
 .loading-dot:nth-child(2) {
-  animation-delay: -0.16s;
+    animation-delay: -0.16s;
 }
 
 @keyframes loadingDot {
 
-  0%,
-  80%,
-  100% {
-    transform: scale(0.8);
-    opacity: 0.3;
-  }
+    0%,
+    80%,
+    100% {
+        transform: scale(0.8);
+        opacity: 0.3;
+    }
 
-  40% {
-    transform: scale(1.2);
-    opacity: 1;
-  }
+    40% {
+        transform: scale(1.2);
+        opacity: 1;
+    }
 }
 
 .fill-button-container {
-  padding: 20rpx;
-  border-top: 1rpx solid #eee;
+    padding: 20rpx;
+    border-top: 1rpx solid #eee;
 }
 
 .fill-button {
-  width: 100%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 12rpx;
-  padding: 24rpx;
-  font-size: 28rpx;
-  font-weight: bold;
-  margin: 0;
+    width: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 12rpx;
+    padding: 24rpx;
+    font-size: 28rpx;
+    font-weight: bold;
+    margin: 0;
 }
 
 .chat-input-container {
-  display: flex;
-  padding: 20rpx;
-  gap: 20rpx;
-  border-top: 1rpx solid #eee;
-  align-items: center;
+    display: flex;
+    align-items: center;
+    padding: 12rpx 24rpx;
+    background: #fff;
+    border-top: 1px solid #eee;
+    gap: 16rpx;
+    height: 100rpx;
 }
 
+/* 输入框外层 */
+.input-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    background: #f7f7f8;
+    border-radius: 50rpx;
+    padding: 0 24rpx;
+    height: 88rpx;
+    position: relative;
+    box-sizing: border-box;
+}
+
+/* 输入框 */
 .chat-input {
-  flex: 1;
-  padding: 20rpx;
-  border: 1rpx solid #ddd;
-  border-radius: 25rpx;
-  font-size: 28rpx;
-  background: #f9f9f9;
-  min-height: 80rpx;
-  max-height: 200rpx;
-  word-wrap: break-word;
-  word-break: break-all;
-  white-space: pre-wrap;
-  resize: none;
-  overflow-y: auto;
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 28rpx;
+    color: #333;
+    line-height: 1.6;
+    resize: none;
+    height: 100%;
+    outline: none;
 }
 
-.send-button {
-  max-width: 20%;
-  padding: 20rpx 30rpx;
-  background: $primary-color;
-  color: white;
-  border: none;
-  border-radius: 25rpx;
-  font-size: 28rpx;
-  margin: 0;
-  white-space: nowrap;
+/* =============================== */
+/* 🎤 麦克风部分整体容器：真正居中基线 */
+.voice-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 72rpx;
+    height: 72rpx;
+    margin-left: 12rpx;
 }
+
+/* 背景圆圈（录音时显示） */
+.voice-bg {
+    position: absolute;
+    inset: 0; // 完全铺满容器
+    border-radius: 50%;
+    background: rgba(76, 255, 120, 0.25);
+    z-index: 1;
+    animation: softPulse 2s ease-in-out infinite;
+}
+
+/* 呼吸扩散动画（去掉 translateY） */
+@keyframes softPulse {
+    0% {
+        transform: scale(1);
+        opacity: 0.8;
+        background: rgba(76, 255, 120, 0.25);
+    }
+
+    50% {
+        transform: scale(1.15);
+        opacity: 1;
+        background: rgba(76, 255, 120, 0.45);
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 0.8;
+        background: rgba(76, 255, 120, 0.25);
+    }
+}
+
+/* 麦克风图标 */
+.voice-icon {
+    width: 50rpx;
+    height: 50rpx;
+    opacity: 0.9;
+    z-index: 2;
+    transition: all 0.2s ease;
+}
+
+.voice-icon:active {
+    transform: scale(0.9);
+    opacity: 1;
+}
+
+/* =============================== */
+/* ✈️ 发送图标 */
+.send-icon {
+    width: 70rpx;
+    height: 70rpx;
+    opacity: 0.85;
+    transition: all 0.15s ease-in-out;
+}
+
+.send-icon:active {
+    opacity: 1;
+    transform: scale(0.9);
+}
+
 
 .icon-suggest {
     width: 40rpx;
@@ -628,14 +701,17 @@ rich-text {
     cursor: pointer;
     transition: filter 0.2s;
 }
+
 .icon-suggest:active {
     filter: brightness(0.7);
 }
+
 .icon-loading {
     display: flex;
     align-items: center;
     margin-left: 8rpx;
 }
+
 .icon-loading .loading-dot {
     width: 10rpx;
     height: 10rpx;
@@ -644,12 +720,30 @@ rich-text {
     margin: 0 2rpx;
     animation: loadingDot 1.4s infinite ease-in-out both;
 }
-.icon-loading .loading-dot:nth-child(1) { animation-delay: -0.32s; }
-.icon-loading .loading-dot:nth-child(2) { animation-delay: -0.16s; }
-@keyframes loadingDot {
-    0%, 80%, 100% { transform: scale(0.8); opacity: 0.3; }
-    40% { transform: scale(1.2); opacity: 1; }
+
+.icon-loading .loading-dot:nth-child(1) {
+    animation-delay: -0.32s;
 }
+
+.icon-loading .loading-dot:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+@keyframes loadingDot {
+
+    0%,
+    80%,
+    100% {
+        transform: scale(0.8);
+        opacity: 0.3;
+    }
+
+    40% {
+        transform: scale(1.2);
+        opacity: 1;
+    }
+}
+
 .icon-confirm {
     font-size: 32rpx;
     color: #43a047;
@@ -657,6 +751,7 @@ rich-text {
     cursor: pointer;
     transition: color 0.2s;
 }
+
 .icon-cancel {
     font-size: 32rpx;
     color: #e53935;
@@ -664,6 +759,7 @@ rich-text {
     cursor: pointer;
     transition: color 0.2s;
 }
+
 .suggest-reason {
     font-size: 24rpx;
     color: #888;
@@ -672,15 +768,22 @@ rich-text {
     white-space: normal;
     word-break: break-all;
 }
+
 .highlighted {
     background: #fffde7 !important;
     border-color: #ffe082 !important;
     transition: background 0.5s, border-color 0.5s;
     animation: highlightFade 1.2s;
 }
+
 @keyframes highlightFade {
-    0% { background: #fff9c4; }
-    100% { background: #fffde7; }
+    0% {
+        background: #fff9c4;
+    }
+
+    100% {
+        background: #fffde7;
+    }
 }
 
 .ai-question {

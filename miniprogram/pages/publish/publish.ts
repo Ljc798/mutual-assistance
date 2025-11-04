@@ -91,6 +91,9 @@ Page({
         highlightDetail: false,
         aiQuestion: '', // 价格估算AI问题
         summaryQuestion: '', // 简介生成AI问题
+        isRecording: false,
+        voiceLevel: 1, // 模拟音量大小
+        voiceFilePath: '', // 存储录音后的文件路径
     },
 
     // 处理任务分类选择
@@ -428,8 +431,11 @@ Page({
 
     // 发送聊天消息
     async sendChatMessage() {
-        const { chatInput, chatMessages, conversationId } = this.data;
-        if (!chatInput.trim()) return;
+        const { chatInput, chatMessages, conversationId, voiceFilePath } = this.data;
+        if (!chatInput.trim() && !voiceFilePath) {
+            wx.showToast({ title: "请输入内容或录制语音", icon: "none" });
+            return;
+        }
 
         const app = getApp();
         const token = wx.getStorageSync("token");
@@ -472,6 +478,37 @@ Page({
             user_input: chatInput
         };
 
+        // 如果有录音文件则上传
+        let voiceUrl = '';
+        if (voiceFilePath) {
+            try {
+                wx.showLoading({ title: '上传语音中...' });
+                const uploadRes = await new Promise((resolve, reject) => {
+                    wx.uploadFile({
+                        url: `${BASE_URL}/upload/audio`, // 你自己后端接口
+                        filePath: voiceFilePath,
+                        name: 'file',
+                        header: { Authorization: `Bearer ${token}` },
+                        success: resolve,
+                        fail: reject,
+                    });
+                });
+                const uploadData = JSON.parse((uploadRes as any).data);
+                voiceUrl = uploadData.url || '';
+                wx.hideLoading();
+            } catch (err) {
+                wx.hideLoading();
+                wx.showToast({ title: '语音上传失败', icon: 'none' });
+                console.error('语音上传失败:', err);
+            }
+        }
+
+        // 附加 voice_url 字段
+        if (voiceUrl) {
+            payload.voice_url = voiceUrl;
+        }
+
+
         try {
             // 调用后端APItest
             const response = await new Promise((resolve, reject) => {
@@ -506,7 +543,8 @@ Page({
                     this.setData({
                         chatMessages: [...this.data.chatMessages, aiMessage],
                         conversationId: data.conversation_id || conversationId,
-                        isLoading: false
+                        isLoading: false,
+                        voiceFilePath: '', // 清空语音
                     });
 
                     // 滚动到底部
@@ -515,7 +553,8 @@ Page({
                     // 如果有JSON数据，只更新conversationId和loading状态
                     this.setData({
                         conversationId: data.conversation_id || conversationId,
-                        isLoading: false
+                        isLoading: false,
+                        voiceFilePath: '', // 清空语音
                     });
 
                     // 滚动到底部（格式化消息会在checkForJsonData中添加）
@@ -833,4 +872,30 @@ Page({
     cancelSummarySuggest() {
         this.setData({ detail: this.data.originalDetail, showSummaryConfirm: false, highlightDetail: false, summaryQuestion: '' });
     },
+
+    toggleRecording() {
+        const recorderManager = wx.getRecorderManager();
+        if (this.data.isRecording) {
+            recorderManager.stop();
+            this.setData({ isRecording: false });
+            wx.showToast({ title: '录音结束，准备发送...', icon: 'none' });
+        } else {
+            recorderManager.start({
+                duration: 60000,
+                sampleRate: 44100,
+                encodeBitRate: 64000,
+                format: 'mp3',
+            });
+            this.setData({ isRecording: true });
+            wx.showToast({ title: '开始录音', icon: 'none' });
+
+            recorderManager.onStop((res) => {
+                console.log('录音文件:', res.tempFilePath);
+                this.setData({ voiceFilePath: res.tempFilePath });
+                // 可选：自动触发发送
+                // this.sendChatMessage();
+            });
+        }
+    }
+
 });

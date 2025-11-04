@@ -23,6 +23,7 @@ Page({
         pageSize: 10,
         hasMore: true,
         selectedSchoolName: '',
+        selectedSchoolId: 1271,
     },
 
     onLoad() {
@@ -31,7 +32,7 @@ Page({
         if (userInfo?.id) {
             // ✅ 已登录，设置数据后再加载
             this.setData({ userInfo }, () => {
-                this.fetchPosts(false); // 带 user_id 获取是否点赞等
+                this.fetchPosts(false);
                 this.getCheckinStatus();
             });
         } else {
@@ -50,8 +51,10 @@ Page({
             return;
         }
 
-        const selectedSchoolName = app.globalData.selectedSquareSchoolName || userInfo.school_name || '';
-        const selectedSchoolId = app.globalData.selectedSquareSchoolId || userInfo.school_id || null;
+        const selectedSchoolName =
+            app.globalData.selectedSquareSchoolName || userInfo.school_name || "未选择学校";
+        const selectedSchoolId =
+            app.globalData.selectedSquareSchoolId || userInfo.school_id || null;
 
         this.setData({
             userInfo,
@@ -200,7 +203,7 @@ Page({
                             created_time: this.formatTime(post.created_time)
                         };
                     });
-                    
+
 
                     this.setData({
                         posts: isLoadMore ? [...this.data.posts, ...newPosts] : newPosts,
@@ -385,7 +388,7 @@ Page({
     async submitPost() {
         const app = getApp();
         const user_id = app.globalData.userInfo?.id;
-        const school_id = app.globalData.selectedSquareSchoolId;
+        const school_id = this.data.selectedSchoolId;
         const token = wx.getStorageSync("token");
 
         if (!user_id || !school_id) {   // 👈 这里也加校验

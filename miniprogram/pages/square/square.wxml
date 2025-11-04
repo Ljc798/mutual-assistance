@@ -109,6 +109,8 @@
             <!-- 发布按钮 -->
             <button class="submit-btn" bindtap="submitPost">发布</button>
             <text class="close-btn" bindtap="closePostModal">×</text>
+
+            <text class="warn-text">发布的帖子为广场页所选中的学校</text>
         </view>
     </view>
 
