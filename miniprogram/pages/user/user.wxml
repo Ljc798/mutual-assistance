@@ -44,13 +44,13 @@
         </view>
     </view>
 
-    <view class="vip-card" wx:if="{{isVip}}">
+    <view class="vip-card" wx:if="{{isVip}}" bindtap="goToVipPage">
         <image class="vip-badge" src="/assets/icons/huiyuanVIP.svg" />
         <view class="vip-info">
             <text class="vip-label">VIP 用户</text>
             <text class="vip-expire">到期时间：{{vip_expire_time}}</text>
         </view>
-        <button class="vip-renew-btn" size="mini" bindtap="goToVipPage">续 费</button>
+        <button class="vip-renew-btn" size="mini">续 费</button>
     </view>
 
     <!-- 非 VIP 展示普通盒子 -->

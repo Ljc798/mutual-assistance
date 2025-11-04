@@ -79,3 +79,14 @@
     font-size: 26rpx;
     color: #faad14;
 }
+
+.back-btn:active {
+    transform: scale(0.96);
+    transition: all 0.1s ease;
+}
+
+.notification-card:active {
+    opacity: 0.7;
+    transform: scale(0.98);
+    transition: all 0.1s ease;
+}

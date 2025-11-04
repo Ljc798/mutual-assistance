@@ -24,15 +24,15 @@
     <!-- 动态内容展示区 -->
     <view class="content">
         <block wx:for="{{posts}}" wx:key="post_id">
-            <view class="post-card {{item.is_pinned ? 'pinned-post' : ''}}" bindtap="goToDetail" data-postid="{{item.id}}">
+            <view class="post-card touch-large {{item.is_pinned ? 'pinned-post' : ''}}" bindtap="goToDetail" data-postid="{{item.id}}">
                 <!-- 用户信息 -->
                 <view class="post-header">
-                    <image class="user-avatar" src="{{item.avatar_url}}" mode="aspectFill" catchtap="goToProfile" data-userid="{{item.user_id}}"/>
-                    <view class="username-area">
+                    <image class="user-avatar touch-small" src="{{item.avatar_url}}" mode="aspectFill" catchtap="goToProfile" data-userid="{{item.user_id}}"/>
+                    <view class="username-area touch-small">
                         <text class="username {{item.isVip ? 'vip-username' : ''}}" catchtap="goToProfile" data-userid="{{item.user_id}}">{{item.username}}</text>
                         <image wx:if="{{item.isVip}}" src="/assets/icons/vip-2.svg" class="vip-badge" />
                     </view>
-                    <view class="more-button" catchtap="onReportTap" data-postid="{{item.id}}">
+                    <view class="more-button touch-small" catchtap="onReportTap" data-postid="{{item.id}}">
                         <image src="/assets/icons/menu-dots-svgrepo-com.svg" class="more-icon" />
                     </view>
                 </view>
@@ -63,7 +63,7 @@
                             <image src="{{item.isLiked ? '/assets/icons/heart-fill.svg' : '/assets/icons/heart-line.svg'}}" />
                             <text>{{item.likes_count}}</text>
                         </view>
-                        <view class="comments">
+                        <view class="comments touch-small">
                             <image src="/assets/icons/comment-3-svgrepo-com.svg" />
                             <text>{{item.comments_count}}</text>
                         </view>

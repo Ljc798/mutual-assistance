@@ -397,3 +397,22 @@
     display: flex;
     margin-left: 10rpx;
 }
+
+.user-info:active,
+.vip-card:active,
+.vip-box:active {
+    opacity: 0.7;
+    transform: scale(0.99);
+    transition: all 0.1s ease;
+}
+
+.box:active {
+    opacity: 0.7;
+    transform: scale(0.98);
+    transition: all 0.1s ease;
+}
+
+.action-item:active {
+    transform: scale(0.96);
+    transition: all 0.1s ease;
+}

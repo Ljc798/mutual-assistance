@@ -392,3 +392,23 @@
     background-color: #007aff;
     color: #fff;
 }
+
+.user-avatar:active,
+.username-area:active,
+.comment-avatar:active,
+.sub-comment-avatar:active,
+.comment-username:active,
+.cancel-btn:active,
+.submit-btn:active,
+.back-btn:active {
+  opacity: 0.7;
+  transform: scale(0.96);
+  transition: all 0.1s ease;
+}
+
+.comment-text:active
+.fake-input-bar:active {
+    opacity: 0.7;
+    transform: scale(0.98);
+    transition: all 0.1s ease;
+}

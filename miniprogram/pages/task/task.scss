@@ -271,8 +271,10 @@
     font-size: 26rpx;
     color: white;
     border-radius: 30rpx;
-    white-space: nowrap; /* ❗ 不换行 */
-    display: inline-block; /* 保证nowrap生效 */
+    white-space: nowrap;
+    /* ❗ 不换行 */
+    display: inline-block;
+    /* 保证nowrap生效 */
 }
 
 .comment-disabled {
@@ -289,10 +291,18 @@
 .cancel-bid-button {
     margin-top: 8rpx;
     font-size: 24rpx;
-    color: #ff4d4f; /* 红色文字 */
+    color: #ff4d4f;
+    /* 红色文字 */
     background: transparent;
     border: 1rpx solid #ff4d4f;
     border-radius: 20rpx;
     padding: 4rpx 12rpx;
     display: inline-block;
-  }
+}
+
+.comment-avatar:active,
+.username:active {
+    opacity: 0.7;
+    transform: scale(0.96);
+    transition: all 0.1s ease;
+}

@@ -191,7 +191,6 @@ Page({
                             url: img.url,
                             status: img.status || "checking"
                         }));
-
                         return {
                             ...post,
                             images: reviewedImages,
@@ -201,6 +200,7 @@ Page({
                             created_time: this.formatTime(post.created_time)
                         };
                     });
+                    
 
                     this.setData({
                         posts: isLoadMore ? [...this.data.posts, ...newPosts] : newPosts,

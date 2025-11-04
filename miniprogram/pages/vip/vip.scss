@@ -186,3 +186,9 @@
 .blink {
     animation: blinkEffect 1.6s infinite;
 }
+
+.pay-btn:active,
+.plan:active {
+    transform: scale(0.95);
+    transition: all 0.1s ease;
+}

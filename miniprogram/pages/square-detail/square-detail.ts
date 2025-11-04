@@ -65,6 +65,8 @@ Page({
                         isVip,
                         created_time: this.formatTime(post.created_time)
                     };
+                    console.log(post);
+                    
 
                     this.setData({ post, isLoading: false });
                 } else {

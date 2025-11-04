@@ -104,34 +104,51 @@ router.post("/upload-image", upload.single("image"), async (req, res) => {
 
 // COS 审核结果回调接口
 router.post("/image-review", express.json(), async (req, res) => {
-    res.status(200).send("OK"); // 必须尽快响应 200
+    // ✅ 立即返回 200
+    res.status(200).send("OK");
 
     try {
         const {
             data
         } = req.body;
+
         if (!data || !data.url || data.forbidden_status === undefined) {
-            console.warn("⚠️ 回调格式缺失:", req.body);
+            console.warn("⚠️ 回调格式异常:", req.body);
             return;
         }
 
-        const objectKey = data.url.split(".myqcloud.com/")[1]; // 提取 key
+        // ✅ 提取 object key（去掉签名参数）
+        const urlPart = data.url.split(".myqcloud.com/")[1] || "";
+        const objectKey = urlPart.split("?")[0];
+
+        // ✅ 审核状态
         const auditStatus = data.forbidden_status === 0 ? "pass" : "fail";
 
-        const [result] = await db.query(
-            `UPDATE square_images SET audit_status = ? WHERE image_url LIKE ?`,
-            [auditStatus, `%${objectKey}`]
+        // ✅ 使用连接池独立连接执行更新
+        const conn = await db.getConnection();
+        const [result] = await conn.query(
+            `UPDATE square_images 
+         SET audit_status = ? 
+         WHERE image_url LIKE ?`,
+            [auditStatus, `%${objectKey}%`]
         );
+        conn.release();
 
-        console.log("✅ 审核回调成功：", {
+        console.log("✅ COS 回调成功:", {
+            url: data.url,
             objectKey,
             auditStatus,
             affectedRows: result.affectedRows
         });
+
+        if (result.affectedRows === 0) {
+            console.warn("⚠️ 未匹配到对应图片记录:", objectKey);
+        }
     } catch (err) {
-        console.error("❌ 审核处理异常:", err);
+        console.error("❌ COS 回调异常:", err);
     }
 });
+
 
 
 module.exports = router;
