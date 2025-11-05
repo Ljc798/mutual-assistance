@@ -884,8 +884,9 @@ Page({
         wx.showLoading({ title: '上传语音中...' });
 
         try {
+            const app = getApp();
             const token = wx.getStorageSync('token');
-            const userId = wx.getStorageSync('userId');
+            const userId = app.globalData.userInfo?.id || 0;
 
             const uploadRes = await new Promise((resolve, reject) => {
                 wx.uploadFile({

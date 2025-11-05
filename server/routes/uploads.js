@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const COS = require("cos-nodejs-sdk-v5");
 const multer = require("multer");
+import { v4 as uuidv4 } from "uuid";
 const path = require("path");
 const dotenv = require("dotenv");
 const db = require("../config/db")
@@ -112,14 +113,25 @@ router.post("/upload-voice", upload.single("voice"), async (req, res) => {
             });
         }
 
-        const userId = req.body.userId || "anonymous";
-        const conversationId = req.body.conversationId || "temp";
+        // 🧠 从 body 获取 userId、conversation_id
+        let {
+            userId,
+            conversation_id
+        } = req.body;
+        userId = userId && !isNaN(userId) ? Number(userId) : null;
         const extension = path.extname(file.originalname) || ".mp3";
 
-        // 生成文件名
-        const fileName = `voice/${userId}/${conversationId}/${Date.now()}_${Math.random()
-            .toString(36)
-            .substr(2, 8)}${extension}`;
+        // ✅ 如果没有 conversation_id，先创建一条会话
+        if (!conversation_id) {
+            const [result] = await db.query(
+                `INSERT INTO ai_conversation (user_id, title) VALUES (?, ?)`,
+                [userId, "语音会话"]
+            );
+            conversation_id = result.insertId; // 拿到主键ID
+        }
+
+        // ✅ 生成唯一文件名
+        const fileName = `voice/${userId}/${conversation_id}/${Date.now()}_${uuidv4()}${extension}`;
 
         // ✅ 上传到 COS
         await uploadToCOS({
@@ -130,22 +142,28 @@ router.post("/upload-voice", upload.single("voice"), async (req, res) => {
             ContentType: file.mimetype,
         });
 
-        // 拼接公网访问 URL
+        // ✅ 拼接公网 URL
         const voiceUrl = `https://${bucketName}.cos.${region}.myqcloud.com/${fileName}`;
 
-        await db.query(
-            "INSERT INTO ai_message (conversation_id, user_id, role, message_type) VALUES (?, ?, 'user', 'voice')",
-            [conversationId, userId]
+        // ✅ 插入消息记录
+        const [msgResult] = await db.query(
+            "INSERT INTO ai_message (conversation_id, user_id, role, message_type, content) VALUES (?, ?, 'user', 'voice', '[语音消息]')",
+            [conversation_id, userId]
         );
 
-        const [msg] = await db.query("SELECT LAST_INSERT_ID() as id");
+        const message_id = msgResult.insertId;
+
+        // ✅ 插入附件表
         await db.query(
             "INSERT INTO ai_attachment (message_id, file_url, file_type) VALUES (?, ?, 'voice')",
-            [msg[0].id, voiceUrl]
+            [message_id, voiceUrl]
         );
 
+        // ✅ 返回结果
         return res.json({
             success: true,
+            conversation_id,
+            message_id,
             voiceUrl,
         });
     } catch (err) {
