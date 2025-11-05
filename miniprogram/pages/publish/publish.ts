@@ -937,7 +937,7 @@ Page({
         const payload = {
             tag: 'field_filling',
             voice: voiceUrl,
-            user_input: '根据我的语音填充字段', // 语音消息没有文本
+            user_input: '根据我的语音填充字段',
             conversation_id: this.data.conversationId,
         };
 

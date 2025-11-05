@@ -113,11 +113,11 @@ router.post("/upload-voice", upload.single("voice"), async (req, res) => {
         }
 
         const userId = req.body.userId || "anonymous";
-        const taskId = req.body.taskId || "temp";
+        const conversationId = req.body.conversationId || "temp";
         const extension = path.extname(file.originalname) || ".mp3";
 
         // 生成文件名
-        const fileName = `voice/${userId}/${taskId}_${Date.now()}_${Math.random()
+        const fileName = `voice/${userId}/${conversationId}/${Date.now()}_${Math.random()
             .toString(36)
             .substr(2, 8)}${extension}`;
 
@@ -132,7 +132,17 @@ router.post("/upload-voice", upload.single("voice"), async (req, res) => {
 
         // 拼接公网访问 URL
         const voiceUrl = `https://${bucketName}.cos.${region}.myqcloud.com/${fileName}`;
-        console.log("✅ 语音上传成功:", voiceUrl);
+
+        await db.query(
+            "INSERT INTO ai_message (conversation_id, user_id, role, message_type) VALUES (?, ?, 'user', 'voice')",
+            [conversationId, userId]
+        );
+
+        const [msg] = await db.query("SELECT LAST_INSERT_ID() as id");
+        await db.query(
+            "INSERT INTO ai_attachment (message_id, file_url, file_type) VALUES (?, ?, 'voice')",
+            [msg[0].id, voiceUrl]
+        );
 
         return res.json({
             success: true,
