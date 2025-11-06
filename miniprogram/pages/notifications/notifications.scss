@@ -6,9 +6,21 @@
     z-index: 10;
 }
 
+.clean-aera {
+    display: flex;
+    align-items: center;
+    gap: 10rpx;
+}
+
 .clean {
-    width: 50rpx;
-    height: 50rpx;
+    width: 40rpx;
+    height: 40rpx;
+    margin-left: 55rpx;
+}
+
+.clean-text {
+    font-weight: 400;
+    font-size: small;
 }
 
 .clean:active {

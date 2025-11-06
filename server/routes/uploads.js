@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const COS = require("cos-nodejs-sdk-v5");
 const multer = require("multer");
-import { v4 as uuidv4 } from "uuid";
+const { v4: uuidv4 } = require('uuid');
 const path = require("path");
 const dotenv = require("dotenv");
 const db = require("../config/db")
