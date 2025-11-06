@@ -87,17 +87,16 @@
     margin-bottom: 20rpx;
 }
 
-.category-item:active
-.location-icon:active {
+.category-item:active .location-icon:active {
     transform: scale(0.96);
     transition: all 0.1s ease;
 }
 
 .task-item:active,
 .filter-item:active {
-  opacity: 0.7;
-  transform: scale(0.99);
-  transition: all 0.1s ease;
+    opacity: 0.7;
+    transform: scale(0.99);
+    transition: all 0.1s ease;
 }
 
 .category-icon {
@@ -155,13 +154,6 @@
     align-items: flex-end;
     justify-content: space-between;
     width: 30%;
-}
-
-.task-reward {
-    font-size: 28rpx;
-    font-weight: bold;
-    color: #FF416C;
-    /* 报酬的颜色 */
 }
 
 .task-status {
@@ -243,4 +235,30 @@
 .filter-text {
     font-size: 26rpx;
     line-height: 1;
+}
+
+.task-price {
+    margin-top: 12rpx;
+    text-align: right;
+    font-weight: bold;
+}
+
+.price-fixed {
+    color: #fa541c;
+}
+
+.price-processing {
+    color: #fa8c16;
+}
+
+.price-bidding {
+    color: #faad14;
+}
+
+.price-deal {
+    color: #1890ff;
+}
+
+.price-finished {
+    color: #52c41a;
 }

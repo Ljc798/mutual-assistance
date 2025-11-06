@@ -40,6 +40,7 @@ interface ExtractedData {
     DDL?: string;
     position?: string;
     address?: string;
+    mode?: string;
     reward?: string;
 }
 
@@ -93,6 +94,7 @@ Page({
         summaryQuestion: '', // 简介生成AI问题
         isRecording: false,
         voiceFilePath: '', // 存储录音后的文件路径
+        mode: 'fixed',
     },
 
     // 处理任务分类选择
@@ -217,6 +219,12 @@ Page({
         this.checkFormValidity();
     },
 
+    // 切换模式
+    setMode(e) {
+        const mode = e.currentTarget.dataset.mode;
+        this.setData({ mode });
+    },
+
     // 校验表单完整性，决定icon显示
     checkFormValidity() {
         const { title, detail, selectedCategory, reward, takeCode, takeName, takeTel, DDL, address, position } = this.data;
@@ -308,7 +316,7 @@ Page({
         const userId = app.globalData?.userInfo?.id;
         const {
             selectedCategory, position, address, DDL, title, reward,
-            detail, takeCode, takeTel, takeName
+            detail, takeCode, takeTel, takeName, mode
         } = this.data;
         const schoolId = app.globalData?.selectedTaskSchoolId || app.globalData?.userInfo?.school_id || null;
 
@@ -327,6 +335,7 @@ Page({
             takeaway_tel: takeTel || null,
             takeaway_name: takeName || '',
             publish_method: method,
+            mode: mode,
             status: method === 'pay' ? -1 : 0
         };
 

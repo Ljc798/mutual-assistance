@@ -89,9 +89,25 @@
         <view wx:if="{{summaryQuestion}}" class="ai-question">{{summaryQuestion}}</view>
     </view>
 
+    <!-- 任务模式选择 -->
+    <view class="field">
+        <text>任务模式</text>
+        <view class="mode-switch">
+            <button class="mode-btn {{mode === 'fixed' ? 'active' : ''}}" bindtap="setMode" data-mode="fixed">
+                💰 一口价
+            </button>
+            <button class="mode-btn {{mode === 'bidding' ? 'active' : ''}}" bindtap="setMode" data-mode="bidding">
+                🏷️ 竞价
+            </button>
+        </view>
+    </view>
+
     <view class="field">
         <view style="display: flex; align-items: center; justify-content: space-between;">
-            <text>报价</text>
+            <text>{{ mode === 'bidding' ? '参考价' : '任务报价' }}</text>
+            <text class="price-hint">
+                {{ mode === 'bidding' ? '接单者可在此基础上自由报价' : '接单者将直接以该价格接单' }}
+            </text>
             <view wx:if="{{showPriceSuggestIcon}}" style="margin-left: 10rpx; display: flex; align-items: center;">
                 <image wx:if="!showPriceConfirm" class="icon-suggest" src="/assets/icons/sparkle.svg" mode="aspectFit" bindtap="handlePriceSuggest" />
                 <view wx:if="{{priceSuggesting}}" class="icon-loading">

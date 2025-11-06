@@ -30,10 +30,11 @@ router.post("/create", authMiddleware, async (req, res) => {
         takeaway_code,
         takeaway_tel,
         takeaway_name,
-        publish_method // 'pay' | 'vip' | 'free'
+        publish_method, 
+        mode
     } = req.body;
 
-    if (!employer_id || !school_id || !category || !position || !address || !DDL || !title || !offer || !detail || !publish_method) {
+    if (!employer_id || !school_id || !category || !position || !address || !DDL || !title || !offer || !detail || !publish_method || !mode) {
         return res.status(400).json({
             success: false,
             message: "缺少必要参数"
@@ -86,8 +87,8 @@ router.post("/create", authMiddleware, async (req, res) => {
                 employer_id, employee_id, category, status,
                 position, address, DDL, title, offer, detail,
                 takeaway_code, takeaway_tel, takeaway_name,
-                commission, school_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                commission, school_id, mode
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
         const values = [
@@ -105,7 +106,8 @@ router.post("/create", authMiddleware, async (req, res) => {
             takeaway_tel || null,
             takeaway_name || '',
             commission,
-            school_id
+            school_id,
+            mode
         ];
 
         const [result] = await db.query(insertSQL, values);

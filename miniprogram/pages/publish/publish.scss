@@ -856,3 +856,32 @@ audio {
     transform: scale(0.95);
     transition: all 0.1s ease;
 }
+
+.mode-switch {
+    display: flex;
+    gap: 20rpx;
+    margin-top: 16rpx;
+}
+
+.mode-btn {
+    flex: 1;
+    background: #f5f5f5;
+    border-radius: 40rpx;
+    padding: 16rpx 0;
+    font-size: 28rpx;
+    border: 1px solid #ddd;
+    color: #666;
+    transition: all 0.2s ease-in-out;
+}
+
+.mode-btn.active {
+    background: linear-gradient(135deg, #67c23a, #4caf50);
+    color: white;
+    border: none;
+    box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+}
+
+.price-hint {
+    color: #999;
+    font-size: 24rpx;
+}
