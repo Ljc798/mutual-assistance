@@ -2,6 +2,7 @@
     <view class="notification-header">
         <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack" />
         <text>通知中心</text>
+        <image class="clean" src="/assets/icons/yijianyidu.svg" bindtap="handleRead"/>
     </view>
     <view class="noti">
         <view class="notification-tip">

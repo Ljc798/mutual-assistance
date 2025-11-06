@@ -91,5 +91,39 @@ Page({
                 wx.showToast({ title: "网络错误", icon: "none" });
             }
         });
+    },
+
+    handleRead() {
+        const token = wx.getStorageSync('token');
+
+        wx.request({
+            url: `${BASE_URL}/notification/mark-all-read`,
+            method: 'POST',
+            header: {
+                Authorization: `Bearer ${token}`
+            },
+            success: (res) => {
+                if (res.statusCode === 200 && res.data.success) {
+                    wx.showToast({
+                        title: res.data.message || '全部已读',
+                        icon: 'success'
+                    });
+
+                    // 👇 更新前端显示
+                    const notifications = this.data.notifications.map((n) => ({
+                        ...n,
+                        is_read: 1,
+                        background: '#f5f5f5'
+                    }));
+                    this.setData({ notifications });
+                } else {
+                    wx.showToast({ title: '操作失败', icon: 'none' });
+                }
+            },
+            fail: () => {
+                wx.showToast({ title: '网络错误', icon: 'none' });
+            }
+        });
+
     }
 });

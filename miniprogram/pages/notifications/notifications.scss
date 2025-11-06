@@ -6,6 +6,17 @@
     z-index: 10;
 }
 
+.clean {
+    width: 50rpx;
+    height: 50rpx;
+}
+
+.clean:active {
+    opacity: 0.7;
+    transform: scale(0.95);
+    transition: all 0.1s ease;
+}
+
 .notification-page {
     padding: 0 32rpx 10rpx 32rpx;
     background-color: #f9f9f9;
