@@ -69,8 +69,9 @@ router.post('/create', async (req, res) => {
         const out_trade_no = `TASK_${task_id}_EMP_${receiver_id}_${Date.now()}`;
 
         await db.query(
-            `INSERT INTO task_payments (task_id, payer_openid, receiver_id, out_trade_no, amount, status) VALUES (?, ?, ?, ?, ?, 'pending')`,
-            [task_id, openid, receiver_id, out_trade_no, amount]
+            `INSERT INTO task_payments (task_id, bid_id, payer_openid, receiver_id, out_trade_no, amount, status)
+             VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
+            [task_id, bid_id, openid, receiver_id, out_trade_no, amount]
         );
 
         // 3. 构造微信支付请求
@@ -171,6 +172,19 @@ router.post('/notify', express.raw({
         const transactionId = decryptedData.transaction_id;
         const amount = parseFloat(decryptedData.amount.total) / 100;
 
+        const [
+            [payment]
+        ] = await db.query(
+            `SELECT task_id, bid_id, receiver_id FROM task_payments WHERE out_trade_no = ?`,
+            [outTradeNo]
+        );
+        const {
+            task_id: taskId,
+            bid_id: bidId,
+            receiver_id: employeeId
+        } = payment;
+
+
         // ✅ 更新支付表
         await db.query(
             `UPDATE task_payments SET status = 'paid', paid_at = NOW(), transaction_id = ? WHERE out_trade_no = ?`,
@@ -185,9 +199,12 @@ router.post('/notify', express.raw({
 
             // ✅ 更新任务表：委派
             await db.query(
-                `UPDATE tasks SET employee_id = ?, status = 1, has_paid = 1, pay_amount = ?, payment_transaction_id = ? WHERE id = ?`,
-                [employeeId, amount, transactionId, taskId]
+                `UPDATE tasks 
+                 SET employee_id = ?, selected_bid_id = ?, status = 1, has_paid = 1, pay_amount = ?, payment_transaction_id = ? 
+                 WHERE id = ?`,
+                [employeeId, bidId, amount, transactionId, taskId]
             );
+
 
             const [
                 [task]

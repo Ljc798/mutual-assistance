@@ -40,7 +40,7 @@
         当前任务已进入{{task.status === 1 ? '进行中' : '已完成'}}状态，留言区已关闭。
     </view>
 
-    <view class="comment-section" wx:if="{{canLeaveMessage}}">
+<view class="comment-section" wx:if="{{task.mode === 'bidding' && canLeaveMessage}}">
         <view class="section-title">留言区</view>
 
         <block wx:if="{{bids.length > 0}}">
@@ -82,7 +82,7 @@
 
     <!-- 出价和接单按钮 -->
     <view wx:if="{{!isOwner}}" class="button-container">
-        <button class="bidding-button" bindtap="openPopup" wx:if="{{canLeaveMessage}}">出价</button>
+        <button class="bidding-button" bindtap="openPopup" wx:if="{{canLeaveMessage && task.mode === 'bidding'}}">出价</button>
         <button class="accept-button" bindtap="goToChat" data-targetid="{{task.employer_id}}" data-username="{{task.employer_name}}" wx:if="{{canLeaveMessage}}">聊一聊</button>
     </view>
 

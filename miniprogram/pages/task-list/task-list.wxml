@@ -29,7 +29,23 @@
                         <view wx:if="{{item.status === 0}}" class="task-status status-pending">{{item.formattedStatus}}</view>
                         <view wx:if="{{item.status === 1}}" class="task-status status-ongoing">{{item.formattedStatus}}</view>
                         <view wx:if="{{item.status === 2}}" class="task-status status-finished">{{item.formattedStatus}}</view>
-                        <text class="task-reward">¥{{item.displayPrice}}</text>
+                        <view class="task-price">
+                            <!-- 一口价任务 -->
+                            <text wx:if="{{item.mode === 'fixed' && item.status === 0}}" class="price-fixed">一口价 ¥{{item.offer}}</text>
+                            <text wx:if="{{item.mode === 'fixed' && item.status === 1}}" class="price-processing">一口价 ¥{{item.offer}}</text>
+                            <text wx:if="{{item.mode === 'fixed' && item.status === 2}}" class="price-finished">一口价 ¥{{item.offer}}</text>
+
+                            <!-- 竞价任务 -->
+                            <text wx:if="{{item.mode === 'bidding' && item.has_paid === 0}}" class="price-bidding">
+                                参考价 ¥{{item.offer}}
+                            </text>
+                            <text wx:if="{{item.mode === 'bidding' && item.has_paid === 1 && item.status !== 2}}" class="price-deal">
+                                中标价 ¥{{item.pay_amount}}
+                            </text>
+                            <text wx:if="{{item.mode === 'bidding' && item.has_paid === 1 && item.status === 2}}" class="price-finished">
+                                成交价 ¥{{item.pay_amount}}
+                            </text>
+                        </view>
                     </view>
                 </view>
             </block>
