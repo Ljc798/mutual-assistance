@@ -447,6 +447,7 @@ Page({
 
         const app = getApp();
         const token = wx.getStorageSync("token");
+        const userId = app.globalData.userInfo?.id;
 
         if (!token) {
             wx.showToast({ title: "请先登录", icon: "none" });
@@ -483,6 +484,7 @@ Page({
             reward: this.data.reward || '',
             date: this.data.date || '',
             time: this.data.time || '',
+            mode: this.data.mode || '',
             user_input: chatInput
         };
 
@@ -493,6 +495,7 @@ Page({
                     url: `${BASE_URL}/ai/extract`,
                     method: 'POST',
                     data: {
+                        userId,
                         text: JSON.stringify(payload),
                         tag: 'field_filling',
                         conversation_id: this.data.conversationId

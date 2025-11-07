@@ -9,7 +9,7 @@ const DIFY_API_KEY = process.env.AI_TASK_HELPER_API_KEY; // 在环境变量里�
 const DIFY_API_URL = "https://ai.mutualcampus.top/v1/chat-messages";
 
 // 🌟 提取任务结构字段
-router.post("/extract", async (req, res) => {
+router.post("/extract", authMiddleware, async (req, res) => {
     try {
         let {
             text,
