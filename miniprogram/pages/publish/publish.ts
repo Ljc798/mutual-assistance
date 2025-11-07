@@ -1002,6 +1002,41 @@ Page({
             console.log("docker???");
             console.log("docker???");
             console.log("docker???");
+            console.log("docker??? what the fk?");
+            console.log("docker??? what the fk?");
+            console.log("docker??? what the fk?");
+            console.log("docker??? what the fk?");
+            console.log("docker??? what the fk?");
+            console.log("docker??? what the fk?");
+            console.log("docker??? what the fk?");
+            console.log("docker??? what the fk?");
+            console.log("docker??? what the fk?");
+            console.log("docker??? what the fk?");
+            console.log("docker??? what the fk?");
+            console.log("docker??? what the fk?");
+            console.log("docker??? what the fk?");
+            console.log("docker??? what the fk?");
+            console.log("docker??? what the fk?");
+            console.log("docker??? what the fk?");
+            console.log("docker??? what the fk?");
+            console.log("docker??? what the fk?");
+            console.log("docker??? what the fk?");
+            console.log("docker??? what the fk?");
+            console.log("docker??? what the fk?");
+            console.log("docker??? what the fk?");
+            console.log("docker??? what the fk?");
+            console.log("docker??? what the fk?");
+            console.log("docker??? what the fk?");
+            console.log("docker??? what the fk?");
+            console.log("docker??? what the fk?");
+            console.log("docker??? what the fk?");
+            console.log("docker??? what the fk?");
+            console.log("docker??? what the fk?");
+            console.log("docker??? what the fk?");
+            console.log("docker??? what the fk?");
+            console.log("docker??? what the fk?");
+            console.log("docker??? what the fk?");
+            console.log("docker??? what the fk?");
             
 
             if (data.status === "ok") {
