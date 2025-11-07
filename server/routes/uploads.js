@@ -111,7 +111,7 @@ router.post("/upload-voice", upload.single("voice"), async (req, res) => {
         if (!file) {
             return res.status(400).json({
                 success: false,
-                message: "未上传文件"
+                message: "未上传文件",
             });
         }
 
@@ -122,18 +122,32 @@ router.post("/upload-voice", upload.single("voice"), async (req, res) => {
         userId = userId && !isNaN(userId) ? Number(userId) : null;
         const extension = path.extname(file.originalname) || ".mp3";
 
-        // 如果没有 conversation_id，则创建新会话
-        if (!conversation_id) {
+        // 🧠 检查是否已有本地 conversation 记录
+        let localConvId = null;
+        if (conversation_id) {
+            // 如果传的是 Dify conversation_id，则在本地查找是否存在对应记录
+            const [convRows] = await db.query(
+                `SELECT id FROM ai_conversation WHERE conversation_id = ? AND user_id = ?`,
+                [conversation_id, userId]
+            );
+            if (convRows.length > 0) {
+                localConvId = convRows[0].id;
+            }
+        }
+
+        // 🪄 如果数据库没有这条会话，则创建新会话（暂时没有 Dify conversation_id）
+        if (!localConvId) {
             const [result] = await db.query(
                 `INSERT INTO ai_conversation (user_id, title, created_at) VALUES (?, ?, NOW())`,
                 [userId, "语音会话"]
             );
-            conversation_id = result.insertId;
+            localConvId = result.insertId;
         }
 
-        // 生成文件名路径：voice/<user>/<conversation>/<uuid>.mp3
-        const fileName = `voice/${userId}/${conversation_id}/${uuidv4()}${extension}`;
+        // ✅ 生成唯一文件名
+        const fileName = `voice/${userId}/${localConvId}/${uuidv4()}${extension}`;
 
+        // ✅ 上传至 COS
         await uploadToCOS({
             Bucket: bucketName,
             Region: region,
@@ -142,27 +156,29 @@ router.post("/upload-voice", upload.single("voice"), async (req, res) => {
             ContentType: file.mimetype,
         });
 
+        // ✅ 拼接公网访问 URL
         const voiceUrl = `https://${bucketName}.cos.${region}.myqcloud.com/${fileName}`;
 
-        // 插入 ai_message
+        // ✅ 插入消息表
         const [msgResult] = await db.query(
             `INSERT INTO ai_message (conversation_id, user_id, role, message_type, content, created_at)
          VALUES (?, ?, 'user', 'voice', '[语音消息]', NOW())`,
-            [conversation_id, userId]
+            [localConvId, userId]
         );
 
         const message_id = msgResult.insertId;
 
-        // 插入附件表
+        // ✅ 插入附件表
         await db.query(
             `INSERT INTO ai_attachment (message_id, file_url, file_type, created_at)
          VALUES (?, ?, 'voice', NOW())`,
             [message_id, voiceUrl]
         );
 
+        // ✅ 返回 COS 地址 + 本地 conversation 主键
         return res.json({
             success: true,
-            conversation_id,
+            conversation_id: localConvId, // 🧩 本地数据库 id，不是 Dify 的
             message_id,
             voiceUrl,
         });

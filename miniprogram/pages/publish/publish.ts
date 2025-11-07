@@ -95,6 +95,8 @@ Page({
         isRecording: false,
         voiceFilePath: '', // 存储录音后的文件路径
         mode: 'fixed',
+        localConvId: null, // 本地数据库自增 ID
+        difyConvId: "",
     },
 
     // 处理任务分类选择
@@ -906,7 +908,11 @@ Page({
                     url: `${BASE_URL}/uploads/upload-voice`,
                     filePath: this.data.voiceFilePath,
                     name: "voice",
-                    formData: { userId, conversation_id: this.data.conversationId },
+                    formData: {
+                        userId,
+                        // 本地数据库 id（数字）
+                        conversation_id: this.data.localConvId || ""
+                    },
                     header: { Authorization: `Bearer ${token}` },
                     success: resolve,
                     fail: reject,
@@ -916,48 +922,15 @@ Page({
             const result = JSON.parse(uploadRes.data);
             if (!result.success) throw new Error("上传失败");
 
-            const { voiceUrl, conversation_id } = result;
-
+            const { voiceUrl, conversation_id: localConvId } = result;
             wx.showToast({ title: "语音上传成功", icon: "success" });
 
-            // ✅ 同步保存 conversation_id
-            this.setData({ conversationId: conversation_id });
+            // ✅ 保存本地会话 ID
+            this.setData({ localConvId });
 
-            // ② 发给 Dify
-            const payload = {
-                tag: "field_filling",
-                user_input: "根据语音补全任务字段",
-                voice: voiceUrl,
-                conversation_id: conversation_id,
-            };
+            // ② 调用 Dify（正式交互）
+            await this.sendChatMessageWithVoice(voiceUrl);
 
-            const aiRes = await new Promise((resolve, reject) => {
-                wx.request({
-                    url: `${BASE_URL}/ai/extract`,
-                    method: "POST",
-                    data: payload,
-                    header: { Authorization: `Bearer ${token}` },
-                    success: resolve,
-                    fail: reject,
-                });
-            });
-
-            const { data } = aiRes as any;
-
-            if (data.status === "ok") {
-                const aiMessage = {
-                    type: "ai",
-                    content: data.reply,
-                    timestamp: new Date().toLocaleTimeString(),
-                };
-                this.setData({
-                    chatMessages: [...this.data.chatMessages, aiMessage],
-                    conversationId: data.conversation_id || conversation_id,
-                    isLoading: false,
-                });
-            } else {
-                wx.showToast({ title: "AI 回复失败", icon: "none" });
-            }
         } catch (err) {
             console.error("❌ 上传或发送语音失败:", err);
             wx.showToast({ title: "网络错误", icon: "none" });
@@ -966,28 +939,29 @@ Page({
         }
     },
 
+
     // ✅ 将语音 URL 发送到 Dify
     async sendChatMessageWithVoice(voiceUrl: string) {
         const token = wx.getStorageSync('token');
-        const { chatMessages, conversationId } = this.data;
+        const { chatMessages, difyConvId } = this.data;
 
+        // 添加用户消息
         const userMessage = {
             type: 'user',
             content: '[语音消息]',
             timestamp: new Date().toLocaleTimeString(),
         };
-
         this.setData({
             chatMessages: [...chatMessages, userMessage],
             isLoading: true,
         });
 
-        // 构造 payload
+        // ✅ Dify 请求体
         const payload = {
             tag: 'field_filling',
             voice: voiceUrl,
             user_input: '根据我的语音填充字段',
-            conversation_id: this.data.conversationId,
+            conversation_id: difyConvId || "",
         };
 
         try {
@@ -1011,7 +985,7 @@ Page({
                 };
                 this.setData({
                     chatMessages: [...this.data.chatMessages, aiMessage],
-                    conversationId: data.conversation_id || conversationId,
+                    difyConvId: data.conversation_id || difyConvId, // ✅ 保存 Dify UUID
                     isLoading: false,
                 });
             } else {
@@ -1024,6 +998,7 @@ Page({
             this.setData({ isLoading: false });
         }
     },
+
 
 
 });

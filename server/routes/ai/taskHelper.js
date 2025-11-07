@@ -1,14 +1,13 @@
 const express = require("express");
 const axios = require("axios");
 const authMiddleware = require("../authMiddleware");
-const FormData = require("form-data");
 const router = express.Router();
 const db = require("../../config/db");
 
 const DIFY_API_KEY = process.env.AI_TASK_HELPER_API_KEY; // 在环境变量里设置
 const DIFY_API_URL = "https://ai.mutualcampus.top/v1/chat-messages";
 
-// 🌟 提取任务结构字段
+// ================== AI 字段提取主路由 ==================
 router.post("/extract", authMiddleware, async (req, res) => {
     try {
         let {
@@ -18,7 +17,7 @@ router.post("/extract", authMiddleware, async (req, res) => {
             tag,
             user_input
         } = req.body;
-        const userId = req.user?.id || 0;
+        const userId = req.user?.id?.toString() || "anonymous"; // Dify user 必须是 string
 
         if (!text && !voice) {
             return res.status(400).json({
@@ -26,62 +25,61 @@ router.post("/extract", authMiddleware, async (req, res) => {
             });
         }
 
-        // ✅ 构造 Dify 请求体
+        // ============ 构造 Dify 请求体 ============
         let difyRes;
         const isVoice = !!voice;
 
+        // ✅ 如果是语音请求：使用 remote_url 上传文件
         if (isVoice) {
-            const formData = new FormData();
-            formData.append("user", userId);
-            formData.append("response_mode", "blocking");
-            formData.append(
-                "inputs",
-                JSON.stringify({
+            const payload = {
+                query: "根据我的语音补全任务字段",
+                user: userId,
+                conversation_id: conversation_id || "", // 首次为空字符串
+                response_mode: "blocking",
+                inputs: {
                     tag: tag || "field_filling",
                     user_input: user_input || "",
-                })
-            );
-            if (conversation_id) formData.append("conversation_id", conversation_id);
+                },
+                files: [{
+                    type: "audio",
+                    transfer_method: "remote_url",
+                    url: voice, // ✅ COS 公网 URL
+                }, ],
+            };
 
-            // 下载语音文件后上传给 Dify
-            const audioRes = await axios.get(voice, {
-                responseType: "arraybuffer"
-            });
-            formData.append("voice", Buffer.from(audioRes.data), {
-                filename: "voice.mp3",
-                contentType: "audio/mpeg",
-            });
-
-            difyRes = await axios.post(DIFY_API_URL, formData, {
+            difyRes = await axios.post(DIFY_API_URL, payload, {
                 headers: {
                     Authorization: `Bearer ${DIFY_API_KEY}`,
-                    ...formData.getHeaders(),
+                    "Content-Type": "application/json",
                 },
             });
-        } else {
-            difyRes = await axios.post(
-                DIFY_API_URL, {
-                    query: text,
-                    user: userId,
-                    conversation_id: conversation_id || null,
-                    inputs: {
-                        tag: tag || "field_filling",
-                        user_input: user_input || "",
-                    },
-                    response_mode: "blocking",
-                }, {
-                    headers: {
-                        Authorization: `Bearer ${DIFY_API_KEY}`,
-                        "Content-Type": "application/json",
-                    },
-                }
-            );
+        }
+        // ✅ 如果是文字请求：普通 JSON 请求
+        else {
+            const payload = {
+                query: text,
+                user: userId,
+                conversation_id: conversation_id || "",
+                response_mode: "blocking",
+                inputs: {
+                    tag: tag || "field_filling",
+                    user_input: user_input || "",
+                },
+            };
+
+            difyRes = await axios.post(DIFY_API_URL, payload, {
+                headers: {
+                    Authorization: `Bearer ${DIFY_API_KEY}`,
+                    "Content-Type": "application/json",
+                },
+            });
         }
 
+        // ================== 响应处理 ==================
         const data = difyRes.data;
         const difyConvId = data.conversation_id;
 
-        // ✅ 如果是第一次调用（数据库还没有会话），现在才插入
+        // ✅ 如果数据库中还没有这场会话，插入一条
         const [existingConv] = await db.query(
             "SELECT id FROM ai_conversation WHERE conversation_id = ? AND user_id = ?",
             [difyConvId, userId]
@@ -101,6 +99,7 @@ router.post("/extract", authMiddleware, async (req, res) => {
         );
         const messageId = msgRes.insertId;
 
+        // ✅ 如果是语音，插入附件表
         if (isVoice) {
             await db.query(
                 "INSERT INTO ai_attachment (message_id, file_url, file_type) VALUES (?, ?, 'voice')",
@@ -109,13 +108,13 @@ router.post("/extract", authMiddleware, async (req, res) => {
         }
 
         // ✅ 插入 AI 回复
-        const reply = data.answer || "(AI无回复)";
+        const reply = data.answer || "(AI 无回复)";
         await db.query(
             "INSERT INTO ai_message (conversation_id, user_id, role, content, message_type) VALUES (?, ?, 'ai', ?, 'text')",
             [difyConvId, userId, reply]
         );
 
-        // ✅ 返回 Dify conversation_id 给前端
+        // ✅ 返回给前端
         res.json({
             status: "ok",
             reply,
@@ -129,8 +128,5 @@ router.post("/extract", authMiddleware, async (req, res) => {
         });
     }
 });
-
-
-
 
 module.exports = router;
