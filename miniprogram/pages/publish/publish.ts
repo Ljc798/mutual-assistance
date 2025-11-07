@@ -95,8 +95,6 @@ Page({
         isRecording: false,
         voiceFilePath: '', // 存储录音后的文件路径
         mode: 'fixed',
-        localConvId: null, // 本地数据库自增 ID
-        difyConvId: "",
     },
 
     // 处理任务分类选择
@@ -892,7 +890,6 @@ Page({
         wx.showToast({ title: '已取消发送', icon: 'none' });
     },
 
-    // 确认发送语音
     async confirmVoiceSend() {
         this.setData({ showVoicePreview: false });
         wx.showLoading({ title: "上传语音中..." });
@@ -900,7 +897,7 @@ Page({
         try {
             const app = getApp();
             const token = wx.getStorageSync("token");
-            const userId = app.globalData.userInfo?.id || 0;
+            const userId = app.globalData.userInfo?.id;
 
             // ① 上传语音文件
             const uploadRes = await new Promise((resolve, reject) => {
@@ -908,11 +905,7 @@ Page({
                     url: `${BASE_URL}/uploads/upload-voice`,
                     filePath: this.data.voiceFilePath,
                     name: "voice",
-                    formData: {
-                        userId,
-                        // 本地数据库 id（数字）
-                        conversation_id: this.data.localConvId || ""
-                    },
+                    formData: { userId },
                     header: { Authorization: `Bearer ${token}` },
                     success: resolve,
                     fail: reject,
@@ -922,13 +915,10 @@ Page({
             const result = JSON.parse(uploadRes.data);
             if (!result.success) throw new Error("上传失败");
 
-            const { voiceUrl, conversation_id: localConvId } = result;
+            const { voiceUrl } = result;
             wx.showToast({ title: "语音上传成功", icon: "success" });
 
-            // ✅ 保存本地会话 ID
-            this.setData({ localConvId });
-
-            // ② 调用 Dify（正式交互）
+            // ② 发给 Dify
             await this.sendChatMessageWithVoice(voiceUrl);
 
         } catch (err) {
@@ -939,16 +929,15 @@ Page({
         }
     },
 
-
     // ✅ 将语音 URL 发送到 Dify
     async sendChatMessageWithVoice(voiceUrl: string) {
-        const token = wx.getStorageSync('token');
-        const { chatMessages, difyConvId } = this.data;
+        const token = wx.getStorageSync("token");
+        const { chatMessages, conversationId } = this.data;
 
         // 添加用户消息
         const userMessage = {
-            type: 'user',
-            content: '[语音消息]',
+            type: "user",
+            content: "[语音消息]",
             timestamp: new Date().toLocaleTimeString(),
         };
         this.setData({
@@ -956,19 +945,19 @@ Page({
             isLoading: true,
         });
 
-        // ✅ Dify 请求体
+        // ✅ 构造 payload
         const payload = {
-            tag: 'field_filling',
+            tag: "field_filling",
+            user_input: "根据语音补全任务字段",
             voice: voiceUrl,
-            user_input: '根据我的语音填充字段',
-            conversation_id: difyConvId || "",
+            conversation_id: conversationId || "", // 首次为空
         };
 
         try {
             const res = await new Promise((resolve, reject) => {
                 wx.request({
                     url: `${BASE_URL}/ai/extract`,
-                    method: 'POST',
+                    method: "POST",
                     data: payload,
                     header: { Authorization: `Bearer ${token}` },
                     success: resolve,
@@ -977,28 +966,28 @@ Page({
             });
 
             const { data } = res as any;
-            if (data.status === 'ok') {
+
+            if (data.status === "ok") {
                 const aiMessage = {
-                    type: 'ai',
+                    type: "ai",
                     content: data.reply,
                     timestamp: new Date().toLocaleTimeString(),
                 };
+
                 this.setData({
                     chatMessages: [...this.data.chatMessages, aiMessage],
-                    difyConvId: data.conversation_id || difyConvId, // ✅ 保存 Dify UUID
+                    conversationId: data.conversation_id || conversationId, // ✅ 保存 Dify 的 UUID
                     isLoading: false,
                 });
             } else {
-                wx.showToast({ title: 'AI回复失败', icon: 'none' });
+                wx.showToast({ title: "AI 回复失败", icon: "none" });
                 this.setData({ isLoading: false });
             }
         } catch (err) {
-            console.error('发送语音到 Dify 失败:', err);
-            wx.showToast({ title: '请求错误', icon: 'none' });
+            console.error("❌ 发送语音到 Dify 失败:", err);
+            wx.showToast({ title: "请求错误", icon: "none" });
             this.setData({ isLoading: false });
         }
     },
-
-
 
 });
