@@ -29,6 +29,8 @@ router.post("/extract", authMiddleware, async (req, res) => {
         let difyRes;
         const isVoice = !!voice;
 
+        console.log(voice);
+
         // ✅ 如果是语音请求：使用 remote_url 上传文件
         if (isVoice) {
             const payload = {
