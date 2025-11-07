@@ -2,7 +2,9 @@ const express = require("express");
 const router = express.Router();
 const COS = require("cos-nodejs-sdk-v5");
 const multer = require("multer");
-const { v4: uuidv4 } = require('uuid');
+const {
+    v4: uuidv4
+} = require('uuid');
 const path = require("path");
 const dotenv = require("dotenv");
 const db = require("../config/db")
@@ -26,7 +28,7 @@ const upload = multer({
     }
 });
 
-// ✅ 封装上传为 Promise
+// 封装上传为 Promise
 function uploadToCOS({
     Bucket,
     Region,
@@ -48,7 +50,7 @@ function uploadToCOS({
     });
 }
 
-// ✅ 上传图片接口
+// 上传图片接口
 router.post("/upload-image", upload.single("image"), async (req, res) => {
     try {
         const file = req.file;
@@ -76,7 +78,7 @@ router.post("/upload-image", upload.single("image"), async (req, res) => {
             fileName = `other/${Date.now()}_${Math.random().toString(36).substr(2, 9)}${extension}`;
         }
 
-        // ✅ 上传到 COS
+        // 上传到 COS
         await uploadToCOS({
             Bucket: bucketName,
             Region: region,
@@ -86,7 +88,7 @@ router.post("/upload-image", upload.single("image"), async (req, res) => {
         });
 
         const imageUrl = `https://${bucketName}.cos.${region}.myqcloud.com/${fileName}`;
-        console.log("✅ 图片上传成功:", imageUrl);
+        console.log("图片上传成功:", imageUrl);
 
         return res.json({
             success: true,
@@ -109,11 +111,10 @@ router.post("/upload-voice", upload.single("voice"), async (req, res) => {
         if (!file) {
             return res.status(400).json({
                 success: false,
-                message: "未上传文件",
+                message: "未上传文件"
             });
         }
 
-        // 🧠 从 body 获取 userId、conversation_id
         let {
             userId,
             conversation_id
@@ -121,19 +122,18 @@ router.post("/upload-voice", upload.single("voice"), async (req, res) => {
         userId = userId && !isNaN(userId) ? Number(userId) : null;
         const extension = path.extname(file.originalname) || ".mp3";
 
-        // ✅ 如果没有 conversation_id，先创建一条会话
+        // 如果没有 conversation_id，则创建新会话
         if (!conversation_id) {
             const [result] = await db.query(
-                `INSERT INTO ai_conversation (user_id, title) VALUES (?, ?)`,
+                `INSERT INTO ai_conversation (user_id, title, created_at) VALUES (?, ?, NOW())`,
                 [userId, "语音会话"]
             );
-            conversation_id = result.insertId; // 拿到主键ID
+            conversation_id = result.insertId;
         }
 
-        // ✅ 生成唯一文件名
-        const fileName = `voice/${userId}/${conversation_id}/${Date.now()}_${uuidv4()}${extension}`;
+        // 生成文件名路径：voice/<user>/<conversation>/<uuid>.mp3
+        const fileName = `voice/${userId}/${conversation_id}/${uuidv4()}${extension}`;
 
-        // ✅ 上传到 COS
         await uploadToCOS({
             Bucket: bucketName,
             Region: region,
@@ -142,24 +142,24 @@ router.post("/upload-voice", upload.single("voice"), async (req, res) => {
             ContentType: file.mimetype,
         });
 
-        // ✅ 拼接公网 URL
         const voiceUrl = `https://${bucketName}.cos.${region}.myqcloud.com/${fileName}`;
 
-        // ✅ 插入消息记录
+        // 插入 ai_message
         const [msgResult] = await db.query(
-            "INSERT INTO ai_message (conversation_id, user_id, role, message_type, content) VALUES (?, ?, 'user', 'voice', '[语音消息]')",
+            `INSERT INTO ai_message (conversation_id, user_id, role, message_type, content, created_at)
+         VALUES (?, ?, 'user', 'voice', '[语音消息]', NOW())`,
             [conversation_id, userId]
         );
 
         const message_id = msgResult.insertId;
 
-        // ✅ 插入附件表
+        // 插入附件表
         await db.query(
-            "INSERT INTO ai_attachment (message_id, file_url, file_type) VALUES (?, ?, 'voice')",
+            `INSERT INTO ai_attachment (message_id, file_url, file_type, created_at)
+         VALUES (?, ?, 'voice', NOW())`,
             [message_id, voiceUrl]
         );
 
-        // ✅ 返回结果
         return res.json({
             success: true,
             conversation_id,
@@ -178,7 +178,7 @@ router.post("/upload-voice", upload.single("voice"), async (req, res) => {
 
 // COS 审核结果回调接口
 router.post("/image-review", express.json(), async (req, res) => {
-    // ✅ 立即返回 200
+    // 立即返回 200
     res.status(200).send("OK");
 
     try {
@@ -191,14 +191,14 @@ router.post("/image-review", express.json(), async (req, res) => {
             return;
         }
 
-        // ✅ 提取 object key（去掉签名参数）
+        // 提取 object key（去掉签名参数）
         const urlPart = data.url.split(".myqcloud.com/")[1] || "";
         const objectKey = urlPart.split("?")[0];
 
-        // ✅ 审核状态
+        // 审核状态
         const auditStatus = data.forbidden_status === 0 ? "pass" : "fail";
 
-        // ✅ 使用连接池独立连接执行更新
+        // 使用连接池独立连接执行更新
         const conn = await db.getConnection();
         const [result] = await conn.query(
             `UPDATE square_images 
@@ -208,7 +208,7 @@ router.post("/image-review", express.json(), async (req, res) => {
         );
         conn.release();
 
-        console.log("✅ COS 回调成功:", {
+        console.log("COS 回调成功:", {
             url: data.url,
             objectKey,
             auditStatus,

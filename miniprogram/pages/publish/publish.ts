@@ -890,19 +890,20 @@ Page({
     // 确认发送语音
     async confirmVoiceSend() {
         this.setData({ showVoicePreview: false });
-        wx.showLoading({ title: '上传语音中...' });
+        wx.showLoading({ title: "上传语音中..." });
 
         try {
             const app = getApp();
-            const token = wx.getStorageSync('token');
+            const token = wx.getStorageSync("token");
             const userId = app.globalData.userInfo?.id || 0;
 
+            // ① 上传语音文件
             const uploadRes = await new Promise((resolve, reject) => {
                 wx.uploadFile({
                     url: `${BASE_URL}/uploads/upload-voice`,
                     filePath: this.data.voiceFilePath,
-                    name: 'voice',
-                    formData: { userId },
+                    name: "voice",
+                    formData: { userId, conversation_id: this.data.conversationId },
                     header: { Authorization: `Bearer ${token}` },
                     success: resolve,
                     fail: reject,
@@ -910,18 +911,53 @@ Page({
             });
 
             const result = JSON.parse(uploadRes.data);
-            if (result.success) {
-                wx.showToast({ title: '语音上传成功', icon: 'success' });
+            if (!result.success) throw new Error("上传失败");
 
-                // ✅ 上传成功后发给 Dify
-                const voiceUrl = result.voiceUrl;
-                this.sendChatMessageWithVoice(voiceUrl);
+            const { voiceUrl, conversation_id } = result;
+
+            wx.showToast({ title: "语音上传成功", icon: "success" });
+
+            // ✅ 同步保存 conversation_id
+            this.setData({ conversationId: conversation_id });
+
+            // ② 发给 Dify
+            const payload = {
+                tag: "field_filling",
+                user_input: "根据语音补全任务字段",
+                voice: voiceUrl,
+                conversation_id: conversation_id,
+            };
+
+            const aiRes = await new Promise((resolve, reject) => {
+                wx.request({
+                    url: `${BASE_URL}/ai/extract`,
+                    method: "POST",
+                    data: payload,
+                    header: { Authorization: `Bearer ${token}` },
+                    success: resolve,
+                    fail: reject,
+                });
+            });
+
+            const { data } = aiRes as any;
+
+            if (data.status === "ok") {
+                const aiMessage = {
+                    type: "ai",
+                    content: data.reply,
+                    timestamp: new Date().toLocaleTimeString(),
+                };
+                this.setData({
+                    chatMessages: [...this.data.chatMessages, aiMessage],
+                    conversationId: data.conversation_id || conversation_id,
+                    isLoading: false,
+                });
             } else {
-                wx.showToast({ title: '上传失败', icon: 'none' });
+                wx.showToast({ title: "AI 回复失败", icon: "none" });
             }
         } catch (err) {
-            console.error('上传语音失败:', err);
-            wx.showToast({ title: '网络错误', icon: 'none' });
+            console.error("❌ 上传或发送语音失败:", err);
+            wx.showToast({ title: "网络错误", icon: "none" });
         } finally {
             wx.hideLoading();
         }
