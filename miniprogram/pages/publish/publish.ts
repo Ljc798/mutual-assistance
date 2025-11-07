@@ -966,6 +966,43 @@ Page({
             });
 
             const { data } = res as any;
+            console.log("docker???");
+            console.log("docker???");
+            console.log("docker???");
+            console.log("docker???");
+            console.log("docker???");
+            console.log("docker???");
+            console.log("docker???");
+            console.log("docker???");
+            console.log("docker???");
+            console.log("docker???");
+            console.log("docker???");
+            console.log("docker???");
+            console.log("docker???");
+            console.log("docker???");
+            console.log("docker???");
+            console.log("docker???");
+            console.log("docker???");
+            console.log("docker???");
+            console.log("docker???");
+            console.log("docker???");
+            console.log("docker???");
+            console.log("docker???");
+            console.log("docker???");
+            console.log("docker???");
+            console.log("docker???");
+            console.log("docker???");
+            console.log("docker???");
+            console.log("docker???");
+            console.log("docker???");
+            console.log("docker???");
+            console.log("docker???");
+            console.log("docker???");
+            console.log("docker???");
+            console.log("docker???");
+            console.log("docker???");
+            console.log("docker???");
+            
 
             if (data.status === "ok") {
                 const aiMessage = {
