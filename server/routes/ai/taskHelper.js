@@ -6,6 +6,7 @@ const db = require("../../config/db");
 
 const DIFY_API_KEY = process.env.AI_TASK_HELPER_API_KEY; // 在环境变量里设置
 const DIFY_API_URL = "https://ai.mutualcampus.top/v1/chat-messages";
+const VOICE_API_KEY = process.env.voice_api_key;
 
 // ================== AI 字段提取主路由 ==================
 router.post("/extract", authMiddleware, async (req, res) => {
@@ -29,8 +30,6 @@ router.post("/extract", authMiddleware, async (req, res) => {
         let difyRes;
         const isVoice = !!voice;
 
-        console.log(voice);
-
         // ✅ 如果是语音请求：使用 remote_url 上传文件
         if (isVoice) {
             const payload = {
@@ -41,6 +40,7 @@ router.post("/extract", authMiddleware, async (req, res) => {
                 inputs: {
                     tag: tag || "field_filling",
                     user_input: user_input || "",
+                    api_key: VOICE_API_KEY,
                 },
                 files: [{
                     type: "audio",
