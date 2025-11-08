@@ -121,7 +121,7 @@ router.post("/upload-voice", upload.single("voice"), async (req, res) => {
         .replace(/[-:T]/g, "")
         .split(".")[0];
       
-      const fileName = `voice/${userId}_${timestamp}${extension}`;
+      const fileName = `voice/${userId}/${timestamp}${extension}`;
 
         await uploadToCOS({
             Bucket: bucketName,

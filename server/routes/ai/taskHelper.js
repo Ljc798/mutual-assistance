@@ -39,14 +39,11 @@ router.post("/extract", authMiddleware, async (req, res) => {
                 response_mode: "blocking",
                 inputs: {
                     tag: tag || "field_filling",
-                    user_input: user_input || "",
+                    user_input: user_input,
+                    voice: voice,
                     api_key: VOICE_API_KEY,
                 },
-                files: [{
-                    type: "audio",
-                    transfer_method: "remote_url",
-                    url: voice, // ✅ COS 公网 URL
-                }, ],
+                
             };
 
             difyRes = await axios.post(DIFY_API_URL, payload, {
