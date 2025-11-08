@@ -30,11 +30,14 @@ Component({
         chatInput: "",
         conversationId: "",
         isLoading: false,
-        scrollIntoView: ""
+        scrollIntoView: "",
+        remaining: 0,
+        limit: 0,
     },
 
     lifetimes: {
         attached() {
+            this.fetchAiUsage();
             const systemInfo = wx.getSystemInfoSync();
             this.setData({
                 ballPosition: {
@@ -42,6 +45,10 @@ Component({
                     y: systemInfo.windowHeight - 200
                 }
             });
+        },
+
+        ready() {
+            this.fetchAiUsage();
         }
     },
 
@@ -164,7 +171,6 @@ Component({
                 });
 
                 const { data } = response;
-                console.log("AI接口响应:", data);
 
                 if (data?.success && typeof data?.answer === "string") {
                     const aiMessage: ChatMessage = {
@@ -177,6 +183,7 @@ Component({
                         conversationId: data.conversation_id || conversationId || null,
                         isLoading: false
                     });
+                    this.fetchAiUsage();
                     this.scrollToBottom();
                 } else {
                     this.setData({ isLoading: false });
@@ -191,6 +198,21 @@ Component({
 
         scrollToBottom() {
             setTimeout(() => this.setData({ scrollIntoView: "last-message" }), 100);
-        }
+        },
+
+        async fetchAiUsage() {
+            const token = wx.getStorageSync("token");
+            const res = await new Promise((resolve, reject) => {
+                wx.request({
+                    url: `${BASE_URL}/ai/almighty/usage`,
+                    header: { Authorization: `Bearer ${token}` },
+                    success: resolve,
+                    fail: reject,
+                });
+            });
+
+            const { remaining, limit } = res.data;
+            this.setData({ remaining, limit });
+        },
     }
 });

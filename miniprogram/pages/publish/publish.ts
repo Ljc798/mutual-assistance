@@ -101,20 +101,23 @@ Page({
     },
 
     async onLoad() {
+        this.fetchAiUsage();
+    },
+
+    async fetchAiUsage() {
         const token = wx.getStorageSync("token");
         const res = await new Promise((resolve, reject) => {
-          wx.request({
-            url: `${BASE_URL}/ai/usage`,  // ✅ 新增后端接口，用于获取剩余次数
-            header: { Authorization: `Bearer ${token}` },
-            success: resolve,
-            fail: reject,
-          });
+            wx.request({
+                url: `${BASE_URL}/ai/almighty/usage`,
+                header: { Authorization: `Bearer ${token}` },
+                success: resolve,
+                fail: reject,
+            });
         });
-      
+
         const { remaining, limit } = res.data;
         this.setData({ remaining, limit });
-      }
-      
+    },
 
     // 处理任务分类选择
     handleCategoryChange(e: any) {
@@ -544,7 +547,7 @@ Page({
                         conversationId: data.conversation_id || conversationId,
                         isLoading: false,
                     });
-
+                    this.fetchAiUsage();
                     // 滚动到底部
                     this.scrollToBottom();
                 } else {

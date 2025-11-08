@@ -26,6 +26,11 @@
             </view>
         </scroll-view>
 
+        <view class="usage-info">
+            <text wx:if="{{limit === -1}}">💎 无限次对话特权已开启</text>
+            <text wx:elif="{{remaining >= 0}}">💬 今日剩余 {{remaining}} / {{limit}} 次</text>
+            <text wx:else>正在获取剩余次数...</text>
+        </view>
         <view class="chat-input-container">
             <!-- 注意：textarea 在 WXML 里不要自闭合，用显式结束标签 -->
             <textarea class="chat-input" placeholder="说点什么..." value="{{chatInput}}" bindinput="handleChatInput" auto-height maxlength="500"></textarea>
