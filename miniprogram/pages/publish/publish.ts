@@ -96,7 +96,25 @@ Page({
         voiceFilePath: '', // 存储录音后的文件路径
         voiceDuration: 0,
         mode: 'fixed',
+        remaining: 0,
+        limit: 0,
     },
+
+    async onLoad() {
+        const token = wx.getStorageSync("token");
+        const res = await new Promise((resolve, reject) => {
+          wx.request({
+            url: `${BASE_URL}/ai/usage`,  // ✅ 新增后端接口，用于获取剩余次数
+            header: { Authorization: `Bearer ${token}` },
+            success: resolve,
+            fail: reject,
+          });
+        });
+      
+        const { remaining, limit } = res.data;
+        this.setData({ remaining, limit });
+      }
+      
 
     // 处理任务分类选择
     handleCategoryChange(e: any) {
@@ -533,6 +551,8 @@ Page({
                     // 如果有JSON数据，只更新conversationId和loading状态
                     this.setData({
                         conversationId: data.conversation_id || conversationId,
+                        remaining: data.remaining,
+                        limit: data.limit,
                         isLoading: false,
                     });
 
@@ -945,7 +965,7 @@ Page({
             duration: Math.floor(this.data.voiceDuration / 1000), // 取录音长度
             timestamp: new Date().toLocaleTimeString(),
         };
-        
+
         this.setData({
             chatMessages: [...chatMessages, userMessage],
             isLoading: true,
@@ -989,6 +1009,8 @@ Page({
                     this.setData({
                         chatMessages: [...this.data.chatMessages, aiMessage],
                         conversationId: data.conversation_id || conversationId,
+                        remaining: data.remaining,
+                        limit: data.limit,
                         isLoading: false,
                     });
 

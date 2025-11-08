@@ -174,10 +174,7 @@
                     <view wx:if="{{item.type === 'voice'}}">
                         <voice-bubble src="{{item.url}}" duration="{{item.duration}}"></voice-bubble>
                     </view>
-
-                    <view wx:if="{{item.type === 'user'}}" class="message-content">
-                        {{item.content}}
-                    </view>
+                    <view wx:if="{{item.type === 'user'}}" class="message-content">{{item.content}}</view>
                     <view wx:if="{{item.type === 'ai' && item.isFormatted}}">
                         <rich-text class="message-content" nodes="{{item.content}}"></rich-text>
                     </view>
@@ -202,10 +199,13 @@
                 </button>
             </view>
 
+            <!-- ✅ 今日剩余次数提示 -->
             <view class="usage-info">
-                <text wx:if="{{remaining === 'unlimited'}}">💎 无限次对话特权已开启</text>
-                <text wx:else>💬 今日剩余 {{remaining}} 次 AI 对话机会</text>
+                <text wx:if="{{limit === -1}}">💎 无限次对话特权已开启</text>
+                <text wx:elif="{{remaining >= 0}}">💬 今日剩余 {{remaining}} / {{limit}} 次</text>
+                <text wx:else>正在获取剩余次数...</text>
             </view>
+
 
 
             <view class="chat-input-container">

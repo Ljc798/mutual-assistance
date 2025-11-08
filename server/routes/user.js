@@ -380,19 +380,23 @@ router.get("/public/:id", async (req, res) => {
             [user]
         ] = await db.query(
             `SELECT 
-            u.wxid,
-            u.username, 
-            u.avatar_url,
-            s.name AS school_name,
-            CASE 
-                WHEN u.vip_expire_time IS NOT NULL AND u.vip_expire_time > NOW() THEN TRUE 
-                ELSE FALSE 
-            END AS isVip
-         FROM users u
-         LEFT JOIN schools s ON u.school_id = s.id
-         WHERE u.id = ?`,
+                u.wxid,
+                u.username, 
+                u.avatar_url,
+                s.name AS school_name,
+                u.vip_level,
+                u.vip_expire_time,
+                CASE
+                    WHEN u.vip_level = 2 THEN TRUE
+                    WHEN u.vip_level = 1 AND u.vip_expire_time > NOW() THEN TRUE
+                    ELSE FALSE
+                END AS isVip
+            FROM users u
+            LEFT JOIN schools s ON u.school_id = s.id
+            WHERE u.id = ?`,
             [userId]
         );
+
 
         if (!user) {
             return res.status(404).json({
