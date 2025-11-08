@@ -1,6 +1,8 @@
 {
     "usingComponents": {
         "bottom-nav": "/components/bottom-nav/bottom-nav",
-        "notify-banner": "/components/notify-banner/index"
+        "notify-banner": "/components/notify-banner/index",
+        "audio-player": "/components/audio-player/audio-player",
+        "voice-bubble": "/components/voice-bubble/voice-bubble"
     }
 }

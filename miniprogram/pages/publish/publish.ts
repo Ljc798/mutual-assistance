@@ -94,6 +94,7 @@ Page({
         summaryQuestion: '', // 简介生成AI问题
         isRecording: false,
         voiceFilePath: '', // 存储录音后的文件路径
+        voiceDuration: 0,
         mode: 'fixed',
     },
 
@@ -877,6 +878,7 @@ Page({
                 console.log('录音完成:', res.tempFilePath);
                 this.setData({
                     voiceFilePath: res.tempFilePath,
+                    voiceDuration: res.duration,
                     showVoicePreview: true, // 打开预览弹窗
                 });
             });
@@ -938,10 +940,12 @@ Page({
 
         // 添加用户消息
         const userMessage = {
-            type: "user",
-            content: "[语音消息]",
+            type: "voice",
+            url: voiceUrl,
+            duration: Math.floor(this.data.voiceDuration / 1000), // 取录音长度
             timestamp: new Date().toLocaleTimeString(),
         };
+        
         this.setData({
             chatMessages: [...chatMessages, userMessage],
             isLoading: true,
@@ -953,6 +957,7 @@ Page({
             user_input: "根据语音补全任务字段",
             voice: voiceUrl,
             conversation_id: conversationId || "", // 首次为空
+            duration: Math.round(this.data.voiceDuration / 1000),
         };
 
         try {

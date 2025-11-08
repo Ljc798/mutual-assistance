@@ -1,0 +1,38 @@
+.audio-player {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16rpx;
+    border-radius: 16rpx;
+    background: #f6fff8;
+    box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.05);
+  }
+  
+  .controls {
+    margin-bottom: 12rpx;
+  }
+  
+  .play-btn {
+    font-size: 28rpx;
+    padding: 10rpx 30rpx;
+    background: #4caf50;
+    color: #fff;
+    border-radius: 999rpx;
+  }
+  
+  .progress-section {
+    display: flex;
+    align-items: center;
+    width: 90%;
+  }
+  
+  .progress-slider {
+    flex: 1;
+    margin: 0 10rpx;
+  }
+  
+  .time {
+    font-size: 24rpx;
+    color: #555;
+  }
+  

@@ -171,7 +171,13 @@
 
             <scroll-view class="chat-messages" scroll-y="true" scroll-into-view="{{scrollIntoView}}" scroll-with-animation="true">
                 <view wx:for="{{chatMessages}}" wx:key="index" class="message {{item.type}}" id="{{index === chatMessages.length - 1 ? 'last-message' : ''}}">
-                    <view wx:if="{{item.type === 'user'}}" class="message-content">{{item.content}}</view>
+                    <view wx:if="{{item.type === 'voice'}}">
+                        <voice-bubble src="{{item.url}}" duration="{{item.duration}}"></voice-bubble>
+                    </view>
+
+                    <view wx:if="{{item.type === 'user'}}" class="message-content">
+                        {{item.content}}
+                    </view>
                     <view wx:if="{{item.type === 'ai' && item.isFormatted}}">
                         <rich-text class="message-content" nodes="{{item.content}}"></rich-text>
                     </view>
@@ -211,7 +217,8 @@
         <view wx:if="{{showVoicePreview}}" class="voice-preview-mask">
             <view class="voice-preview-box">
                 <text class="preview-title">🎧 语音预览</text>
-                <audio src="{{voiceFilePath}}" controls></audio>
+                <audio-player src="{{voiceFilePath}}" autoplay="{{false}}"></audio-player>
+
                 <view class="preview-actions">
                     <button class="cancel-btn" bindtap="cancelVoiceSend">取消</button>
                     <button class="send-btn" bindtap="confirmVoiceSend">发送</button>

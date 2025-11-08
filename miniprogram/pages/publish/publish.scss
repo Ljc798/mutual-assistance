@@ -486,13 +486,21 @@ button {
     border-bottom-right-radius: 8rpx;
 }
 
+/* 去掉语音消息的背景 */
+.message.voice {
+    float: right;
+    background: none !important;
+    padding: 0 !important;
+    max-width: 100%;
+  }
+  
+
 .message.ai {
     float: left;
     background: #f0f0f0;
     color: #333;
     border-bottom-left-radius: 8rpx;
 }
-
 
 .message-content {
     font-size: 28rpx;

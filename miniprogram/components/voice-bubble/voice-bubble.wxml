@@ -1,0 +1,12 @@
+<view
+  class="voice-bubble {{ isPlaying ? 'playing' : '' }}"
+  bindtap="togglePlay"
+>
+  <view class="wave">
+    <view class="bar bar1"></view>
+    <view class="bar bar2"></view>
+    <view class="bar bar3"></view>
+  </view>
+
+  <text class="duration">{{ duration }}"</text>
+</view>

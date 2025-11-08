@@ -16,7 +16,8 @@ router.post("/extract", authMiddleware, async (req, res) => {
             voice,
             conversation_id,
             tag,
-            user_input
+            user_input,
+            duration
         } = req.body;
         const userId = req.user?.id?.toString() || "anonymous"; // Dify user 必须是 string
 
@@ -101,8 +102,8 @@ router.post("/extract", authMiddleware, async (req, res) => {
         // ✅ 如果是语音，插入附件表
         if (isVoice) {
             await db.query(
-                "INSERT INTO ai_attachment (message_id, file_url, file_type) VALUES (?, ?, 'voice')",
-                [messageId, voice]
+                "INSERT INTO ai_attachment (message_id, file_url, file_type, duration) VALUES (?, ?, 'voice', ?)",
+                [messageId, voice, duration]
             );
         }
 

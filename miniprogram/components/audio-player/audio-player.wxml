@@ -1,0 +1,25 @@
+<view class="audio-player">
+  <view class="controls">
+    <button class="play-btn" bindtap="togglePlay">
+      {{ isPlaying ? '⏸ 暂停' : '▶ 播放' }}
+    </button>
+  </view>
+
+  <view class="progress-section">
+    <text class="time">{{ currentTimeStr }}</text>
+
+    <slider
+      min="0"
+      max="{{ duration }}"
+      step="1"
+      value="{{ currentTime }}"
+      bindchange="onSliderChange"
+      block-size="14"
+      activeColor="#4CAF50"
+      backgroundColor="#ddd"
+      class="progress-slider"
+    />
+
+    <text class="time">{{ durationStr }}</text>
+  </view>
+</view>
