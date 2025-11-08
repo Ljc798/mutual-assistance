@@ -202,6 +202,12 @@
                 </button>
             </view>
 
+            <view class="usage-info">
+                <text wx:if="{{remaining === 'unlimited'}}">💎 无限次对话特权已开启</text>
+                <text wx:else>💬 今日剩余 {{remaining}} 次 AI 对话机会</text>
+            </view>
+
+
             <view class="chat-input-container">
                 <view class="input-wrapper">
                     <textarea class="chat-input" placeholder="描述您的任务需求..." value="{{chatInput}}" bindinput="handleChatInput" disabled="{{isLoading}}" auto-height maxlength="500" />

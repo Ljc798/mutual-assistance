@@ -3,13 +3,14 @@ const axios = require("axios");
 const authMiddleware = require("../authMiddleware");
 const router = express.Router();
 const db = require("../../config/db");
+const aiLimit = require('../aiLimit')
 
 const DIFY_API_KEY = process.env.AI_TASK_HELPER_API_KEY; // 在环境变量里设置
 const DIFY_API_URL = "https://ai.mutualcampus.top/v1/chat-messages";
 const VOICE_API_KEY = process.env.voice_api_key;
 
 // ================== AI 字段提取主路由 ==================
-router.post("/extract", authMiddleware, async (req, res) => {
+router.post("/extract", authMiddleware, aiLimit, async (req, res) => {
     try {
         let {
             text,
@@ -44,7 +45,7 @@ router.post("/extract", authMiddleware, async (req, res) => {
                     voice: voice,
                     api_key: VOICE_API_KEY,
                 },
-                
+
             };
 
             difyRes = await axios.post(DIFY_API_URL, payload, {
@@ -115,10 +116,18 @@ router.post("/extract", authMiddleware, async (req, res) => {
         );
 
         // ✅ 返回给前端
+        const remaining =
+            req.aiUsageInfo.limit === Infinity ?
+            "无限" :
+            Math.max(req.aiUsageInfo.limit - req.aiUsageInfo.used, 0);
+
+        // ✅ 返回给前端
         res.json({
             status: "ok",
             reply,
             conversation_id: difyConvId,
+            remaining,
+            limit: req.aiUsageInfo.limit
         });
     } catch (error) {
         console.error("❌ 调用 Dify 失败:", error.message, error.response?.data || {});

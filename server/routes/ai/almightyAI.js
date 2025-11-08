@@ -2,6 +2,7 @@
 const express = require("express");
 const axios = require("axios");
 const authMiddleware = require("../authMiddleware");
+const aiLimit = require('../aiLimit')
 
 const router = express.Router();
 
@@ -13,7 +14,7 @@ if (!API_KEY) {
 }
 
 // 转发到 Dify
-router.post("/", authMiddleware, async (req, res) => {
+router.post("/", authMiddleware, aiLimit, async (req, res) => {
     try {
       const { query, conversation_id } = req.body || {};
       if (!query) {

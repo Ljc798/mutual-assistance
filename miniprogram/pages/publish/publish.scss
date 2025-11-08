@@ -893,3 +893,19 @@ audio {
     color: #999;
     font-size: 24rpx;
 }
+
+.usage-info {
+    text-align: center;
+    font-size: 24rpx;
+    color: #888;
+    margin-bottom: 10rpx;
+  }
+  
+  .usage-info text {
+    display: inline-block;
+    background: #f9f9f9;
+    padding: 6rpx 16rpx;
+    border-radius: 20rpx;
+    color: #555;
+  }
+  

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../../config/db'); // mysql2/promise pool
+const aiLimit = require('../aiLimit')
 
 // --- 安全检查：只允许 SELECT ---
 function isSafeSelect(sql) {
@@ -31,19 +32,15 @@ function fixFindInSet(sql) {
  * body: { practice_sql: "...", theory_sql: "..." }
  * 返回: { practice: [...], theory: [...] }
  */
-router.post('/query', async (req, res) => {
+router.post('/query', aiLimit, async (req, res) => {
   try {
     const { practice_sql, theory_sql } = req.body || {};
     if (!practice_sql || !theory_sql) {
       return res.status(400).json({ message: 'practice_sql 和 theory_sql 都是必填的' });
     }
 
-    console.log("req", req.body);
-    console.log("1", practice_sql);
-
     const psql = fixFindInSet(practice_sql);
     const tsql = fixFindInSet(theory_sql);
-    console.log("2", practice_sql);
 
     if (!isSafeSelect(psql) || !isSafeSelect(tsql)) {
       return res.status(400).json({ message: '仅允许只读 SELECT 语句' });
