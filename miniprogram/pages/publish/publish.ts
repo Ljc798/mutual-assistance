@@ -608,6 +608,7 @@ Page({
         if (data.detail) lines.push(`📄 <strong>任务详情：</strong>${data.detail}`);
         if (data.position) lines.push(`📍 <strong>交易地点：</strong>${data.position}`);
         if (data.address) lines.push(`🏠 <strong>送达地址：</strong>${data.address}`);
+        if (data.mode) lines.push(`🏷️ <strong>任务模式：</strong>${data.mode}`);
         if (data.reward) lines.push(`💰 <strong>任务奖励：</strong>${data.reward}元`);
 
         // 可选字段 - 根据任务类型显示
@@ -685,6 +686,7 @@ Page({
                 time: extractedData.time || '',
                 position: extractedData.position || '',
                 address: extractedData.address || '',
+                mode: extractedData.mode || '',
                 reward: extractedData.reward || ''
             };
 
@@ -966,22 +968,42 @@ Page({
             });
 
             const { data } = res as any;
-            
-            if (data.status === "ok") {
-                const aiMessage = {
-                    type: "ai",
-                    content: data.reply,
-                    timestamp: new Date().toLocaleTimeString(),
-                };
 
-                this.setData({
-                    chatMessages: [...this.data.chatMessages, aiMessage],
-                    conversationId: data.conversation_id || conversationId, // ✅ 保存 Dify 的 UUID
-                    isLoading: false,
-                });
+            if (data.status === 'ok') {
+                // 检查是否返回了JSON数据
+                const hasJsonData = this.checkForJsonData(data.reply);
+
+                if (!hasJsonData) {
+                    // 如果没有JSON数据，才添加AI的原始回复
+                    const aiMessage: ChatMessage = {
+                        type: 'ai',
+                        content: data.reply,
+                        timestamp: new Date().toLocaleTimeString()
+                    };
+
+                    this.setData({
+                        chatMessages: [...this.data.chatMessages, aiMessage],
+                        conversationId: data.conversation_id || conversationId,
+                        isLoading: false,
+                    });
+
+                    // 滚动到底部
+                    this.scrollToBottom();
+                } else {
+                    // 如果有JSON数据，只更新conversationId和loading状态
+                    this.setData({
+                        conversationId: data.conversation_id || conversationId,
+                        isLoading: false,
+                    });
+
+                    // 滚动到底部（格式化消息会在checkForJsonData中添加）
+                    setTimeout(() => {
+                        this.scrollToBottom();
+                    }, 100);
+                }
             } else {
-                wx.showToast({ title: "AI 回复失败", icon: "none" });
                 this.setData({ isLoading: false });
+                wx.showToast({ title: "AI回复失败", icon: "none" });
             }
         } catch (err) {
             console.error("❌ 发送语音到 Dify 失败:", err);
