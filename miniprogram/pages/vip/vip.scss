@@ -78,71 +78,129 @@
     }
 }
 
+/* ===== 顶部 Tab 样式修正 ===== */
 .tab-bar {
     display: flex;
     justify-content: space-around;
     margin: 20rpx 60rpx;
     background: #fff;
-    border-radius: 40rpx;
+    border-radius: 50rpx;
     box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.05);
-
+    overflow: hidden; // 防止子元素突出圆角
+  
     .tab {
-        flex: 1;
-        text-align: center;
-        padding: 20rpx 0;
-        font-size: 30rpx;
-        color: #888;
-        transition: all 0.2s;
-
-        &.active {
-            color: #ff9900;
-            font-weight: 600;
-            border-bottom: 4rpx solid #ff9900;
+      flex: 1;
+      text-align: center;
+      padding: 20rpx 0;
+      font-size: 30rpx;
+      color: #999;
+      position: relative;
+  
+      &.active {
+        color: #ff9900;
+        font-weight: 600;
+  
+        /* 下划线只显示中间 60% 区域，避免两边溢出 */
+        &::after {
+          content: "";
+          position: absolute;
+          bottom: 0;
+          left: 10%;
+          width: 80%;
+          height: 4rpx;
+          border-radius: 2rpx;
+          background: linear-gradient(90deg, #ffcc00, #ff9900);
         }
+      }
     }
-}
-
-.plan-scroll {
+  }
+  
+  /* ===== 滚动区（不使用 transform 浮起） ===== */
+  .plan-scroll-wrapper {
+    position: relative;
+    overflow: hidden;
+    margin-top: 20rpx;
+  }
+  
+  .plan-scroll {
     display: flex;
-    margin: 20rpx 0 40rpx 0;
-    padding: 0 20rpx;
     white-space: nowrap;
-
-    .plan-card {
-        display: inline-block;
-        width: 200rpx;
-        margin-right: 20rpx;
-        padding: 30rpx 0;
-        text-align: center;
-        background: #fff;
-        border-radius: 20rpx;
-        border: 2rpx solid transparent;
-        box-shadow: 0 6rpx 8rpx rgba(0, 0, 0, 0.05);
-        transition: 0.2s;
-
-        &.active {
-            border-color: #ff9900;
-            box-shadow: 0 6rpx 12rpx rgba(255, 153, 0, 0.2);
-        }
-
-        .plan-name {
-            font-size: 28rpx;
-            color: #333;
-        }
-
-        .plan-price {
-            font-size: 36rpx;
-            color: #ff6600;
-            margin-top: 10rpx;
-        }
-
-        .plan-original {
-            font-size: 24rpx;
-            color: #999;
-            text-decoration: line-through;
-        }
+    overflow-x: auto;
+    padding: 20rpx 40rpx;
+    scroll-behavior: smooth;
+  
+    &::-webkit-scrollbar {
+      display: none;
     }
-}
+  
+    .plan-card {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      width: 240rpx;
+      height: 240rpx;
+      margin-right: 30rpx;
+      background: #fff;
+      border-radius: 24rpx;
+      border: 2rpx solid transparent;
+      box-shadow: 0 6rpx 12rpx rgba(0, 0, 0, 0.05);
+      transition: all 0.25s ease;
+  
+      .plan-name {
+        font-size: 28rpx;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 12rpx;
+      }
+  
+      .plan-price {
+        font-size: 38rpx;
+        font-weight: 700;
+        color: #ff6600;
+        margin-bottom: 6rpx;
+      }
+  
+      .plan-original {
+        font-size: 24rpx;
+        color: #aaa;
+        text-decoration: line-through;
+      }
+  
+      /* ✅ 改为放大 + 阴影增强，不使用 translateY */
+      &.active {
+        border-color: #ff9900;
+        box-shadow: 0 12rpx 24rpx rgba(255, 153, 0, 0.35);
+        background: #fffaf0; // 轻微亮化背景
+        z-index: 2;
+      }
+    }
+  
+    /* ✅ 渐变遮罩，避免 scroll-view 的突兀边界 */
+    &::before,
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 40rpx;
+      pointer-events: none;
+      z-index: 1;
+    }
+  
+    &::before {
+      left: 0;
+      background: linear-gradient(to right, #f7f8fa 60%, transparent);
+    }
+  
+    &::after {
+      right: 0;
+      background: linear-gradient(to left, #f7f8fa 60%, transparent);
+    }
+  }
+  
+
 
 .pay-btn {
     margin: 0 60rpx;

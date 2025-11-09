@@ -10,9 +10,8 @@
         <image class="avatar" src="{{user.avatar_url}}" mode="aspectFill"></image>
         <view class="user-meta">
             <text class="nickname">{{user.username}}</text>
-            <text class="expire">
-                到期时间：
-                <text class="date">{{user.vip_expire_time}}</text>
+            <text class="expire">到期时间：
+            <text class="date">{{user.vip_expire_time}}</text>
             </text>
         </view>
         <view class="compare-btn" bindtap="showBenefitPopup">权益对比</view>
@@ -25,15 +24,19 @@
     </view>
 
     <!-- 套餐横向滚动区 -->
-    <scroll-view scroll-x class="plan-scroll">
-        <block wx:for="{{plans}}" wx:key="id">
-            <view class="plan-card {{selectedPlanId === item.id ? 'active' : ''}}" bindtap="selectPlan" data-id="{{item.id}}">
-                <text class="plan-name">{{item.name}}</text>
-                <text class="plan-price">¥{{item.promo_price}}</text>
-                <text class="plan-original">¥{{item.original_price}}</text>
-            </view>
-        </block>
-    </scroll-view>
+    <view class="plan-scroll-wrapper">
+        <scroll-view scroll-x class="plan-scroll">
+            <block wx:for="{{plans}}" wx:key="id">
+                <view class="plan-card {{selectedPlanId === item.id ? 'active' : ''}}" bindtap="selectPlan" data-id="{{item.id}}">
+                    <text class="plan-name">{{item.name}}</text>
+                    <text class="plan-price">¥{{item.promo_price}}</text>
+                    <text class="plan-original">¥{{item.original_price}}</text>
+                </view>
+            </block>
+            <view style="display:inline-block;width:45rpx;"></view>
+        </scroll-view>
+    </view>
+
 
     <!-- 支付按钮 -->
     <button class="pay-btn" bindtap="payNow">立即支付</button>

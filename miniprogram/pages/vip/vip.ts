@@ -5,6 +5,7 @@ Page({
         activeTab: 'vip', // 当前选中的tab
         selectedPlanId: null,
         user: [],
+        showCompareModal: false,
         plans: [], // 当前tab下的套餐
         allPlans: { vip: [], svip: [] }, // 分类缓存
     },
@@ -12,11 +13,23 @@ Page({
     onLoad() {
         this.fetchPlans();
         const app = getApp();
+        let expire = app.globalData.userInfo.vip_expire_time;
+        if (expire) {
+            const date = new Date(expire);
+            expire = `${date.getFullYear()}年${(date.getMonth() + 1)
+                .toString()
+                .padStart(2, '0')}月${date
+                    .getDate()
+                    .toString()
+                    .padStart(2, '0')}日`;
+        } else {
+            expire = '未开通';
+        }
         this.setData({
             user: {
                 username: app.globalData.userInfo.username,
                 avatar_url: app.globalData.userInfo.avatar_url,
-                vip_expire_time: app.globalData.userInfo.vip_expire_time,
+                vip_expire_time: expire,
                 vip_level: app.globalData.userInfo.vip_level,
             }
         })
