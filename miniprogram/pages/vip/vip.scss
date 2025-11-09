@@ -1,194 +1,271 @@
-.vip-page {
-    padding: 180rpx 40rpx 40rpx 40rpx;
-    background: #f1e7d7;
+.vip-center {
+    background-color: #f7f8fa;
     min-height: 100vh;
+    padding-bottom: 40rpx;
+    padding-top: 165rpx;
 }
 
-.vip-banner {
+.sticky-vip-header {
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
-    height: 200rpx;
-    border-radius: 16rpx;
-    margin-bottom: 40rpx;
-}
-
-.vip-benefits {
+    height: 100rpx;
+    background: linear-gradient(90deg, #ffcc00, #ff9900);
+    color: #333;
+    z-index: 999;
     display: flex;
-    flex-direction: column;
-    margin-bottom: 40rpx;
-    font-size: 28rpx;
-    color: #444;
+    align-items: center;
+    padding: 80rpx 20rpx 0 20rpx;
+    box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
 }
 
-.benefit {
-    margin: 10rpx 0;
+/* 返回按钮样式 */
+.back-btn {
+    width: 48rpx;
+    height: 48rpx;
+    margin-right: 20rpx;
 }
 
-.vip-plans {
+/* 中间标题 */
+.vip-header {
+    font-size: 36rpx;
+    font-weight: bold;
+    text-align: center;
+}
+
+.user-info {
+    margin: 30rpx 40rpx;
+    padding: 30rpx 30rpx 30rpx 30rpx;
+    background: #fff;
+    border-radius: 20rpx;
     display: flex;
-    flex-direction: column;
-    gap: 20rpx;
+    align-items: center;
+    box-shadow: 0 6rpx 10rpx rgba(0, 0, 0, 0.05);
+
+    .avatar {
+        width: 120rpx;
+        height: 120rpx;
+        border-radius: 50%;
+        margin-right: 30rpx;
+    }
+
+    .user-meta {
+        flex: 1;
+
+        .nickname {
+            font-size: 32rpx;
+            font-weight: 600;
+            display: block;
+        }
+
+        .expire {
+            font-size: 26rpx;
+            color: #888;
+        }
+
+        .date {
+            color: #333;
+        }
+    }
+
+    .compare-btn {
+        font-size: 26rpx;
+        color: #ff9900;
+        border: 1rpx solid #ff9900;
+        border-radius: 30rpx;
+        padding: 8rpx 20rpx;
+    }
 }
 
+.tab-bar {
+    display: flex;
+    justify-content: space-around;
+    margin: 20rpx 60rpx;
+    background: #fff;
+    border-radius: 40rpx;
+    box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.05);
+
+    .tab {
+        flex: 1;
+        text-align: center;
+        padding: 20rpx 0;
+        font-size: 30rpx;
+        color: #888;
+        transition: all 0.2s;
+
+        &.active {
+            color: #ff9900;
+            font-weight: 600;
+            border-bottom: 4rpx solid #ff9900;
+        }
+    }
+}
+
+.plan-scroll {
+    display: flex;
+    margin: 20rpx 0 40rpx 0;
+    padding: 0 20rpx;
+    white-space: nowrap;
+
+    .plan-card {
+        display: inline-block;
+        width: 200rpx;
+        margin-right: 20rpx;
+        padding: 30rpx 0;
+        text-align: center;
+        background: #fff;
+        border-radius: 20rpx;
+        border: 2rpx solid transparent;
+        box-shadow: 0 6rpx 8rpx rgba(0, 0, 0, 0.05);
+        transition: 0.2s;
+
+        &.active {
+            border-color: #ff9900;
+            box-shadow: 0 6rpx 12rpx rgba(255, 153, 0, 0.2);
+        }
+
+        .plan-name {
+            font-size: 28rpx;
+            color: #333;
+        }
+
+        .plan-price {
+            font-size: 36rpx;
+            color: #ff6600;
+            margin-top: 10rpx;
+        }
+
+        .plan-original {
+            font-size: 24rpx;
+            color: #999;
+            text-decoration: line-through;
+        }
+    }
+}
 
 .pay-btn {
-    margin-top: 50rpx;
-    background-color: #fbc02d;
+    margin: 0 60rpx;
+    background: linear-gradient(90deg, #ffcc00, #ff9900);
     color: #fff;
-    font-weight: bold;
-    border-radius: 32rpx;
+    font-size: 32rpx;
+    font-weight: 600;
+    border-radius: 50rpx;
+    padding: 20rpx 0;
+    box-shadow: 0 8rpx 16rpx rgba(255, 153, 0, 0.3);
 }
 
-.username-area {
-    margin-left: 10rpx;
+.benefit-section {
+    margin-top: 50rpx;
+
+    .section-title {
+        text-align: center;
+        font-size: 28rpx;
+        color: #666;
+        margin-bottom: 20rpx;
+    }
+
+    .benefit-grid {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-around;
+        padding: 0 30rpx;
+
+        .benefit-item {
+            width: 25%;
+            text-align: center;
+            margin-bottom: 40rpx;
+
+            .benefit-icon {
+                width: 60rpx;
+                height: 60rpx;
+                margin-bottom: 10rpx;
+            }
+
+            .benefit-name {
+                font-size: 24rpx;
+                color: #555;
+            }
+        }
+    }
+}
+
+/* 权益对比弹窗 */
+.popup-mask {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.45);
     display: flex;
     align-items: center;
+    justify-content: center;
+    z-index: 999;
+
+    .popup {
+        width: 80%;
+        max-height: 70%;
+        background: #fff;
+        border-radius: 20rpx;
+        overflow: hidden;
+        animation: fadeIn 0.3s;
+
+        .popup-header {
+            font-size: 32rpx;
+            font-weight: 600;
+            text-align: center;
+            padding: 20rpx 0;
+            background: #ffcc00;
+        }
+
+        .popup-body {
+            padding: 20rpx;
+            max-height: 400rpx;
+
+            .popup-row {
+                display: flex;
+                justify-content: space-between;
+                font-size: 26rpx;
+                margin-bottom: 10rpx;
+
+                .right-name {
+                    flex: 1;
+                }
+
+                .right-vip {
+                    flex: 1;
+                    color: #ff9900;
+                    text-align: center;
+                }
+
+                .right-svip {
+                    flex: 1;
+                    color: #000;
+                    font-weight: 600;
+                    text-align: center;
+                }
+            }
+        }
+
+        .close-btn {
+            margin: 20rpx auto 30rpx;
+            width: 60%;
+            background: #ff9900;
+            color: #fff;
+            border-radius: 40rpx;
+        }
+    }
 }
 
-.username {
-    font-size: 32rpx;
-    font-weight: bold;
-    color: #333;
-}
-
-/* ✨ VIP 用户名样式：渐变 + 动画 */
-.vip-username {
-    background: linear-gradient(90deg, #FFD700, #FF69B4, #FFD700);
-    background-size: 400%;
-    color: transparent;
-    -webkit-background-clip: text;
-    animation: shimmer 5s linear infinite;
-}
-
-/* 🎖️ VIP 徽章样式 */
-.vip-badge {
-    width: 60rpx;
-    height: 60rpx;
-    margin-left: 15rpx;
-    animation: shine 2s ease-in-out infinite;
-    filter: drop-shadow(0 0 6rpx gold);
-}
-
-/* ✨ 流光动画 */
-@keyframes shimmer {
-    0% {
-        background-position: 0% 50%;
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
     }
 
-    100% {
-        background-position: 400% 50%;
-    }
-}
-
-/* ⭐ 徽章轻微闪烁 */
-@keyframes shine {
-
-    0%,
-    100% {
+    to {
+        opacity: 1;
         transform: scale(1);
-        opacity: 1;
     }
-
-    50% {
-        transform: scale(1.1);
-        opacity: 0.85;
-    }
-}
-
-.vip-square {
-    display: flex;
-    flex-direction: row;
-}
-
-.back-btn {
-    position: absolute;
-    top: 110rpx;
-    left: 20rpx;
-    width: 50rpx;
-    height: 50rpx;
-    margin-right: 20rpx;
-    z-index: 99;
-}
-
-.plan {
-    background: #fff;
-    margin: 24rpx 24rpx;
-    padding: 30rpx 20rpx;
-    border-radius: 16rpx;
-    box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
-}
-
-.plan.selected {
-    background-color: #fff8e1;
-    border: 2rpx solid #f7b500;
-}
-
-.plan-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.plan-title {
-    font-size: 32rpx;
-    color: #333;
-    font-weight: 600;
-}
-
-.plan-price-area {
-    display: flex;
-    align-items: center;
-    gap: 12rpx;
-}
-
-.promo-price {
-    font-size: 32rpx;
-    color: #e53935;
-    font-weight: bold;
-}
-
-.original-price {
-    font-size: 26rpx;
-    color: #999;
-    text-decoration: line-through;
-}
-
-.regular-price {
-    font-size: 32rpx;
-    color: #333;
-    font-weight: bold;
-}
-
-.promo-banner {
-    background-color: #fff7e6;
-    color: #d35400;
-    text-align: center;
-    font-size: 26rpx;
-    padding: 16rpx;
-    margin: 24rpx;
-    border-radius: 12rpx;
-    font-weight: 600;
-    border: 2rpx dashed #f39c12;
-}
-
-/* ✨ 闪烁动画 */
-@keyframes blinkEffect {
-
-    0%,
-    100% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0.6;
-    }
-}
-
-.blink {
-    animation: blinkEffect 1.6s infinite;
-}
-
-.pay-btn:active,
-.plan:active {
-    transform: scale(0.95);
-    transition: all 0.1s ease;
 }

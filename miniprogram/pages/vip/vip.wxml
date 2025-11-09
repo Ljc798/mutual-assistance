@@ -1,38 +1,66 @@
-<view class="vip-page">
-    <notify-banner/>
-    <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="handleBack" />
+<view class="vip-center">
+    <!-- 顶部导航栏 -->
+    <view class="sticky-vip-header">
+        <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="goBack" />
+        <view class="vip-header">积分商城</view>
+    </view>
 
-    <view class="vip-benefits">
-        <text class="benefit">🚫 订单免佣金（不限次数）</text>
-        <view class="vip-square">
-            <text class="benefit">👑 广场尊贵 VIP 标签</text>
-            <view class="username-area">
-                <text class="username vip-username">测试用户</text>
-                <image src="/assets/icons/vip-2.svg" class="vip-badge" />
+    <!-- 用户信息区 -->
+    <view class="user-info">
+        <image class="avatar" src="{{user.avatar_url}}" mode="aspectFill"></image>
+        <view class="user-meta">
+            <text class="nickname">{{user.username}}</text>
+            <text class="expire">
+                到期时间：
+                <text class="date">{{user.vip_expire_time}}</text>
+            </text>
+        </view>
+        <view class="compare-btn" bindtap="showBenefitPopup">权益对比</view>
+    </view>
+
+    <!-- VIP / SVIP tab -->
+    <view class="tab-bar">
+        <view class="tab {{activeTab === 'vip' ? 'active' : ''}}" data-tab="vip" bindtap="switchTab">VIP</view>
+        <view class="tab {{activeTab === 'svip' ? 'active' : ''}}" data-tab="svip" bindtap="switchTab">SVIP</view>
+    </view>
+
+    <!-- 套餐横向滚动区 -->
+    <scroll-view scroll-x class="plan-scroll">
+        <block wx:for="{{plans}}" wx:key="id">
+            <view class="plan-card {{selectedPlanId === item.id ? 'active' : ''}}" bindtap="selectPlan" data-id="{{item.id}}">
+                <text class="plan-name">{{item.name}}</text>
+                <text class="plan-price">¥{{item.promo_price}}</text>
+                <text class="plan-original">¥{{item.original_price}}</text>
+            </view>
+        </block>
+    </scroll-view>
+
+    <!-- 支付按钮 -->
+    <button class="pay-btn" bindtap="payNow">立即支付</button>
+
+    <!-- 会员特权展示 -->
+    <view class="benefit-section">
+        <text class="section-title">会员特权</text>
+        <view class="benefit-grid">
+            <view class="benefit-item" wx:for="{{benefits}}" wx:key="name">
+                <image class="benefit-icon" src="{{item.icon}}" mode="aspectFit"></image>
+                <text class="benefit-name">{{item.name}}</text>
             </view>
         </view>
-        <text class="benefit">📅 签到享双倍积分</text>
-        <text class="benefit">🔔 新功能抢先体验</text>
     </view>
 
-    <view class="promo-banner blink">
-        🎉 试运营期间限时促销中，价格超值不容错过！
-    </view>
-
-    <view wx:for="{{plans}}" wx:key="id" bindtap="selectPlan" data-id="{{item.id}}" class="plan {{item.id === selectedPlanId ? 'selected' : ''}}">
-        <view class="plan-row">
-            <text class="plan-title">{{item.name}}</text>
-
-            <view wx:if="{{item.promo_price !== null}}" class="plan-price-area">
-                <text class="promo-price">￥{{item.promo_price}}</text>
-                <text class="original-price">￥{{item.price}}</text>
-            </view>
-            <view wx:else class="plan-price-area">
-                <text class="regular-price">￥{{item.price}}</text>
-            </view>
+    <!-- 权益对比悬浮窗 -->
+    <view class="popup-mask" wx:if="{{showPopup}}" bindtap="closePopup">
+        <view class="popup" catchtap="noop">
+            <view class="popup-header">会员权益对比</view>
+            <scroll-view scroll-y class="popup-body">
+                <view class="popup-row" wx:for="{{rights}}" wx:key="key">
+                    <text class="right-name">{{item.name}}</text>
+                    <text class="right-vip">{{item.vip}}</text>
+                    <text class="right-svip">{{item.svip}}</text>
+                </view>
+            </scroll-view>
+            <button class="close-btn" bindtap="closePopup">我知道了</button>
         </view>
     </view>
-
-    <button class="pay-btn" bindtap="handlePay">立即开通</button>
-
 </view>

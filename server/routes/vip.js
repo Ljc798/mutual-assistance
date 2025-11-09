@@ -166,7 +166,6 @@ router.post('/notify', express.raw({
             );
         }
 
-        console.log("✅ VIP支付成功并更新会员信息");
         res.status(200).json({
             code: 'SUCCESS',
             message: 'OK'
@@ -197,16 +196,28 @@ function decryptResource(resource, key) {
 // ✅ 返回所有VIP套餐（含促销价）
 router.get('/plans', async (req, res) => {
     try {
-        const [plans] = await db.query(
-            `SELECT id, name, original_price AS price, promo_price, days FROM vip_plans WHERE is_active = 1`
-        );
+        const [plans] = await db.query(`
+        SELECT 
+          id,
+          name,
+          original_price,
+          promo_price,
+          days,
+          level,
+          benefits
+        FROM vip_plans
+        WHERE is_active = 1
+        ORDER BY level ASC, promo_price ASC
+      `);
 
         const formattedPlans = plans.map(plan => ({
             id: plan.id,
             name: plan.name,
-            price: parseFloat(plan.price), // 原价
+            level: plan.level,
+            original_price: parseFloat(plan.original_price),
             promo_price: plan.promo_price !== null ? parseFloat(plan.promo_price) : null,
-            days: plan.days
+            days: plan.days,
+            benefits: plan.benefits || {}
         }));
 
         res.json({
@@ -221,5 +232,7 @@ router.get('/plans', async (req, res) => {
         });
     }
 });
+
+
 
 module.exports = router;
