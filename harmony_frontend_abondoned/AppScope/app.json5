@@ -1,0 +1,10 @@
+{
+  "app": {
+    "bundleName": "com.example.harmony_frontend",
+    "vendor": "example",
+    "versionCode": 1000000,
+    "versionName": "1.0.0",
+    "icon": "$media:layered_image",
+    "label": "$string:label_name"
+  }
+}
