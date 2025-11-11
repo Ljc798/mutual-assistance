@@ -27,7 +27,6 @@ struct Index {
     Tabs({ barPosition: BarPosition.End }) {
       ForEach(this.list, (item: TabItem, index: number) => {
         TabContent() {
-          TabContent() {
             if (index == 0) {
               HomeView()
             } else if (index == 1) {
