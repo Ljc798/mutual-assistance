@@ -1,1 +1,1 @@
-export { add } from './src/main/ets/utils/Calc';
+export { PublishView } from './src/main/ets/views/PublishView';
