@@ -21,6 +21,22 @@
       "value": "#FF2737"
     },
     {
+      "name": "home_header_bg",
+      "value": "#FF416C"
+    },
+    {
+      "name": "text_primary",
+      "value": "#222222"
+    },
+    {
+      "name": "text_secondary",
+      "value": "#666666"
+    },
+    {
+      "name": "category_text",
+      "value": "#333333"
+    },
+    {
       "name": "linear_begin",
       "value": "#FD3F8F"
     },
@@ -37,8 +53,68 @@
       "value": "#F5F4F9"
     },
     {
+      "name": "page_background",
+      "value": "#F5F5F5"
+    },
+    {
+      "name": "search_box_bg",
+      "value": "#F8F8F8"
+    },
+    {
       "name": "border",
       "value": "#e4e4e4"
+    },
+    {
+      "name": "filter_border",
+      "value": "#FFD1DC"
+    },
+    {
+      "name": "filter_active_bg",
+      "value": "#FF6B8B"
+    },
+    {
+      "name": "status_pending",
+      "value": "#FFCC00"
+    },
+    {
+      "name": "status_ongoing",
+      "value": "#4CAF50"
+    },
+    {
+      "name": "status_finished",
+      "value": "#999999"
+    },
+    {
+      "name": "price_fixed",
+      "value": "#FA541C"
+    },
+    {
+      "name": "price_processing",
+      "value": "#FA8C16"
+    },
+    {
+      "name": "price_bidding",
+      "value": "#FAAD14"
+    },
+    {
+      "name": "price_deal",
+      "value": "#1890FF"
+    },
+    {
+      "name": "price_done",
+      "value": "#52C41A"
+    },
+    {
+      "name": "category_active_overlay",
+      "value": "#1AFF416C"
+    },
+    {
+      "name": "shadow_soft",
+      "value": "#1A000000"
+    },
+    {
+      "name": "shadow_card",
+      "value": "#12000000"
     }
   ]
 }

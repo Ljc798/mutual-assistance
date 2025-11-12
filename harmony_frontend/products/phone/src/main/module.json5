@@ -10,27 +10,31 @@
     "deliveryWithInstall": true,
     "installationFree": false,
     "pages": "$profile:main_pages",
-    "abilities": [
-      {
-        "name": "EntryAbility",
-        "srcEntry": "./ets/entryability/EntryAbility.ets",
+  "abilities": [
+    {
+      "name": "EntryAbility",
+      "srcEntry": "./ets/entryability/EntryAbility.ets",
         "description": "$string:EntryAbility_desc",
         "icon": "$media:layered_image",        // 应用图标
         "label": "$string:EntryAbility_label", // 应用名称
         "startWindowIcon": "$media:logo", // 启动图标
         "startWindowBackground": "$color:start_window_background",
         "exported": true,
-        "skills": [
-          {
-            "entities": [
-              "entity.system.home"
-            ],
-            "actions": [
-              "action.system.home"
-            ]
-          }
-        ]
-      }
-    ]
-  }
+      "skills": [
+        {
+          "entities": [
+            "entity.system.home"
+          ],
+          "actions": [
+            "action.system.home"
+          ]
+        }
+      ]
+    }
+  ]
+  ,
+  "requestPermissions": [
+    { "name": "ohos.permission.INTERNET" }
+  ]
+}
 }

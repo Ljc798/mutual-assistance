@@ -15,5 +15,10 @@ export { BreakPointType } from './src/main/ets/viewmodels/BreakPointType'
 export { HDMProgressLoading } from './src/main/ets/components/HDMProgressLoading'
 
 export { TabItem } from './src/main/ets/viewmodels/task'
+export { TaskDTO, TaskItemBase, TaskItem, TaskMode, TaskStatus } from './src/main/ets/viewmodels/task'
 
 export { HDMLoading } from './src/main/ets/components/HDMLoading'
+
+export { HttpClient } from './src/main/ets/utils/HttpClient'
+
+export { GlobalVariable } from './src/main/ets/components/GlobalVariable'

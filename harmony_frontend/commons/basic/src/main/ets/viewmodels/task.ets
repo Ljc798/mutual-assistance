@@ -4,7 +4,41 @@ export interface TabItem {
   active: ResourceStr
 }
 
-// TODO 根据/miniprogram里的所有字段来定义接口，此处为公用接口，还有home页特殊接口放在/features下
-export interface Tasks {
+export type TaskStatus = 0 | 1 | 2
 
+export interface TaskDTO {
+  id: number
+  employer_id: number
+  employee_id?: number
+  category: string
+  status: number
+  position: string
+  address: string
+  DDL: string
+  title: string
+  offer: number
+  detail: string
+  takeaway_code: string
+  takeaway_tel?: number
+  takeaway_name: string
+}
+
+export interface TaskItemBase {
+  id: string
+  title: string
+  category: string
+  deadline: string
+  position: string
+  address: string
+  status: TaskStatus
+  offer: number
+  formattedDeadline: string
+}
+
+export type TaskMode = 'fixed' | 'bidding'
+
+export interface TaskItem extends TaskItemBase {
+  mode: TaskMode
+  payAmount?: number
+  hasPaid: boolean
 }
