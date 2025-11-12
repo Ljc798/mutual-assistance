@@ -1,4 +1,17 @@
 import { HttpClient, TaskDTO, TaskItem, TaskStatus } from 'basic'
+import { TaskFilterValue } from '../viewmodels/HomeTypes'
+
+interface QueryParam {
+  key: string
+  value: string
+}
+
+export interface TaskQuery {
+  category?: string
+  page?: number
+  pageSize?: number
+  status?: TaskFilterValue
+}
 
 function toTaskItem(item: TaskDTO): TaskItem {
   return {
@@ -26,12 +39,38 @@ function formatDeadline(value: string): string {
   return `${pad(month)}-${pad(day)} ${pad(hours)}:${pad(minutes)}`
 }
 
-export async function fetchTasks(token?: string): Promise<TaskItem[]> {
+function buildQueryParams(query?: TaskQuery): QueryParam[] | undefined {
+  if (!query) {
+    return undefined
+  }
+  const params: QueryParam[] = []
+  params.push({
+    key: 'category',
+    value: query.category && query.category !== '全部' ? query.category : '全部'
+  })
+  params.push({
+    key: 'page',
+    value: `${query.page ?? 1}`
+  })
+  params.push({
+    key: 'pageSize',
+    value: `${query.pageSize ?? 10}`
+  })
+  const statusValue = query.status !== undefined && query.status !== 'all' ? `${query.status}` : ''
+  params.push({
+    key: 'status',
+    value: statusValue
+  })
+  return params
+}
+
+export async function fetchTasks(query?: TaskQuery, token?: string): Promise<TaskItem[]> {
   const headers: Record<string, string> = token ? {
     "Authorization": `Bearer ${token}`
   } : {};
 
-  const list = await HttpClient.get<TaskDTO[]>('/task/tasks', undefined, headers);
+  const params = buildQueryParams(query)
+  const list = await HttpClient.get<TaskDTO[]>('/task/tasks', params, headers)
 
-  return list.map(toTaskItem);
+  return list.map(toTaskItem)
 }

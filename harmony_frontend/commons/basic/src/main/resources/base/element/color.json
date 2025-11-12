@@ -115,6 +115,46 @@
     {
       "name": "shadow_card",
       "value": "#12000000"
+    },
+    {
+      "name": "home_page_bg",
+      "value": "#F7F8FA"
+    },
+    {
+      "name": "home_primary",
+      "value": "#FF6B8B"
+    },
+    {
+      "name": "home_accent",
+      "value": "#FF416C"
+    },
+    {
+      "name": "home_text_dark",
+      "value": "#333333"
+    },
+    {
+      "name": "home_text_light",
+      "value": "#666666"
+    },
+    {
+      "name": "home_border",
+      "value": "#F2F2F2"
+    },
+    {
+      "name": "home_card_shadow",
+      "value": "#14000000"
+    },
+    {
+      "name": "home_text_gray",
+      "value": "#8C8C8C"
+    },
+    {
+      "name": "home_price",
+      "value": "#39B54A"
+    },
+    {
+      "name": "home_category_bg",
+      "value": "#FFF0F3"
     }
   ]
 }
