@@ -7,5 +7,6 @@
   "license": "Apache-2.0",
   "packageType": "InterfaceHar",
   "dependencies": {
+    "basic": "file:../../commons/basic"
   }
 }

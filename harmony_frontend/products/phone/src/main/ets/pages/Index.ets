@@ -3,16 +3,27 @@ import { SquareView } from 'square';
 import { PublishView } from 'publish';
 import { MessageView } from 'message';
 import { MyView } from 'my';
+import { AppBreakPoint, AppSafeArea, BreakPointType, HDMProgressLoading, PAGE_PATH, TabItem } from 'basic'
+import { AppStorageV2, AttributeUpdater } from '@kit.ArkUI'
+import { HMDefaultGlobalAnimator, HMNavigation } from '@hadss/hmrouter'
+import { Logger } from 'basic'
 
-interface TabItem {
-  text: string
-  normal: ResourceStr
-  active: ResourceStr
+
+class MyModifier extends AttributeUpdater<NavigationAttribute> {
+  // 重写原来的方法
+  initializeModifier(instance: NavigationAttribute): void {
+    // instance就是Navigation实例对象
+    instance.mode(NavigationMode.Stack) // 分栏模式去掉
+    instance.titleMode(NavigationTitleMode.Mini) // 标题模式全屏
+    instance.hideTitleBar(true) // 隐藏标题栏
+  }
 }
 
 @Entry
 @Component
 struct Index {
+  safeArea: AppSafeArea = AppStorageV2.connect(AppSafeArea, () => new AppSafeArea())!
+
   @State activeIndex: number = 0
   list: TabItem[] = [
     { text: '首页', normal: $r('app.media.icon_nav_home'), active: $r('app.media.icon_nav_home') },
@@ -42,6 +53,9 @@ struct Index {
         .tabBar(this.TabItemBuilder(item, index))
       })
     }
+    .padding({
+      bottom: this.safeArea.bottomHeight
+    })
     .scrollable(false)
     .onTabBarClick(index => {
       this.activeIndex = index
