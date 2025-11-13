@@ -37,12 +37,32 @@
       "value": "#333333"
     },
     {
-      "name": "linear_begin",
+      "name": "my_linear_begin",
       "value": "#FD3F8F"
     },
     {
-      "name": "linear_end",
+      "name": "my_linear_end",
       "value": "#FF773C"
+    },
+    {
+      "name": "vip_linear_begin",
+      "value": "#FFF4E6"
+    },
+    {
+      "name": "vip_linear_end",
+      "value": "#FFE0B2"
+    },
+    {
+      "name": "vip_label",
+      "value": "#B8860B"
+    },
+    {
+      "name": "vip_expire",
+      "value": "#8D6E63"
+    },
+    {
+      "name": "vip_renew_btn",
+      "value": "#F6B100"
     },
     {
       "name": "yellow",

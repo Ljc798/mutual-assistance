@@ -100,6 +100,7 @@ export struct HomeView {
   }
 
   build() {
+    Stack() {
     Column() {
       Refresh({
         refreshing: this.isRefreshing,
@@ -121,6 +122,7 @@ export struct HomeView {
           })
           .width('100%')
         }
+        .scrollBar(BarState.Off)
         .onScrollEdge((side: Edge) => {
           if (side === Edge.Bottom) {
             this.loadMoreTasks()
@@ -148,11 +150,26 @@ export struct HomeView {
         }
       })
       .onRefreshing(() => this.handleRefresh())
+      }
+      Image($r('[basic].media.ic_up_arrow'))
+        .width(50)
+        .padding(10)
+        .backgroundColor($r('[basic].color.white'))
+        .borderRadius(25)
+        .position({
+          right: 20,
+          bottom: 20
+        })
+        .onClick(() => {
+          this.scroller.scrollEdge(Edge.Top)
+        })
     }
     .width('100%')
     .height('100%')
     .backgroundColor($r('[basic].color.page_background'))
+
   }
+
 
   async handleRefresh() {
     if (this.isRefreshing || this.isLoadingMore) {

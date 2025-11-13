@@ -31,94 +31,98 @@ router.post("/phone-login", async (req, res) => {
         loginCode
     } = req.body;
 
-    if (!phoneCode || !loginCode) {
+    // ✅ 基础参数检查
+    if (!phoneCode && !loginCode) {
         return res.status(400).json({
             success: false,
             message: "缺少参数"
         });
     }
 
+    let openid = null;
+    let phoneNumber = null;
+
     try {
-        // ✅ 使用云调用的方式获取 openid
-        const openidRes = await axios.get("http://api.weixin.qq.com/sns/jscode2session", {
-            params: {
-                appid: process.env.WX_APPID,
-                secret: process.env.WX_SECRET,
-                js_code: loginCode,
-                grant_type: "authorization_code"
-            }
-        });
-
-        const {
-            openid
-        } = openidRes.data;
-        if (!openid) {
-            return res.status(400).json({
-                success: false,
-                message: "获取 openid 失败",
-                raw: openidRes.data
-            });
-        }
-
-        // ✅ 获取手机号（用云调用）
-        const accessToken = await getAccessToken(); // ✅ 从 utils/wechat 拿 token
-        const wxRes = await axios.post(
-            `https://api.weixin.qq.com/wxa/business/getuserphonenumber?access_token=${accessToken}`, {
-                code: phoneCode
-            }, {
-                headers: {
-                    "Content-Type": "application/json"
+        // ===== [1] 若是微信小程序，获取 openid 和手机号 =====
+        if (loginCode) {
+            const openidRes = await axios.get("https://api.weixin.qq.com/sns/jscode2session", {
+                params: {
+                    appid: process.env.WX_APPID,
+                    secret: process.env.WX_SECRET,
+                    js_code: loginCode,
+                    grant_type: "authorization_code"
                 }
-            }
-        );
-
-        if (!wxRes.data?.phone_info?.phoneNumber) {
-            return res.status(400).json({
-                success: false,
-                message: "获取手机号失败",
-                error: wxRes.data
             });
+            openid = openidRes.data.openid || null;
         }
 
-        const phoneNumber = wxRes.data.phone_info.phoneNumber;
+        // ✅ 获取手机号
+        if (phoneCode) {
+            const accessToken = await getAccessToken();
+            const wxRes = await axios.post(
+                `https://api.weixin.qq.com/wxa/business/getuserphonenumber?access_token=${accessToken}`, {
+                    code: phoneCode
+                }, {
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                }
+            );
+            phoneNumber = wxRes.data?.phone_info?.phoneNumber ?? null;
+        }
 
-        // ✅ 查或建用户，并保存 openid
-        const [results] = await db.query("SELECT * FROM users WHERE phone_number = ?", [phoneNumber]);
-        let user;
-        let isNewUser = false;
+        // ===== [2] 若是鸿蒙端登录，只提供手机号 =====
+        if (!phoneNumber) {
+            // 鸿蒙端直接传手机号，不通过微信接口
+            phoneNumber = req.body.phoneNumber;
+            if (!phoneNumber) {
+                return res.status(400).json({
+                    success: false,
+                    message: "缺少手机号"
+                });
+            }
+        }
 
-        if (results.length > 0) {
-            user = results[0];
-            await db.query("UPDATE users SET openid = ? WHERE id = ?", [openid, user.id]);
-            user.openid = openid;
+        // ===== [3] 查或建用户 =====
+        const [existing] = await db.query("SELECT * FROM users WHERE phone_number = ?", [phoneNumber]);
+        let user, isNewUser = false;
+
+        if (existing.length > 0) {
+            user = existing[0];
+
+            // ✅ 如果是小程序端且数据库还没 openid，就更新
+            if (openid && !user.openid) {
+                await db.query("UPDATE users SET openid = ? WHERE id = ?", [openid, user.id]);
+                user.openid = openid;
+            }
+
         } else {
             const now = new Date();
             now.setHours(now.getHours() + 8);
+
             const newUser = {
                 wxid: uuidv4(),
                 phone_number: phoneNumber,
-                username: "微信用户" + phoneNumber.slice(-4),
+                username: "用户" + phoneNumber.slice(-4),
                 avatar_url: "https://mutual-campus-1348081197.cos.ap-nanjing.myqcloud.com/avatar/default.png",
                 free_counts: 5,
                 points: 10,
                 created_time: now,
-                openid
+                openid // 可能为空
             };
+
             const [insertResult] = await db.query("INSERT INTO users SET ?", [newUser]);
             newUser.id = insertResult.insertId;
             user = newUser;
             isNewUser = true;
 
-            const [repCheck] = await db.query("SELECT id FROM user_reputation WHERE user_id = ?", [user.id]);
-            if (repCheck.length === 0) {
-                await db.query(`
-                    INSERT INTO user_reputation (user_id, total_score, completed_tasks, canceled_tasks, reports_received, average_rating, reliability_index)
-                    VALUES (?, 80.00, 0, 0, 0, 4.00, 1.0000)
-                `, [user.id]);
-            }
-
+            await db.query(`
+          INSERT INTO user_reputation (user_id, total_score, completed_tasks, canceled_tasks, reports_received, average_rating, reliability_index)
+          VALUES (?, 80.00, 0, 0, 0, 4.00, 1.0000)
+        `, [user.id]);
         }
 
+        // ===== [4] 返回 token =====
         const token = jwt.sign({
             id: user.id
         }, SECRET_KEY, {
@@ -131,16 +135,16 @@ router.post("/phone-login", async (req, res) => {
             user,
             isNewUser
         });
-
     } catch (error) {
         console.error("❌ 登录失败:", error.response?.data || error.message);
-        return res.status(500).json({
+        res.status(500).json({
             success: false,
             message: "登录失败",
             error: error.response?.data || error.message
         });
     }
 });
+
 
 
 // 新版登录：只用 loginCode 换 openid，放弃手机号逻辑
