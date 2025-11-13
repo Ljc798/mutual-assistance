@@ -1,6 +1,6 @@
 {
   "module": {
-    "name": "my",
+    "name": "mine",
     "type": "shared",
     "description": "$string:shared_desc",
     "deviceTypes": [

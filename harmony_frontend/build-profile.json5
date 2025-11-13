@@ -1,6 +1,20 @@
 {
   "app": {
-    "signingConfigs": [],
+    "signingConfigs": [
+      {
+        "name": "default",
+        "type": "HarmonyOS",
+        "material": {
+          "storeFile": "/Users/alex/Downloads/harmony_key/mutual_key_pre.p12",
+          "storePassword": "0000001A169DCC0496FFF2712BE67C721F8A759B6AC757A0195BE69234A2FAF1103158DF0A25971EE458",
+          "keyAlias": "mutual_key_pre",
+          "keyPassword": "0000001AAC96A4DBAE672F09FE6B12A099553E8C8777D4094524DFCC2FC4033709FEA6CC5D991FEA911F",
+          "signAlg": "SHA256withECDSA",
+          "profile": "/Users/alex/Downloads/harmony_key/mutualDebug.p7b",
+          "certpath": "/Users/alex/Downloads/harmony_key/mutual_key_pre.cer"
+        }
+      }
+    ],
     "products": [
       {
         "name": "default",
@@ -99,8 +113,8 @@
       ]
     },
     {
-      "name": "my",
-      "srcPath": "./features/my",
+      "name": "mine",
+      "srcPath": "./features/mine",
       "targets": [
         {
           "name": "default",

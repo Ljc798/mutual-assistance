@@ -1,6 +1,6 @@
 import promptAction from '@ohos.promptAction'
 import { AppStorageV2 } from '@kit.ArkUI'
-import { AppSafeArea } from 'basic'
+import { AppSafeArea, PAGE_PATH, auth } from 'basic'
 import {
   ActionShortcut,
   ReputationSummary,
@@ -8,9 +8,10 @@ import {
   UserProfileSummary,
   VipState
 } from '../viewmodels/MyTypes'
+import { HMRouterMgr } from '@hadss/hmrouter'
 
 @Component
-export struct MyView {
+export struct MineView {
   private scroller: Scroller = new Scroller()
   safeArea: AppSafeArea = AppStorageV2.connect(AppSafeArea, () => new AppSafeArea())!
   @State profile: UserProfileSummary = {
@@ -99,7 +100,7 @@ export struct MyView {
 
   @Builder
   private renderProfileCard() {
-    Row({space: 6}) {
+    Row({ space: 6 }) {
       Image(this.profile.avatar)
         .width(60)
         .height(60)
@@ -123,6 +124,7 @@ export struct MyView {
         .fontWeight(FontWeight.Medium)
         .fontColor($r('[basic].color.text_secondary'))
     }
+    .onClick(() => this.handleProtectedAction('profile'))
     .width('96%')
     .padding(16)
     .backgroundColor($r('[basic].color.white'))
@@ -156,6 +158,7 @@ export struct MyView {
         }, (index: number) => `${index}`)
       }
     }
+    .onClick(() => this.handleProtectedAction('reputation'))
     .padding({
       top: 3,
       bottom: 3,
@@ -188,7 +191,7 @@ export struct MyView {
         .padding({ top: 16, bottom: 16 })
         .layoutWeight(1)
         .alignItems(HorizontalAlign.Center)
-        .onClick(() => this.showToast('功能稍后开放'))
+        .onClick(() => this.handleProtectedAction(item.action))
       }, (item: StatisticCard) => item.label)
     }
     .backgroundColor($r('[basic].color.white'))
@@ -228,6 +231,11 @@ export struct MyView {
           .fontColor($r('[basic].color.white'))
           .borderRadius(20)
           .padding({ top: 5, bottom: 5, left: 10, right: 10 })
+          .onClick(() => {
+            HMRouterMgr.push({
+              pageUrl: PAGE_PATH.LOGIN_PAGE
+            })
+          })
       }
       .width('96%')
       .padding({
@@ -291,8 +299,8 @@ export struct MyView {
             }
           }
           .width('80%')
-          .alignItems(HorizontalAlign.Center)
-          .onClick(() => this.handleShortcutTap(item))
+      .alignItems(HorizontalAlign.Center)
+      .onClick(() => this.handleProtectedAction(item.action))
         }, (item: ActionShortcut) => item.title)
     }
     .padding({
@@ -313,6 +321,12 @@ export struct MyView {
         .fontSize(13)
         .fontColor($r('[basic].color.text_secondary'))
         .textAlign(TextAlign.Center)
+      Button('填写反馈')
+        .fontSize(14)
+        .borderRadius(20)
+        .backgroundColor($r('[basic].color.filter_active_bg'))
+        .fontColor($r('[basic].color.white'))
+        .onClick(() => this.handleProtectedAction('feedback'))
     }
     .alignItems(HorizontalAlign.Center)
     .padding({ top: 12, bottom: 12 })
@@ -380,14 +394,18 @@ export struct MyView {
     return this.reputation.weightedScore > index ? '#FFB400' : $r('[basic].color.text_secondary')
   }
 
-  private handleShortcutTap(item: ActionShortcut) {
-    if (item.action === 'feedback') {
+  private handleProtectedAction(action: string) {
+    const user = auth.getUser()
+    if (!user?.token) {
+      HMRouterMgr.push({ pageUrl: PAGE_PATH.LOGIN_PAGE })
+      return
+    }
+    if (action === 'feedback') {
       this.showFeedbackModal = true
       return
     }
-    this.showToast(`${item.title} 页面开发中`)
+    this.showToast('功能开发中')
   }
-
   private closeFeedbackModal() {
     this.showFeedbackModal = false
     this.feedbackTitle = ''

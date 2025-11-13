@@ -1,6 +1,6 @@
 import promptAction from '@ohos.promptAction'
 import {
-  AppBreakPoint, AppSafeArea, BreakPointType, HDMProgressLoading, TaskItem, TaskStatus
+  AppBreakPoint, AppSafeArea, BreakPointType, ProgressLoading, TaskItem, TaskStatus
 } from 'basic'
 import { TaskFilterValue, HomeCategoryItem, TaskFilter, PriceInfo } from '../viewmodels/HomeTypes'
 import { fetchTasks as fetchHomeTasks, TaskQuery } from '../services/TaskService'
@@ -208,7 +208,7 @@ export struct HomeView {
         .fontSize(13)
         .fontColor($r('[basic].color.text_secondary'))
       // 加载动画组件
-      HDMProgressLoading({ pWidth: 18, strokeWidth: 2 })
+      ProgressLoading({ pWidth: 18, strokeWidth: 2 })
     }
     .width('100%')
     .height(60)

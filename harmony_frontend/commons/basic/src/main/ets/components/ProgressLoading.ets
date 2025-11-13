@@ -1,5 +1,5 @@
 @ComponentV2
-export struct HDMProgressLoading {
+export struct ProgressLoading {
   @Param
   pWidth: number = 80
   @Param

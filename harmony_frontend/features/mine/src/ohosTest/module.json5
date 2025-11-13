@@ -1,6 +1,6 @@
 {
   "module": {
-    "name": "my_test",
+    "name": "mine_test",
     "type": "feature",
     "deviceTypes": [
       "phone",

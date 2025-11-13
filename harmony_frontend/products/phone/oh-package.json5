@@ -11,6 +11,6 @@
     "square": "file:../../features/square",
     "publish": "file:../../features/publish",
     "message": "file:../../features/message",
-    "my": "file:../../features/my"
+    "mine": "file:../../features/mine"
   }
 }

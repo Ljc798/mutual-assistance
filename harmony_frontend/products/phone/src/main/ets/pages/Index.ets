@@ -2,8 +2,8 @@ import { HomeView } from 'home';
 import { SquareView } from 'square';
 import { PublishView } from 'publish';
 import { MessageView } from 'message';
-import { MyView } from 'my';
-import { AppBreakPoint, AppSafeArea, BreakPointType, HDMProgressLoading, PAGE_PATH, TabItem } from 'basic'
+import { MineView } from 'mine';
+import { AppBreakPoint, AppSafeArea, BreakPointType, ProgressLoading, PAGE_PATH, TabItem } from 'basic'
 import { AppStorageV2, AttributeUpdater } from '@kit.ArkUI'
 import { HMDefaultGlobalAnimator, HMNavigation } from '@hadss/hmrouter'
 import { Logger } from 'basic'
@@ -22,8 +22,8 @@ class MyModifier extends AttributeUpdater<NavigationAttribute> {
 @Entry
 @Component
 struct Index {
+  modifier: MyModifier = new MyModifier() // 专门用来修改Navigation特性对象实例
   safeArea: AppSafeArea = AppStorageV2.connect(AppSafeArea, () => new AppSafeArea())!
-
   @State activeIndex: number = 0
   list: TabItem[] = [
     { text: '首页', normal: $r('app.media.icon_nav_home'), active: $r('app.media.icon_nav_home') },
@@ -35,32 +35,51 @@ struct Index {
   ]
 
   build() {
-    Tabs({ barPosition: BarPosition.End }) {
-      ForEach(this.list, (item: TabItem, index: number) => {
-        TabContent() {
-            if (index == 0) {
-              HomeView()
-            } else if (index == 1) {
-              SquareView()
-            } else if (index == 2) {
-              PublishView()
-            } else if (index == 3) {
-              MessageView()
-            } else {
-              MyView()
-            }
+    Column() {
+      // 使用HMNavigation包裹整个根容器 -坑点-HMNavigation外层必须再包一个容器
+      // HMNavigation 是对navigation的封装
+      // 坑点 子页面绝不能出现NavDestination
+      // homePageUrl 是根页面的地址 想要回来直接写整个地址
+      // 想要Navigation的特性
+      HMNavigation({
+        navigationId: PAGE_PATH.MAIN_PAGE_ID,
+        homePageUrl: PAGE_PATH.MAIN_PAGE,
+        options: {
+          standardAnimator: HMDefaultGlobalAnimator.STANDARD_ANIMATOR,
+          dialogAnimator: HMDefaultGlobalAnimator.DIALOG_ANIMATOR,
+          modifier: this.modifier,
         }
-        .tabBar(this.TabItemBuilder(item, index))
-      })
+      }) {
+        Tabs({ barPosition: BarPosition.End }) {
+          ForEach(this.list, (item: TabItem, index: number) => {
+            TabContent() {
+              if (index == 0) {
+                HomeView()
+              } else if (index == 1) {
+                SquareView()
+              } else if (index == 2) {
+                PublishView()
+              } else if (index == 3) {
+                MessageView()
+              } else {
+                MineView()
+              }
+            }
+            .tabBar(this.TabItemBuilder(item, index))
+          })
+        }
+        .padding({
+          bottom: this.safeArea.bottomHeight
+        })
+        .scrollable(false)
+        .onTabBarClick(index => {
+          this.activeIndex = index
+        })
+      }
     }
-    .padding({
-      bottom: this.safeArea.bottomHeight
-    })
-    .scrollable(false)
-    .onTabBarClick(index => {
-      this.activeIndex = index
-    })
+    .height('100%')
   }
+
 
   @Builder
   TabItemBuilder(item: TabItem, index: number) {
