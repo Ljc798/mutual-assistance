@@ -1,4 +1,4 @@
-import { AppSafeArea, NavBar, PAGE_PATH } from 'basic'
+import { AppSafeArea, AppUser, NavBar, PAGE_PATH, UserInfo } from 'basic'
 import { AppStorageV2, promptAction } from '@kit.ArkUI'
 
 import { HMRouter, HMRouterMgr } from '@hadss/hmrouter'
@@ -19,6 +19,7 @@ export struct LoginView {
   })
   @Local agree: boolean = false
   safeArea: AppSafeArea = AppStorageV2.connect(AppSafeArea, () => new AppSafeArea())!
+  private appUser: AppUser = AppStorageV2.connect(AppUser, () => new AppUser())!
 
   @Monitor("loginForm.account")
   updateAccount(monitor: IMonitor) {
@@ -49,7 +50,21 @@ export struct LoginView {
       }
       const response = await passwordLoginAPI(payload)
       if (response.success && response.user) {
-        auth.setUser(response.user)
+        const userPayload: UserInfo = {
+          id: response.user.id,
+          username: response.user.username,
+          avatar_url: response.user.avatar_url,
+          wxid: response.user.wxid,
+          phone_number: response.user.phone_number,
+          openid: response.user.openid,
+          points: response.user.points,
+          free_counts: response.user.free_counts,
+          balance: response.user.balance,
+          vip_expire_time: response.user.vip_expire_time,
+          vip_level: response.user.vip_level,
+          token: response.token ?? ''
+        }
+        auth.setUser(userPayload)
         promptAction.showToast({ message: '登录成功' })
         HMRouterMgr.pop()
       } else {

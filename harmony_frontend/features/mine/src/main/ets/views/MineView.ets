@@ -1,6 +1,6 @@
 import promptAction from '@ohos.promptAction'
 import { AppStorageV2 } from '@kit.ArkUI'
-import { AppSafeArea, PAGE_PATH, auth } from 'basic'
+import { AppSafeArea, PAGE_PATH, AppUser } from 'basic'
 import {
   ActionShortcut,
   ReputationSummary,
@@ -14,28 +14,16 @@ import { HMRouterMgr } from '@hadss/hmrouter'
 export struct MineView {
   private scroller: Scroller = new Scroller()
   safeArea: AppSafeArea = AppStorageV2.connect(AppSafeArea, () => new AppSafeArea())!
-  @State profile: UserProfileSummary = {
-    name: '立即登录',
-    idLabel: '登录以体验完整功能',
-    avatar: 'https://mutual-campus-1348081197.cos.ap-nanjing.myqcloud.com/avatar/default.png',
-    freeCounts: 3,
-    points: 120,
-    balance: '56.80'
-  }
+  private appUser: AppUser = AppStorageV2.connect(AppUser, () => new AppUser())!
+  private readonly defaultAvatar: ResourceStr = 'https://mutual-campus-1348081197.cos.ap-nanjing.myqcloud.com/avatar/default.png'
+  @State profile: UserProfileSummary = this.buildProfileFromStorage()
   @State reputation: ReputationSummary = {
-    totalScore: 480,
-    weightedScore: 4.3,
+    totalScore: 80,
+    weightedScore: 4.0,
     creditLevel: '良好'
   }
-  @State statistics: StatisticCard[] = [
-    { label: '免佣金次数', value: '3', action: 'shop' },
-    { label: '积分余额', value: '120', action: 'points' },
-    { label: '账户余额', value: '¥56.80', action: 'wallet' }
-  ]
-  @State vipState: VipState = {
-    isVip: true,
-    expireText: '到期时间：2025-03-01'
-  }
+  @State statistics: StatisticCard[] = this.buildStatisticsFromStorage()
+  @State vipState: VipState = this.buildVipStateFromStorage()
   @State shortcuts: ActionShortcut[] = [
     { title: '我的订单', action: 'orders' },
     { title: '我的空间', action: 'space' },
@@ -46,6 +34,14 @@ export struct MineView {
   @State showFeedbackModal: boolean = false
   @State feedbackTitle: string = ''
   @State feedbackContent: string = ''
+
+  aboutToAppear() {
+    this.syncUserState()
+  }
+
+  onPageShow() {
+    this.syncUserState()
+  }
 
   build() {
     Stack() {
@@ -286,22 +282,22 @@ export struct MineView {
   @Builder
   private renderShortcutsCard() {
     Column() {
-        ForEach(this.shortcuts, (item: ActionShortcut, index: number) => {
-          Column() {
-            Text(item.title)
-              .fontSize(16)
-              .fontColor($r('[basic].color.text_primary'))
-            if (index < this.shortcuts.length - 1) {
-              Divider()
-                .color($r('[basic].color.status_finished'))
-                .strokeWidth(0.5)
-                .margin({ top: 16, bottom: 16 })
-            }
+      ForEach(this.shortcuts, (item: ActionShortcut, index: number) => {
+        Column() {
+          Text(item.title)
+            .fontSize(16)
+            .fontColor($r('[basic].color.text_primary'))
+          if (index < this.shortcuts.length - 1) {
+            Divider()
+              .color($r('[basic].color.status_finished'))
+              .strokeWidth(0.5)
+              .margin({ top: 16, bottom: 16 })
           }
-          .width('80%')
-      .alignItems(HorizontalAlign.Center)
-      .onClick(() => this.handleProtectedAction(item.action))
-        }, (item: ActionShortcut) => item.title)
+        }
+        .width('80%')
+        .alignItems(HorizontalAlign.Center)
+        .onClick(() => this.handleProtectedAction(item.action))
+      }, (item: ActionShortcut) => item.title)
     }
     .padding({
       left: 16,
@@ -389,11 +385,12 @@ export struct MineView {
   }
 
   private handleProtectedAction(action: string) {
-    const user = auth.getUser()
+    const user = this.appUser.user
     if (!user?.token) {
       HMRouterMgr.push({ pageUrl: PAGE_PATH.LOGIN_PAGE })
       return
     }
+    this.syncUserState()
     if (action === 'feedback') {
       this.showFeedbackModal = true
       return
@@ -417,5 +414,65 @@ export struct MineView {
       duration: 1500,
       bottom: 120
     })
+  }
+
+  private buildProfileFromStorage(): UserProfileSummary {
+    const user = this.appUser.user
+    if (!user?.token) {
+      return {
+        name: '立即登录',
+        idLabel: '登录以体验完整功能',
+        avatar: this.defaultAvatar,
+        freeCounts: 0,
+        points: 0,
+        balance: '¥0.00'
+      }
+    }
+    const idLabel = user.wxid?.length
+      ? `ID: ${user.wxid}`
+      : user.phone_number?.length
+        ? `手机号：${user.phone_number}`
+        : '欢迎回来'
+    const balanceValue = user.balance !== undefined ? `¥${Number(user.balance).toFixed(2)}` : '¥0.00'
+    return {
+      name: user.username?.length ? user.username : '校园用户',
+      idLabel,
+      avatar: user.avatar_url?.length ? user.avatar_url : this.defaultAvatar,
+      freeCounts: user.free_counts ?? 0,
+      points: user.points ?? 0,
+      balance: balanceValue
+    }
+  }
+
+  private buildStatisticsFromStorage(): StatisticCard[] {
+    const user = this.appUser.user
+    const freeCounts = user?.free_counts ?? 0
+    const points = user?.points ?? 0
+    const balanceValue = user?.balance !== undefined ? `¥${Number(user.balance).toFixed(2)}` : '¥0.00'
+    return [
+      { label: '免佣金次数', value: `${freeCounts}`, action: 'shop' },
+      { label: '积分余额', value: `${points}`, action: 'points' },
+      { label: '账户余额', value: balanceValue, action: 'wallet' }
+    ]
+  }
+
+  private buildVipStateFromStorage(): VipState {
+    const user = this.appUser.user
+    const expireText = user?.vip_expire_time
+    if (!expireText) {
+      return { isVip: false, expireText: '未开通' }
+    }
+    const expireDate = new Date(expireText)
+    const isVip = !Number.isNaN(expireDate.getTime()) && expireDate.getTime() > Date.now()
+    return {
+      isVip,
+      expireText: isVip ? `到期时间：${expireText}` : '未开通'
+    }
+  }
+
+  private syncUserState() {
+    this.profile = this.buildProfileFromStorage()
+    this.statistics = this.buildStatisticsFromStorage()
+    this.vipState = this.buildVipStateFromStorage()
   }
 }

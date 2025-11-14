@@ -62,12 +62,12 @@ router.post("/phone-login", async (req, res) => {
             const accessToken = await getAccessToken();
             const wxRes = await axios.post(
                 `https://api.weixin.qq.com/wxa/business/getuserphonenumber?access_token=${accessToken}`, {
-                    code: phoneCode
-                }, {
-                    headers: {
-                        "Content-Type": "application/json"
-                    }
+                code: phoneCode
+            }, {
+                headers: {
+                    "Content-Type": "application/json"
                 }
+            }
             );
             phoneNumber = wxRes.data?.phone_info?.phoneNumber ?? null;
         }
@@ -133,7 +133,19 @@ router.post("/phone-login", async (req, res) => {
         res.json({
             success: true,
             token,
-            user,
+            user: {
+                id: user.id,
+                wxid: user.wxid,
+                username: user.username,
+                openid: openid,
+                balance: balance,
+                avatar_url: user.avatar_url,
+                free_counts: user.free_counts,
+                points: user.points,
+                vip_level: user.vip_level,
+                vip_expire_time: user.vip_expire_time,
+                created_time: user.created_time
+            },
             isNewUser
         });
     } catch (error) {
@@ -147,69 +159,72 @@ router.post("/phone-login", async (req, res) => {
 });
 
 router.post("/password-login", async (req, res) => {
-  const { phone, password } = req.body;
+    const { phone, password } = req.body;
 
-  if (!phone || !password) {
-    return res.status(400).json({
-      success: false,
-      message: "缺少手机号或密码",
-    });
-  }
-
-  try {
-    // 1️⃣ 根据手机号查用户
-    const [rows] = await db.query(
-      "SELECT * FROM users WHERE phone_number = ?",
-      [phone]
-    );
-
-    if (rows.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "该手机号未注册",
-      });
+    if (!phone || !password) {
+        return res.status(400).json({
+            success: false,
+            message: "缺少手机号或密码",
+        });
     }
 
-    const user = rows[0];
+    try {
+        // 1️⃣ 根据手机号查用户
+        const [rows] = await db.query(
+            "SELECT * FROM users WHERE phone_number = ?",
+            [phone]
+        );
 
-    // 2️⃣ 校验密码是否正确
-    const isMatch = await bcrypt.compare(password, user.password_hash);
-    if (!isMatch) {
-      return res.status(400).json({
-        success: false,
-        message: "密码错误",
-      });
+        if (rows.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "该手机号未注册",
+            });
+        }
+
+        const user = rows[0];
+
+        // 2️⃣ 校验密码是否正确
+        const isMatch = await bcrypt.compare(password, user.password_hash);
+        if (!isMatch) {
+            return res.status(400).json({
+                success: false,
+                message: "密码错误",
+            });
+        }
+
+        // 3️⃣ 生成 JWT
+        const token = jwt.sign({ id: user.id }, SECRET_KEY, {
+            expiresIn: "7d",
+        });
+
+        // 4️⃣ 登录成功
+        return res.json({
+            success: true,
+            message: "登录成功",
+            token,
+            user: {
+                id: user.id,
+                wxid: user.wxid,
+                username: user.username,
+                openid: user.openid,
+                balance: balance,
+                avatar_url: user.avatar_url,
+                free_counts: user.free_counts,
+                points: user.points,
+                vip_level: user.vip_level,
+                vip_expire_time: user.vip_expire_time,
+                created_time: user.created_time
+            },
+        });
+    } catch (err) {
+        console.error("❌ 密码登录失败:", err);
+        return res.status(500).json({
+            success: false,
+            message: "服务器错误",
+            error: err.message,
+        });
     }
-
-    // 3️⃣ 生成 JWT
-    const token = jwt.sign({ id: user.id }, SECRET_KEY, {
-      expiresIn: "7d",
-    });
-
-    // 4️⃣ 登录成功
-    return res.json({
-      success: true,
-      message: "登录成功",
-      token,
-      user: {
-        id: user.id,
-        username: user.username,
-        avatar_url: user.avatar_url,
-        phone_number: user.phone_number,
-        wxid: user.wxid,
-        openid: user.openid,
-        points: user.points,
-        free_counts: user.free_counts,
-      },
-    });
-  } catch (err) {
-    console.error("❌ 密码登录失败:", err);
-    return res.status(500).json({
-      success: false,
-      message: "服务器错误",
-      error: err.message,
-    });
-  }
 });
 
 
@@ -329,7 +344,19 @@ router.post("/admin-login", async (req, res) => {
         return res.json({
             success: true,
             token,
-            user,
+            user: {
+                id: user.id,
+                wxid: user.wxid,
+                username: user.username,
+                openid: user.openid,
+                balance: user.balance,
+                avatar_url: user.avatar_url,
+                free_counts: user.free_counts,
+                points: user.points,
+                vip_level: user.vip_level,
+                vip_expire_time: user.vip_expire_time,
+                created_time: user.created_time
+            },
             isAdmin: true
         });
 
@@ -391,12 +418,25 @@ router.post("/update", authMiddleware, async (req, res) => {
             [username, avatar_url, wxid, school_id || 1, userId]
         );
 
-        const [updatedUser] = await db.query("SELECT * FROM users WHERE id = ?", [userId]);
+        const [[newUser]] = await db.query("SELECT * FROM users WHERE id = ?", [userId]);
 
         return res.json({
             success: true,
             message: "用户信息更新成功",
-            user: updatedUser[0]
+            user: {
+                id: newUser.id,
+                wxid: newUser.wxid,
+                username: newUser.username,
+                avatar_url: newUser.avatar_url,
+                school_id: newUser.school_id,
+                free_counts: newUser.free_counts,
+                points: newUser.points,
+                vip_level: newUser.vip_level,
+                vip_expire_time: newUser.vip_expire_time,
+                created_time: newUser.created_time,
+                openid: newUser.openid,
+                balance: newUser.balance
+            }
         });
 
     } catch (err) {
@@ -676,11 +716,11 @@ router.post("/check-image", upload.single("image"), async (req, res) => {
         const wxRes = await axios.post(
             `https://api.weixin.qq.com/wxa/img_sec_check?access_token=${accessToken}`,
             form, {
-                headers: form.getHeaders(),
-                httpsAgent: new https.Agent({
-                    rejectUnauthorized: false
-                })
-            }
+            headers: form.getHeaders(),
+            httpsAgent: new https.Agent({
+                rejectUnauthorized: false
+            })
+        }
         );
 
         fs.unlinkSync(filePath); // 删除临时文件
@@ -748,10 +788,10 @@ router.post("/check-text", async (req, res) => {
         const wxRes = await axios.post(
             `https://api.weixin.qq.com/wxa/msg_sec_check?access_token=${accessToken}`,
             payload, {
-                httpsAgent: new https.Agent({
-                    rejectUnauthorized: false
-                })
-            }
+            httpsAgent: new https.Agent({
+                rejectUnauthorized: false
+            })
+        }
         );
 
         if (wxRes.data.errcode === 0) {
