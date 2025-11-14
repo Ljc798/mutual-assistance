@@ -23,7 +23,7 @@
   },
   "include": [
     "./**/*.ts"
-, "miniprogram/components/simple/simple.js"  ],
+, "miniprogram/components/simple/simple.js", "server/test.js"  ],
   "exclude": [
     "node_modules"
   ]

@@ -321,12 +321,6 @@ export struct MineView {
         .fontSize(13)
         .fontColor($r('[basic].color.text_secondary'))
         .textAlign(TextAlign.Center)
-      Button('填写反馈')
-        .fontSize(14)
-        .borderRadius(20)
-        .backgroundColor($r('[basic].color.filter_active_bg'))
-        .fontColor($r('[basic].color.white'))
-        .onClick(() => this.handleProtectedAction('feedback'))
     }
     .alignItems(HorizontalAlign.Center)
     .padding({ top: 12, bottom: 12 })

@@ -3,8 +3,8 @@ import { AppStorageV2, promptAction } from '@kit.ArkUI'
 
 import { HMRouter, HMRouterMgr } from '@hadss/hmrouter'
 import { LoginFormModel } from '../viewmodels/MyTypes'
-import { loginAPI, huaweiLoginAPI } from '../api/user'
-import { auth, huaweiAuthManager } from 'basic'
+import { passwordLoginAPI, PasswordLoginPayload } from '../api/user'
+import { auth } from 'basic'
 
 
 @Preview
@@ -14,8 +14,8 @@ export struct LoginView {
   // @Local account: string = '13200000010' // 13200000010 - 13200000060
   // @Local password: string = '123456'
   loginForm: LoginFormModel = new LoginFormModel({
-    account: '13200000005',
-    password: '123456'
+    account: '16607923402',
+    password: '12345678'
   })
   @Local agree: boolean = false
   safeArea: AppSafeArea = AppStorageV2.connect(AppSafeArea, () => new AppSafeArea())!
@@ -43,7 +43,11 @@ export struct LoginView {
       return
     }
     try {
-      const response = await loginAPI(this.loginForm)
+      const payload: PasswordLoginPayload = {
+        phone: this.loginForm.account.trim(),
+        password: this.loginForm.password.trim()
+      }
+      const response = await passwordLoginAPI(payload)
       if (response.success && response.user) {
         auth.setUser(response.user)
         promptAction.showToast({ message: '登录成功' })
@@ -52,7 +56,14 @@ export struct LoginView {
         promptAction.showToast({ message: response.message ?? '登录失败' })
       }
     } catch (error) {
-      promptAction.showToast({ message: '登录失败，请稍后再试' })
+      let message: string = '登录失败，请稍后再试'
+      if (error instanceof Error && error.message) {
+        message = `登录失败：${error.message}`
+      } else if (typeof error === 'string' && error.length > 0) {
+        message = `登录失败：${error}`
+      }
+      console.error('Password login failed', JSON.stringify(error))
+      promptAction.showToast({ message })
     }
   }
 
@@ -131,33 +142,39 @@ export struct LoginView {
         }
         .width('100%')
         Column({ space: 16 }) {
-          Stack() {
-            Text()
-              .width(200)
-              .height(1)
-              .backgroundColor($r('[basic].color.under'))
-            Text('其他登录方式')
-              .width(100)
-              .fontSize(12)
-              .backgroundColor($r('[basic].color.white'))
-              .fontColor($r('[basic].color.text'))
-              .textAlign(TextAlign.Center)
-          }
-          Row() {
-            Image($r("app.media.huawei"))
-              .width(60)
-              .height(60)
-              .onClick(async () => {
-                const code = (await huaweiAuthManager.launchAuth())! // 拉起华为登录
-                const result = await huaweiLoginAPI({
-                  code,
-                  clientId: '66666',
-                  clientSecret: '6666'
-                })
-                auth.setUser(result)
-                HMRouterMgr.pop() // 返回上一层
-              })
-          }
+          // 华为login无法使用
+          // Stack() {
+          //   Text()
+          //     .width(200)
+          //     .height(1)
+          //     .backgroundColor($r('[basic].color.under'))
+          //   Text('其他登录方式')
+          //     .width(100)
+          //     .fontSize(12)
+          //     .backgroundColor($r('[basic].color.white'))
+          //     .fontColor($r('[basic].color.text'))
+          //     .textAlign(TextAlign.Center)
+          // }
+          // Row() {
+          //   Image($r("app.media.huawei"))
+          //     .width(60)
+          //     .height(60)
+          //     .onClick(async () => {
+          //       const code = (await huaweiAuthManager.launchAuth())! // 拉起华为登录
+          //       const result: LoginResponse = await huaweiLoginAPI({
+          //         code,
+          //         clientId: '6917589220426632079',
+          //         clientSecret: 'a7901edd60ce814769a9e90006cef64976682001b9597450e11589c8498a66a9'
+          //       })
+          //       console.info("后端返回:", JSON.stringify(result))
+          //       if (result.success && result.user) {
+          //         auth.setUser(result.user)
+          //         HMRouterMgr.pop()
+          //       } else {
+          //         promptAction.showToast({ message: result.message ?? '登录失败' })
+          //       }
+          //     })
+          // }
         }
         .margin({ top: 200 })
       }

@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const db = require("../config/db");
 const axios = require("axios");
+const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const SECRET_KEY = process.env.JWT_SECRET;
 const {
@@ -145,6 +146,71 @@ router.post("/phone-login", async (req, res) => {
     }
 });
 
+router.post("/password-login", async (req, res) => {
+  const { phone, password } = req.body;
+
+  if (!phone || !password) {
+    return res.status(400).json({
+      success: false,
+      message: "缺少手机号或密码",
+    });
+  }
+
+  try {
+    // 1️⃣ 根据手机号查用户
+    const [rows] = await db.query(
+      "SELECT * FROM users WHERE phone_number = ?",
+      [phone]
+    );
+
+    if (rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "该手机号未注册",
+      });
+    }
+
+    const user = rows[0];
+
+    // 2️⃣ 校验密码是否正确
+    const isMatch = await bcrypt.compare(password, user.password_hash);
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+        message: "密码错误",
+      });
+    }
+
+    // 3️⃣ 生成 JWT
+    const token = jwt.sign({ id: user.id }, SECRET_KEY, {
+      expiresIn: "7d",
+    });
+
+    // 4️⃣ 登录成功
+    return res.json({
+      success: true,
+      message: "登录成功",
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        avatar_url: user.avatar_url,
+        phone_number: user.phone_number,
+        wxid: user.wxid,
+        openid: user.openid,
+        points: user.points,
+        free_counts: user.free_counts,
+      },
+    });
+  } catch (err) {
+    console.error("❌ 密码登录失败:", err);
+    return res.status(500).json({
+      success: false,
+      message: "服务器错误",
+      error: err.message,
+    });
+  }
+});
 
 
 // 新版登录：只用 loginCode 换 openid，放弃手机号逻辑

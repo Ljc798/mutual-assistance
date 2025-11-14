@@ -1,5 +1,4 @@
-import { HuaweiLoginParams } from "../viewmodels/user";
-import { MutualUser, HttpClient } from "basic";
+import { HttpClient, MutualUser } from "basic"
 
 export interface LoginResponse {
   success: boolean
@@ -9,16 +8,11 @@ export interface LoginResponse {
   message?: string
 }
 
-export interface PhoneLoginPayload {
-  phoneNumber?: string
-  phoneCode?: string
-  loginCode?: string
+export interface PasswordLoginPayload {
+  phone: string
+  password: string
 }
 
-export async function loginAPI(data: PhoneLoginPayload): Promise<LoginResponse> {
-  return HttpClient.post<LoginResponse, PhoneLoginPayload>("/user/phone-login", data)
-}
-
-export async function huaweiLoginAPI(data: HuaweiLoginParams): Promise<LoginResponse> {
-  return loginAPI({ loginCode: data.code })
+export async function passwordLoginAPI(payload: PasswordLoginPayload): Promise<LoginResponse> {
+  return HttpClient.post<LoginResponse, PasswordLoginPayload>('/user/password-login', payload)
 }
