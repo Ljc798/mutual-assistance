@@ -1,10 +1,868 @@
+import promptAction from '@ohos.promptAction'
+import { AppStorageV2 } from '@kit.ArkUI'
+import { AppSafeArea, AppUser } from 'basic'
+import {
+  DEFAULT_SQUARE_CATEGORIES,
+  POST_CATEGORIES,
+  REPORT_REASONS,
+  SquareCategory,
+  SquareCreatePayload,
+  SquareImageDTO,
+  SquareLikePayload,
+  SquarePost,
+  SquareQuery,
+  SquareReportPayload
+} from '../viewmodels/SquareTypes'
+import {
+  createSquarePost,
+  fetchCheckinStatus,
+  fetchSquarePosts,
+  likeSquarePost,
+  reportSquarePost,
+  submitCheckin,
+  unlikeSquarePost
+} from '../services/SquareService'
+
+const MAX_IMAGES: number = 9
+
+@Entry
 @Component
 export struct SquareView {
+  private readonly scroller: Scroller = new Scroller()
+  safeArea: AppSafeArea = AppStorageV2.connect(AppSafeArea, () => new AppSafeArea())!
+  private readonly appUser: AppUser = AppStorageV2.connect(AppUser, () => new AppUser())!
+
+  @State posts: SquarePost[] = []
+  @State selectedCategory: SquareCategory = '全部'
+  @State selectedSchoolName: string = '请选择学校'
+  @State selectedSchoolId: number = 1271
+  @State isRefreshing: boolean = false
+  @State isLoadingMore: boolean = false
+  @State hasMore: boolean = true
+  @State currentPage: number = 1
+  private readonly pageSize: number = 10
+  @State refreshText: string = '下拉刷新'
+  @State checkinCompleted: boolean = false
+  @State showPublishModal: boolean = false
+  @State showReportModal: boolean = false
+  @State publishCategory: string = ''
+  @State publishContent: string = ''
+  @State tempImages: string[] = []
+  @State reportReasonIndex: number = -1
+  @State reportDescription: string = ''
+  @State reportPostId: number = -1
+  @State isSubmittingPost: boolean = false
+  @State isSubmittingReport: boolean = false
+  @State isSubmittingCheckin: boolean = false
+  @State checkinSubTitle: string = '签到领积分'
+
+  aboutToAppear() {
+    this.bootstrap()
+  }
+
+  private bootstrap() {
+    this.loadCheckinStatus()
+    this.loadPosts()
+  }
+
   build() {
-    Column() {
-      Text('广场')
+    Stack() {
+      Column() {
+        Refresh({
+          refreshing: this.isRefreshing,
+          builder: this.renderRefreshHeader
+        }) {
+          Scroll(this.scroller) {
+            Column({ space: 12 }) {
+              this.renderHeader()
+              this.renderCategoryBar()
+              this.renderPostList()
+            }
+            .padding({
+              left: 0,
+              right: 0,
+              top: 0,
+              bottom: 80 + this.safeArea.bottomHeight
+            })
+            .width('100%')
+          }
+          .scrollBar(BarState.Off)
+          .onScrollEdge((side: Edge) => {
+            if (side === Edge.Bottom) {
+              this.loadMorePosts()
+            }
+          })
+        }
+        .onStateChange((state: RefreshStatus) => this.handleRefreshState(state))
+        .onRefreshing(() => this.handleRefresh())
+      }
+      this.renderFloatingButton()
+      this.renderPublishModal()
+      this.renderReportModal()
     }
+    .backgroundColor($r('[basic].color.page_background'))
     .width('100%')
     .height('100%')
+  }
+
+  @Builder
+  private renderHeader() {
+    Column() {
+      Row() {
+        Text('广场')
+          .fontSize(24)
+          .fontWeight(FontWeight.Bold)
+          .fontColor($r('[basic].color.white'));
+        Blank();
+        Row() {
+          Image($r('app.media.icon_ditu'))
+            .width(18)
+            .height(18)
+            .margin({ right: 4 });
+          // todo school
+          Text('请选择学校')
+            .fontSize(16)
+            .fontColor($r('[basic].color.white'))
+            .fontWeight(FontWeight.Regular)
+            .onClick(() => this.handleSchoolTap());
+        }
+        .alignItems(VerticalAlign.Center);
+      }
+      .width('100%')
+      .alignItems(VerticalAlign.Center)
+      .justifyContent(FlexAlign.Start)
+      .margin({ bottom: 8 });
+    }
+    .width('100%')
+    .margin({ left: 0, right: 0 })
+    .padding({
+      top: this.safeArea.topHeight + 6,
+      bottom: 6,
+      left: 20,
+      right: 20
+    })
+    .backgroundColor($r('[basic].color.home_header_bg'));
+  }
+
+  @Builder
+  private renderCategoryBar() {
+    Row() {
+      Scroll() {
+        Row({ space: 8 }) {
+          ForEach(DEFAULT_SQUARE_CATEGORIES, (category: SquareCategory) => {
+            Text(category)
+              .padding({
+                left: 16,
+                right: 16,
+                top: 8,
+                bottom: 8
+              })
+              .fontSize(14)
+              .fontColor(this.selectedCategory === category ? $r('[basic].color.white') : $r('[basic].color.text_secondary'))
+              .backgroundColor(this.selectedCategory === category ? $r('[basic].color.filter_active_bg') : $r('[basic].color.white'))
+              .borderRadius(18)
+              .onClick((): void => { this.selectCategory(category) })
+          }, (category: SquareCategory) => category)
+        }
+      }
+      .width('80%')
+      .scrollBar(BarState.Off)
+      .scrollable(ScrollDirection.Horizontal)
+      Column({ space: 4 }) {
+        Image(this.checkinCompleted ? $r('app.media.icon_square_checkin_done') : $r('app.media.icon_square_checkin'))
+          .width(36)
+          .height(36)
+      }
+      .width('20%')
+      .alignItems(HorizontalAlign.Center)
+      .onClick((): void => { this.handleCheckin() })
+    }
+    .width('100%')
+  }
+
+  @Builder
+  private renderPostList() {
+    if (this.posts.length === 0) {
+      Column({ space: 12 }) {
+        Text('暂时没有帖子')
+          .fontSize(14)
+          .fontColor($r('[basic].color.text_secondary'))
+        Text('快来发布第一条动态吧')
+          .fontSize(13)
+          .fontColor($r('[basic].color.text_secondary'))
+      }
+      .alignItems(HorizontalAlign.Center)
+      .padding({ top: 60 })
+    } else {
+      Column({ space: 12 }) {
+        ForEach(this.posts, (post: SquarePost) => {
+          this.renderPostCard(post)
+        }, (post: SquarePost) => `${post.id}`)
+        this.renderListFooter()
+      }
+    }
+  }
+
+  @Builder
+  private renderPostCard(post: SquarePost) {
+    Column({ space: 12 }) {
+      Row({ space: 12 }) {
+        Image(this.getAvatarSource(post.avatarUrl))
+          .width(40)
+          .height(40)
+          .borderRadius(20)
+          .objectFit(ImageFit.Cover)
+          .backgroundColor($r('[basic].color.search_box_bg'))
+          .onClick((): void => { this.openProfile(post.userId) })
+        Column({ space: 4 }) {
+          Row({ space: 6 }) {
+            Text(post.username)
+              .fontSize(15)
+              .fontColor($r('[basic].color.text_primary'))
+              .fontWeight(FontWeight.Medium)
+            if (post.isVip) {
+              Text('VIP')
+                .fontSize(11)
+                .fontColor($r('[basic].color.white'))
+                .padding({ left: 6, right: 6, top: 2, bottom: 2 })
+                .backgroundColor($r('[basic].color.filter_active_bg'))
+                .borderRadius(10)
+            }
+            if (post.pinned) {
+              Text('置顶')
+                .fontSize(11)
+                .fontColor($r('[basic].color.filter_active_bg'))
+                .padding({ left: 6, right: 6, top: 2, bottom: 2 })
+                .backgroundColor('#1AFF6B8B')
+                .borderRadius(10)
+            }
+          }
+          Text(post.formattedTime)
+            .fontSize(12)
+            .fontColor($r('[basic].color.text_secondary'))
+        }
+        .alignItems(HorizontalAlign.Start)
+        .layoutWeight(1)
+        Image($r('[basic].media.ic_public_more'))
+          .width(24)
+          .height(24)
+          .onClick((): void => { this.openReportModal(post.id) })
+      }
+      Text(post.content)
+        .fontSize(15)
+        .fontColor($r('[basic].color.text_primary'))
+        .lineHeight(22)
+        .textAlign(TextAlign.Start)
+      if (post.images.length > 0) {
+        this.renderPostImages(post)
+      }
+      Row({ space: 16 }) {
+        Row({ space: 6 }) {
+          Image(post.isLiked ? $r('app.media.icon_heart_fill') : $r('app.media.icon_heart_line'))
+            .width(20)
+            .height(20)
+          Text(`${post.likesCount}`)
+            .fontSize(13)
+            .fontColor($r('[basic].color.text_secondary'))
+        }
+        .onClick((): void => { this.toggleLike(post) })
+        Row({ space: 6 }) {
+          Image($r('app.media.icon_square_comment'))
+            .width(20)
+            .height(20)
+          Text(`${post.commentsCount}`)
+            .fontSize(13)
+            .fontColor($r('[basic].color.text_secondary'))
+        }
+        .onClick((): void => { this.openDetail(post.id) })
+      }
+      .width('95%')
+      .justifyContent(FlexAlign.End)
+      .alignItems(VerticalAlign.Center)
+    }
+    .padding(16)
+    .backgroundColor($r('[basic].color.white'))
+    .borderRadius(20)
+    .shadow({
+      radius: 12,
+      color: $r('[basic].color.shadow_card'),
+      offsetX: 0,
+      offsetY: 6
+    })
+    .onClick((): void => { this.openDetail(post.id) })
+    .alignItems(HorizontalAlign.Start)
+  }
+
+  @Builder
+  private renderPostImages(post: SquarePost) {
+    Scroll() {
+      Row({ space: 10 }) {
+        ForEach(post.images, (imageItem: SquareImageDTO, index: number) => {
+          if (imageItem.status === 'pass') {
+            Image(imageItem.url as ResourceStr)
+              .width(160)
+              .height(120)
+              .borderRadius(16)
+              .objectFit(ImageFit.Cover)
+          } else {
+            Column() {
+              Text('图片审核中')
+                .fontSize(12)
+                .fontColor($r('[basic].color.text_secondary'))
+            }
+            .width(160)
+            .height(120)
+            .borderRadius(16)
+            .backgroundColor($r('[basic].color.search_box_bg'))
+            .justifyContent(FlexAlign.Center)
+            .alignItems(HorizontalAlign.Center)
+          }
+        }, (_: SquareImageDTO, index: number) => `${post.id}-${index}`)
+      }
+    }
+    .scrollable(ScrollDirection.Horizontal)
+  }
+
+  @Builder
+  private renderListFooter() {
+    if (this.isLoadingMore) {
+      Text('加载中...')
+        .fontSize(12)
+        .fontColor($r('[basic].color.text_secondary'))
+        .textAlign(TextAlign.Center)
+        .width('100%')
+        .padding({ top: 8, bottom: 8 })
+    } else if (!this.hasMore) {
+      Text('没有更多内容了')
+        .fontSize(12)
+        .fontColor($r('[basic].color.text_secondary'))
+        .textAlign(TextAlign.Center)
+        .width('100%')
+        .padding({ top: 8, bottom: 8 })
+    } else {
+      Blank()
+    }
+  }
+
+  @Builder
+  private renderFloatingButton() {
+    if (!this.showPublishModal && !this.showReportModal) {
+      Image($r('app.media.icon_square_plus'))
+        .width(64)
+        .height(64)
+        .position({
+          right: 20,
+          bottom: 20 + this.safeArea.bottomHeight
+        })
+        .onClick((): void => { this.openPublishModal() })
+    } else {
+      Blank()
+    }
+  }
+
+  @Builder
+  private renderPublishModal() {
+    if (!this.showPublishModal) {
+      Blank()
+    } else {
+      Column() {
+        Column({ space: 14 }) {
+          Text('发布新内容')
+            .fontSize(18)
+            .fontWeight(FontWeight.Medium)
+          this.renderPostCategorySelector()
+          TextArea({ placeholder: '写点什么吧...' })
+            .height(120)
+            .backgroundColor($r('[basic].color.search_box_bg'))
+            .padding(12)
+            .borderRadius(16)
+            .onChange((value: string) => this.publishContent = value)
+          this.renderImagePicker()
+          Button(this.isSubmittingPost ? '发布中...' : '发布')
+            .width('100%')
+            .height(44)
+            .backgroundColor($r('[basic].color.filter_active_bg'))
+            .fontColor($r('[basic].color.white'))
+            .borderRadius(16)
+            .enabled(!this.isSubmittingPost)
+            .onClick((): void => { this.submitPost() })
+          Text('发布的帖子会关联当前学校')
+            .fontSize(12)
+            .fontColor($r('[basic].color.text_secondary'))
+            .textAlign(TextAlign.Center)
+          Button('关闭')
+            .width('100%')
+            .height(40)
+            .borderRadius(16)
+            .backgroundColor($r('[basic].color.search_box_bg'))
+            .onClick((): void => { this.closePublishModal() })
+        }
+        .width('90%')
+        .padding(20)
+        .backgroundColor($r('[basic].color.white'))
+        .borderRadius(24)
+      }
+      .width('100%')
+      .height('100%')
+      .justifyContent(FlexAlign.Center)
+      .alignItems(HorizontalAlign.Center)
+      .backgroundColor('rgba(0,0,0,0.45)')
+    }
+  }
+
+  @Builder
+  private renderPostCategorySelector() {
+    Column({ space: 8 }) {
+      Text('选择分类')
+        .fontSize(14)
+        .fontColor($r('[basic].color.text_secondary'))
+      Scroll() {
+        Row({ space: 10 }) {
+          ForEach(POST_CATEGORIES, (category: SquareCategory) => {
+            Text(category)
+              .padding({ left: 12, right: 12, top: 6, bottom: 6 })
+              .fontSize(13)
+              .fontColor(this.publishCategory === category ? $r('[basic].color.white') : $r('[basic].color.text_secondary'))
+              .backgroundColor(this.publishCategory === category ? $r('[basic].color.filter_active_bg') : $r('[basic].color.search_box_bg'))
+              .borderRadius(16)
+              .onClick((): void => { this.publishCategory = category })
+          }, (category: SquareCategory) => `publish-${category}`)
+        }
+      }
+      .scrollable(ScrollDirection.Horizontal)
+    }
+  }
+
+  @Builder
+  private renderImagePicker() {
+    Column({ space: 8 }) {
+      Text('图片 (暂不支持上传，敬请期待)')
+        .fontSize(13)
+        .fontColor($r('[basic].color.text_secondary'))
+      Row({ space: 10 }) {
+        ForEach(this.tempImages, (_value: string, index: number) => {
+          Stack() {
+            Image(this.tempImages[index] as ResourceStr)
+              .width(64)
+              .height(64)
+              .borderRadius(12)
+              .objectFit(ImageFit.Cover)
+            Text('×')
+              .fontSize(14)
+              .fontColor($r('[basic].color.white'))
+              .backgroundColor('rgba(0,0,0,0.5)')
+              .padding(4)
+              .borderRadius(12)
+              .position({
+                right: -8,
+                top: -8
+              })
+              .onClick((): void => { this.removeTempImage(index) })
+          }
+        }, (_: string, index: number) => `temp-${index}`)
+        if (this.tempImages.length < MAX_IMAGES) {
+          Column() {
+            Text('+')
+              .fontSize(20)
+              .fontColor($r('[basic].color.text_secondary'))
+          }
+          .width(64)
+          .height(64)
+          .borderRadius(12)
+          .backgroundColor($r('[basic].color.search_box_bg'))
+          .justifyContent(FlexAlign.Center)
+          .alignItems(HorizontalAlign.Center)
+          .onClick((): void => { this.handleImagePick() })
+        }
+      }
+    }
+  }
+
+  @Builder
+  private renderReportModal() {
+    if (!this.showReportModal) {
+      Blank()
+    } else {
+      Column() {
+        Column({ space: 14 }) {
+          Text('举报帖子')
+            .fontSize(18)
+            .fontWeight(FontWeight.Medium)
+          this.renderReasonSelector()
+          TextArea({ placeholder: '补充说明（可选）' })
+            .height(100)
+            .backgroundColor($r('[basic].color.search_box_bg'))
+            .padding(12)
+            .borderRadius(16)
+            .onChange((value: string) => this.reportDescription = value)
+          Row({ space: 12 }) {
+            Button('取消')
+              .layoutWeight(1)
+              .height(44)
+              .borderRadius(16)
+              .backgroundColor($r('[basic].color.search_box_bg'))
+              .onClick((): void => { this.closeReportModal() })
+            Button(this.isSubmittingReport ? '提交中...' : '提交')
+              .layoutWeight(1)
+              .height(44)
+              .borderRadius(16)
+              .backgroundColor($r('[basic].color.filter_active_bg'))
+              .fontColor($r('[basic].color.white'))
+              .enabled(!this.isSubmittingReport)
+              .onClick((): void => { this.submitReport() })
+          }
+        }
+        .width('90%')
+        .padding(20)
+        .backgroundColor($r('[basic].color.white'))
+        .borderRadius(24)
+      }
+      .width('100%')
+      .height('100%')
+      .justifyContent(FlexAlign.Center)
+      .alignItems(HorizontalAlign.Center)
+      .backgroundColor('rgba(0,0,0,0.45)')
+    }
+  }
+
+  @Builder
+  private renderReasonSelector() {
+    Column({ space: 10 }) {
+      Text('选择举报原因')
+        .fontSize(14)
+        .fontColor($r('[basic].color.text_secondary'))
+      Column({ space: 8 }) {
+        ForEach(REPORT_REASONS, (reason: string, index: number) => {
+          Row() {
+            Text(reason)
+              .fontSize(14)
+              .fontColor(this.reportReasonIndex === index ? $r('[basic].color.filter_active_bg') : $r('[basic].color.text_primary'))
+          }
+          .width('100%')
+          .padding({ left: 12, right: 12, top: 10, bottom: 10 })
+          .backgroundColor(this.reportReasonIndex === index ? '#1AFF6B8B' : $r('[basic].color.search_box_bg'))
+          .borderRadius(14)
+          .onClick((): void => { this.reportReasonIndex = index })
+        }, (reason: string) => `reason-${reason}`)
+      }
+    }
+  }
+
+  @Builder
+  private renderRefreshHeader() {
+    Column() {
+      Text(this.refreshText)
+        .fontSize(13)
+        .fontColor($r('[basic].color.text_secondary'))
+    }
+    .padding({ top: 16, bottom: 16 })
+  }
+
+  private async loadPosts(isLoadMore: boolean = false) {
+    if (isLoadMore) {
+      if (!this.hasMore || this.isLoadingMore) {
+        return
+      }
+      this.isLoadingMore = true
+    } else if (this.isRefreshing) {
+      return
+    } else {
+      this.isRefreshing = true
+      this.currentPage = 1
+    }
+    const nextPage: number = isLoadMore ? this.currentPage + 1 : 1
+    try {
+      const query: SquareQuery = {
+        category: this.selectedCategory,
+        page: nextPage,
+        pageSize: this.pageSize,
+        userId: this.appUser.user.id,
+        schoolId: this.selectedSchoolId
+      }
+      const list = await fetchSquarePosts(query)
+      if (isLoadMore) {
+        const merged: SquarePost[] = [...this.posts, ...list]
+        this.posts = merged
+      } else {
+        this.posts = list
+      }
+      this.currentPage = nextPage
+      this.hasMore = list.length === this.pageSize
+    } catch (error) {
+      console.error('加载广场数据失败', JSON.stringify(error))
+      this.showToast('获取帖子失败，请稍后重试')
+    } finally {
+      if (isLoadMore) {
+        this.isLoadingMore = false
+      } else {
+        this.isRefreshing = false
+      }
+    }
+  }
+
+  private async loadCheckinStatus() {
+    const userId = this.appUser.user.id
+    const token = this.appUser.user.token
+    if (!userId || !token) {
+      this.checkinCompleted = false
+      this.checkinSubTitle = '签到领积分'
+      return
+    }
+    try {
+      const status = await fetchCheckinStatus(userId, token)
+      this.checkinCompleted = status.checked_in
+      this.checkinSubTitle = status.checked_in
+        ? `已连续 ${status.consecutive_days} 天`
+        : '签到领积分'
+    } catch (error) {
+      console.warn('获取签到状态失败', JSON.stringify(error))
+    }
+  }
+
+  private handleRefreshState(state: RefreshStatus) {
+    switch (state) {
+      case RefreshStatus.Inactive:
+        this.refreshText = '下拉刷新'
+        break
+      case RefreshStatus.Drag:
+        this.refreshText = '继续下拉'
+        break
+      case RefreshStatus.OverDrag:
+        this.refreshText = '松手刷新'
+        break
+      case RefreshStatus.Refresh:
+        this.refreshText = '刷新中...'
+        break
+      case RefreshStatus.Done:
+        this.refreshText = '刷新完成'
+        break
+      default:
+        this.refreshText = '下拉刷新'
+    }
+  }
+
+  private handleSchoolTap() {
+    this.showToast('学校选择功能开发中')
+  }
+
+  private async handleRefresh() {
+    if (this.isRefreshing) {
+      return
+    }
+    await this.loadPosts(false)
+  }
+
+  private loadMorePosts() {
+    if (this.isLoadingMore || !this.hasMore) {
+      return
+    }
+    this.loadPosts(true)
+  }
+
+  private selectCategory(category: SquareCategory) {
+    if (this.selectedCategory === category) {
+      return
+    }
+    this.selectedCategory = category
+    this.loadPosts(false)
+  }
+
+  private async handleCheckin() {
+    const userId = this.appUser.user.id
+    const token = this.appUser.user.token
+    if (!userId || !token) {
+      this.showToast('请先登录')
+      return
+    }
+    if (this.checkinCompleted || this.isSubmittingCheckin) {
+      this.showToast('今日已签到')
+      return
+    }
+    this.isSubmittingCheckin = true
+    try {
+      const result = await submitCheckin(userId, token)
+      this.checkinCompleted = true
+      this.checkinSubTitle = `已连续 ${result.consecutive_days} 天`
+      this.showToast(result.message)
+    } catch (error) {
+      console.error('签到失败', JSON.stringify(error))
+      this.showToast('签到失败，请稍后再试')
+    } finally {
+      this.isSubmittingCheckin = false
+    }
+  }
+
+  private getAvatarSource(url: string): ResourceStr {
+    if (!url) {
+      return $r('app.media.icon_square_avatar')
+    }
+    return url as ResourceStr
+  }
+
+  private openPublishModal() {
+    if (!this.appUser.user.token) {
+      this.showToast('请先登录')
+      return
+    }
+    this.showPublishModal = true
+  }
+
+  private closePublishModal() {
+    this.showPublishModal = false
+  }
+
+  private openReportModal(postId: number) {
+    if (!this.appUser.user.token) {
+      this.showToast('请先登录')
+      return
+    }
+    this.reportPostId = postId
+    this.reportReasonIndex = -1
+    this.reportDescription = ''
+    this.showReportModal = true
+  }
+
+  private closeReportModal() {
+    this.showReportModal = false
+    this.reportPostId = -1
+  }
+
+  private removeTempImage(index: number) {
+    const mutable = [...this.tempImages]
+    mutable.splice(index, 1)
+    this.tempImages = mutable
+  }
+
+  private handleImagePick() {
+    this.showToast('图片上传能力开发中')
+  }
+
+  private resetPublishForm() {
+    this.publishCategory = ''
+    this.publishContent = ''
+    this.tempImages = []
+  }
+
+  private async submitPost() {
+    const userId = this.appUser.user.id
+    const token = this.appUser.user.token
+    if (!userId || !token) {
+      this.showToast('请先登录')
+      return
+    }
+    if (!this.publishCategory) {
+      this.showToast('请选择分类')
+      return
+    }
+    if (!this.publishContent || this.publishContent.trim().length === 0) {
+      this.showToast('请输入内容')
+      return
+    }
+    if (this.tempImages.length > 0) {
+      this.showToast('暂不支持图片上传，请删除图片后再提交')
+      return
+    }
+    if (this.isSubmittingPost) {
+      return
+    }
+    this.isSubmittingPost = true
+    try {
+      const payload: SquareCreatePayload = {
+        user_id: userId,
+        school_id: this.selectedSchoolId,
+        category: this.publishCategory,
+        content: this.publishContent.trim()
+      }
+      await createSquarePost(payload, token)
+      this.showToast('发布成功')
+      this.resetPublishForm()
+      this.closePublishModal()
+      this.loadPosts(false)
+    } catch (error) {
+      console.error('发布失败', JSON.stringify(error))
+      this.showToast('发布失败，请稍后重试')
+    } finally {
+      this.isSubmittingPost = false
+    }
+  }
+
+  private async submitReport() {
+    const userId = this.appUser.user.id
+    const token = this.appUser.user.token
+    if (!userId || !token) {
+      this.showToast('请先登录')
+      return
+    }
+    if (this.reportReasonIndex < 0 || this.reportPostId < 0) {
+      this.showToast('请选择举报原因')
+      return
+    }
+    if (this.isSubmittingReport) {
+      return
+    }
+    this.isSubmittingReport = true
+    try {
+      const payload: SquareReportPayload = {
+        post_id: this.reportPostId,
+        reason: REPORT_REASONS[this.reportReasonIndex],
+        description: this.reportDescription
+      }
+      await reportSquarePost(payload, token)
+      this.showToast('举报已提交')
+      this.closeReportModal()
+    } catch (error) {
+      console.error('举报失败', JSON.stringify(error))
+      this.showToast('举报失败，请稍后重试')
+    } finally {
+      this.isSubmittingReport = false
+    }
+  }
+
+  private async toggleLike(post: SquarePost) {
+    const userId = this.appUser.user.id
+    const token = this.appUser.user.token
+    if (!userId || !token) {
+      this.showToast('请先登录')
+      return
+    }
+    try {
+      const payload: SquareLikePayload = {
+        user_id: userId,
+        square_id: post.id
+      }
+      if (post.isLiked) {
+        await unlikeSquarePost(payload, token)
+      } else {
+        await likeSquarePost(payload, token)
+      }
+      const nextPosts: SquarePost[] = [...this.posts]
+      for (let i = 0; i < nextPosts.length; i++) {
+        if (nextPosts[i].id === post.id) {
+          nextPosts[i].isLiked = !nextPosts[i].isLiked
+          nextPosts[i].likesCount += nextPosts[i].isLiked ? 1 : -1
+          break
+        }
+      }
+      this.posts = nextPosts
+    } catch (error) {
+      console.error('点赞失败', JSON.stringify(error))
+      this.showToast('操作失败，请稍后重试')
+    }
+  }
+
+  private openDetail(postId: number) {
+    this.showToast(`帖子 ${postId} 详情开发中`)
+  }
+
+  private openProfile(userId: number) {
+    this.showToast(`个人主页 ${userId} 敬请期待`)
+  }
+
+  private showToast(message: string) {
+    promptAction.showToast({
+      message,
+      duration: 1500,
+      bottom: 80
+    })
   }
 }

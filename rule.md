@@ -36,3 +36,11 @@
 - 方法调用时传入的配置对象必须具备显式接口类型（例如 `client.request(config: HttpRequestOptions)`），不要使用未类型的对象字面量 `{ ... }`。
 - 展开运算符仅可用于数组或数组派生类，禁止对象展开；对象合并需显式赋值或通过工具函数实现。
 - `@Entry` 组件的 `build` 方法必须且只能有一个根节点，且该根节点必须是容器组件（如 `Column`、`Row`、`Navigation`、`Tabs`）。
+
+### SquareView.ets 当前编译错误原因
+- `@State reportPostId?: number`（SquareView.ets:52）未提供默认值，ArkTS 规定所有 @State 成员必须显式初始化。
+- 多个 @Builder 内直接书写普通语句（如 `const` 定义或 `return`），在 SquareView.ets:169、380、435、499、550 被报出 “Only UI component syntax can be written here”；Builder 区块中只能组合 UI 组件，控制流需要用 ArkUI 提供的条件/循环语法表达。
+- `Image({ uri: ... })` 的写法（SquareView.ets:315、459）与 Image 组件签名不符，ArkUI 仅接受 `ResourceStr` 或 `PixelMap` 资源，不能传入自定义对象字面量。
+- `Button` 组件不存在 `.disabled()` 属性（SquareView.ets:401、526），需要改用 `.enabled()` 等受支持的属性设置交互态。
+- 事件处理函数 `() => this.submitPost()`、`() => this.submitReport()`（SquareView.ets:402、527）缺少显式返回类型，触发 `arkts-no-implicit-return-types` 规则；应声明 `(): void => { ... }`。
+- `getAvatarSource` 及临时图片渲染中返回 `{ uri: string }`（SquareView.ets:714 等）不满足 `PixelMap | ResourceStr` 类型要求，导致 “Type '{ uri: string; }' is not assignable…” 报错，需要转换为 PixelMap 或引用打包资源。
