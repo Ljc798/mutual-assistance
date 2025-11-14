@@ -44,3 +44,14 @@
 - `Button` 组件不存在 `.disabled()` 属性（SquareView.ets:401、526），需要改用 `.enabled()` 等受支持的属性设置交互态。
 - 事件处理函数 `() => this.submitPost()`、`() => this.submitReport()`（SquareView.ets:402、527）缺少显式返回类型，触发 `arkts-no-implicit-return-types` 规则；应声明 `(): void => { ... }`。
 - `getAvatarSource` 及临时图片渲染中返回 `{ uri: string }`（SquareView.ets:714 等）不满足 `PixelMap | ResourceStr` 类型要求，导致 “Type '{ uri: string; }' is not assignable…” 报错，需要转换为 PixelMap 或引用打包资源。
+
+### PublishView.ets 当前编译错误原因
+- `@State pendingExtractData?: ExtractedFormData` 缺少默认值（PublishView.ets:55），违反 “所有 @State 成员必须初始化” 规则。
+- ArkUI 并未导出 `InputType`（PublishView.ets:2），因此 TextInput 不可使用 `.type(InputType.xxx)`；需要换成 ArkUI 支持的属性或直接移除输入类型设置。
+- `Image` 组件不支持 `.tintColor`（PublishView.ets:154）；需使用支持的属性或预设好颜色资源。
+- `mode as typeof this.form.mode`（PublishView.ets:307、747）属于类型查询语句，ArkTS 只允许出现在类型位置；应直接使用明确的联合类型（如 `TaskMode`）。
+- 自定义对象字面量必须显式声明接口（arkts-no-untyped-obj-literals）；例如任务发布 payload、AI 请求参数都要声明为 `PublishCreatePayload` / `AiExtractPayload`（PublishView.ets:459、631）。
+- 在已经 `return` 的分支后继续比较 `method === 'pay'`（PublishView.ets:481）会导致类型收窄为 `'free' | 'vip'`，编译器认为比较无意义，应移除该比较。
+- ArkTS 禁止对普通对象使用展开运算符（PublishView.ets:700）；需要通过手动赋值或辅助方法合并字段。
+- 多个私有方法缺少显式返回类型（如 PublishView.ets:563、615 等），触发 `arkts-no-implicit-return-types` 警告，需要补充 `: void` / `: Promise<void>`。
+- 在 Builder 中使用 `return`（PublishView.ets:838、897）违反 “Only UI component syntax can be written here”，应改为 `if/else` 分支输出组件。

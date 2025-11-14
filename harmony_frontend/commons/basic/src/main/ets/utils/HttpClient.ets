@@ -6,7 +6,7 @@ interface QueryParam {
   value: string
 }
 
-interface AuthHeader {
+export interface AuthHeader {
   Authorization?: string
 }
 

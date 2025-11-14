@@ -22,7 +22,7 @@ export { TaskDTO, TaskItemBase, TaskItem, TaskMode, TaskStatus } from './src/mai
 
 export { HDMLoading } from './src/main/ets/components/HDMLoading'
 
-export { HttpClient } from './src/main/ets/utils/HttpClient'
+export { AuthHeader, HttpClient } from './src/main/ets/utils/HttpClient'
 
 export { GlobalVariable } from './src/main/ets/components/GlobalVariable'
 

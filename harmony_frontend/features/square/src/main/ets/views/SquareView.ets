@@ -1,6 +1,6 @@
 import promptAction from '@ohos.promptAction'
 import { AppStorageV2 } from '@kit.ArkUI'
-import { AppSafeArea, AppUser } from 'basic'
+import { AppSafeArea, AppUser, ProgressLoading } from 'basic'
 import {
   DEFAULT_SQUARE_CATEGORIES,
   POST_CATEGORIES,
@@ -25,7 +25,6 @@ import {
 
 const MAX_IMAGES: number = 9
 
-@Entry
 @Component
 export struct SquareView {
   private readonly scroller: Scroller = new Scroller()
@@ -93,8 +92,27 @@ export struct SquareView {
             }
           })
         }
-        .onStateChange((state: RefreshStatus) => this.handleRefreshState(state))
+        .onStateChange((state: RefreshStatus) => {
+          switch (state) {
+            case RefreshStatus.Inactive:
+              this.refreshText = '下拉刷新'
+              break
+            case RefreshStatus.Drag:
+              this.refreshText = '继续下拉'
+              break
+            case RefreshStatus.OverDrag:
+              this.refreshText = '松手刷新'
+              break
+            case RefreshStatus.Refresh:
+              this.refreshText = '正在刷新任务...'
+              break
+            case RefreshStatus.Done:
+              this.refreshText = '刷新完成'
+              break
+          }
+        })
         .onRefreshing(() => this.handleRefresh())
+
       }
       this.renderFloatingButton()
       this.renderPublishModal()
@@ -548,15 +566,6 @@ export struct SquareView {
     }
   }
 
-  @Builder
-  private renderRefreshHeader() {
-    Column() {
-      Text(this.refreshText)
-        .fontSize(13)
-        .fontColor($r('[basic].color.text_secondary'))
-    }
-    .padding({ top: 16, bottom: 16 })
-  }
 
   private async loadPosts(isLoadMore: boolean = false) {
     if (isLoadMore) {
@@ -645,15 +654,43 @@ export struct SquareView {
     this.showToast('学校选择功能开发中')
   }
 
-  private async handleRefresh() {
-    if (this.isRefreshing) {
+  async handleRefresh() {
+    if (this.isRefreshing || this.isLoadingMore) {
       return
     }
-    await this.loadPosts(false)
+    this.refreshText = '正在刷新帖子...'
+    this.resetPagingState()
+
+    try {
+      await this.loadPosts(false)
+      this.refreshText = '刷新成功'
+    } catch (error) {
+      console.error('[刷新失败]', error)
+      this.refreshText = '刷新失败，请重试'
+    } finally {
+      setTimeout(() => {
+        this.refreshText = '下拉刷新'
+      }, 600)
+    }
+  }
+
+  @Builder
+  private renderRefreshHeader() {
+    Row({ space: 10 }) {
+      Text(this.refreshText)
+        .fontSize(13)
+        .fontColor($r('[basic].color.text_secondary'))
+      // 加载动画组件
+      ProgressLoading({ pWidth: 18, strokeWidth: 2 })
+    }
+    .width('100%')
+    .height(60)
+    .justifyContent(FlexAlign.Center)
+    .backgroundColor(Color.Transparent)
   }
 
   private loadMorePosts() {
-    if (this.isLoadingMore || !this.hasMore) {
+    if (this.isLoadingMore || this.isRefreshing || !this.hasMore) {
       return
     }
     this.loadPosts(true)
@@ -664,6 +701,7 @@ export struct SquareView {
       return
     }
     this.selectedCategory = category
+    this.resetPagingState()
     this.loadPosts(false)
   }
 
@@ -864,5 +902,12 @@ export struct SquareView {
       duration: 1500,
       bottom: 80
     })
+  }
+
+  private resetPagingState() {
+    this.currentPage = 1
+    this.hasMore = true
+    this.isLoadingMore = false
+    this.posts = []
   }
 }
