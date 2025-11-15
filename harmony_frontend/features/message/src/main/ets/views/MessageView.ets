@@ -1,6 +1,8 @@
 import promptAction from '@ohos.promptAction'
 import { AppStorageV2 } from '@kit.ArkUI'
-import { AppSafeArea, AppUser, ProgressLoading } from 'basic'
+import { AppSafeArea, AppUser, ProgressLoading, PAGE_PATH } from 'basic'
+import { HMRouterMgr } from '@hadss/hmrouter'
+import { AppCurrentChat } from '../viewmodels/ChatVM'
 import { ChatPreview } from '../viewmodels/MessageTypes'
 import { fetchChatPreviews, fetchLatestNotification } from '../services/MessageService'
 
@@ -238,11 +240,13 @@ export struct MessageView {
   }
 
   private handleChatTap(item: ChatPreview) {
-    promptAction.showToast({ message: `聊天功能开发中（${item.username}）` })
+    const vm = AppStorageV2.connect(AppCurrentChat, () => new AppCurrentChat())!
+    vm.set(item.roomId, item.targetId, item.username, item.avatarUrl)
+    HMRouterMgr.push({ pageUrl: PAGE_PATH.CHAT_PAGE })
   }
 
   private handleSystemNotification() {
-    promptAction.showToast({ message: '系统通知页面开发中' })
+    HMRouterMgr.push({ pageUrl: PAGE_PATH.NOTIFICATIONS_PAGE })
   }
 
   private getAvatarSource(url: string): ResourceStr {

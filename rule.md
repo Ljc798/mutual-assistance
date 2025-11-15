@@ -116,3 +116,33 @@
 **ArkTSCheck: arkts-no-untyped-obj-literals**
 - 错误原因：直接传入未声明类型的对象字面量，未与显式接口对应。例：SquareDetailView.ets:257 传入点赞载荷 `{ user_id, square_id }`。
 - 解决方案：为对象字面量标注接口类型或断言类型，例如：`const payload: SquareLikePayload = { user_id, square_id }`；或使用已有接口并在调用处传入该类型。
+
+**ArkTSCheck: Cannot find name 'WebSocket' / 'MessageEvent'**
+- 错误原因：ArkTS 环境不提供浏览器全局对象。
+- 解决方案：使用 Harmony 提供的网络能力或回退为 HTTP 轮询；避免使用浏览器 API 名称。
+
+**ArkTSCheck: arkts-no-utility-types / arkts-no-intersection-types**
+- 错误原因：不支持 `Record<>`、`Partial<>` 等实用类型与交叉类型。
+- 解决方案：用显式 interface 声明负载与响应类型，按字段展开，不使用交叉与工具类型。
+
+**ArkTSCheck: arkts-no-obj-literals-as-types**
+- 错误原因：在泛型中书写对象字面量类型。
+- 解决方案：为响应定义命名接口，如 `SquareDetailResponse`，并在泛型中使用该接口。
+
+**ArkTSCheck: 属性不存在（minHeight/position 链式）**
+- 错误原因：在 Builder 调用上链式设置属性或使用不支持的属性名。
+- 解决方案：用容器组件包裹 Builder，再在容器上设置 `.position(...)`；用 `.height('100%')` 替代 `.minHeight('100%')` 并配合 `Scroll`。
+
+**ArkTSCheck: @State must specify a default value**
+- 错误原因：`@State` 未初始化默认值，或使用可选 `?` 导致未提供初值。
+- 解决方案：所有 `@State` 显式赋默认值，例如：
+  - `@State count: number = 0`
+  - `@State summary: ReputationItem = { totalScore: 0, completed: 0, canceled: 0, reports: 0, averageRating: 0, reliabilityIndex: 0, updatedAt: '' }`
+
+**ArkTSCheck: 展开运算符禁用（arkts-no-spread）**
+- 错误原因：不允许对象/数组展开。
+- 解决方案：用 `slice()/concat()` 与“重建对象”模式替代，重新赋值触发渲染。
+
+**资源命名空间错误**
+- 错误原因：资源路径缺少模块命名空间。
+- 解决方案：使用 `$r('[basic].media.xxx')` 或 `$r('app.media.xxx')`，避免裸资源名。

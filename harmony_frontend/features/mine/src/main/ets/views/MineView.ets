@@ -395,6 +395,10 @@ export struct MineView {
       this.showFeedbackModal = true
       return
     }
+    if (action === 'reputation') {
+      HMRouterMgr.push({ pageUrl: PAGE_PATH.REPUTATION_PAGE })
+      return
+    }
     this.showToast('功能开发中')
   }
   private closeFeedbackModal() {
