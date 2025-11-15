@@ -102,6 +102,8 @@ export struct HomeView {
   build() {
     Stack() {
     Column() {
+      this.renderHeader()
+
       Refresh({
         refreshing: this.isRefreshing,
         builder: this.renderRefreshHeader
@@ -109,7 +111,6 @@ export struct HomeView {
         Scroll(this.scroller) {
           Column({ space: 12 }) {
             // 页面各部分
-            this.renderHeader()
             this.renderCategories()
             this.renderFilterBar()
             this.renderTasks()

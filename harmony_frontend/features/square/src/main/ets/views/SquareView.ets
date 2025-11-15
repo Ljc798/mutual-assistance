@@ -30,7 +30,6 @@ export struct SquareView {
   private readonly scroller: Scroller = new Scroller()
   safeArea: AppSafeArea = AppStorageV2.connect(AppSafeArea, () => new AppSafeArea())!
   private readonly appUser: AppUser = AppStorageV2.connect(AppUser, () => new AppUser())!
-
   @State posts: SquarePost[] = []
   @State selectedCategory: SquareCategory = '全部'
   @State selectedSchoolName: string = '请选择学校'
@@ -67,13 +66,14 @@ export struct SquareView {
   build() {
     Stack() {
       Column() {
+        this.renderHeader()
+
         Refresh({
           refreshing: this.isRefreshing,
           builder: this.renderRefreshHeader
         }) {
           Scroll(this.scroller) {
             Column({ space: 12 }) {
-              this.renderHeader()
               this.renderCategoryBar()
               this.renderPostList()
             }
@@ -114,6 +114,7 @@ export struct SquareView {
         .onRefreshing(() => this.handleRefresh())
 
       }
+
       this.renderFloatingButton()
       this.renderPublishModal()
       this.renderReportModal()
@@ -176,16 +177,21 @@ export struct SquareView {
                 bottom: 8
               })
               .fontSize(14)
-              .fontColor(this.selectedCategory === category ? $r('[basic].color.white') : $r('[basic].color.text_secondary'))
-              .backgroundColor(this.selectedCategory === category ? $r('[basic].color.filter_active_bg') : $r('[basic].color.white'))
+              .fontColor(this.selectedCategory === category ? $r('[basic].color.white') :
+                $r('[basic].color.text_secondary'))
+              .backgroundColor(this.selectedCategory === category ? $r('[basic].color.filter_active_bg') :
+                $r('[basic].color.white'))
               .borderRadius(18)
-              .onClick((): void => { this.selectCategory(category) })
+              .onClick((): void => {
+                this.selectCategory(category)
+              })
           }, (category: SquareCategory) => category)
         }
       }
       .width('80%')
       .scrollBar(BarState.Off)
       .scrollable(ScrollDirection.Horizontal)
+
       Column({ space: 4 }) {
         Image(this.checkinCompleted ? $r('app.media.icon_square_checkin_done') : $r('app.media.icon_square_checkin'))
           .width(36)
@@ -193,8 +199,11 @@ export struct SquareView {
       }
       .width('20%')
       .alignItems(HorizontalAlign.Center)
-      .onClick((): void => { this.handleCheckin() })
+      .onClick((): void => {
+        this.handleCheckin()
+      })
     }
+    .margin({top: 10})
     .width('100%')
   }
 
@@ -231,7 +240,9 @@ export struct SquareView {
           .borderRadius(20)
           .objectFit(ImageFit.Cover)
           .backgroundColor($r('[basic].color.search_box_bg'))
-          .onClick((): void => { this.openProfile(post.userId) })
+          .onClick((): void => {
+            this.openProfile(post.userId)
+          })
         Column({ space: 4 }) {
           Row({ space: 6 }) {
             Text(post.username)
@@ -242,7 +253,12 @@ export struct SquareView {
               Text('VIP')
                 .fontSize(11)
                 .fontColor($r('[basic].color.white'))
-                .padding({ left: 6, right: 6, top: 2, bottom: 2 })
+                .padding({
+                  left: 6,
+                  right: 6,
+                  top: 2,
+                  bottom: 2
+                })
                 .backgroundColor($r('[basic].color.filter_active_bg'))
                 .borderRadius(10)
             }
@@ -250,22 +266,32 @@ export struct SquareView {
               Text('置顶')
                 .fontSize(11)
                 .fontColor($r('[basic].color.filter_active_bg'))
-                .padding({ left: 6, right: 6, top: 2, bottom: 2 })
+                .padding({
+                  left: 6,
+                  right: 6,
+                  top: 2,
+                  bottom: 2
+                })
                 .backgroundColor('#1AFF6B8B')
                 .borderRadius(10)
             }
           }
+
           Text(post.formattedTime)
             .fontSize(12)
             .fontColor($r('[basic].color.text_secondary'))
         }
         .alignItems(HorizontalAlign.Start)
         .layoutWeight(1)
+
         Image($r('[basic].media.ic_public_more'))
           .width(24)
           .height(24)
-          .onClick((): void => { this.openReportModal(post.id) })
+          .onClick((): void => {
+            this.openReportModal(post.id)
+          })
       }
+
       Text(post.content)
         .fontSize(15)
         .fontColor($r('[basic].color.text_primary'))
@@ -283,7 +309,10 @@ export struct SquareView {
             .fontSize(13)
             .fontColor($r('[basic].color.text_secondary'))
         }
-        .onClick((): void => { this.toggleLike(post) })
+        .onClick((): void => {
+          this.toggleLike(post)
+        })
+
         Row({ space: 6 }) {
           Image($r('app.media.icon_square_comment'))
             .width(20)
@@ -292,7 +321,9 @@ export struct SquareView {
             .fontSize(13)
             .fontColor($r('[basic].color.text_secondary'))
         }
-        .onClick((): void => { this.openDetail(post.id) })
+        .onClick((): void => {
+          this.openDetail(post.id)
+        })
       }
       .width('95%')
       .justifyContent(FlexAlign.End)
@@ -307,7 +338,9 @@ export struct SquareView {
       offsetX: 0,
       offsetY: 6
     })
-    .onClick((): void => { this.openDetail(post.id) })
+    .onClick((): void => {
+      this.openDetail(post.id)
+    })
     .alignItems(HorizontalAlign.Start)
   }
 
@@ -372,7 +405,9 @@ export struct SquareView {
           right: 20,
           bottom: 20 + this.safeArea.bottomHeight
         })
-        .onClick((): void => { this.openPublishModal() })
+        .onClick((): void => {
+          this.openPublishModal()
+        })
     } else {
       Blank()
     }
@@ -403,7 +438,9 @@ export struct SquareView {
             .fontColor($r('[basic].color.white'))
             .borderRadius(16)
             .enabled(!this.isSubmittingPost)
-            .onClick((): void => { this.submitPost() })
+            .onClick((): void => {
+              this.submitPost()
+            })
           Text('发布的帖子会关联当前学校')
             .fontSize(12)
             .fontColor($r('[basic].color.text_secondary'))
@@ -413,7 +450,9 @@ export struct SquareView {
             .height(40)
             .borderRadius(16)
             .backgroundColor($r('[basic].color.search_box_bg'))
-            .onClick((): void => { this.closePublishModal() })
+            .onClick((): void => {
+              this.closePublishModal()
+            })
         }
         .width('90%')
         .padding(20)
@@ -438,12 +477,21 @@ export struct SquareView {
         Row({ space: 10 }) {
           ForEach(POST_CATEGORIES, (category: SquareCategory) => {
             Text(category)
-              .padding({ left: 12, right: 12, top: 6, bottom: 6 })
+              .padding({
+                left: 12,
+                right: 12,
+                top: 6,
+                bottom: 6
+              })
               .fontSize(13)
-              .fontColor(this.publishCategory === category ? $r('[basic].color.white') : $r('[basic].color.text_secondary'))
-              .backgroundColor(this.publishCategory === category ? $r('[basic].color.filter_active_bg') : $r('[basic].color.search_box_bg'))
+              .fontColor(this.publishCategory === category ? $r('[basic].color.white') :
+                $r('[basic].color.text_secondary'))
+              .backgroundColor(this.publishCategory === category ? $r('[basic].color.filter_active_bg') :
+                $r('[basic].color.search_box_bg'))
               .borderRadius(16)
-              .onClick((): void => { this.publishCategory = category })
+              .onClick((): void => {
+                this.publishCategory = category
+              })
           }, (category: SquareCategory) => `publish-${category}`)
         }
       }
@@ -475,7 +523,9 @@ export struct SquareView {
                 right: -8,
                 top: -8
               })
-              .onClick((): void => { this.removeTempImage(index) })
+              .onClick((): void => {
+                this.removeTempImage(index)
+              })
           }
         }, (_: string, index: number) => `temp-${index}`)
         if (this.tempImages.length < MAX_IMAGES) {
@@ -490,7 +540,9 @@ export struct SquareView {
           .backgroundColor($r('[basic].color.search_box_bg'))
           .justifyContent(FlexAlign.Center)
           .alignItems(HorizontalAlign.Center)
-          .onClick((): void => { this.handleImagePick() })
+          .onClick((): void => {
+            this.handleImagePick()
+          })
         }
       }
     }
@@ -519,7 +571,9 @@ export struct SquareView {
               .height(44)
               .borderRadius(16)
               .backgroundColor($r('[basic].color.search_box_bg'))
-              .onClick((): void => { this.closeReportModal() })
+              .onClick((): void => {
+                this.closeReportModal()
+              })
             Button(this.isSubmittingReport ? '提交中...' : '提交')
               .layoutWeight(1)
               .height(44)
@@ -527,7 +581,9 @@ export struct SquareView {
               .backgroundColor($r('[basic].color.filter_active_bg'))
               .fontColor($r('[basic].color.white'))
               .enabled(!this.isSubmittingReport)
-              .onClick((): void => { this.submitReport() })
+              .onClick((): void => {
+                this.submitReport()
+              })
           }
         }
         .width('90%')
@@ -554,18 +610,25 @@ export struct SquareView {
           Row() {
             Text(reason)
               .fontSize(14)
-              .fontColor(this.reportReasonIndex === index ? $r('[basic].color.filter_active_bg') : $r('[basic].color.text_primary'))
+              .fontColor(this.reportReasonIndex === index ? $r('[basic].color.filter_active_bg') :
+                $r('[basic].color.text_primary'))
           }
           .width('100%')
-          .padding({ left: 12, right: 12, top: 10, bottom: 10 })
+          .padding({
+            left: 12,
+            right: 12,
+            top: 10,
+            bottom: 10
+          })
           .backgroundColor(this.reportReasonIndex === index ? '#1AFF6B8B' : $r('[basic].color.search_box_bg'))
           .borderRadius(14)
-          .onClick((): void => { this.reportReasonIndex = index })
+          .onClick((): void => {
+            this.reportReasonIndex = index
+          })
         }, (reason: string) => `reason-${reason}`)
       }
     }
   }
-
 
   private async loadPosts(isLoadMore: boolean = false) {
     if (isLoadMore) {
@@ -625,28 +688,6 @@ export struct SquareView {
         : '签到领积分'
     } catch (error) {
       console.warn('获取签到状态失败', JSON.stringify(error))
-    }
-  }
-
-  private handleRefreshState(state: RefreshStatus) {
-    switch (state) {
-      case RefreshStatus.Inactive:
-        this.refreshText = '下拉刷新'
-        break
-      case RefreshStatus.Drag:
-        this.refreshText = '继续下拉'
-        break
-      case RefreshStatus.OverDrag:
-        this.refreshText = '松手刷新'
-        break
-      case RefreshStatus.Refresh:
-        this.refreshText = '刷新中...'
-        break
-      case RefreshStatus.Done:
-        this.refreshText = '刷新完成'
-        break
-      default:
-        this.refreshText = '下拉刷新'
     }
   }
 
