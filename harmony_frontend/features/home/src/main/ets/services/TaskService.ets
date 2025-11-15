@@ -11,6 +11,7 @@ export interface TaskQuery {
   page?: number
   pageSize?: number
   status?: TaskFilterValue
+  schoolId?: number
 }
 
 function toTaskItem(item: TaskDTO): TaskItem {
@@ -22,10 +23,15 @@ function toTaskItem(item: TaskDTO): TaskItem {
     position: item.position,
     address: item.address,
     status: item.status as TaskStatus,
-    mode: 'fixed',
+    mode: item.mode === 'bidding' ? 'bidding' : 'fixed',
     offer: item.offer,
     hasPaid: false,
-    formattedDeadline: formatDeadline(item.DDL)
+    formattedDeadline: formatDeadline(item.DDL),
+    detail: item.detail,
+    employerId: item.employer_id,
+    takeawayCode: item.takeaway_code,
+    takeawayTel: item.takeaway_tel,
+    takeawayName: item.takeaway_name
   }
 }
 
@@ -61,6 +67,12 @@ function buildQueryParams(query?: TaskQuery): QueryParam[] | undefined {
     key: 'status',
     value: statusValue
   })
+  if (typeof query.schoolId === 'number' && query.schoolId > 0) {
+    params.push({
+      key: 'school_id',
+      value: `${query.schoolId}`
+    })
+  }
   return params
 }
 

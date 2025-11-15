@@ -3,4 +3,7 @@ export class PAGE_PATH {
   static readonly MAIN_PAGE_ID: string = "mainNavigation"
   static readonly SEARCH_PAGE: string = "SearchView"
   static readonly LOGIN_PAGE: string = "LoginView"
+  static readonly SCHOOL_PICKER_PAGE: string = "SchoolPickerView"
+  static readonly TASK_DETAIL_PAGE: string = "TaskDetailView"
+  static readonly SQUARE_DETAIL_PAGE: string = "SquareDetailView"
 }

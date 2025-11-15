@@ -1,18 +1,23 @@
 import promptAction from '@ohos.promptAction'
 import { AppStorageV2 } from '@kit.ArkUI'
-import { AppSafeArea, AppUser, TaskMode } from 'basic'
+import { AppSafeArea, AppSelectedSchool, AppUser, PAGE_PATH, SCHOOL_SELECTION_VERSION_KEY, TaskMode, schoolPersistence } from 'basic'
 import { PublishCategory, PublishFormModel, PublishMethod, PUBLISH_CATEGORIES, PublishCreatePayload } from '../viewmodels/PublishTypes'
 import { calculateCommission, createTask } from '../services/PublishService'
+import { HMRouterMgr } from '@hadss/hmrouter'
 
 @Component
 export struct PublishView {
   private readonly scroller: Scroller = new Scroller()
   safeArea: AppSafeArea = AppStorageV2.connect(AppSafeArea, () => new AppSafeArea())!
   private readonly appUser: AppUser = AppStorageV2.connect(AppUser, () => new AppUser())!
+  private readonly schoolSelection: AppSelectedSchool = AppStorageV2.connect(AppSelectedSchool, () => new AppSelectedSchool())!
+  @StorageLink(SCHOOL_SELECTION_VERSION_KEY) schoolVersion: number = 0
+  private lastSyncedVersion: number = 0
+  private hasMounted: boolean = false
 
   form: PublishFormModel = new PublishFormModel()
-  @State selectedSchoolName: string = '当前学校待选择'
-  @State selectedSchoolId: number = 1271
+  @State selectedSchoolId: number = 0
+  @State selectedSchoolName: string = '请选择学校'
   @State showCategoryDialog: boolean = false
   @State showCommissionPopup: boolean = false
   @State commissionAmount: string = '0.00'
@@ -23,7 +28,13 @@ export struct PublishView {
   @State isSubmittingPublish: boolean = false
 
   aboutToAppear() {
-    this.selectedSchoolName = '首页所选学校'
+    this.hasMounted = true
+    this.lastSyncedVersion = this.schoolVersion
+    this.syncSelectedSchool()
+  }
+
+  aboutToRender() {
+    this.syncSelectedSchool()
   }
 
   build() {
@@ -41,8 +52,7 @@ export struct PublishView {
                 .width(18)
                 .height(18)
                 .margin({ right: 4 });
-              // todo school
-              Text('请选择学校')
+              Text(this.getSelectedSchoolName())
                 .fontSize(16)
                 .fontColor($r('[basic].color.white'))
                 .fontWeight(FontWeight.Regular)
@@ -301,7 +311,7 @@ export struct PublishView {
   @Builder
   private renderHint() {
     Column({ space: 8 }) {
-      Text(`📍 当前发布任务所处学校：${this.selectedSchoolName}`)
+      Text(`📍 当前发布任务所处学校：${this.getSelectedSchoolName()}`)
         .fontSize(12)
         .fontColor($r('[basic].color.text_secondary'))
     }
@@ -357,6 +367,10 @@ export struct PublishView {
       promptAction.showToast({ message: '请先登录' })
       return
     }
+    if (this.getSelectedSchoolId() <= 0) {
+      promptAction.showToast({ message: '请选择学校后再发布' })
+      return
+    }
     const rewardValue = Number.parseFloat(this.form.reward)
     const commissionFen = calculateCommission(rewardValue)
     this.commissionAmount = (commissionFen / 100).toFixed(2)
@@ -374,11 +388,16 @@ export struct PublishView {
       promptAction.showToast({ message: '暂未开通支付发布，请选择其他方式' })
       return
     }
+    const schoolId = this.getSelectedSchoolId()
+    if (schoolId <= 0) {
+      promptAction.showToast({ message: '请选择学校后再发布' })
+      return
+    }
     this.isSubmittingPublish = true
     try {
       const payload: PublishCreatePayload = {
         employer_id: userId,
-        school_id: this.selectedSchoolId,
+        school_id: schoolId,
         category: this.form.category,
         position: this.form.position,
         address: this.form.address,
@@ -427,6 +446,30 @@ export struct PublishView {
     await this.submitTask(method)
   }
 
+  private syncSelectedSchool(): void {
+    const snapshot = schoolPersistence.getSelection()
+    const id = snapshot.id
+    const name = snapshot.name
+    const normalizedId: number = typeof id === 'number' && id > 0 && name.length > 0 ? id : 0
+    const normalizedName: string = normalizedId > 0 ? name : '请选择学校'
+    this.selectedSchoolId = normalizedId
+    this.selectedSchoolName = normalizedName
+  }
+
+  private getSelectedSchoolName(): string {
+    const idValue: number = this.schoolSelection.id
+    const nameValue: string = this.schoolSelection.name
+    const normalizedId: number = typeof idValue === 'number' && idValue > 0 && nameValue.length > 0 ? idValue : 0
+    return normalizedId > 0 ? nameValue : '请选择学校'
+  }
+
+  private getSelectedSchoolId(): number {
+    const idValue: number = this.schoolSelection.id
+    const nameValue: string = this.schoolSelection.name
+    const normalizedId: number = typeof idValue === 'number' && idValue > 0 && nameValue.length > 0 ? idValue : 0
+    return normalizedId
+  }
+
   @Builder
   private renderCommissionPopup() {
     if (this.showCommissionPopup) {
@@ -468,7 +511,9 @@ export struct PublishView {
   }
 
   private handleSchoolTap() {
-    promptAction.showToast({ message: '学校选择功能开发中' })
+    HMRouterMgr.push({
+      pageUrl: PAGE_PATH.SCHOOL_PICKER_PAGE
+    })
   }
 
   @Builder

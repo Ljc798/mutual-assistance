@@ -1,10 +1,21 @@
 import promptAction from '@ohos.promptAction'
 import {
-  AppBreakPoint, AppSafeArea, BreakPointType, ProgressLoading, TaskItem, TaskStatus
+  AppBreakPoint,
+  AppSafeArea,
+  AppSelectedSchool,
+  BreakPointType,
+  PAGE_PATH,
+  ProgressLoading,
+  SCHOOL_SELECTION_VERSION_KEY,
+  schoolPersistence,
+  TaskItem,
+  TaskStatus
 } from 'basic'
 import { TaskFilterValue, HomeCategoryItem, TaskFilter, PriceInfo } from '../viewmodels/HomeTypes'
 import { fetchTasks as fetchHomeTasks, TaskQuery } from '../services/TaskService'
+import { AppCurrentTaskDetail } from '../viewmodels/TaskDetailVM'
 import { AppStorageV2 } from '@kit.ArkUI'
+import { HMRouterMgr } from '@hadss/hmrouter'
 
 type TaskMode = 'fixed' | 'bidding'
 
@@ -13,11 +24,17 @@ export struct HomeView {
   private scroller: Scroller = new Scroller()
   safeArea: AppSafeArea = AppStorageV2.connect(AppSafeArea, () => new AppSafeArea())!
   breakPoint: AppBreakPoint = AppStorageV2.connect(AppBreakPoint, () => new AppBreakPoint())!
+  private readonly schoolSelection: AppSelectedSchool =
+    AppStorageV2.connect(AppSelectedSchool, () => new AppSelectedSchool())!
+  @StorageLink(SCHOOL_SELECTION_VERSION_KEY) schoolVersion: number = 0
+  private lastSchoolId: number = 0
+  private lastSchoolName: string = '请选择学校'
+  private lastSyncedVersion: number = 0
+  private hasMounted: boolean = false
   @State isRefreshing: boolean = false
   @State keyword: string = ''
   @State selectedCategory: string = '全部'
   @State activeFilter: TaskFilterValue = 'all'
-  @State selectedSchool: string = '请选择学校'
   @State allTasks: TaskItem[] = []
   @State visibleTasks: TaskItem[] = []
   @State searchResults: TaskItem[] = []
@@ -28,6 +45,8 @@ export struct HomeView {
   @State refreshText: string = '下拉刷新'
   @State page: number = 1
   @State isFinished: boolean = false
+  @State currentSchoolId: number = 0
+  @State currentSchoolName: string = '请选择学校'
   private searchTimer?: number
   private readonly filters: TaskFilter[] = [
     { label: '全部', value: 'all' },
@@ -89,7 +108,18 @@ export struct HomeView {
   ]
 
   aboutToAppear() {
+    this.hasMounted = true
+    this.syncSchoolSelection()
+    this.lastSyncedVersion = this.schoolVersion
     this.loadTasks()
+  }
+
+  aboutToRender() {
+    const changed = this.syncSchoolSelection()
+    if (changed && this.hasMounted) {
+      this.resetPagingState()
+      this.loadTasks()
+    }
   }
 
   aboutToDisappear() {
@@ -99,18 +129,29 @@ export struct HomeView {
     }
   }
 
+  private syncSchoolSelection(): boolean {
+    const snapshot = schoolPersistence.getSelection()
+    const idValue: number = snapshot.id
+    const nameValue: string = snapshot.name
+    const nextId: number = typeof idValue === 'number' && idValue > 0 && nameValue.length > 0 ? idValue : 0
+    const nextName: string = nextId > 0 ? nameValue : '请选择学校'
+    const hasChanged: boolean = nextId !== this.lastSchoolId || nextName !== this.lastSchoolName
+    this.lastSchoolId = nextId
+    this.lastSchoolName = nextName
+    this.currentSchoolId = nextId
+    this.currentSchoolName = nextName
+    return hasChanged
+  }
+
   build() {
     Stack() {
-    Column() {
-      this.renderHeader()
-
-      Refresh({
-        refreshing: this.isRefreshing,
-        builder: this.renderRefreshHeader
-      }) {
-        Scroll(this.scroller) {
+      Column() {
+        this.renderHeader()
+        Refresh({
+          refreshing: this.isRefreshing,
+          builder: this.renderRefreshHeader
+        }) {
           Column({ space: 12 }) {
-            // 页面各部分
             this.renderCategories()
             this.renderFilterBar()
             this.renderTasks()
@@ -123,35 +164,32 @@ export struct HomeView {
           })
           .width('100%')
         }
-        .scrollBar(BarState.Off)
-        .onScrollEdge((side: Edge) => {
-          if (side === Edge.Bottom) {
-            this.loadMoreTasks()
+        // 刷新状态更新逻辑（文字动态变化）
+        .onStateChange((state: RefreshStatus) => {
+          switch (state) {
+            case RefreshStatus.Inactive:
+              this.refreshText = '下拉刷新'
+              break
+            case RefreshStatus.Drag:
+              this.refreshText = '继续下拉'
+              break
+            case RefreshStatus.OverDrag:
+              this.refreshText = '松手刷新'
+              break
+            case RefreshStatus.Refresh:
+              this.refreshText = '正在刷新任务...'
+              break
+            case RefreshStatus.Done:
+              this.refreshText = '刷新完成'
+              break
           }
         })
+        .onRefreshing(() => this.handleRefresh())
       }
-      // 刷新状态更新逻辑（文字动态变化）
-      .onStateChange((state: RefreshStatus) => {
-        switch (state) {
-          case RefreshStatus.Inactive:
-            this.refreshText = '下拉刷新'
-            break
-          case RefreshStatus.Drag:
-            this.refreshText = '继续下拉'
-            break
-          case RefreshStatus.OverDrag:
-            this.refreshText = '松手刷新'
-            break
-          case RefreshStatus.Refresh:
-            this.refreshText = '正在刷新任务...'
-            break
-          case RefreshStatus.Done:
-            this.refreshText = '刷新完成'
-            break
-        }
-      })
-      .onRefreshing(() => this.handleRefresh())
-      }
+      .width('100%')
+      .height('100%')
+      .justifyContent(FlexAlign.Start)
+
       Image($r('[basic].media.ic_up_arrow'))
         .width(50)
         .padding(10)
@@ -170,7 +208,6 @@ export struct HomeView {
     .backgroundColor($r('[basic].color.page_background'))
 
   }
-
 
   async handleRefresh() {
     if (this.isRefreshing || this.isLoadingMore) {
@@ -231,8 +268,7 @@ export struct HomeView {
             .width(18)
             .height(18)
             .margin({ right: 4 });
-          // todo school
-          Text('请选择学校')
+          Text(this.getSchoolDisplayName())
             .fontSize(16)
             .fontColor($r('[basic].color.white'))
             .fontWeight(FontWeight.Regular)
@@ -341,8 +377,14 @@ export struct HomeView {
           Text(item.label)
             .fontSize(14)
             .fontColor(this.activeFilter === item.value ? $r('[basic].color.white') : $r('[basic].color.text_primary'))
-            .padding({ left: 18, right: 18, top: 10, bottom: 10 })
-            .backgroundColor(this.activeFilter === item.value ? $r('[basic].color.filter_active_bg') : $r('[basic].color.white'))
+            .padding({
+              left: 18,
+              right: 18,
+              top: 10,
+              bottom: 10
+            })
+            .backgroundColor(this.activeFilter === item.value ? $r('[basic].color.filter_active_bg') :
+              $r('[basic].color.white'))
             .borderRadius(999)
             .onClick(() => this.handleFilterTap(item.value))
         }, (item: TaskFilter) => item.label)
@@ -351,8 +393,13 @@ export struct HomeView {
       .width('100%')
       .alignItems(VerticalAlign.Center);
     }
-    .margin({left: 16, right: 16})
-    .padding({ top: 12, bottom: 6, left: 12, right: 12 })
+    .margin({ left: 16, right: 16 })
+    .padding({
+      top: 12,
+      bottom: 6,
+      left: 12,
+      right: 12
+    })
     .backgroundColor($r('[basic].color.white'))
     .borderRadius(28)
     .shadow({
@@ -461,6 +508,7 @@ export struct HomeView {
       .justifyContent(FlexAlign.SpaceBetween)
       .alignItems(HorizontalAlign.End)
       .padding({ right: 5 });
+
       // todo much words are wrong on the template
     }
     .width('100%')
@@ -508,11 +556,13 @@ export struct HomeView {
       this.isRefreshing = true
     }
     try {
+      const schoolId: number = this.resolveSelectedSchoolId()
       const query: TaskQuery = {
         page: nextPage,
         pageSize: this.pageSize,
         category: this.selectedCategory,
-        status: this.activeFilter
+        status: this.activeFilter,
+        schoolId: schoolId > 0 ? schoolId : undefined
       }
       const tasks = await this.fetchTasks(query)
       if (isLoadMore) {
@@ -639,13 +689,30 @@ export struct HomeView {
     return { label: `中标价 ¥${bidAmount}`, color: $r('[basic].color.price_deal') }
   }
 
+  private getSchoolDisplayName(): string {
+    return this.currentSchoolName
+  }
+
+  private resolveSelectedSchoolId(): number {
+    return this.currentSchoolId
+  }
+
+  private resolveSelectedSchoolName(): string {
+    return this.currentSchoolName
+  }
 
   private handleTaskSelect(task: TaskItem) {
-    this.showToast(`查看任务: ${task.title}`)
+    const vm = AppStorageV2.connect(AppCurrentTaskDetail, () => new AppCurrentTaskDetail())!
+    vm.setTask(task)
+    HMRouterMgr.push({
+      pageUrl: PAGE_PATH.TASK_DETAIL_PAGE
+    })
   }
 
   private handleSchoolTap() {
-    this.showToast('学校选择功能开发中')
+    HMRouterMgr.push({
+      pageUrl: PAGE_PATH.SCHOOL_PICKER_PAGE
+    })
   }
 
   private loadMoreTasks() {

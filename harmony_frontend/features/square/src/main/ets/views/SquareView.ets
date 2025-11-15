@@ -1,6 +1,15 @@
 import promptAction from '@ohos.promptAction'
 import { AppStorageV2 } from '@kit.ArkUI'
-import { AppSafeArea, AppUser, ProgressLoading } from 'basic'
+import {
+  AppSafeArea,
+  AppSelectedSchool,
+  AppUser,
+  PAGE_PATH,
+  ProgressLoading,
+  SCHOOL_SELECTION_VERSION_KEY,
+  schoolPersistence
+} from 'basic'
+import { HMRouterMgr } from '@hadss/hmrouter'
 import {
   DEFAULT_SQUARE_CATEGORIES,
   POST_CATEGORIES,
@@ -13,6 +22,7 @@ import {
   SquareQuery,
   SquareReportPayload
 } from '../viewmodels/SquareTypes'
+import { AppCurrentSquareDetail } from '../viewmodels/SquareDetailVM'
 import {
   createSquarePost,
   fetchCheckinStatus,
@@ -30,10 +40,16 @@ export struct SquareView {
   private readonly scroller: Scroller = new Scroller()
   safeArea: AppSafeArea = AppStorageV2.connect(AppSafeArea, () => new AppSafeArea())!
   private readonly appUser: AppUser = AppStorageV2.connect(AppUser, () => new AppUser())!
+  private readonly schoolSelection: AppSelectedSchool = AppStorageV2.connect(AppSelectedSchool, () => new AppSelectedSchool())!
+  @StorageLink(SCHOOL_SELECTION_VERSION_KEY) schoolVersion: number = 0
+  private lastSchoolId: number = 0
+  private lastSchoolName: string = '请选择学校'
+  private lastSyncedVersion: number = 0
+  private hasMounted: boolean = false
   @State posts: SquarePost[] = []
   @State selectedCategory: SquareCategory = '全部'
-  @State selectedSchoolName: string = '请选择学校'
-  @State selectedSchoolId: number = 1271
+  @State currentSchoolId: number = 0
+  @State currentSchoolName: string = '请选择学校'
   @State isRefreshing: boolean = false
   @State isLoadingMore: boolean = false
   @State hasMore: boolean = true
@@ -55,7 +71,18 @@ export struct SquareView {
   @State checkinSubTitle: string = '签到领积分'
 
   aboutToAppear() {
+    this.hasMounted = true
+    this.syncSchoolSelection()
+    this.lastSyncedVersion = this.schoolVersion
     this.bootstrap()
+  }
+
+  aboutToRender() {
+    const changed = this.syncSchoolSelection()
+    if (changed && this.hasMounted) {
+      this.resetPagingState()
+      this.loadPosts(false)
+    }
   }
 
   private bootstrap() {
@@ -63,11 +90,24 @@ export struct SquareView {
     this.loadPosts()
   }
 
+  private syncSchoolSelection(): boolean {
+    const snapshot = schoolPersistence.getSelection()
+    const idValue: number = snapshot.id
+    const nameValue: string = snapshot.name
+    const nextId: number = typeof idValue === 'number' && idValue > 0 && nameValue.length > 0 ? idValue : 0
+    const nextName: string = nextId > 0 ? nameValue : '请选择学校'
+    const hasChanged: boolean = nextId !== this.lastSchoolId || nextName !== this.lastSchoolName
+    this.lastSchoolId = nextId
+    this.lastSchoolName = nextName
+    this.currentSchoolId = nextId
+    this.currentSchoolName = nextName
+    return hasChanged
+  }
+
   build() {
     Stack() {
       Column() {
         this.renderHeader()
-
         Refresh({
           refreshing: this.isRefreshing,
           builder: this.renderRefreshHeader
@@ -104,7 +144,7 @@ export struct SquareView {
               this.refreshText = '松手刷新'
               break
             case RefreshStatus.Refresh:
-              this.refreshText = '正在刷新任务...'
+              this.refreshText = '刷新中...'
               break
             case RefreshStatus.Done:
               this.refreshText = '刷新完成'
@@ -112,9 +152,10 @@ export struct SquareView {
           }
         })
         .onRefreshing(() => this.handleRefresh())
-
       }
-
+      .width('100%')
+      .height('100%')
+      .justifyContent(FlexAlign.Start)
       this.renderFloatingButton()
       this.renderPublishModal()
       this.renderReportModal()
@@ -138,8 +179,7 @@ export struct SquareView {
             .width(18)
             .height(18)
             .margin({ right: 4 });
-          // todo school
-          Text('请选择学校')
+          Text(this.getSelectedSchoolName())
             .fontSize(16)
             .fontColor($r('[basic].color.white'))
             .fontWeight(FontWeight.Regular)
@@ -630,6 +670,14 @@ export struct SquareView {
     }
   }
 
+  private getSelectedSchoolName(): string {
+    return this.currentSchoolName
+  }
+
+  private getSelectedSchoolId(): number {
+    return this.currentSchoolId
+  }
+
   private async loadPosts(isLoadMore: boolean = false) {
     if (isLoadMore) {
       if (!this.hasMore || this.isLoadingMore) {
@@ -649,7 +697,7 @@ export struct SquareView {
         page: nextPage,
         pageSize: this.pageSize,
         userId: this.appUser.user.id,
-        schoolId: this.selectedSchoolId
+        schoolId: this.getSelectedSchoolId()
       }
       const list = await fetchSquarePosts(query)
       if (isLoadMore) {
@@ -692,7 +740,9 @@ export struct SquareView {
   }
 
   private handleSchoolTap() {
-    this.showToast('学校选择功能开发中')
+    HMRouterMgr.push({
+      pageUrl: PAGE_PATH.SCHOOL_PICKER_PAGE
+    })
   }
 
   async handleRefresh() {
@@ -841,6 +891,10 @@ export struct SquareView {
       this.showToast('暂不支持图片上传，请删除图片后再提交')
       return
     }
+    if (this.getSelectedSchoolId() <= 0) {
+      this.showToast('请选择学校后再发布')
+      return
+    }
     if (this.isSubmittingPost) {
       return
     }
@@ -848,7 +902,7 @@ export struct SquareView {
     try {
       const payload: SquareCreatePayload = {
         user_id: userId,
-        school_id: this.selectedSchoolId,
+        school_id: this.getSelectedSchoolId(),
         category: this.publishCategory,
         content: this.publishContent.trim()
       }
@@ -914,11 +968,30 @@ export struct SquareView {
       } else {
         await likeSquarePost(payload, token)
       }
-      const nextPosts: SquarePost[] = [...this.posts]
+      const nextPosts: SquarePost[] = this.posts.slice()
       for (let i = 0; i < nextPosts.length; i++) {
-        if (nextPosts[i].id === post.id) {
-          nextPosts[i].isLiked = !nextPosts[i].isLiked
-          nextPosts[i].likesCount += nextPosts[i].isLiked ? 1 : -1
+        const p = nextPosts[i]
+        if (p.id === post.id) {
+          const delta = p.isLiked ? -1 : 1
+          const updated: SquarePost = {
+            id: p.id,
+            userId: p.userId,
+            username: p.username,
+            avatarUrl: p.avatarUrl,
+            content: p.content,
+            category: p.category,
+            likesCount: Math.max(0, p.likesCount + delta),
+            commentsCount: p.commentsCount,
+            createdTime: p.createdTime,
+            formattedTime: p.formattedTime,
+            isLiked: !p.isLiked,
+            isVip: p.isVip,
+            pinned: p.pinned,
+            schoolId: p.schoolId,
+            images: p.images,
+            approvedImages: p.approvedImages
+          }
+          nextPosts[i] = updated
           break
         }
       }
@@ -930,7 +1003,16 @@ export struct SquareView {
   }
 
   private openDetail(postId: number) {
-    this.showToast(`帖子 ${postId} 详情开发中`)
+    const target = this.posts.find((p: SquarePost) => p.id === postId)
+    if (!target) {
+      this.showToast('未找到帖子数据')
+      return
+    }
+    const vm = AppStorageV2.connect(AppCurrentSquareDetail, () => new AppCurrentSquareDetail())!
+    vm.setPost(target)
+    HMRouterMgr.push({
+      pageUrl: PAGE_PATH.SQUARE_DETAIL_PAGE
+    })
   }
 
   private openProfile(userId: number) {

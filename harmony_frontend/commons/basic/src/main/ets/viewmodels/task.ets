@@ -21,6 +21,7 @@ export interface TaskDTO {
   takeaway_code: string
   takeaway_tel?: number
   takeaway_name: string
+  mode?: TaskMode
 }
 
 export interface TaskItemBase {
@@ -33,6 +34,11 @@ export interface TaskItemBase {
   status: TaskStatus
   offer: number
   formattedDeadline: string
+  detail?: string
+  employerId?: number
+  takeawayCode?: string
+  takeawayTel?: number
+  takeawayName?: string
 }
 
 export type TaskMode = 'fixed' | 'bidding'

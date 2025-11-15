@@ -14,11 +14,15 @@ export { AppSafeArea } from './src/main/ets/viewmodels/AppSafeArea';
 
 export { BreakPointType } from './src/main/ets/viewmodels/BreakPointType'
 
+export { AppSelectedSchool, SchoolOption, SchoolSelectionSnapshot } from './src/main/ets/viewmodels/School'
+
 export { ProgressLoading } from './src/main/ets/components/ProgressLoading'
 
 export { TabItem } from './src/main/ets/viewmodels/task'
 
 export { TaskDTO, TaskItemBase, TaskItem, TaskMode, TaskStatus } from './src/main/ets/viewmodels/task'
+export { TaskBidDTO, TaskBidItem, BaseResponse as TaskBidBaseResponse } from './src/main/ets/viewmodels/taskBid'
+export { SquareCommentDTO, SquareCommentItem, CreateCommentPayload, BaseResponse as SquareCommentBaseResponse } from './src/main/ets/viewmodels/squareComment'
 
 export { HDMLoading } from './src/main/ets/components/HDMLoading'
 
@@ -33,3 +37,5 @@ export { huaweiAuthManager } from './src/main/ets/utils/HuaweiAuthPlugin'
 export { auth } from './src/main/ets/utils/Auth'
 
 export { userPersistence } from './src/main/ets/utils/UserPersistenceManager'
+
+export { schoolPersistence, SCHOOL_SELECTION_VERSION_KEY } from './src/main/ets/utils/SchoolPersistenceManager'
