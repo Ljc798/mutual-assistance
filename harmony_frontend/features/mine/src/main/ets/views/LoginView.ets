@@ -1,10 +1,9 @@
-import { AppSafeArea, AppUser, NavBar, PAGE_PATH, UserInfo } from 'basic'
+import { AppSafeArea, AppUser, NavBar, PAGE_PATH, UserInfo, userPersistence } from 'basic'
 import { AppStorageV2, promptAction } from '@kit.ArkUI'
 
 import { HMRouter, HMRouterMgr } from '@hadss/hmrouter'
 import { LoginFormModel } from '../viewmodels/MyTypes'
 import { passwordLoginAPI, PasswordLoginPayload } from '../api/user'
-import { auth } from 'basic'
 
 
 @Preview
@@ -64,7 +63,7 @@ export struct LoginView {
           vip_level: response.user.vip_level,
           token: response.token ?? ''
         }
-        auth.setUser(userPayload)
+        userPersistence.persistUser(userPayload)
         promptAction.showToast({ message: '登录成功' })
         HMRouterMgr.pop()
       } else {

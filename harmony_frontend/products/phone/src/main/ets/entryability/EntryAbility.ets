@@ -2,7 +2,7 @@ import { AbilityConstant, ConfigurationConstant, UIAbility, Want } from '@kit.Ab
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { display, window } from '@kit.ArkUI';
 import { HMRouterMgr } from '@hadss/hmrouter';
-import { ScreenManager } from 'basic'
+import { ScreenManager, userPersistence } from 'basic'
 
 const DOMAIN = 0x0000;
 
@@ -69,6 +69,7 @@ export default class EntryAbility extends UIAbility {
         return;
       }
       hilog.info(DOMAIN, 'testTag', 'Succeeded in loading the content.');
+      userPersistence.initialize()
       this.screenManager = new ScreenManager(this.context)
       this.screenManager.init()
       this.screenManager.full()

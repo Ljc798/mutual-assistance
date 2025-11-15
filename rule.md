@@ -30,6 +30,7 @@
 - scroller不需要引入，直接使用即可
 - 禁止使用for... in循环，只能使用for... of循环
 - 所有interface都写在viewmodels里，然后export导出，要用的地方引入
+- 不要使用(error: Error)直接用(error)
 
 ### ArkTS 类型与结构补充规范
 - 禁止在泛型或类型声明中直接使用对象字面量类型（例如 `HttpClient.get<Array<{...}>>`），必须先声明 interface/class 再引用。
@@ -55,3 +56,10 @@
 - ArkTS 禁止对普通对象使用展开运算符（PublishView.ets:700）；需要通过手动赋值或辅助方法合并字段。
 - 多个私有方法缺少显式返回类型（如 PublishView.ets:563、615 等），触发 `arkts-no-implicit-return-types` 警告，需要补充 `: void` / `: Promise<void>`。
 - 在 Builder 中使用 `return`（PublishView.ets:838、897）违反 “Only UI component syntax can be written here”，应改为 `if/else` 分支输出组件。
+
+### UserPersistenceManager.ets 持久化错误原因与处理
+- `AppStorage`、`PersistentStorage` 为系统级全局对象，`@kit.ArkUI` 不导出这些成员，直接 `import` 会提示 “has no exported member”。正确做法是在 `typings/arkui-storage.d.ts` 中声明类型后直接使用全局对象。
+- `UserInfo.token` 是可选字段，直接持久化会触发 “snapshot.token is possibly undefined”。必须定义 `UserSnapshot` 让 `token: string` 并在读写时统一转成字符串。
+- `JSON.parse` 结果和 `catch` 变量默认是 `unknown`，在 ArkTS 会触发 `arkts-no-any-unknown`。需要先声明结构化接口（如 `RawUserSnapshot`）并通过 `as` 转换，同时为 `catch` 指定 `Error` 类型。
+- ArkTS 仅支持 `instanceof`/`as` 类型收窄，禁止自定义 `value is Xxx` 守卫；也不要用 `hasOwnProperty` 鉴别，改用 `typeof model.token === 'string'` 等显式校验。
+- ArkTS 禁止 `Object.prototype` 赋值及 `.call/.apply`，因此 `Object.prototype.hasOwnProperty.call` 会命中 `no-prototype-assignment` 和 `no-func-apply-call`。改写为直接的字段类型判断即可。

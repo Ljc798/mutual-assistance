@@ -31,3 +31,5 @@ export { NavBar } from './src/main/ets/components/NavBar'
 export { huaweiAuthManager } from './src/main/ets/utils/HuaweiAuthPlugin'
 
 export { auth } from './src/main/ets/utils/Auth'
+
+export { userPersistence } from './src/main/ets/utils/UserPersistenceManager'
