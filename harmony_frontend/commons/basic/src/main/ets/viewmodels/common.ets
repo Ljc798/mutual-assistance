@@ -13,6 +13,8 @@ export interface UserInfo {
   balance?: number | string
   vip_expire_time?: string
   vip_level?: number
+  school_id?: number
+  school_name?: string
 }
 
 // 全局用户类型
@@ -42,6 +44,10 @@ export class MutualUser implements UserInfo {
   vip_expire_time?: string
   @Trace
   vip_level?: number
+  @Trace
+  school_id?: number
+  @Trace
+  school_name: string = ''
 
   constructor(model?: UserInfo) {
     if (!model) {
@@ -59,6 +65,8 @@ export class MutualUser implements UserInfo {
     this.balance = model.balance
     this.vip_expire_time = model.vip_expire_time
     this.vip_level = model.vip_level
+    this.school_id = model.school_id
+    this.school_name = model.school_name ?? ''
   }
 }
 

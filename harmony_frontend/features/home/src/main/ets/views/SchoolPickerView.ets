@@ -311,55 +311,6 @@ export struct SchoolPickerView {
     }, 350)
   }
 
-  private openFeedbackDialog(): void {
-    this.feedbackProvince = this.isProvincePlaceholder(this.selectedProvince) ? '' : this.selectedProvince
-    this.feedbackCity = this.isCityPlaceholder(this.selectedCity) ? '' : this.selectedCity
-    this.feedbackSchoolName = ''
-    this.showFeedbackDialog = true
-  }
-
-  private closeFeedbackDialog(): void {
-    if (this.isSubmittingFeedback) {
-      return
-    }
-    this.showFeedbackDialog = false
-  }
-
-  private async handleSubmitFeedback(): Promise<void> {
-    const name = this.feedbackSchoolName.trim()
-    const province = this.feedbackProvince.trim()
-    const city = this.feedbackCity.trim()
-    if (!name || !province || !city) {
-      this.showToast('请填写完整的学校信息')
-      return
-    }
-    const token = this.appUser.user.token
-    if (!token) {
-      this.showToast('需要登录后才能反馈学校')
-      return
-    }
-    this.isSubmittingFeedback = true
-    try {
-      const payload: SchoolFeedbackPayload = {
-        name,
-        province,
-        city
-      }
-      const response = await submitSchoolFeedback(payload, token)
-      if (response.success) {
-        this.showToast('反馈提交成功')
-        this.showFeedbackDialog = false
-      } else {
-        this.showToast(response.message ?? '反馈提交失败')
-      }
-    } catch (error) {
-      console.error('提交学校反馈失败', error.message)
-      this.showToast('反馈失败，请稍后重试')
-    } finally {
-      this.isSubmittingFeedback = false
-    }
-  }
-
   private showToast(message: string): void {
     promptAction.showToast({
       message,

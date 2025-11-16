@@ -130,6 +130,20 @@ router.post("/phone-login", async (req, res) => {
             expiresIn: "7d"
         });
 
+        // 查询学校名称（如有）
+        let schoolName = null
+        const schoolId = user.school_id || null
+        if (schoolId) {
+            try {
+                const [schoolRows] = await db.query("SELECT name FROM schools WHERE id = ?", [schoolId])
+                if (schoolRows && schoolRows.length > 0) {
+                    schoolName = schoolRows[0].name
+                }
+            } catch (e) {
+                console.warn("⚠️ 查询学校名称失败:", e.message)
+            }
+        }
+
         res.json({
             success: true,
             token,
@@ -144,7 +158,9 @@ router.post("/phone-login", async (req, res) => {
                 points: user.points,
                 vip_level: user.vip_level,
                 vip_expire_time: user.vip_expire_time,
-                created_time: user.created_time
+                created_time: user.created_time,
+                school_id: schoolId,
+                school_name: schoolName
             },
             isNewUser
         });
@@ -198,6 +214,20 @@ router.post("/password-login", async (req, res) => {
             expiresIn: "7d",
         });
 
+        // 4️⃣ 登录成功（补充学校信息）
+        let schoolName = null
+        const schoolId = user.school_id || null
+        if (schoolId) {
+            try {
+                const [schoolRows] = await db.query("SELECT name FROM schools WHERE id = ?", [schoolId])
+                if (schoolRows && schoolRows.length > 0) {
+                    schoolName = schoolRows[0].name
+                }
+            } catch (e) {
+                console.warn("⚠️ 查询学校名称失败:", e.message)
+            }
+        }
+
         // 4️⃣ 登录成功
         return res.json({
             success: true,
@@ -214,7 +244,9 @@ router.post("/password-login", async (req, res) => {
                 points: user.points,
                 vip_level: user.vip_level,
                 vip_expire_time: user.vip_expire_time,
-                created_time: user.created_time
+                created_time: user.created_time,
+                school_id: schoolId,
+                school_name: schoolName
             },
         });
     } catch (err) {

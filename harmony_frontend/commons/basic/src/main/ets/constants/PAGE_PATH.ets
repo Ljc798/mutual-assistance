@@ -9,4 +9,6 @@ export class PAGE_PATH {
   static readonly CHAT_PAGE: string = "ChatView"
   static readonly NOTIFICATIONS_PAGE: string = "NotificationsView"
   static readonly REPUTATION_PAGE: string = "ReputationView"
+  static readonly MALL_PAGE: string = "MallView"
+  static readonly EDIT_PROFILE_PAGE: string = "EditProfileView"
 }

@@ -1,6 +1,6 @@
 import promptAction from '@ohos.promptAction'
 import { AppStorageV2 } from '@kit.ArkUI'
-import { AppSafeArea, PAGE_PATH, AppUser } from 'basic'
+import { AppSafeArea, PAGE_PATH, AppUser, USER_LOGIN_TIME_KEY } from 'basic'
 import {
   ActionShortcut,
   ReputationSummary,
@@ -15,6 +15,8 @@ export struct MineView {
   private scroller: Scroller = new Scroller()
   safeArea: AppSafeArea = AppStorageV2.connect(AppSafeArea, () => new AppSafeArea())!
   private appUser: AppUser = AppStorageV2.connect(AppUser, () => new AppUser())!
+  @StorageLink(USER_LOGIN_TIME_KEY) userLoginVersion: number = 0
+  private lastUserLoginVersion: number = -1
   private readonly defaultAvatar: ResourceStr = 'https://mutual-campus-1348081197.cos.ap-nanjing.myqcloud.com/avatar/default.png'
   @State profile: UserProfileSummary = this.buildProfileFromStorage()
   @State reputation: ReputationSummary = {
@@ -41,6 +43,13 @@ export struct MineView {
 
   onPageShow() {
     this.syncUserState()
+  }
+
+  aboutToRender() {
+    if (this.userLoginVersion !== this.lastUserLoginVersion) {
+      this.lastUserLoginVersion = this.userLoginVersion
+      this.syncUserState()
+    }
   }
 
   build() {
@@ -97,18 +106,18 @@ export struct MineView {
   @Builder
   private renderProfileCard() {
     Row({ space: 6 }) {
-      Image(this.profile.avatar)
+      Image(this.getProfileAvatar())
         .width(60)
         .height(60)
         .borderRadius(28)
         .backgroundColor($r('[basic].color.white'))
         .margin({ right: 12 })
       Column({ space: 10 }) {
-        Text(this.profile.name)
+        Text(this.getProfileName())
           .fontSize(20)
           .fontWeight(FontWeight.Medium)
           .fontColor($r('[basic].color.text_primary'))
-        Text(this.profile.idLabel)
+        Text(this.getProfileIdLabel())
           .fontSize(13)
           .fontColor($r('[basic].color.text_secondary'))
       }
@@ -174,21 +183,47 @@ export struct MineView {
   @Builder
   private renderStatisticBoxes() {
     Row() {
-      ForEach(this.statistics, (item: StatisticCard) => {
-        Column({ space: 6 }) {
-          Text(item.label)
-            .fontSize(13)
-            .fontColor($r('[basic].color.text_secondary'))
-          Text(item.value)
-            .fontSize(18)
-            .fontWeight(FontWeight.Medium)
-            .fontColor($r('[basic].color.text_primary'))
-        }
-        .padding({ top: 16, bottom: 16 })
-        .layoutWeight(1)
-        .alignItems(HorizontalAlign.Center)
-        .onClick(() => this.handleProtectedAction(item.action))
-      }, (item: StatisticCard) => item.label)
+      Column({ space: 6 }) {
+        Text('免佣金次数')
+          .fontSize(13)
+          .fontColor($r('[basic].color.text_secondary'))
+        Text(`${this.appUser.user?.free_counts ?? 0}`)
+          .fontSize(18)
+          .fontWeight(FontWeight.Medium)
+          .fontColor($r('[basic].color.text_primary'))
+      }
+      .padding({ top: 16, bottom: 16 })
+      .layoutWeight(1)
+      .alignItems(HorizontalAlign.Center)
+      .onClick(() => this.handleProtectedAction('shop'))
+
+      Column({ space: 6 }) {
+        Text('积分余额')
+          .fontSize(13)
+          .fontColor($r('[basic].color.text_secondary'))
+        Text(`${this.appUser.user?.points ?? 0}`)
+          .fontSize(18)
+          .fontWeight(FontWeight.Medium)
+          .fontColor($r('[basic].color.text_primary'))
+      }
+      .padding({ top: 16, bottom: 16 })
+      .layoutWeight(1)
+      .alignItems(HorizontalAlign.Center)
+      .onClick(() => this.handleProtectedAction('points'))
+
+      Column({ space: 6 }) {
+        Text('账户余额')
+          .fontSize(13)
+          .fontColor($r('[basic].color.text_secondary'))
+        Text(this.formatBalance(this.appUser.user?.balance))
+          .fontSize(18)
+          .fontWeight(FontWeight.Medium)
+          .fontColor($r('[basic].color.text_primary'))
+      }
+      .padding({ top: 16, bottom: 16 })
+      .layoutWeight(1)
+      .alignItems(HorizontalAlign.Center)
+      .onClick(() => this.handleProtectedAction('wallet'))
     }
     .backgroundColor($r('[basic].color.white'))
     .borderRadius(20)
@@ -202,7 +237,7 @@ export struct MineView {
 
   @Builder
   private renderVipSection() {
-    if (this.vipState.isVip) {
+    if (this.isVipActive()) {
       Row() {
         Image($r('app.media.huiyuan_yes'))
           .width(40)
@@ -213,7 +248,7 @@ export struct MineView {
             .fontSize(18)
             .fontWeight(FontWeight.Bold)
             .fontColor($r('[basic].color.vip_label'))
-          Text(this.vipState.expireText)
+          Text(this.getVipExpireText())
             .fontSize(13)
             .fontColor($r('[basic].color.vip_expire'))
         }
@@ -399,6 +434,14 @@ export struct MineView {
       HMRouterMgr.push({ pageUrl: PAGE_PATH.REPUTATION_PAGE })
       return
     }
+    if (action === 'shop' || action === 'points') {
+      HMRouterMgr.push({ pageUrl: PAGE_PATH.MALL_PAGE })
+      return
+    }
+    if (action === 'profile') {
+      HMRouterMgr.push({ pageUrl: PAGE_PATH.EDIT_PROFILE_PAGE })
+      return
+    }
     this.showToast('功能开发中')
   }
   private closeFeedbackModal() {
@@ -478,5 +521,57 @@ export struct MineView {
     this.profile = this.buildProfileFromStorage()
     this.statistics = this.buildStatisticsFromStorage()
     this.vipState = this.buildVipStateFromStorage()
+  }
+  private getProfileAvatar(): ResourceStr {
+    const u = this.appUser.user
+    return (u?.avatar_url && u.avatar_url.length > 0 ? u.avatar_url : this.defaultAvatar) as ResourceStr
+  }
+
+  private getProfileName(): string {
+    const u = this.appUser.user
+    if (!u?.token) { return '立即登录' }
+    return u.username?.length ? u.username : '校园用户'
+  }
+
+  private getProfileIdLabel(): string {
+    const u = this.appUser.user
+    if (!u?.token) { return '登录以体验完整功能' }
+    if (u.wxid?.length) { return `ID: ${u.wxid}` }
+    if (u.phone_number?.length) { return `手机号：${u.phone_number}` }
+    return '欢迎回来'
+  }
+
+  private getStatistics(): StatisticCard[] {
+    const u = this.appUser.user
+    const freeCounts = u?.free_counts ?? 0
+    const points = u?.points ?? 0
+    const balanceValue = u?.balance !== undefined ? `¥${Number(u.balance).toFixed(2)}` : '¥0.00'
+    return [
+      { label: '免佣金次数', value: `${freeCounts}`, action: 'shop' },
+      { label: '积分余额', value: `${points}`, action: 'points' },
+      { label: '账户余额', value: balanceValue, action: 'wallet' }
+    ]
+  }
+
+  private isVipActive(): boolean {
+    const exp = this.appUser.user?.vip_expire_time
+    if (!exp) { return false }
+    const t = new Date(exp).getTime()
+    return !Number.isNaN(t) && t > Date.now()
+  }
+
+  private getVipExpireText(): string {
+    const exp = this.appUser.user?.vip_expire_time
+    if (!exp) { return '未开通' }
+    return this.isVipActive() ? `到期时间：${exp}` : '未开通'
+  }
+
+  private formatBalance(b: number | string | undefined): string {
+    if (typeof b === 'number') { return `¥${b.toFixed(2)}` }
+    if (typeof b === 'string') {
+      const n = Number(b)
+      return Number.isFinite(n) ? `¥${n.toFixed(2)}` : b
+    }
+    return '¥0.00'
   }
 }

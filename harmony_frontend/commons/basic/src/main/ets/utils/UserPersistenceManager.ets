@@ -25,11 +25,13 @@ interface RawUserSnapshot {
   balance?: number | string
   vip_expire_time?: string
   vip_level?: number
+  school_id?: number
+  school_name?: string
 }
 
 const USER_INFO_KEY: string = 'app_user_snapshot'
 const USER_LOGIN_STATE_KEY: string = 'app_user_is_logged_in'
-const USER_LOGIN_TIME_KEY: string = 'app_user_login_time'
+export const USER_LOGIN_TIME_KEY: string = 'app_user_login_time'
 const STORAGE_DEFAULTS: PersistOption[] = [
   { key: USER_INFO_KEY, defaultValue: '' },
   { key: USER_LOGIN_STATE_KEY, defaultValue: false },
@@ -108,19 +110,44 @@ class UserPersistenceManager {
 
   private normalizeSnapshot(model: RawUserSnapshot | UserInfo): UserSnapshot {
     const tokenValue: string = typeof model.token === 'string' ? model.token : ''
+    const parseNum = (v: number | string | undefined): number | undefined => {
+      if (typeof v === 'number') { return v }
+      if (typeof v === 'string') {
+        const n = Number(v)
+        return Number.isFinite(n) ? n : undefined
+      }
+      return undefined
+    }
+    const idValue = parseNum((model as RawUserSnapshot).id)
+    const pointsValue = parseNum((model as RawUserSnapshot).points) ?? 0
+    const freeCountsValue = parseNum((model as RawUserSnapshot).free_counts) ?? 0
+    const balanceRaw: number | string | undefined = (model as RawUserSnapshot).balance
+    const balanceValue = ((): number | string | undefined => {
+      if (typeof balanceRaw === 'number') { return balanceRaw }
+      if (typeof balanceRaw === 'string') {
+        const n = Number(balanceRaw)
+        return Number.isFinite(n) ? n : balanceRaw
+      }
+      return undefined
+    })()
+    const vipLevelValue = parseNum((model as RawUserSnapshot).vip_level)
+    const schoolIdValue = parseNum((model as RawUserSnapshot).school_id)
+    const schoolNameValue = typeof (model as RawUserSnapshot).school_name === 'string' ? (model as RawUserSnapshot).school_name : ''
     return {
-      id: typeof model.id === 'number' ? model.id : undefined,
+      id: idValue,
       token: tokenValue,
       avatar_url: typeof model.avatar_url === 'string' ? model.avatar_url : '',
       username: typeof model.username === 'string' ? model.username : '',
       wxid: typeof model.wxid === 'string' ? model.wxid : '',
       phone_number: typeof model.phone_number === 'string' ? model.phone_number : '',
       openid: typeof model.openid === 'string' ? model.openid : undefined,
-      points: typeof model.points === 'number' ? model.points : 0,
-      free_counts: typeof model.free_counts === 'number' ? model.free_counts : 0,
-      balance: typeof model.balance === 'number' || typeof model.balance === 'string' ? model.balance : undefined,
+      points: pointsValue,
+      free_counts: freeCountsValue,
+      balance: balanceValue,
       vip_expire_time: typeof model.vip_expire_time === 'string' ? model.vip_expire_time : undefined,
-      vip_level: typeof model.vip_level === 'number' ? model.vip_level : undefined
+      vip_level: vipLevelValue,
+      school_id: schoolIdValue,
+      school_name: schoolNameValue
     }
   }
 

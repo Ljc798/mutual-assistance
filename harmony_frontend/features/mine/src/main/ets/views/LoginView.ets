@@ -61,6 +61,8 @@ export struct LoginView {
           balance: response.user.balance,
           vip_expire_time: response.user.vip_expire_time,
           vip_level: response.user.vip_level,
+          school_id: response.user.school_id,
+          school_name: response.user.school_name,
           token: response.token ?? ''
         }
         userPersistence.persistUser(userPayload)

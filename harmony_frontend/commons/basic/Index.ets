@@ -36,6 +36,6 @@ export { huaweiAuthManager } from './src/main/ets/utils/HuaweiAuthPlugin'
 
 export { auth } from './src/main/ets/utils/Auth'
 
-export { userPersistence } from './src/main/ets/utils/UserPersistenceManager'
+export { userPersistence, USER_LOGIN_TIME_KEY } from './src/main/ets/utils/UserPersistenceManager'
 
 export { schoolPersistence, SCHOOL_SELECTION_VERSION_KEY } from './src/main/ets/utils/SchoolPersistenceManager'
