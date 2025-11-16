@@ -29,6 +29,23 @@ interface RawUserSnapshot {
   school_name?: string
 }
 
+interface PersistLogView {
+  id?: number
+  username?: string
+  wxid?: string
+  points?: number
+  free_counts?: number
+  balance?: number | string
+  school_id?: number
+  school_name?: string
+  token_len: number
+}
+
+interface PersistClearView {
+  state: boolean
+  time: number
+}
+
 const USER_INFO_KEY: string = 'app_user_snapshot'
 const USER_LOGIN_STATE_KEY: string = 'app_user_is_logged_in'
 export const USER_LOGIN_TIME_KEY: string = 'app_user_login_time'
@@ -59,6 +76,8 @@ class UserPersistenceManager {
     AppStorage.setOrCreate(USER_LOGIN_STATE_KEY, false)
     AppStorage.setOrCreate(USER_LOGIN_TIME_KEY, 0)
     auth.clear()
+    const clearLog: PersistClearView = { state: false, time: 0 }
+    console.info('PersistUserSnapshotClear', JSON.stringify(clearLog))
   }
 
   private ensurePersistentConfig(): void {
@@ -156,6 +175,18 @@ class UserPersistenceManager {
     const hasToken: boolean = snapshot.token.length > 0
     AppStorage.setOrCreate(USER_LOGIN_STATE_KEY, hasToken)
     AppStorage.setOrCreate(USER_LOGIN_TIME_KEY, Date.now())
+    const logObj: PersistLogView = {
+      id: snapshot.id,
+      username: snapshot.username,
+      wxid: snapshot.wxid,
+      points: snapshot.points,
+      free_counts: snapshot.free_counts,
+      balance: snapshot.balance,
+      school_id: snapshot.school_id,
+      school_name: snapshot.school_name,
+      token_len: snapshot.token.length
+    }
+    console.info('PersistUserSnapshot', JSON.stringify(logObj))
   }
 }
 

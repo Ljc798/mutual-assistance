@@ -1,6 +1,8 @@
 import promptAction from '@ohos.promptAction'
 import { AppStorageV2 } from '@kit.ArkUI'
-import { AppSafeArea, AppUser, PAGE_PATH, schoolPersistence, SchoolSelectionSnapshot, userPersistence, SCHOOL_SELECTION_VERSION_KEY } from 'basic'
+import { AppSafeArea, AppUser, PAGE_PATH, userPersistence, AppEditSelectedSchool,
+  UserInfo,
+  AppSchoolPickerContext} from 'basic'
 import { HMRouter, HMRouterMgr } from '@hadss/hmrouter'
 import { checkUsername, checkWxid, updateProfile, UpdatePayload } from '../services/EditProfileService'
 
@@ -10,37 +12,25 @@ export struct EditProfileView {
   private readonly scroller: Scroller = new Scroller()
   safeArea: AppSafeArea = AppStorageV2.connect(AppSafeArea, () => new AppSafeArea())!
   private readonly appUser: AppUser = AppStorageV2.connect(AppUser, () => new AppUser())!
+  private readonly selectedSchoolVM: AppEditSelectedSchool = AppStorageV2.connect(AppEditSelectedSchool, () => new AppEditSelectedSchool())!
   @State avatarUrl: string = ''
   @State usernameInput: string = ''
   @State wxidInput: string = ''
-  @State schoolId: number = 0
-  @State schoolName: string = '请选择学校'
   @State isSubmitting: boolean = false
-  @StorageLink(SCHOOL_SELECTION_VERSION_KEY) schoolVersion: number = 0
-  private lastSchoolVersion: number = -1
 
   aboutToAppear() {
     const u = this.appUser.user
     this.avatarUrl = u.avatar_url ?? ''
     this.usernameInput = u.username ?? ''
     this.wxidInput = u.wxid ?? ''
-    // 优先使用用户快照中的学校信息
     if (typeof u.school_id === 'number' && u.school_id > 0 && (u.school_name?.length ?? 0) > 0) {
-      this.schoolId = u.school_id
-      this.schoolName = u.school_name!
+      this.selectedSchoolVM.update({ id: u.school_id, name: u.school_name!, province: '', city: '' })
+      const log: EditSchoolLogView = { phase: 'appear.user', school_id: this.selectedSchoolVM.id, school_name: this.selectedSchoolVM.name ?? '' }
+      console.info('EditProfile.school', JSON.stringify(log))
     } else {
-      const s = schoolPersistence.getSelection()
-      this.schoolId = s.id > 0 ? s.id : 0
-      this.schoolName = s.id > 0 ? s.name : '请选择学校'
-    }
-  }
-
-  aboutToRender() {
-    if (this.schoolVersion !== this.lastSchoolVersion) {
-      this.lastSchoolVersion = this.schoolVersion
-      const s = schoolPersistence.getSelection()
-      this.schoolId = s.id > 0 ? s.id : 0
-      this.schoolName = s.id > 0 ? s.name : '请选择学校'
+      this.selectedSchoolVM.reset()
+      const log: EditSchoolLogView = { phase: 'appear.none', school_id: 0, school_name: '请选择学校' }
+      console.info('EditProfile.school', JSON.stringify(log))
     }
   }
 
@@ -137,7 +127,7 @@ export struct EditProfileView {
         .fontSize(14)
         .fontColor($r('[basic].color.text_secondary'))
       Row() {
-        Text(this.schoolName)
+        Text(this.selectedSchoolVM.name?.length > 0 ? this.selectedSchoolVM.name : '请选择学校')
           .fontSize(14)
           .fontColor($r('[basic].color.text_primary'))
       }
@@ -145,7 +135,11 @@ export struct EditProfileView {
       .backgroundColor($r('[basic].color.white'))
       .borderRadius(12)
       .padding({ left: 12, right: 12 })
-      .onClick(() => HMRouterMgr.push({ pageUrl: PAGE_PATH.SCHOOL_PICKER_PAGE }))
+      .onClick(() => {
+        const ctx = AppStorageV2.connect(AppSchoolPickerContext, () => new AppSchoolPickerContext())!
+        ctx.target = 'edit'
+        HMRouterMgr.push({ pageUrl: PAGE_PATH.SCHOOL_PICKER_PAGE })
+      })
     }
   }
 
@@ -182,13 +176,35 @@ export struct EditProfileView {
     if (!nameCheck.success || !nameCheck.available) { promptAction.showToast({ message: nameCheck.message ?? '用户名已被占用' }); return }
     const wxidCheck = await checkWxid(wxid, idNum)
     if (!wxidCheck.success || !wxidCheck.available) { promptAction.showToast({ message: wxidCheck.message ?? '微信号已被占用' }); return }
-    const schoolOk = this.schoolId > 0
+    const currentSchoolId: number = Number(this.selectedSchoolVM.id ?? 0)
+    const schoolOk = currentSchoolId > 0
     if (!schoolOk) { promptAction.showToast({ message: '请选择学校' }); return }
     this.isSubmitting = true
     try {
-      const payload: UpdatePayload = { username: name, avatar_url: this.avatarUrl, wxid, school_id: this.schoolId }
+      const payload: UpdatePayload = { username: name, avatar_url: this.avatarUrl, wxid, school_id: currentSchoolId }
       const res = await updateProfile(payload, token)
       if (!res.success) { promptAction.showToast({ message: res.message ?? '更新失败' }); return }
+      // 本地更新用户快照，避免下次进入用旧学校
+      this.appUser.user.school_id = currentSchoolId
+      this.appUser.user.school_name = this.selectedSchoolVM.name ?? ''
+      const localPersist: UserInfo = {
+        id: this.appUser.user.id,
+        token: this.appUser.user.token,
+        avatar_url: this.appUser.user.avatar_url,
+        username: name,
+        wxid,
+        phone_number: this.appUser.user.phone_number,
+        openid: this.appUser.user.openid,
+        points: this.appUser.user.points,
+        free_counts: this.appUser.user.free_counts,
+        balance: this.appUser.user.balance,
+        vip_expire_time: this.appUser.user.vip_expire_time,
+        vip_level: this.appUser.user.vip_level,
+        school_id: currentSchoolId,
+        school_name: this.selectedSchoolVM.name ?? ''
+      }
+      userPersistence.persistUser(localPersist)
+      console.info('EditProfile.save.userUpdate', JSON.stringify({ school_id: currentSchoolId, school_name: this.selectedSchoolVM.name ?? '' }))
       promptAction.showToast({ message: '更新成功' })
       HMRouterMgr.pop()
     } catch (_e) { promptAction.showToast({ message: '更新失败' }) } finally { this.isSubmitting = false }
@@ -204,4 +220,10 @@ export struct EditProfileView {
     if (!url) { return $r('[basic].media.ic_public_user') }
     return url as ResourceStr
   }
+}
+interface EditSchoolLogView {
+  phase: string
+  school_id: number
+  school_name: string
+  version?: number
 }

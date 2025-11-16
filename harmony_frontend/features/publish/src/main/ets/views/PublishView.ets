@@ -1,6 +1,7 @@
 import promptAction from '@ohos.promptAction'
 import { AppStorageV2 } from '@kit.ArkUI'
-import { AppSafeArea, AppSelectedSchool, AppUser, PAGE_PATH, SCHOOL_SELECTION_VERSION_KEY, TaskMode, schoolPersistence } from 'basic'
+import { AppSafeArea, AppSelectedSchool, AppUser, PAGE_PATH, SCHOOL_SELECTION_VERSION_KEY, TaskMode, schoolPersistence,
+  AppSchoolPickerContext } from 'basic'
 import { PublishCategory, PublishFormModel, PublishMethod, PUBLISH_CATEGORIES, PublishCreatePayload } from '../viewmodels/PublishTypes'
 import { calculateCommission, createTask } from '../services/PublishService'
 import { HMRouterMgr } from '@hadss/hmrouter'
@@ -52,11 +53,15 @@ export struct PublishView {
                 .width(18)
                 .height(18)
                 .margin({ right: 4 });
-              Text(this.getSelectedSchoolName())
+              Text(this.schoolSelection.name?.length > 0 ? this.schoolSelection.name : '请选择学校')
                 .fontSize(16)
                 .fontColor($r('[basic].color.white'))
                 .fontWeight(FontWeight.Regular)
-                .onClick(() => this.handleSchoolTap());
+                .onClick(() => {
+                  const ctx = AppStorageV2.connect(AppSchoolPickerContext, () => new AppSchoolPickerContext())!
+                  ctx.target = 'browse'
+                  this.handleSchoolTap()
+                });
             }
             .alignItems(VerticalAlign.Center);
           }

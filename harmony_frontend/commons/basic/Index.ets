@@ -14,7 +14,7 @@ export { AppSafeArea } from './src/main/ets/viewmodels/AppSafeArea';
 
 export { BreakPointType } from './src/main/ets/viewmodels/BreakPointType'
 
-export { AppSelectedSchool, SchoolOption, SchoolSelectionSnapshot } from './src/main/ets/viewmodels/School'
+export { AppSelectedSchool, SchoolOption, SchoolSelectionSnapshot, AppEditSelectedSchool, AppSchoolPickerContext } from './src/main/ets/viewmodels/School'
 
 export { ProgressLoading } from './src/main/ets/components/ProgressLoading'
 

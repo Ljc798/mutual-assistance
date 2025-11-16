@@ -7,7 +7,8 @@ import {
   PAGE_PATH,
   ProgressLoading,
   SCHOOL_SELECTION_VERSION_KEY,
-  schoolPersistence
+  schoolPersistence,
+  AppSchoolPickerContext
 } from 'basic'
 import { HMRouterMgr } from '@hadss/hmrouter'
 import {
@@ -42,9 +43,11 @@ export struct SquareView {
   private readonly appUser: AppUser = AppStorageV2.connect(AppUser, () => new AppUser())!
   private readonly schoolSelection: AppSelectedSchool = AppStorageV2.connect(AppSelectedSchool, () => new AppSelectedSchool())!
   @StorageLink(SCHOOL_SELECTION_VERSION_KEY) schoolVersion: number = 0
+  @StorageLink('reload_square_now') reloadSquareNow: number = 0
   private lastSchoolId: number = 0
   private lastSchoolName: string = '请选择学校'
   private lastSyncedVersion: number = 0
+  private lastReloadSquareNow: number = 0
   private hasMounted: boolean = false
   @State posts: SquarePost[] = []
   @State selectedCategory: SquareCategory = '全部'
@@ -78,8 +81,30 @@ export struct SquareView {
   }
 
   aboutToRender() {
+    if (this.schoolVersion !== this.lastSyncedVersion) {
+      this.lastSyncedVersion = this.schoolVersion
+      const vChanged = this.syncSchoolSelection()
+      this.resetPagingState()
+      this.loadPosts(false)
+      return
+    }
+    if (this.reloadSquareNow !== this.lastReloadSquareNow) {
+      this.lastReloadSquareNow = this.reloadSquareNow
+      const changed = this.syncSchoolSelection()
+      this.resetPagingState()
+      this.loadPosts(false)
+      return
+    }
     const changed = this.syncSchoolSelection()
     if (changed && this.hasMounted) {
+      this.resetPagingState()
+      this.loadPosts(false)
+    }
+  }
+
+  onPageShow() {
+    const changed = this.syncSchoolSelection()
+    if (changed) {
       this.resetPagingState()
       this.loadPosts(false)
     }
@@ -179,11 +204,15 @@ export struct SquareView {
             .width(18)
             .height(18)
             .margin({ right: 4 });
-          Text(this.getSelectedSchoolName())
+          Text(this.schoolSelection.name?.length > 0 ? this.schoolSelection.name : '请选择学校')
             .fontSize(16)
             .fontColor($r('[basic].color.white'))
             .fontWeight(FontWeight.Regular)
-            .onClick(() => this.handleSchoolTap());
+            .onClick(() => {
+              const ctx = AppStorageV2.connect(AppSchoolPickerContext, () => new AppSchoolPickerContext())!
+              ctx.target = 'browse'
+              this.handleSchoolTap()
+            });
         }
         .alignItems(VerticalAlign.Center);
       }
@@ -671,11 +700,19 @@ export struct SquareView {
   }
 
   private getSelectedSchoolName(): string {
-    return this.currentSchoolName
+    const snapshot = schoolPersistence.getSelection()
+    const idValue: number = snapshot.id
+    const nameValue: string = snapshot.name
+    const normalizedId: number = typeof idValue === 'number' && idValue > 0 && nameValue.length > 0 ? idValue : 0
+    return normalizedId > 0 ? nameValue : '请选择学校'
   }
 
   private getSelectedSchoolId(): number {
-    return this.currentSchoolId
+    const snapshot = schoolPersistence.getSelection()
+    const idValue: number = snapshot.id
+    const nameValue: string = snapshot.name
+    const normalizedId: number = typeof idValue === 'number' && idValue > 0 && nameValue.length > 0 ? idValue : 0
+    return normalizedId
   }
 
   private async loadPosts(isLoadMore: boolean = false) {
@@ -699,7 +736,9 @@ export struct SquareView {
         userId: this.appUser.user.id,
         schoolId: this.getSelectedSchoolId()
       }
+      console.info('[SquareView] loadPosts.query', JSON.stringify(query))
       const list = await fetchSquarePosts(query)
+      console.info('[SquareView] loadPosts.result.length', list.length)
       if (isLoadMore) {
         const merged: SquarePost[] = [...this.posts, ...list]
         this.posts = merged
@@ -709,7 +748,7 @@ export struct SquareView {
       this.currentPage = nextPage
       this.hasMore = list.length === this.pageSize
     } catch (error) {
-      console.error('加载广场数据失败', JSON.stringify(error))
+      console.error('[SquareView] loadPosts.error', error?.message ?? error)
       this.showToast('获取帖子失败，请稍后重试')
     } finally {
       if (isLoadMore) {

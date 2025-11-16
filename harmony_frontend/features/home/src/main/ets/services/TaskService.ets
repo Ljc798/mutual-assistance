@@ -47,8 +47,10 @@ function formatDeadline(value: string): string {
 
 function buildQueryParams(query?: TaskQuery): QueryParam[] | undefined {
   if (!query) {
+    console.info('[TaskService] buildQueryParams: query is undefined')
     return undefined
   }
+  console.info('[TaskService] buildQueryParams: input query =', JSON.stringify(query))
   const params: QueryParam[] = []
   params.push({
     key: 'category',
@@ -73,6 +75,7 @@ function buildQueryParams(query?: TaskQuery): QueryParam[] | undefined {
       value: `${query.schoolId}`
     })
   }
+  console.info('[TaskService] buildQueryParams: output params =', JSON.stringify(params))
   return params
 }
 
@@ -82,7 +85,16 @@ export async function fetchTasks(query?: TaskQuery, token?: string): Promise<Tas
   } : {};
 
   const params = buildQueryParams(query)
-  const list = await HttpClient.get<TaskDTO[]>('/task/tasks', params, headers)
-
-  return list.map(toTaskItem)
+  console.info('[TaskService] fetchTasks: GET /task/tasks with params =', JSON.stringify(params))
+  const t0 = Date.now()
+  try {
+    const list = await HttpClient.get<TaskDTO[]>('/task/tasks', params, headers)
+    const dt = Date.now() - t0
+    console.info('[TaskService] fetchTasks: response length =', list.length, 'duration(ms)=', dt)
+    return list.map(toTaskItem)
+  } catch (error) {
+    const msg: string = (error && (error as Error).message) ? (error as Error).message : 'fetchTasks failed'
+    console.error('[TaskService] fetchTasks: request failed', msg)
+    throw new Error(msg)
+  }
 }

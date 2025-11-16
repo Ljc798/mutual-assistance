@@ -146,3 +146,6 @@
 **资源命名空间错误**
 - 错误原因：资源路径缺少模块命名空间。
 - 解决方案：使用 `$r('[basic].media.xxx')` 或 `$r('app.media.xxx')`，避免裸资源名。
+**ArkTSCheck: arkts-limited-throw**
+- 错误原因：在 `catch (error)` 或其他分支中直接 `throw error`，导致抛出任意类型的值（非 `Error`）。ArkTS 限制 `throw` 仅能抛出受限类型。
+- 解决方案：只抛出 `Error` 或自定义错误类型；在 `catch` 中使用 `const msg: string = (error as Error)?.message ?? '...'`，然后 `throw new Error(msg)`；或选择不抛错，返回安全的默认值并记录日志。

@@ -10,6 +10,32 @@ interface PersistOption {
   defaultValue: PersistValue
 }
 
+interface SelectionLogView {
+  prevId: number
+  prevName: string
+  nextId: number
+  nextName: string
+  changed: boolean
+}
+
+interface VersionLogView {
+  action: string
+  version: number
+}
+
+interface RestoreLogView {
+  loaded: boolean
+  id: number
+  name: string
+}
+
+interface SchoolSelectionRaw {
+  id?: number | string
+  name?: string
+  province?: string
+  city?: string
+}
+
 const STORAGE_KEY: string = 'app_selected_school'
 const STORAGE_OPTIONS: PersistOption[] = [
   { key: STORAGE_KEY, defaultValue: '' },
@@ -33,8 +59,17 @@ export class SchoolPersistenceManager {
       return
     }
     const hasChanged: boolean = !this.isSameSelection(normalized)
+    const beforeLog: SelectionLogView = {
+      prevId: this.selection.id,
+      prevName: this.selection.name,
+      nextId: normalized.id,
+      nextName: normalized.name,
+      changed: hasChanged
+    }
+    console.info('SchoolPersist.before', JSON.stringify(beforeLog))
     this.selection.update(normalized)
     this.writeSnapshot(normalized)
+    console.info('SchoolPersist.write', JSON.stringify({ id: normalized.id, name: normalized.name }))
     if (hasChanged) {
       this.bumpVersion()
     }
@@ -48,6 +83,7 @@ export class SchoolPersistenceManager {
     if (shouldNotify) {
       this.bumpVersion()
     }
+    console.info('SchoolPersist.clear', JSON.stringify({ cleared: true }))
   }
 
   getSelection(): SchoolSelectionSnapshot {
@@ -75,6 +111,8 @@ export class SchoolPersistenceManager {
     const payload: string = AppStorage.get<string>(STORAGE_KEY) ?? ''
     if (!payload) {
       this.selection.reset()
+      const log: RestoreLogView = { loaded: false, id: 0, name: '' }
+      console.info('SchoolPersist.restore', JSON.stringify(log))
       return
     }
     const snapshot: SchoolSelectionSnapshot | undefined = this.decodeSnapshot(payload)
@@ -83,6 +121,8 @@ export class SchoolPersistenceManager {
       return
     }
     this.selection.update(snapshot)
+    const log: RestoreLogView = { loaded: true, id: snapshot.id, name: snapshot.name }
+    console.info('SchoolPersist.restore', JSON.stringify(log))
   }
 
   private decodeSnapshot(payload: string): SchoolSelectionSnapshot | undefined {
@@ -106,14 +146,24 @@ export class SchoolPersistenceManager {
     }
   }
 
-  private normalizeSnapshot(model: SchoolSelectionSnapshot): SchoolSelectionSnapshot {
-    const idValue: number = typeof model.id === 'number' && model.id > 0 ? model.id : 0
-    return {
-      id: idValue,
-      name: typeof model.name === 'string' ? model.name : '',
-      province: typeof model.province === 'string' ? model.province : '',
-      city: typeof model.city === 'string' ? model.city : ''
+  private normalizeSnapshot(model: SchoolSelectionSnapshot | SchoolSelectionRaw): SchoolSelectionSnapshot {
+    let idInput: number | string | undefined = undefined
+    const raw = model as SchoolSelectionRaw
+    if (raw && raw.id !== undefined) {
+      idInput = raw.id
+    } else {
+      idInput = (model as SchoolSelectionSnapshot).id
     }
+    let idValue: number = 0
+    if (typeof idInput === 'number') { idValue = idInput }
+    else if (typeof idInput === 'string') {
+      const n: number = Number(idInput)
+      idValue = Number.isFinite(n) ? n : 0
+    }
+    const nameValue: string = typeof raw.name === 'string' ? raw.name : (typeof (model as SchoolSelectionSnapshot).name === 'string' ? (model as SchoolSelectionSnapshot).name : '')
+    const provinceValue: string = typeof raw.province === 'string' ? raw.province : (typeof (model as SchoolSelectionSnapshot).province === 'string' ? (model as SchoolSelectionSnapshot).province : '')
+    const cityValue: string = typeof raw.city === 'string' ? raw.city : (typeof (model as SchoolSelectionSnapshot).city === 'string' ? (model as SchoolSelectionSnapshot).city : '')
+    return { id: idValue > 0 ? idValue : 0, name: nameValue, province: provinceValue, city: cityValue }
   }
 
   private writeSnapshot(snapshot: SchoolSelectionSnapshot): void {
@@ -123,6 +173,8 @@ export class SchoolPersistenceManager {
   private bumpVersion(): void {
     const currentVersion: number = AppStorage.get<number>(SCHOOL_SELECTION_VERSION_KEY) ?? 0
     AppStorage.setOrCreate(SCHOOL_SELECTION_VERSION_KEY, currentVersion + 1)
+    const vLog: VersionLogView = { action: 'bump', version: currentVersion + 1 }
+    console.info('SchoolPersist.version', JSON.stringify(vLog))
   }
 
   private isSameSelection(snapshot: SchoolSelectionSnapshot): boolean {

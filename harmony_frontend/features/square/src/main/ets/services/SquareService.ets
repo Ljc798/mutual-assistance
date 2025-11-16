@@ -22,8 +22,10 @@ interface QueryParam {
 
 function buildQueryParams(query?: SquareQuery): QueryParam[] | undefined {
   if (!query) {
+    console.info('[SquareService] buildQueryParams: query is undefined')
     return undefined
   }
+  console.info('[SquareService] buildQueryParams: input query =', JSON.stringify(query))
   const params: QueryParam[] = []
   if (query.category && query.category !== '全部') {
     params.push({ key: 'category', value: query.category })
@@ -36,6 +38,7 @@ function buildQueryParams(query?: SquareQuery): QueryParam[] | undefined {
   }
   params.push({ key: 'page', value: `${query.page ?? 1}` })
   params.push({ key: 'pageSize', value: `${query.pageSize ?? 10}` })
+  console.info('[SquareService] buildQueryParams: output params =', JSON.stringify(params))
   return params
 }
 
@@ -81,12 +84,24 @@ function toSquarePost(dto: SquarePostDTO): SquarePost {
 
 export async function fetchSquarePosts(query?: SquareQuery): Promise<SquarePost[]> {
   const params = buildQueryParams(query)
-  const response = await HttpClient.get<SquarePostListResponse>('/square/posts', params)
-  if (!response.success) {
-    return []
+  console.info('[SquareService] fetchSquarePosts: GET /square/posts with params =', JSON.stringify(params))
+  const t0 = Date.now()
+  try {
+    const response = await HttpClient.get<SquarePostListResponse>('/square/posts', params)
+    const dt = Date.now() - t0
+    console.info('[SquareService] fetchSquarePosts: response.success =', response?.success, 'duration(ms)=', dt)
+    if (!response.success) {
+      console.warn('[SquareService] fetchSquarePosts: request failed, response =', JSON.stringify(response))
+      return []
+    }
+    const posts: SquarePostDTO[] = response.posts ?? []
+    console.info('[SquareService] fetchSquarePosts: posts.length =', posts.length)
+    return posts.map((item: SquarePostDTO) => toSquarePost(item))
+  } catch (error) {
+    const msg: string = (error && (error as Error).message) ? (error as Error).message : 'fetchSquarePosts failed'
+    console.error('[SquareService] fetchSquarePosts: request failed', msg)
+    throw new Error(msg)
   }
-  const posts: SquarePostDTO[] = response.posts ?? []
-  return posts.map((item: SquarePostDTO) => toSquarePost(item))
 }
 
 export async function likeSquarePost(payload: SquareLikePayload, token: string): Promise<BaseResponse> {

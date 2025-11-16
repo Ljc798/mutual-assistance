@@ -9,7 +9,8 @@ import {
   SCHOOL_SELECTION_VERSION_KEY,
   schoolPersistence,
   TaskItem,
-  TaskStatus
+  TaskStatus,
+  AppSchoolPickerContext
 } from 'basic'
 import { TaskFilterValue, HomeCategoryItem, TaskFilter, PriceInfo } from '../viewmodels/HomeTypes'
 import { fetchTasks as fetchHomeTasks, TaskQuery } from '../services/TaskService'
@@ -26,10 +27,14 @@ export struct HomeView {
   breakPoint: AppBreakPoint = AppStorageV2.connect(AppBreakPoint, () => new AppBreakPoint())!
   private readonly schoolSelection: AppSelectedSchool =
     AppStorageV2.connect(AppSelectedSchool, () => new AppSelectedSchool())!
+  private readonly pickerContext: AppSchoolPickerContext =
+    AppStorageV2.connect(AppSchoolPickerContext, () => new AppSchoolPickerContext())!
   @StorageLink(SCHOOL_SELECTION_VERSION_KEY) schoolVersion: number = 0
+  @StorageLink('reload_home_now') reloadHomeNow: number = 0
   private lastSchoolId: number = 0
   private lastSchoolName: string = '请选择学校'
   private lastSyncedVersion: number = 0
+  private lastReloadHomeNow: number = 0
   private hasMounted: boolean = false
   @State isRefreshing: boolean = false
   @State keyword: string = ''
@@ -115,8 +120,30 @@ export struct HomeView {
   }
 
   aboutToRender() {
+    if (this.schoolVersion !== this.lastSyncedVersion) {
+      this.lastSyncedVersion = this.schoolVersion
+      const vChanged = this.syncSchoolSelection()
+      this.resetPagingState()
+      this.loadTasks()
+      return
+    }
+    if (this.reloadHomeNow !== this.lastReloadHomeNow) {
+      this.lastReloadHomeNow = this.reloadHomeNow
+      const changed = this.syncSchoolSelection()
+      this.resetPagingState()
+      this.loadTasks()
+      return
+    }
     const changed = this.syncSchoolSelection()
     if (changed && this.hasMounted) {
+      this.resetPagingState()
+      this.loadTasks()
+    }
+  }
+
+  onPageShow() {
+    const changed = this.syncSchoolSelection()
+    if (changed) {
       this.resetPagingState()
       this.loadTasks()
     }
@@ -136,6 +163,7 @@ export struct HomeView {
     const nextId: number = typeof idValue === 'number' && idValue > 0 && nameValue.length > 0 ? idValue : 0
     const nextName: string = nextId > 0 ? nameValue : '请选择学校'
     const hasChanged: boolean = nextId !== this.lastSchoolId || nextName !== this.lastSchoolName
+    console.info('[HomeView] syncSchoolSelection', JSON.stringify({ prevId: this.lastSchoolId, prevName: this.lastSchoolName, nextId, nextName, changed: hasChanged }))
     this.lastSchoolId = nextId
     this.lastSchoolName = nextName
     this.currentSchoolId = nextId
@@ -210,10 +238,9 @@ export struct HomeView {
   }
 
   async handleRefresh() {
-    if (this.isRefreshing || this.isLoadingMore) {
+    if (this.isLoadingMore) {
       return
     }
-    this.isRefreshing = true
     this.refreshText = '正在刷新任务...'
 
     try {
@@ -222,10 +249,8 @@ export struct HomeView {
       this.isFinished = false
 
       // 并发加载首页数据与推荐任务
-      await Promise.all([
-        this.resetPagingState(),
-        this.loadTasks()
-      ])
+      this.resetPagingState()
+      await this.loadTasks()
 
       this.refreshText = '刷新成功'
     } catch (error) {
@@ -268,11 +293,14 @@ export struct HomeView {
             .width(18)
             .height(18)
             .margin({ right: 4 });
-          Text(this.getSchoolDisplayName())
+          Text(this.schoolSelection.name?.length > 0 ? this.schoolSelection.name : '请选择学校')
             .fontSize(16)
             .fontColor($r('[basic].color.white'))
             .fontWeight(FontWeight.Regular)
-            .onClick(() => this.handleSchoolTap());
+            .onClick(() => {
+              this.pickerContext.target = 'browse'
+              this.handleSchoolTap()
+            });
         }
         .alignItems(VerticalAlign.Center);
       }
@@ -546,7 +574,7 @@ export struct HomeView {
     if (isLoadMore && (!this.hasMore || this.isLoadingMore)) {
       return
     }
-    if (!isLoadMore && (this.isRefreshing || this.isLoadingMore)) {
+    if (!isLoadMore && this.isLoadingMore) {
       return
     }
     const nextPage = isLoadMore ? this.currentPage + 1 : 1
@@ -564,7 +592,9 @@ export struct HomeView {
         status: this.activeFilter,
         schoolId: schoolId > 0 ? schoolId : undefined
       }
+      console.info('[HomeView] loadTasks.query', JSON.stringify(query))
       const tasks = await this.fetchTasks(query)
+      console.info('[HomeView] loadTasks.result.length', tasks.length)
       if (isLoadMore) {
         this.allTasks = [...this.allTasks, ...tasks]
         this.visibleTasks = [...this.visibleTasks, ...tasks]
@@ -576,6 +606,7 @@ export struct HomeView {
       this.hasMore = tasks.length === this.pageSize
       this.updateSearchResults(this.keyword)
     } catch (error) {
+      console.error('[HomeView] loadTasks.error', error?.message ?? error)
       this.showToast('任务加载失败')
     } finally {
       if (isLoadMore) {
@@ -689,17 +720,17 @@ export struct HomeView {
     return { label: `中标价 ¥${bidAmount}`, color: $r('[basic].color.price_deal') }
   }
 
-  private getSchoolDisplayName(): string {
-    return this.currentSchoolName
-  }
+  private getSchoolDisplayName(): string { return this.schoolSelection.name?.length > 0 ? this.schoolSelection.name : '请选择学校' }
 
   private resolveSelectedSchoolId(): number {
-    return this.currentSchoolId
+    const snapshot = schoolPersistence.getSelection()
+    const idValue: number = snapshot.id
+    const nameValue: string = snapshot.name
+    const normalizedId: number = typeof idValue === 'number' && idValue > 0 && nameValue.length > 0 ? idValue : 0
+    return normalizedId
   }
 
-  private resolveSelectedSchoolName(): string {
-    return this.currentSchoolName
-  }
+  private resolveSelectedSchoolName(): string { return this.schoolSelection.name?.length > 0 ? this.schoolSelection.name : '请选择学校' }
 
   private handleTaskSelect(task: TaskItem) {
     const vm = AppStorageV2.connect(AppCurrentTaskDetail, () => new AppCurrentTaskDetail())!

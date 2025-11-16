@@ -66,6 +66,19 @@ export struct LoginView {
           token: response.token ?? ''
         }
         userPersistence.persistUser(userPayload)
+        const appUserSnapshot = this.appUser.user
+        const afterLoginLog: AfterLoginLogView = {
+          id: appUserSnapshot.id,
+          username: appUserSnapshot.username,
+          wxid: appUserSnapshot.wxid,
+          points: appUserSnapshot.points,
+          free_counts: appUserSnapshot.free_counts,
+          balance: appUserSnapshot.balance,
+          school_id: appUserSnapshot.school_id,
+          school_name: appUserSnapshot.school_name,
+          token_len: appUserSnapshot.token.length
+        }
+        console.info('AppUserAfterLogin', JSON.stringify(afterLoginLog))
         promptAction.showToast({ message: '登录成功' })
         HMRouterMgr.pop()
       } else {
@@ -200,4 +213,15 @@ export struct LoginView {
     .height('100%')
 
   }
+}
+interface AfterLoginLogView {
+  id?: number
+  username: string
+  wxid: string
+  points: number
+  free_counts: number
+  balance?: number | string
+  school_id?: number
+  school_name?: string
+  token_len: number
 }

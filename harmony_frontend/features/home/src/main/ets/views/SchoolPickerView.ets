@@ -4,6 +4,8 @@ import { HMRouter, HMRouterMgr } from '@hadss/hmrouter'
 import {
   AppSafeArea,
   AppSelectedSchool,
+  AppEditSelectedSchool,
+  AppSchoolPickerContext,
   AppUser,
   PAGE_PATH,
   ProgressLoading,
@@ -23,8 +25,9 @@ import { SchoolFeedbackPayload, SchoolListItem, SchoolListQuery } from '../viewm
 @Component
 export struct SchoolPickerView {
   safeArea: AppSafeArea = AppStorageV2.connect(AppSafeArea, () => new AppSafeArea())!
-  private readonly selection: AppSelectedSchool =
-    AppStorageV2.connect(AppSelectedSchool, () => new AppSelectedSchool())!
+  private readonly selection: AppSelectedSchool = AppStorageV2.connect(AppSelectedSchool, () => new AppSelectedSchool())!
+  private readonly editSelection: AppEditSelectedSchool = AppStorageV2.connect(AppEditSelectedSchool, () => new AppEditSelectedSchool())!
+  private readonly pickerContext: AppSchoolPickerContext = AppStorageV2.connect(AppSchoolPickerContext, () => new AppSchoolPickerContext())!
   private readonly appUser: AppUser = AppStorageV2.connect(AppUser, () => new AppUser())!
   private readonly pageSize: number = 20
   private hasBootstrapped: boolean = false
@@ -304,7 +307,14 @@ export struct SchoolPickerView {
       province: item.province ?? this.selectedProvince,
       city: item.city ?? this.selectedCity
     }
-    schoolPersistence.persistSelection(snapshot)
+    if (this.pickerContext.target === 'edit') {
+      this.editSelection.update(snapshot)
+    } else {
+      schoolPersistence.persistSelection(snapshot)
+      const nowTick: number = Date.now()
+      AppStorage.setOrCreate('reload_square_now', nowTick)
+      AppStorage.setOrCreate('reload_home_now', nowTick)
+    }
     this.showToast(`已选：${snapshot.name}`)
     setTimeout(() => {
       HMRouterMgr.pop()
