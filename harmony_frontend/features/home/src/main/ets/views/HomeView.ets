@@ -84,7 +84,6 @@ export struct HomeView {
       icon: $r('app.media.icon_category_agency'),
       action: 'category'
     },
-    { label: '我的课表', icon: $r('app.media.icon_category_schedule'), action: 'timetable' },
     {
       label: '二手交易',
       value: '二手交易',
@@ -108,8 +107,7 @@ export struct HomeView {
       value: '万能服务',
       icon: $r('app.media.icon_category_service'),
       action: 'category'
-    },
-    { label: '我的任务', icon: $r('app.media.icon_category_orders'), action: 'orders' }
+    }
   ]
 
   aboutToAppear() {
@@ -381,7 +379,7 @@ export struct HomeView {
                 : $r('[basic].color.category_text')
             )
         }
-        .width('20%')
+        .width('25%')
         .padding({ top: 8, bottom: 8 })
         .borderRadius(16)
         .backgroundColor(
@@ -622,14 +620,6 @@ export struct HomeView {
   }
 
   private handleCategoryTap(item: HomeCategoryItem) {
-    if (item.action === 'timetable') {
-      this.showToast('课表功能即将上线，敬请期待')
-      return
-    }
-    if (item.action === 'orders') {
-      this.showToast('我的任务页开发中')
-      return
-    }
     if (item.value) {
       const nextCategory = this.selectedCategory === item.value ? '全部' : item.value
       this.selectedCategory = nextCategory

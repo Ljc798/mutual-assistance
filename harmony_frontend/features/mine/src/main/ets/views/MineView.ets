@@ -442,6 +442,18 @@ export struct MineView {
       HMRouterMgr.push({ pageUrl: PAGE_PATH.EDIT_PROFILE_PAGE })
       return
     }
+    if (action === 'orders') {
+      HMRouterMgr.push({ pageUrl: PAGE_PATH.MY_ORDERS_PAGE })
+      return
+    }
+    if (action === 'space') {
+      HMRouterMgr.push({ pageUrl: PAGE_PATH.MY_SPACE_PAGE })
+      return
+    }
+    if (action === 'wallet') {
+      HMRouterMgr.push({ pageUrl: PAGE_PATH.WALLET_PAGE })
+      return
+    }
     this.showToast('功能开发中')
   }
   private closeFeedbackModal() {

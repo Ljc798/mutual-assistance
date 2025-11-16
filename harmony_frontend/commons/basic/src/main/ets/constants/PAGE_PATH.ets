@@ -11,4 +11,7 @@ export class PAGE_PATH {
   static readonly REPUTATION_PAGE: string = "ReputationView"
   static readonly MALL_PAGE: string = "MallView"
   static readonly EDIT_PROFILE_PAGE: string = "EditProfileView"
+  static readonly MY_ORDERS_PAGE: string = "MyOrdersView"
+  static readonly MY_SPACE_PAGE: string = "MySpaceView"
+  static readonly WALLET_PAGE: string = "WalletView"
 }
