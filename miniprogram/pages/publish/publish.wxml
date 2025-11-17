@@ -143,7 +143,7 @@
                 🎁 使用免佣金次数
             </view>
             <view class="popup-option" bindtap="choosePublishMethod" data-method="pay">
-                💰 支付佣金 ¥{{commissionAmount}}
+                💰 支付佣金（¥{{commissionAmount}}）+报酬（¥{{offerAmount}}）共¥{{totalAmount}}
             </view>
             <view class="popup-option" bindtap="choosePublishMethod" data-method="vip">
                 🌟 使用VIP免费发布

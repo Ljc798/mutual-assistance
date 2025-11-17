@@ -39,7 +39,7 @@ router.post("/prepay", authMiddleware, async (req, res) => {
             message: "任务不存在"
         });
         console.log(privateKey.slice(0, 100));
-        const commission = Math.floor(task.offer * 100 * 0.02); // 单位分
+        const commission = Math.floor(task.offer * 100 * 0.02);
         const out_trade_no = `TASKFEE_${task_id}_${Date.now()}`;
 
         const [
@@ -60,7 +60,7 @@ router.post("/prepay", authMiddleware, async (req, res) => {
         const body = JSON.stringify({
             appid,
             mchid,
-            description: "任务佣金支付",
+            description: "任务佣金",
             out_trade_no,
             notify_url,
             amount: {
@@ -107,6 +107,67 @@ router.post("/prepay", authMiddleware, async (req, res) => {
     }
 });
 
+router.post("/prepay-fixed", authMiddleware, async (req, res) => {
+    try {
+        const { task_id, include_commission } = req.body;
+        const userId = req.user.id;
+
+        const [[task]] = await db.query("SELECT * FROM tasks WHERE id = ?", [task_id]);
+        if (!task) return res.status(404).json({ success: false, message: "任务不存在" });
+
+        const offerFen = Math.floor(parseFloat(task.offer) * 100);
+        const commissionFen = include_commission ? Math.floor(parseFloat(task.offer) * 100 * 0.02) : 0;
+        const totalFen = offerFen + commissionFen;
+        const out_trade_no = `TASK_${task_id}_FIXED_${Date.now()}`;
+
+        const [[user]] = await db.query("SELECT openid FROM users WHERE id = ?", [userId]);
+
+        await db.query(
+            `INSERT INTO task_payments (task_id, payer_openid, receiver_id, amount, out_trade_no, status)
+             VALUES (?, ?, ?, ?, ?, 'pending')`,
+            [task_id, user.openid, null, totalFen, out_trade_no]
+        );
+
+        const timestamp = Math.floor(Date.now() / 1000).toString();
+        const nonceStr = crypto.randomBytes(16).toString("hex");
+        const url = "/v3/pay/transactions/jsapi";
+        const fullUrl = `https://api.mch.weixin.qq.com${url}`;
+
+        const desc = commissionFen > 0
+            ? `佣金${(commissionFen/100).toFixed(2)}+报酬${(offerFen/100).toFixed(2)}共${(totalFen/100).toFixed(2)}元`
+            : `报酬${(offerFen/100).toFixed(2)}元`;
+
+        const body = JSON.stringify({
+            appid,
+            mchid,
+            description: desc,
+            out_trade_no,
+            notify_url,
+            amount: { total: totalFen, currency: "CNY" },
+            payer: { openid: user.openid }
+        });
+
+        const signature = generateSignature("POST", url, timestamp, nonceStr, body);
+        const authorization = `WECHATPAY2-SHA256-RSA2048 mchid="${mchid}",serial_no="${serial_no}",nonce_str="${nonceStr}",timestamp="${timestamp}",signature="${signature}"`;
+
+        const response = await axios.post(fullUrl, body, { headers: { Authorization: authorization, "Content-Type": "application/json" } });
+
+        const prepay_id = response.data.prepay_id;
+        const payNonceStr = crypto.randomBytes(16).toString("hex");
+        const pkg = `prepay_id=${prepay_id}`;
+        const payMessage = `${appid}\n${timestamp}\n${payNonceStr}\n${pkg}\n`;
+        const paySign = crypto.createSign("RSA-SHA256").update(payMessage).sign(privateKey, "base64");
+
+        res.json({
+            success: true,
+            paymentParams: { timeStamp: timestamp, nonceStr: payNonceStr, package: pkg, signType: "RSA", paySign }
+        });
+    } catch (err) {
+        console.error("❌ 固定价预下单失败:", err);
+        res.status(500).json({ success: false, message: "服务异常" });
+    }
+});
+
 router.post("/payment-notify", express.raw({
     type: '*/*'
 }), async (req, res) => {
@@ -138,38 +199,34 @@ router.post("/payment-notify", express.raw({
         );
         if (updatePay.affectedRows === 0) throw new Error(`未更新 task_payments：${outTradeNo}`);
 
-        // ✅ 提取任务 ID
-        const match = outTradeNo.match(/^TASKFEE_(\d+)_/);
-        if (!match) throw new Error(`无效的交易号格式：${outTradeNo}`);
-        const taskId = parseInt(match[1]);
+        let taskId;
+        if (/^TASKFEE_\d+_/.test(outTradeNo)) {
+            const match = outTradeNo.match(/^TASKFEE_(\d+)_/);
+            taskId = parseInt(match[1]);
+            await db.query(`UPDATE tasks SET status = 0 WHERE id = ?`, [taskId]);
+            const [[task]] = await db.query(`SELECT title, employer_id FROM tasks WHERE id = ?`, [taskId]);
+            if (task && task.employer_id) {
+                await db.query(
+                    `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
+                    [task.employer_id, '📢 任务发布成功', `你发布的任务《${task.title}》已成功上线，等待接单人～`]
+                );
+            }
+        } else if (/^TASK_\d+_FIXED_/.test(outTradeNo)) {
+            const match = outTradeNo.match(/^TASK_(\d+)_FIXED_/);
+            taskId = parseInt(match[1]);
+            const [[task]] = await db.query(`SELECT title, employer_id, offer FROM tasks WHERE id = ?`, [taskId]);
+            if (!task) throw new Error(`找不到任务记录 task_id: ${taskId}`);
+            await db.query(
+                `UPDATE tasks SET has_paid = 1, status = 0, pay_amount = ? WHERE id = ?`,
+                [parseFloat(task.offer), taskId]
+            );
+            await db.query(
+                `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
+                [task.employer_id, '💰 支付成功', `你已成功支付任务《${task.title}》，等待接单人完成任务～`]
+            );
+        }
 
-        // ✅ 更新任务状态为已支付上线展示
-        const [updateTask] = await db.query(
-            `UPDATE tasks SET has_paid = 1, status = 0 WHERE id = ?`,
-            [taskId]
-        );
-        if (updateTask.affectedRows === 0) throw new Error(`任务更新失败 task_id: ${taskId}`);
-
-        // ✅ 获取任务基本信息
-        const [
-            [task]
-        ] = await db.query(
-            `SELECT title, employer_id FROM tasks WHERE id = ?`,
-            [taskId]
-        );
-        if (!task) throw new Error(`找不到任务记录 task_id: ${taskId}`);
-
-        // ✅ 插入通知
-        await db.query(
-            `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
-            [
-                task.employer_id,
-                '💰 支付成功',
-                `你已成功支付任务《${task.title}》，等待接单人完成任务～`
-            ]
-        );
-
-        console.log("✅ 任务佣金支付成功，任务状态和通知更新完成");
+        console.log("✅ 任务支付更新完成");
         res.status(200).json({
             code: "SUCCESS",
             message: "OK"

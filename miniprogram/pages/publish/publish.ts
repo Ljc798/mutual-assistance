@@ -64,7 +64,9 @@ Page({
         date: '',  // 存储选择的日期
         time: '',  // 存储选择的时间
         showCommissionPopup: false,
-        commissionAmount: '0', // 改为字符串类型
+        commissionAmount: '0',
+        offerAmount: '0',
+        totalAmount: '0',
         // 聊天相关状态
         showChatPopup: false, // 控制聊天弹窗显示
         // 删除showTagSelectPopup等tag选择相关
@@ -317,8 +319,12 @@ Page({
 
             // ✅ 校验通过后再计算并弹出佣金确认
             const commission = this.calculateCommissionInFen(offer);
+            const offerFen = Math.floor(offer * 100);
+            const totalFen = offerFen + commission;
             this.setData({
                 commissionAmount: (commission / 100).toFixed(2),
+                offerAmount: (offerFen / 100).toFixed(2),
+                totalAmount: (totalFen / 100).toFixed(2),
                 showCommissionPopup: true,
             });
         } catch (e) {
@@ -362,7 +368,6 @@ Page({
         };
 
         try {
-            // ① 创建任务
             const createRes: any = await new Promise((resolve, reject) => {
                 wx.request({
                     url: `${BASE_URL}/task/create`,
@@ -379,14 +384,14 @@ Page({
                 return;
             }
 
+            const taskId = createRes.data.task_id;
+
             if (method === 'pay') {
-                // ② 预下单
-                const taskId = createRes.data.task_id;
                 const prepayRes: any = await new Promise((resolve, reject) => {
                     wx.request({
-                        url: `${BASE_URL}/taskPayment/prepay`,
+                        url: `${BASE_URL}/taskPayment/prepay-fixed`,
                         method: 'POST',
-                        data: { task_id: taskId },
+                        data: { task_id: taskId, include_commission: true },
                         header: { Authorization: `Bearer ${token}` },
                         success: resolve,
                         fail: reject
@@ -398,27 +403,55 @@ Page({
                     return;
                 }
 
-                // ③ 拉起支付
-                await new Promise<void>((resolve, reject) => {
-                    wx.requestPayment({
-                        ...prepayRes.data.paymentParams,
-                        success: () => resolve(),
-                        fail: () => reject(new Error('支付失败或取消'))
+                try {
+                    await new Promise<void>((resolve, reject) => {
+                        wx.requestPayment({
+                            ...prepayRes.data.paymentParams,
+                            success: () => resolve(),
+                            fail: () => reject(new Error('支付失败或取消'))
+                        });
+                    });
+                } catch (payErr) {
+                    wx.showToast({ title: '支付未完成，已生成待支付草稿', icon: 'none' });
+                    return;
+                }
+
+                await requestSubscribe([TMP.DISPATCH, TMP.STATUS, TMP.DONE, TMP.BID]);
+                wx.showToast({ title: '支付成功', icon: 'success' });
+                wx.redirectTo({ url: '/pages/home/home' });
+            } else if (method === 'free' || method === 'vip') {
+                const prepayRes: any = await new Promise((resolve, reject) => {
+                    wx.request({
+                        url: `${BASE_URL}/taskPayment/prepay-fixed`,
+                        method: 'POST',
+                        data: { task_id: taskId, include_commission: false },
+                        header: { Authorization: `Bearer ${token}` },
+                        success: resolve,
+                        fail: reject
                     });
                 });
 
-                // ④ 支付成功 → 拉起订阅弹窗（一次性订阅）
-                await requestSubscribe([TMP.DISPATCH, TMP.STATUS, TMP.DONE, TMP.BID]);
+                if (!prepayRes?.data?.success) {
+                    wx.showToast({ title: prepayRes?.data?.message || '下单失败', icon: 'none' });
+                    return;
+                }
 
-                wx.showToast({ title: "支付成功", icon: "success" });
-                wx.redirectTo({ url: "/pages/home/home" });
-            } else {
-                // 免费发布成功 → 拉起订阅弹窗
+                try {
+                    await new Promise<void>((resolve, reject) => {
+                        wx.requestPayment({
+                            ...prepayRes.data.paymentParams,
+                            success: () => resolve(),
+                            fail: () => reject(new Error('支付失败或取消'))
+                        });
+                    });
+                } catch (payErr) {
+                    wx.showToast({ title: '支付未完成', icon: 'none' });
+                    return;
+                }
+
+                await requestSubscribe([TMP.DISPATCH, TMP.STATUS, TMP.DONE, TMP.BID]);
                 wx.showToast({ title: '发布成功', icon: 'success' });
-
-                await requestSubscribe([TMP.DISPATCH, TMP.STATUS, TMP.DONE, TMP.BID]);
-
-                wx.redirectTo({ url: "/pages/home/home" });
+                wx.redirectTo({ url: '/pages/home/home' });
             }
         } catch (err: any) {
             console.error('发布流程异常：', err);
