@@ -3,6 +3,12 @@ import { AppStorageV2 } from '@kit.ArkUI'
 import { AppSafeArea, AppUser, PAGE_PATH, userPersistence, AppEditSelectedSchool,
   UserInfo,
   AppSchoolPickerContext} from 'basic'
+import { GlobalVariable, readFileAsBytes, uploadSingle, UploadFileItem } from 'basic'
+import { photoAccessHelper } from '@kit.MediaLibraryKit'
+import { request } from '@kit.BasicServicesKit'
+import { fileIo as fs } from '@kit.CoreFileKit'
+import { common } from '@kit.AbilityKit'
+import { BusinessError } from '@ohos.base'
 import { HMRouter, HMRouterMgr } from '@hadss/hmrouter'
 import { checkUsername, checkWxid, updateProfile, UpdatePayload } from '../services/EditProfileService'
 
@@ -14,9 +20,15 @@ export struct EditProfileView {
   private readonly appUser: AppUser = AppStorageV2.connect(AppUser, () => new AppUser())!
   private readonly selectedSchoolVM: AppEditSelectedSchool = AppStorageV2.connect(AppEditSelectedSchool, () => new AppEditSelectedSchool())!
   @State avatarUrl: string = ''
+  @State avatarPreviewUrl: string = ''
+  @State avatarCacheUri: string = ''
+  @State avatarCachePath: string = ''
+  @State avatarZoom: number = 1
+  @State avatarZoomSlider: number = 50
   @State usernameInput: string = ''
   @State wxidInput: string = ''
   @State isSubmitting: boolean = false
+  
 
   aboutToAppear() {
     const u = this.appUser.user
@@ -81,27 +93,25 @@ export struct EditProfileView {
   @Builder
   private renderAvatarField() {
     Column({ space: 8 }) {
-      Text('头像 URL')
+      Text('头像')
         .fontSize(14)
         .fontColor($r('[basic].color.text_secondary'))
       Row({ space: 8 }) {
-        Image(this.getAvatarSource(this.avatarUrl))
+        Image(this.getAvatarSource(this.getCurrentAvatarUrl()))
           .width(56)
           .height(56)
           .borderRadius(28)
           .objectFit(ImageFit.Cover)
           .backgroundColor('#F2F2F2')
-        TextInput({ placeholder: '粘贴头像地址', text: this.avatarUrl })
-          .layoutWeight(1)
-          .height(40)
-          .backgroundColor($r('[basic].color.white'))
-          .borderRadius(12)
-          .padding({ left: 12, right: 12 })
-          .onChange((v: string) => this.avatarUrl = v)
       }
-      Text('暂不支持本地上传，请粘贴图片地址')
-        .fontSize(12)
-        .fontColor($r('[basic].color.text_secondary'))
+      Row({ space: 10 }) {
+        Button('图库选择')
+          .height(36)
+          .borderRadius(12)
+          .backgroundColor($r('[basic].color.filter_active_bg'))
+          .fontColor($r('[basic].color.white'))
+          .onClick(async () => { await this.handlePickAvatarFromGallery() })
+      }
     }
   }
 
@@ -181,16 +191,17 @@ export struct EditProfileView {
     if (!schoolOk) { promptAction.showToast({ message: '请选择学校' }); return }
     this.isSubmitting = true
     try {
-      const payload: UpdatePayload = { username: name, avatar_url: this.avatarUrl, wxid, school_id: currentSchoolId }
+      const payload: UpdatePayload = { username: name, wxid, school_id: currentSchoolId }
       const res = await updateProfile(payload, token)
       if (!res.success) { promptAction.showToast({ message: res.message ?? '更新失败' }); return }
       // 本地更新用户快照，避免下次进入用旧学校
       this.appUser.user.school_id = currentSchoolId
       this.appUser.user.school_name = this.selectedSchoolVM.name ?? ''
+      const avatarNow: string = typeof this.appUser.user.avatar_url === 'string' ? this.appUser.user.avatar_url as string : ''
       const localPersist: UserInfo = {
         id: this.appUser.user.id,
         token: this.appUser.user.token,
-        avatar_url: this.appUser.user.avatar_url,
+        avatar_url: avatarNow,
         username: name,
         wxid,
         phone_number: this.appUser.user.phone_number,
@@ -210,6 +221,67 @@ export struct EditProfileView {
     } catch (_e) { promptAction.showToast({ message: '更新失败' }) } finally { this.isSubmitting = false }
   }
 
+  private async handleUploadAvatar() {
+    promptAction.showToast({ message: '请使用“图库选择”按钮选择头像' })
+  }
+
+  private async handlePickAvatarFromGallery() {
+    const picker = new photoAccessHelper.PhotoViewPicker()
+    const options = { MIMEType: photoAccessHelper.PhotoViewMIMETypes.IMAGE_TYPE, maxSelectNumber: 1 } as photoAccessHelper.PhotoSelectOptions
+    const context = (this.getUIContext().getHostContext() as common.UIAbilityContext)
+    const cacheDir: string = context.cacheDir
+    picker.select(options, async (_err: BusinessError | undefined, result: photoAccessHelper.PhotoSelectResult) => {
+      const uri = (result?.photoUris && result.photoUris.length > 0) ? result.photoUris[0] : ''
+      if (!uri) { return }
+      try {
+        const file = fs.openSync(uri, fs.OpenMode.READ_ONLY)
+        const target: string = `${cacheDir}/avatar_${Date.now()}.jpeg`
+        fs.copyFileSync(file.fd, target)
+        fs.closeSync(file.fd)
+        this.avatarCachePath = target
+        this.avatarCacheUri = `internal://cache/${target.split('/').pop()}`
+        // 预览用图库原始 URI，避免部分设备无法渲染 internal://cache
+        this.avatarPreviewUrl = uri
+        promptAction.showToast({ message: '头像已保存' })
+        // 直接上传并更新数据库头像
+        const token = this.appUser.user.token
+        const userId = Number(this.appUser.user.id ?? 0)
+        if (token && userId) {
+          const bytes = await readFileAsBytes(this.avatarCachePath)
+          const fname: string = this.avatarCachePath.split('/').pop() ?? `avatar_${Date.now()}.jpeg`
+          const item: UploadFileItem = { filename: fname, mime: 'image/jpeg', data: bytes, extra: { type: 'avatar', username: this.appUser.user.username ?? 'user' } }
+          const res = await uploadSingle(item)
+          if (res.success && res.url) {
+            const payload: UpdatePayload = {
+              username: this.appUser.user.username ?? '',
+              avatar_url: res.url,
+              wxid: this.appUser.user.wxid ?? '',
+              school_id: Number(this.appUser.user.school_id ?? 1)
+            }
+            const saved = await updateProfile(payload, token)
+            if (saved.success) {
+              this.appUser.user.avatar_url = res.url
+              promptAction.showToast({ message: '头像已更新' })
+            } else {
+              promptAction.showToast({ message: saved.message ?? '头像更新失败' })
+            }
+          } else {
+            promptAction.showToast({ message: '头像上传失败' })
+          }
+        }
+      } catch (_e) {
+        promptAction.showToast({ message: '复制失败' })
+      }
+    })
+  }
+
+  private getCurrentAvatarUrl(): string {
+    const prev = this.avatarPreviewUrl
+    if (prev && prev.length > 0) { return prev }
+    const raw = this.appUser.user.avatar_url ?? ''
+    return typeof raw === 'string' ? raw : ''
+  }
+
   private handleLogout() {
     userPersistence.clearUser()
     promptAction.showToast({ message: '已退出登录' })
@@ -220,10 +292,41 @@ export struct EditProfileView {
     if (!url) { return $r('[basic].media.ic_public_user') }
     return url as ResourceStr
   }
+  private async uploadAvatarAndGetUrl(cacheUri: string): Promise<string> {
+    return new Promise<string>((resolve) => {
+      const header = new Map<Object, string>()
+      header.set('Content-Type', 'multipart/form-data')
+      const files: Array<request.File> = [{ name: 'image0.jpeg', filename: 'image0.jpeg', uri: cacheUri, type: 'image' }]
+      const data: Array<request.RequestData> = [{ name: 'type', value: 'avatar' }, { name: 'username', value: this.appUser.user.username ?? 'user' }]
+      const uploadConfig: request.UploadConfig = { url: `${GlobalVariable.BASE_URL}/uploads/upload-image`, header, method: 'POST', files, data }
+      try {
+        request.uploadFile((this.getUIContext().getHostContext() as common.UIAbilityContext), uploadConfig, (error: Error | undefined, task) => {
+          if (task) {
+            task.on('complete', (states: Object) => {
+              const arr = states as Array<UploadTaskState>
+              for (let i = 0; i < arr.length; i++) {
+                const dataStr = (arr[i].data as string) ?? ''
+                try {
+                  const parsed = JSON.parse(dataStr) as UploadImageResponse
+                  if (parsed.success && parsed.imageUrl) { resolve(parsed.imageUrl); return }
+                } catch (_e) {}
+              }
+              resolve(this.getCurrentAvatarUrl())
+            })
+          } else { resolve(this.getCurrentAvatarUrl()) }
+        })
+      } catch (_e) { resolve(this.getCurrentAvatarUrl()) }
+    })
+  }
+
 }
+
 interface EditSchoolLogView {
   phase: string
   school_id: number
   school_name: string
   version?: number
 }
+
+interface UploadImageResponse { success: boolean; imageUrl?: string }
+interface UploadTaskState { data?: string }

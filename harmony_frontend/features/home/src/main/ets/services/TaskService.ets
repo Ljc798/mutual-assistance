@@ -14,6 +14,11 @@ export interface TaskQuery {
   schoolId?: number
 }
 
+interface TaskSearchResponse {
+  success: boolean
+  tasks: TaskDTO[]
+}
+
 function toTaskItem(item: TaskDTO): TaskItem {
   return {
     id: String(item.id),
@@ -95,6 +100,25 @@ export async function fetchTasks(query?: TaskQuery, token?: string): Promise<Tas
   } catch (error) {
     const msg: string = (error && (error as Error).message) ? (error as Error).message : 'fetchTasks failed'
     console.error('[TaskService] fetchTasks: request failed', msg)
+    throw new Error(msg)
+  }
+}
+
+export async function searchTasks(keyword: string, schoolId?: number, token?: string): Promise<TaskItem[]> {
+  const headers: Record<string, string> = token ? { "Authorization": `Bearer ${token}` } : {}
+  const params: QueryParam[] = [{ key: 'q', value: keyword.trim() }]
+  if (typeof schoolId === 'number' && schoolId > 0) { params.push({ key: 'school_id', value: `${schoolId}` }) }
+  console.info('[TaskService] searchTasks: GET /task/search with params =', JSON.stringify(params))
+  const t0 = Date.now()
+  try {
+    const res = await HttpClient.get<TaskSearchResponse>('/task/search', params, headers)
+    const dt = Date.now() - t0
+    console.info('[TaskService] searchTasks: response.success =', res?.success, 'tasks.length =', (res?.tasks?.length ?? 0), 'duration(ms)=', dt)
+    if (!res.success) { return [] }
+    return (res.tasks ?? []).map(toTaskItem)
+  } catch (error) {
+    const msg: string = (error && (error as Error).message) ? (error as Error).message : 'searchTasks failed'
+    console.error('[TaskService] searchTasks: request failed', msg)
     throw new Error(msg)
   }
 }

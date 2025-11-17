@@ -39,3 +39,6 @@ export { auth } from './src/main/ets/utils/Auth'
 export { userPersistence, USER_LOGIN_TIME_KEY } from './src/main/ets/utils/UserPersistenceManager'
 
 export { schoolPersistence, SCHOOL_SELECTION_VERSION_KEY } from './src/main/ets/utils/SchoolPersistenceManager'
+export { uploadSingle, uploadBatch, validateImageBytes } from './src/main/ets/utils/UploadManager'
+export type { UploadScene, UploadExtraFields, UploadFileItem, UploadResultItem, UploadProgressEvent } from './src/main/ets/utils/UploadManager'
+export { readFileAsBytes, guessMimeByName } from './src/main/ets/utils/LocalFileReadService'

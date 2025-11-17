@@ -177,18 +177,26 @@ export struct HomeView {
           refreshing: this.isRefreshing,
           builder: this.renderRefreshHeader
         }) {
-          Column({ space: 12 }) {
-            this.renderCategories()
-            this.renderFilterBar()
-            this.renderTasks()
+          Scroll(this.scroller) {
+            Column({ space: 12 }) {
+              this.renderCategories()
+              this.renderFilterBar()
+              this.renderTasks()
+            }
+            .padding({
+              left: 0,
+              right: 0,
+              top: 0,
+              bottom: 80 + this.safeArea.bottomHeight
+            })
+            .width('100%')
           }
-          .padding({
-            left: 0,
-            right: 0,
-            top: 0,
-            bottom: 80 + this.safeArea.bottomHeight
+          .scrollBar(BarState.Off)
+          .onScrollEdge((side: Edge) => {
+            if (side === Edge.Bottom) {
+              this.loadMoreTasks()
+            }
           })
-          .width('100%')
         }
         // 刷新状态更新逻辑（文字动态变化）
         .onStateChange((state: RefreshStatus) => {
@@ -221,6 +229,7 @@ export struct HomeView {
         .padding(10)
         .backgroundColor($r('[basic].color.white'))
         .borderRadius(25)
+        .opacity(0.75)
         .position({
           right: 20,
           bottom: 20
@@ -333,7 +342,8 @@ export struct HomeView {
           .height(32)
           .borderRadius(24)
           .backgroundColor($r('[basic].color.white'))
-          // .onChange((value: string) => this.handleSearchChange(value))
+          .onChange((value: string) => this.onSearchInput(value))
+          .onSubmit(() => { this.executeSearch(this.keyword) })
           .layoutWeight(1);
 
         Row() {
@@ -349,8 +359,7 @@ export struct HomeView {
         .margin({ right: 3 })
         .alignItems(VerticalAlign.Center)
         .justifyContent(FlexAlign.Center)
-
-        // .onClick(() => this.executeSearch(this.keyword));
+        .onClick(() => this.executeSearch(this.keyword))
       }
       .alignItems(VerticalAlign.Center)
       .backgroundColor($r('[basic].color.white'))
@@ -645,6 +654,13 @@ export struct HomeView {
     this.searchTimer = setTimeout(() => {
       this.updateSearchResults(value)
     }, 500)
+  }
+
+  private executeSearch(value: string): void {
+    const keyword = (value || '').trim()
+    if (!keyword) { this.showToast('请输入搜索关键词'); return }
+    AppStorage.setOrCreate('home_search_keyword', keyword)
+    HMRouterMgr.push({ pageUrl: PAGE_PATH.SEARCH_PAGE })
   }
 
   private updateSearchResults(value: string) {

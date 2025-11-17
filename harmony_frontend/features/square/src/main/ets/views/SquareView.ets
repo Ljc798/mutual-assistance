@@ -18,6 +18,7 @@ import {
   SquareCategory,
   SquareCreatePayload,
   SquareImageDTO,
+  SquareImageUpdatePayload,
   SquareLikePayload,
   SquarePost,
   SquareQuery,
@@ -33,6 +34,12 @@ import {
   submitCheckin,
   unlikeSquarePost
 } from '../services/SquareService'
+import { updateSquareImages } from '../services/SquareService'
+import { photoAccessHelper } from '@kit.MediaLibraryKit'
+import { fileIo as fs } from '@kit.CoreFileKit'
+import { common } from '@kit.AbilityKit'
+import { BusinessError } from '@ohos.base'
+import { readFileAsBytes, uploadSingle, UploadFileItem } from 'basic'
 
 const MAX_IMAGES: number = 9
 
@@ -65,6 +72,8 @@ export struct SquareView {
   @State publishCategory: string = ''
   @State publishContent: string = ''
   @State tempImages: string[] = []
+  @State uploadedImages: string[] = []
+  private selectedCachePaths: string[] = []
   @State reportReasonIndex: number = -1
   @State reportDescription: string = ''
   @State reportPostId: number = -1
@@ -471,11 +480,26 @@ export struct SquareView {
         .width(64)
         .height(64)
         .position({
+          left: 20,
+          bottom: 20 + this.safeArea.bottomHeight
+        })
+        .opacity(0.75)
+        .onClick((): void => {
+          this.openPublishModal()
+        })
+
+      Image($r('[basic].media.ic_up_arrow'))
+        .width(50)
+        .padding(10)
+        .backgroundColor($r('[basic].color.white'))
+        .borderRadius(25)
+        .opacity(0.75)
+        .position({
           right: 20,
           bottom: 20 + this.safeArea.bottomHeight
         })
         .onClick((): void => {
-          this.openPublishModal()
+          this.scroller.scrollEdge(Edge.Top)
         })
     } else {
       Blank()
@@ -571,7 +595,7 @@ export struct SquareView {
   @Builder
   private renderImagePicker() {
     Column({ space: 8 }) {
-      Text('图片 (暂不支持上传，敬请期待)')
+      Text('图片（最多9张）')
         .fontSize(13)
         .fontColor($r('[basic].color.text_secondary'))
       Row({ space: 10 }) {
@@ -901,15 +925,49 @@ export struct SquareView {
     this.tempImages = mutable
   }
 
-  private handleImagePick() {
-    this.showToast('图片上传能力开发中')
+  private async handleImagePick() {
+    const remain = Math.max(0, MAX_IMAGES - this.tempImages.length)
+    if (remain <= 0) { this.showToast('最多选择9张'); return }
+    const picker = new photoAccessHelper.PhotoViewPicker()
+    const options = { MIMEType: photoAccessHelper.PhotoViewMIMETypes.IMAGE_TYPE, maxSelectNumber: remain } as photoAccessHelper.PhotoSelectOptions
+    const context = (this.getUIContext().getHostContext() as common.UIAbilityContext)
+    const cacheDir: string = context.cacheDir
+    picker.select(options, async (_err: BusinessError | undefined, result: photoAccessHelper.PhotoSelectResult) => {
+      const uris: string[] = result?.photoUris ?? []
+      console.info('[SquareView] picker.selected', JSON.stringify({ count: uris.length, uris }))
+      if (!uris.length) { return }
+      const internalPaths: string[] = []
+      const cachePaths: string[] = []
+      for (let i = 0; i < uris.length; i++) {
+        try {
+          const file = fs.openSync(uris[i], fs.OpenMode.READ_ONLY)
+          const target: string = `${cacheDir}/square_${Date.now()}_${i}.jpeg`
+          fs.copyFileSync(file.fd, target)
+          internalPaths.push(`internal://cache/${target.split('/').pop()}`)
+          cachePaths.push(target)
+          fs.closeSync(file.fd)
+          console.info('[SquareView] cache.copy.ok', JSON.stringify({ src: uris[i], dst: target }))
+        } catch (err) {
+          console.warn('[SquareView] cache.copy.fail', JSON.stringify({ src: uris[i], message: (err as Error)?.message }))
+        }
+      }
+      if (!internalPaths.length) { this.showToast('复制失败'); return }
+      const current = this.tempImages.slice()
+      const merged = current.concat(uris)
+      this.tempImages = merged
+      this.selectedCachePaths = [...this.selectedCachePaths, ...cachePaths]
+    })
   }
+
+  // 使用多媒体解码，无需路径归一化
 
   private resetPublishForm() {
     this.publishCategory = ''
     this.publishContent = ''
     this.tempImages = []
+    this.uploadedImages = []
   }
+
 
   private async submitPost() {
     const userId = this.appUser.user.id
@@ -926,10 +984,7 @@ export struct SquareView {
       this.showToast('请输入内容')
       return
     }
-    if (this.tempImages.length > 0) {
-      this.showToast('暂不支持图片上传，请删除图片后再提交')
-      return
-    }
+    // 支持图片上传后关联
     if (this.getSelectedSchoolId() <= 0) {
       this.showToast('请选择学校后再发布')
       return
@@ -945,7 +1000,24 @@ export struct SquareView {
         category: this.publishCategory,
         content: this.publishContent.trim()
       }
-      await createSquarePost(payload, token)
+      const created = await createSquarePost(payload, token)
+      if (created.success) {
+        const uploaded: string[] = []
+        for (let i = 0; i < this.selectedCachePaths.length; i++) {
+          try {
+            const p = this.selectedCachePaths[i]
+            const bytes = await readFileAsBytes(p)
+            const fname = p.split('/').pop()!
+            const item: UploadFileItem = { filename: fname, mime: 'image/jpeg', data: bytes, extra: { type: 'square', postId: `${created.square_id}`, userId: this.appUser.user.id } }
+            const res = await uploadSingle(item)
+            if (res.success && res.url) { uploaded.push(res.url) }
+          } catch (e) { console.error('[SquareView] publish.upload.error', (e as Error)?.message) }
+        }
+        if (uploaded.length > 0) {
+          const linkPayload: SquareImageUpdatePayload = { square_id: created.square_id, images: uploaded }
+          await updateSquareImages(linkPayload, token)
+        }
+      }
       this.showToast('发布成功')
       this.resetPublishForm()
       this.closePublishModal()
@@ -1073,3 +1145,5 @@ export struct SquareView {
     this.posts = []
   }
 }
+interface UploadImageResponse { success: boolean; imageUrl?: string }
+interface UploadTaskState { data?: string }
