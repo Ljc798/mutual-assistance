@@ -81,6 +81,10 @@
         <view style="text-align: center; font-weight: 400; color: #333;">
             <text>您的意见真的真的对我们很重要🥺</text>
         </view>
+        <view class="policy">
+        <text class="term" bindtap="goToTerm">《用户协议》</text>
+        <text class="term" bindtap="goToPrivacy">《隐私政策》</text>
+        </view>
     </view>
 
     <!-- 意见反馈弹窗 -->

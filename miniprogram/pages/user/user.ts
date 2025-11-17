@@ -262,4 +262,16 @@ Page({
             url: '/pages/register/register',
         });
     },
+
+    goToTerm() {
+        wx.navigateTo({
+            url: '/pages/agreements/terms'
+        });
+    },
+
+    goToPrivacy() {
+        wx.navigateTo({
+            url: '/pages/agreements/privacy'
+        });
+    },
 });
