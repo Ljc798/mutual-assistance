@@ -386,72 +386,113 @@ Page({
 
             const taskId = createRes.data.task_id;
 
-            if (method === 'pay') {
-                const prepayRes: any = await new Promise((resolve, reject) => {
-                    wx.request({
-                        url: `${BASE_URL}/taskPayment/prepay-fixed`,
-                        method: 'POST',
-                        data: { task_id: taskId, include_commission: true },
-                        header: { Authorization: `Bearer ${token}` },
-                        success: resolve,
-                        fail: reject
-                    });
-                });
-
-                if (!prepayRes?.data?.success) {
-                    wx.showToast({ title: prepayRes?.data?.message || '下单失败', icon: 'none' });
-                    return;
-                }
-
-                try {
-                    await new Promise<void>((resolve, reject) => {
-                        wx.requestPayment({
-                            ...prepayRes.data.paymentParams,
-                            success: () => resolve(),
-                            fail: () => reject(new Error('支付失败或取消'))
+            if (mode === 'fixed') {
+                if (method === 'pay') {
+                    const prepayRes: any = await new Promise((resolve, reject) => {
+                        wx.request({
+                            url: `${BASE_URL}/taskPayment/prepay-fixed`,
+                            method: 'POST',
+                            data: { task_id: taskId, include_commission: true },
+                            header: { Authorization: `Bearer ${token}` },
+                            success: resolve,
+                            fail: reject
                         });
                     });
-                } catch (payErr) {
-                    wx.showToast({ title: '支付未完成，已生成待支付草稿', icon: 'none' });
-                    return;
-                }
 
-                await requestSubscribe([TMP.DISPATCH, TMP.STATUS, TMP.DONE, TMP.BID]);
-                wx.showToast({ title: '支付成功', icon: 'success' });
-                wx.redirectTo({ url: '/pages/home/home' });
-            } else if (method === 'free' || method === 'vip') {
-                const prepayRes: any = await new Promise((resolve, reject) => {
-                    wx.request({
-                        url: `${BASE_URL}/taskPayment/prepay-fixed`,
-                        method: 'POST',
-                        data: { task_id: taskId, include_commission: false },
-                        header: { Authorization: `Bearer ${token}` },
-                        success: resolve,
-                        fail: reject
-                    });
-                });
+                    if (!prepayRes?.data?.success) {
+                        wx.showToast({ title: prepayRes?.data?.message || '下单失败', icon: 'none' });
+                        return;
+                    }
 
-                if (!prepayRes?.data?.success) {
-                    wx.showToast({ title: prepayRes?.data?.message || '下单失败', icon: 'none' });
-                    return;
-                }
+                    try {
+                        await new Promise<void>((resolve, reject) => {
+                            wx.requestPayment({
+                                ...prepayRes.data.paymentParams,
+                                success: () => resolve(),
+                                fail: () => reject(new Error('支付失败或取消'))
+                            });
+                        });
+                    } catch (payErr) {
+                        wx.showToast({ title: '支付未完成，已生成待支付草稿', icon: 'none' });
+                        return;
+                    }
 
-                try {
-                    await new Promise<void>((resolve, reject) => {
-                        wx.requestPayment({
-                            ...prepayRes.data.paymentParams,
-                            success: () => resolve(),
-                            fail: () => reject(new Error('支付失败或取消'))
+                    await requestSubscribe([TMP.DISPATCH, TMP.STATUS, TMP.DONE, TMP.BID]);
+                    wx.showToast({ title: '支付成功', icon: 'success' });
+                    wx.redirectTo({ url: '/pages/home/home' });
+                } else if (method === 'free' || method === 'vip') {
+                    const prepayRes: any = await new Promise((resolve, reject) => {
+                        wx.request({
+                            url: `${BASE_URL}/taskPayment/prepay-fixed`,
+                            method: 'POST',
+                            data: { task_id: taskId, include_commission: false },
+                            header: { Authorization: `Bearer ${token}` },
+                            success: resolve,
+                            fail: reject
                         });
                     });
-                } catch (payErr) {
-                    wx.showToast({ title: '支付未完成', icon: 'none' });
-                    return;
-                }
 
-                await requestSubscribe([TMP.DISPATCH, TMP.STATUS, TMP.DONE, TMP.BID]);
-                wx.showToast({ title: '发布成功', icon: 'success' });
-                wx.redirectTo({ url: '/pages/home/home' });
+                    if (!prepayRes?.data?.success) {
+                        wx.showToast({ title: prepayRes?.data?.message || '下单失败', icon: 'none' });
+                        return;
+                    }
+
+                    try {
+                        await new Promise<void>((resolve, reject) => {
+                            wx.requestPayment({
+                                ...prepayRes.data.paymentParams,
+                                success: () => resolve(),
+                                fail: () => reject(new Error('支付失败或取消'))
+                            });
+                        });
+                    } catch (payErr) {
+                        wx.showToast({ title: '支付未完成', icon: 'none' });
+                        return;
+                    }
+
+                    await requestSubscribe([TMP.DISPATCH, TMP.STATUS, TMP.DONE, TMP.BID]);
+                    wx.showToast({ title: '发布成功', icon: 'success' });
+                    wx.redirectTo({ url: '/pages/home/home' });
+                }
+            } else if (mode === 'bidding') {
+                if (method === 'pay') {
+                    const prepayRes: any = await new Promise((resolve, reject) => {
+                        wx.request({
+                            url: `${BASE_URL}/taskPayment/prepay`,
+                            method: 'POST',
+                            data: { task_id: taskId },
+                            header: { Authorization: `Bearer ${token}` },
+                            success: resolve,
+                            fail: reject
+                        });
+                    });
+
+                    if (!prepayRes?.data?.success) {
+                        wx.showToast({ title: prepayRes?.data?.message || '下单失败', icon: 'none' });
+                        return;
+                    }
+
+                    try {
+                        await new Promise<void>((resolve, reject) => {
+                            wx.requestPayment({
+                                ...prepayRes.data.paymentParams,
+                                success: () => resolve(),
+                                fail: () => reject(new Error('支付失败或取消'))
+                            });
+                        });
+                    } catch (payErr) {
+                        wx.showToast({ title: '支付未完成，已生成待支付草稿', icon: 'none' });
+                        return;
+                    }
+
+                    await requestSubscribe([TMP.DISPATCH, TMP.STATUS, TMP.DONE, TMP.BID]);
+                    wx.showToast({ title: '支付成功', icon: 'success' });
+                    wx.redirectTo({ url: '/pages/home/home' });
+                } else if (method === 'free' || method === 'vip') {
+                    await requestSubscribe([TMP.DISPATCH, TMP.STATUS, TMP.DONE, TMP.BID]);
+                    wx.showToast({ title: '发布成功', icon: 'success' });
+                    wx.redirectTo({ url: '/pages/home/home' });
+                }
             }
         } catch (err: any) {
             console.error('发布流程异常：', err);

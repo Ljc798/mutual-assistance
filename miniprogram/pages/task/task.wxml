@@ -83,6 +83,7 @@
     <!-- 出价和接单按钮 -->
     <view wx:if="{{!isOwner}}" class="button-container">
         <button class="bidding-button" bindtap="openPopup" wx:if="{{canLeaveMessage && task.mode === 'bidding'}}">出价</button>
+        <button class="accept-button" bindtap="acceptFixedTask" wx:if="{{canLeaveMessage && task.mode === 'fixed'}}">接单</button>
         <button class="accept-button" bindtap="goToChat" data-targetid="{{task.employer_id}}" data-username="{{task.employer_name}}" wx:if="{{canLeaveMessage}}">聊一聊</button>
     </view>
 

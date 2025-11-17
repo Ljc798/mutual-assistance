@@ -354,4 +354,35 @@ Page({
             }
         });
     },
+
+    async acceptFixedTask() {
+        const token = wx.getStorageSync("token");
+        if (!token) {
+            wx.showToast({ title: "请先登录", icon: "none" });
+            return;
+        }
+        const taskId = this.data.task.id;
+        wx.showLoading({ title: "正在接单..." });
+        try {
+            const res: any = await new Promise((resolve, reject) => {
+                wx.request({
+                    url: `${BASE_URL}/task/${taskId}/accept`,
+                    method: 'POST',
+                    header: { Authorization: `Bearer ${token}` },
+                    success: resolve,
+                    fail: reject
+                });
+            });
+            if (res?.data?.success) {
+                wx.showToast({ title: '接单成功', icon: 'success' });
+                await this.loadTaskDetail(taskId);
+            } else {
+                wx.showToast({ title: res?.data?.message || '接单失败', icon: 'none' });
+            }
+        } catch (err) {
+            wx.showToast({ title: '网络错误', icon: 'none' });
+        } finally {
+            wx.hideLoading();
+        }
+    }
 });

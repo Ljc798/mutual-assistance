@@ -142,8 +142,11 @@
             <view class="popup-option" bindtap="choosePublishMethod" data-method="free">
                 🎁 使用免佣金次数
             </view>
-            <view class="popup-option" bindtap="choosePublishMethod" data-method="pay">
+            <view class="popup-option" wx:if="{{mode === 'fixed'}}" bindtap="choosePublishMethod" data-method="pay">
                 💰 支付佣金（¥{{commissionAmount}}）+报酬（¥{{offerAmount}}）共¥{{totalAmount}}
+            </view>
+            <view class="popup-option" wx:if="{{mode === 'bidding'}}" bindtap="choosePublishMethod" data-method="pay">
+                💰 支付佣金 ¥{{commissionAmount}}
             </view>
             <view class="popup-option" bindtap="choosePublishMethod" data-method="vip">
                 🌟 使用VIP免费发布

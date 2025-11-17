@@ -116,7 +116,7 @@ router.post("/prepay-fixed", authMiddleware, async (req, res) => {
         if (!task) return res.status(404).json({ success: false, message: "任务不存在" });
 
         const offerFen = Math.floor(parseFloat(task.offer) * 100);
-        const commissionFen = include_commission ? Math.floor(parseFloat(task.offer) * 100 * 0.02) : 0;
+        const commissionFen = include_commission ? Math.max(Math.floor(parseFloat(task.offer) * 100 * 0.02), 1) : 0;
         const totalFen = offerFen + commissionFen;
         const out_trade_no = `TASK_${task_id}_FIXED_${Date.now()}`;
 

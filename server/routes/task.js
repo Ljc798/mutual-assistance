@@ -1057,4 +1057,38 @@ router.post("/:id/confirm-done", authMiddleware, async (req, res) => {
     }
 });
 
+router.post("/:id/accept", authMiddleware, async (req, res) => {
+    const taskId = parseInt(req.params.id);
+    const employeeId = req.user.id;
+    if (isNaN(taskId)) {
+        return res.status(400).json({ success: false, message: "任务 ID 非法" });
+    }
+    try {
+        const [[task]] = await db.query("SELECT id, status, mode, employer_id, title FROM tasks WHERE id = ?", [taskId]);
+        if (!task) return res.status(404).json({ success: false, message: "任务不存在" });
+        if (parseInt(task.status) !== 0) return res.status(400).json({ success: false, message: "任务当前不可接单" });
+        if (task.mode !== 'fixed') return res.status(400).json({ success: false, message: "仅支持一口价任务接单" });
+
+        await db.query("UPDATE tasks SET employee_id = ?, status = 1 WHERE id = ?", [employeeId, taskId]);
+
+        const [[payment]] = await db.query(
+            "SELECT id FROM task_payments WHERE task_id = ? AND out_trade_no LIKE ? ORDER BY id DESC LIMIT 1",
+            [taskId, `TASK_${taskId}_FIXED_%`]
+        );
+        if (payment && payment.id) {
+            await db.query("UPDATE task_payments SET receiver_id = ? WHERE id = ?", [employeeId, payment.id]);
+        }
+
+        await db.query(
+            "INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)",
+            [task.employer_id, '📦 任务已被接单', `你的任务《${task.title}》已被接单，已进入进行中`]
+        );
+
+        return res.json({ success: true, message: "接单成功" });
+    } catch (err) {
+        console.error("❌ 接单失败:", err);
+        return res.status(500).json({ success: false, message: "服务器错误" });
+    }
+});
+
 module.exports = router;
