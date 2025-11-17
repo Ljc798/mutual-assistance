@@ -111,6 +111,14 @@ Page({
                     const params = res.data.paymentParams;
                     if (!params) {
                         // 如果是模拟支付
+                        // 同步更新 VIP 等级
+                        const level = this.data.activeTab === 'svip' ? 2 : 1;
+                        wx.request({
+                            url: `${BASE_URL}/user/vip/activate`,
+                            method: 'POST',
+                            header: { Authorization: `Bearer ${wx.getStorageSync('token')}` },
+                            data: { level },
+                        });
                         wx.showToast({ title: '开通成功', icon: 'success' });
                         setTimeout(() => {
                             wx.redirectTo({ url: "/pages/user/user" });
@@ -126,6 +134,14 @@ Page({
                         signType,
                         paySign,
                         success: () => {
+                            // 同步更新 VIP 等级
+                            const level = this.data.activeTab === 'svip' ? 2 : 1;
+                            wx.request({
+                                url: `${BASE_URL}/user/vip/activate`,
+                                method: 'POST',
+                                header: { Authorization: `Bearer ${wx.getStorageSync('token')}` },
+                                data: { level },
+                            });
                             wx.showToast({ title: '开通成功', icon: 'success' });
                             setTimeout(() => {
                                 wx.redirectTo({ url: "/pages/user/user" });

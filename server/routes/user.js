@@ -480,6 +480,23 @@ router.post("/update", authMiddleware, async (req, res) => {
     }
 });
 
+// 开通或升级 VIP 等级
+router.post("/vip/activate", authMiddleware, async (req, res) => {
+    const userId = req.user.id;
+    const { level } = req.body; // 1: VIP, 2: SVIP
+    if (![1, 2].includes(Number(level))) {
+        return res.status(400).json({ success: false, message: "无效的 VIP 等级" });
+    }
+    try {
+        await db.query(`UPDATE users SET vip_level = ? WHERE id = ?`, [Number(level), userId]);
+        const [[user]] = await db.query(`SELECT vip_level, vip_expire_time FROM users WHERE id = ?`, [userId]);
+        return res.json({ success: true, message: "VIP 等级已更新", vip_level: user.vip_level, vip_expire_time: user.vip_expire_time });
+    } catch (err) {
+        console.error("❌ 更新 VIP 等级失败:", err);
+        return res.status(500).json({ success: false, message: "服务器错误" });
+    }
+});
+
 // 📌 获取用户信息（使用 authMiddleware 来验证 token）
 router.get("/info", authMiddleware, async (req, res) => {
     const userId = req.user.id; // 从 token 中提取 id
