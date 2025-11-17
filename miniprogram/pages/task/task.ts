@@ -303,9 +303,7 @@ Page({
         const username = e.currentTarget.dataset.username;
         const taskId = this.data.task.id;
         const bidId = e.currentTarget.dataset.bidid;
-        const openid = getApp().globalData.userInfo?.openid;
-        console.log(bidId);
-
+        const isSecondHand = this.data.task.category === '二手交易';
 
         wx.showModal({
             title: '确认指派',
@@ -313,6 +311,27 @@ Page({
             success: (res) => {
                 if (!res.confirm) return;
 
+                if (isSecondHand) {
+                    const token = wx.getStorageSync("token");
+                    wx.request({
+                        url: `${BASE_URL}/task/assign`,
+                        method: 'POST',
+                        header: { Authorization: `Bearer ${token}` },
+                        data: { task_id: taskId, bid_id: bidId, receiver_id: receiverId },
+                        success: (res) => {
+                            if (res.data.success) {
+                                wx.showToast({ title: '已指派，交易进行中', icon: 'success' });
+                                this.loadTaskDetail(taskId);
+                                this.loadBids(taskId);
+                            } else {
+                                wx.showToast({ title: res.data.message || '指派失败', icon: 'none' });
+                            }
+                        }
+                    });
+                    return;
+                }
+
+                const openid = getApp().globalData.userInfo?.openid;
                 wx.request({
                     url: `${BASE_URL}/payment/create`,
                     method: 'POST',
@@ -325,20 +344,15 @@ Page({
                     },
                     success: (res) => {
                         if (res.data.success) {
-                            console.log(res.data);
-
                             const { timeStamp, nonceStr, paySign, package: pkg } = res.data.paymentParams;
-                            console.log(nonceStr);
-
                             wx.requestPayment({
                                 timeStamp,
                                 nonceStr,
-                                package: pkg, // 注意不是关键字“package”！
+                                package: pkg,
                                 signType: 'RSA',
                                 paySign,
                                 success: () => {
                                     wx.showToast({ title: '支付成功', icon: 'success' });
-                                    // ✅ 支付成功后重新加载任务和投标列表
                                     const taskId = this.data.task.id;
                                     this.loadTaskDetail(taskId);
                                 },
@@ -379,6 +393,45 @@ Page({
             } else {
                 wx.showToast({ title: res?.data?.message || '接单失败', icon: 'none' });
             }
+        } catch (err) {
+            wx.showToast({ title: '网络错误', icon: 'none' });
+        } finally {
+            wx.hideLoading();
+        }
+    },
+
+    async buySecondHand() {
+        const token = wx.getStorageSync("token");
+        if (!token) {
+            wx.showToast({ title: "请先登录", icon: "none" });
+            return;
+        }
+        const taskId = this.data.task.id;
+        wx.showLoading({ title: "生成订单..." });
+        try {
+            const res: any = await new Promise((resolve, reject) => {
+                wx.request({
+                    url: `${BASE_URL}/taskPayment/prepay-second-hand-fixed`,
+                    method: 'POST',
+                    header: { Authorization: `Bearer ${token}` },
+                    data: { task_id: taskId },
+                    success: resolve,
+                    fail: reject
+                });
+            });
+            if (!res?.data?.success) {
+                wx.showToast({ title: res?.data?.message || '下单失败', icon: 'none' });
+                return;
+            }
+            await new Promise<void>((resolve, reject) => {
+                wx.requestPayment({
+                    ...res.data.paymentParams,
+                    success: () => resolve(),
+                    fail: () => reject(new Error('支付失败或取消'))
+                });
+            });
+            wx.showToast({ title: '购买成功', icon: 'success' });
+            await this.loadTaskDetail(taskId);
         } catch (err) {
             wx.showToast({ title: '网络错误', icon: 'none' });
         } finally {

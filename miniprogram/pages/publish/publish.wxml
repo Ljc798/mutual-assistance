@@ -136,7 +136,7 @@
     <button bindtap="handlePublish" disabled="{{isDisabled}}">🚀 发布任务</button>
 
     <!-- 悬浮佣金选择弹窗 -->
-    <view class="commission-popup" wx:if="{{showCommissionPopup}}">
+    <view class="commission-popup" wx:if="{{showCommissionPopup && selectedCategory !== '二手交易'}}">
         <view class="popup-mask" bindtap="closeCommissionPopup"></view>
         <view class="popup-content">
             <view class="popup-title">请选择发布方式</view>

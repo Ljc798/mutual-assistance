@@ -130,7 +130,9 @@ Page({
                             role,
                             employer_done: employerDone,  // 👈 加这个
                             employee_done: employeeDone,  // 👈 还有这个
-                            hasConfirmed                // 👈 这个你已经加了，保留
+                            hasConfirmed,
+                            category: task.category,
+                            mode: task.mode
                         };
                     });
 
@@ -173,6 +175,38 @@ Page({
             return;
         }
 
+        const currentOrder = this.data.orders.find(o => o.orderId === taskId);
+        const isSecondHandBidding = currentOrder?.category === '二手交易' && currentOrder?.mode === 'bidding' && currentOrder?.role === 'employee';
+        if (isSecondHandBidding) {
+            wx.request({
+                url: `${BASE_URL}/taskPayment/prepay-second-hand-complete`,
+                method: 'POST',
+                header: { Authorization: `Bearer ${token}` },
+                data: { task_id: taskId },
+                success: (res) => {
+                    if (res.data.success) {
+                        const { timeStamp, nonceStr, paySign, package: pkg } = res.data.paymentParams;
+                        wx.requestPayment({
+                            timeStamp,
+                            nonceStr,
+                            package: pkg,
+                            signType: 'RSA',
+                            paySign,
+                            success: () => {
+                                wx.showToast({ title: '支付成功', icon: 'success' });
+                                this.fetchOrders();
+                            },
+                            fail: () => wx.showToast({ title: '支付取消', icon: 'none' })
+                        });
+                    } else {
+                        wx.showToast({ title: res.data.message || '生成支付失败', icon: 'none' });
+                    }
+                },
+                fail: () => wx.showToast({ title: '网络错误', icon: 'none' })
+            });
+            return;
+        }
+
         wx.request({
             url: `${BASE_URL}/task/${taskId}/confirm-done`,
             method: "POST",
@@ -182,7 +216,6 @@ Page({
             success: (res) => {
                 if (res.data.success) {
                     wx.showToast({ title: res.data.message || "操作成功", icon: "success" });
-                    // 重新拉订单或更新页面
                     this.fetchOrders();
                 } else {
                     wx.showToast({ title: res.data.message || "操作失败", icon: "none" });

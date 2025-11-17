@@ -327,7 +327,11 @@ Page({
                 return;
             }
 
-            // ✅ 校验通过后再计算并弹出佣金确认
+            if (this.data.selectedCategory === '二手交易') {
+                await this.publishSecondHand();
+                return;
+            }
+
             const commission = this.calculateCommissionInFen(offer);
             const offerFen = Math.floor(offer * 100);
             const totalFen = offerFen + commission;
@@ -342,6 +346,55 @@ Page({
             wx.showToast({ title: "网络异常，请稍后重试", icon: "none" });
         } finally {
             wx.hideLoading();
+        }
+    },
+
+    async publishSecondHand() {
+        const app = getApp();
+        const token = wx.getStorageSync("token");
+        const userId = app.globalData?.userInfo?.id;
+        const {
+            selectedCategory, position, title, reward, detail, takeCode, takeTel, takeName, mode
+        } = this.data;
+        const schoolId = app.globalData?.selectedTaskSchoolId || app.globalData?.userInfo?.school_id || null;
+        const offer = parseFloat(reward);
+        const payload = {
+            employer_id: userId,
+            school_id: schoolId,
+            category: selectedCategory,
+            position,
+            address: '',
+            DDL: null,
+            title,
+            offer,
+            detail,
+            takeaway_code: takeCode || '',
+            takeaway_tel: takeTel || null,
+            takeaway_name: takeName || '',
+            publish_method: 'vip',
+            mode: mode,
+            status: 0
+        };
+        try {
+            const createRes: any = await new Promise((resolve, reject) => {
+                wx.request({
+                    url: `${BASE_URL}/task/create`,
+                    method: 'POST',
+                    data: payload,
+                    header: { Authorization: `Bearer ${token}` },
+                    success: resolve,
+                    fail: reject
+                });
+            });
+            if (!createRes?.data?.success) {
+                wx.showToast({ title: createRes?.data?.message || '发布失败', icon: 'none' });
+                return;
+            }
+            await requestSubscribe([TMP.DISPATCH, TMP.STATUS, TMP.DONE, TMP.BID]);
+            wx.showToast({ title: '发布成功', icon: 'success' });
+            wx.redirectTo({ url: '/pages/home/home' });
+        } catch (err: any) {
+            wx.showToast({ title: err?.message || '网络错误', icon: 'none' });
         }
     },
 

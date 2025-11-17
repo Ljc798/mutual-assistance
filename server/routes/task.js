@@ -95,7 +95,7 @@ router.post("/create", authMiddleware, async (req, res) => {
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
-        const ddlValue = isSecondHand ? null : dayjs(DDL).format("YYYY-MM-DD HH:mm:ss");
+        const ddlValue = isSecondHand ? dayjs().add(30, 'day').format("YYYY-MM-DD HH:mm:ss") : dayjs(DDL).format("YYYY-MM-DD HH:mm:ss");
         const addrValue = isSecondHand ? '' : address;
 
         const values = [
@@ -250,7 +250,7 @@ router.get("/my", authMiddleware, async (req, res) => {
 
     try {
         let baseSQL = `
-        SELECT id, employer_id, employee_id, status, title, offer, DDL, employer_done, employee_done, pay_amount
+        SELECT id, employer_id, employee_id, status, title, offer, DDL, employer_done, employee_done, pay_amount, category, mode, has_paid
         FROM tasks
         WHERE (employer_id = ? OR employee_id = ?)
       `;
@@ -974,15 +974,42 @@ router.post("/:id/confirm-done", authMiddleware, async (req, res) => {
         }
 
         // ✅ 双方都确认
-        await db.query(`UPDATE tasks SET status = 2, completed_time = NOW() WHERE id = ?`, [taskId]);
-        await db.query(`UPDATE users SET balance = balance + ? WHERE id = ?`, [task.pay_amount, task.employee_id]);
+        if (task.category === '二手交易') {
+            if (task.mode === 'fixed') {
+                // 二手一口价：买家已在下单时付款，完成时打款给卖家（employer）
+                await db.query(`UPDATE tasks SET status = 2, completed_time = NOW() WHERE id = ?`, [taskId]);
+                await db.query(`UPDATE users SET balance = balance + ? WHERE id = ?`, [task.pay_amount, task.employer_id]);
+                await db.query(
+                    `INSERT INTO notifications (user_id, type, title, content) VALUES
+                 (?, 'task', '✅ 订单完成', '你购买的《${task.title}》交易已完成'),
+                 (?, 'task', '💰 收款通知', '二手订单《${task.title}》已完成，收入 ¥${task.pay_amount} 已入账')`,
+                    [task.employee_id, task.employer_id]
+                );
+            } else if (task.mode === 'bidding') {
+                // 二手竞价：完成时由买家付款；未付款则不结单、不打款
+                if (task.has_paid === 1) {
+                    await db.query(`UPDATE tasks SET status = 2, completed_time = NOW() WHERE id = ?`, [taskId]);
+                    await db.query(
+                        `INSERT INTO notifications (user_id, type, title, content) VALUES
+                     (?, 'task', '✅ 订单完成', '你参与的二手订单《${task.title}》已完成'),
+                     (?, 'task', '✅ 订单完成', '二手订单《${task.title}》已完成')`,
+                        [task.employee_id, task.employer_id]
+                    );
+                } else {
+                    return res.json({ success: true, message: '已确认，请买家完成支付后自动结单' });
+                }
+            }
+        } else {
+            await db.query(`UPDATE tasks SET status = 2, completed_time = NOW() WHERE id = ?`, [taskId]);
+            await db.query(`UPDATE users SET balance = balance + ? WHERE id = ?`, [task.pay_amount, task.employee_id]);
 
-        await db.query(
-            `INSERT INTO notifications (user_id, type, title, content) VALUES
-         (?, 'task', '✅ 任务完成', '你参与的任务《${task.title}》已圆满完成，期待与您的下一次相遇 🎉'),
-         (?, 'task', '💰 打款通知', '任务《${task.title}》已完成，报酬 ¥${task.pay_amount} 已到账你的钱包')`,
-            [task.employer_id, task.employee_id]
-        );
+            await db.query(
+                `INSERT INTO notifications (user_id, type, title, content) VALUES
+             (?, 'task', '✅ 任务完成', '你参与的任务《${task.title}》已圆满完成，期待与您的下一次相遇 🎉'),
+             (?, 'task', '💰 打款通知', '任务《${task.title}》已完成，报酬 ¥${task.pay_amount} 已到账你的钱包')`,
+                [task.employer_id, task.employee_id]
+            );
+        }
 
         try {
             await addReputationLog(
@@ -1094,6 +1121,40 @@ router.post("/:id/accept", authMiddleware, async (req, res) => {
         return res.json({ success: true, message: "接单成功" });
     } catch (err) {
         console.error("❌ 接单失败:", err);
+        return res.status(500).json({ success: false, message: "服务器错误" });
+    }
+});
+
+router.post("/assign", authMiddleware, async (req, res) => {
+    const { task_id, bid_id, receiver_id } = req.body;
+    const userId = req.user.id;
+    if (!task_id || !bid_id || !receiver_id) {
+        return res.status(400).json({ success: false, message: "缺少参数" });
+    }
+    try {
+        const [[task]] = await db.query("SELECT id, category, mode, employer_id, title FROM tasks WHERE id = ?", [task_id]);
+        if (!task) return res.status(404).json({ success: false, message: "任务不存在" });
+        if (task.category !== '二手交易' || task.mode !== 'bidding') {
+            return res.status(400).json({ success: false, message: "仅二手竞价任务支持无支付指派" });
+        }
+        const [[bid]] = await db.query("SELECT price FROM task_bids WHERE id = ? AND task_id = ?", [bid_id, task_id]);
+        if (!bid) return res.status(404).json({ success: false, message: "投标不存在" });
+
+        await db.query(
+            `UPDATE tasks SET employee_id = ?, selected_bid_id = ?, status = 1, has_paid = 0, pay_amount = ? WHERE id = ?`,
+            [receiver_id, bid_id, bid.price, task_id]
+        );
+
+        await db.query(
+            `INSERT INTO notifications (user_id, type, title, content) VALUES
+             (?, 'task', '🎉 任务委派成功', '你已被指派为《${task.title}》，请尽快与卖家沟通'),
+             (?, 'task', '📬 已选择接单人', '你已选择接单人，交易进行中')`,
+            [receiver_id, task.employer_id]
+        );
+
+        return res.json({ success: true, message: "指派成功" });
+    } catch (err) {
+        console.error("❌ 二手竞价指派失败:", err);
         return res.status(500).json({ success: false, message: "服务器错误" });
     }
 });

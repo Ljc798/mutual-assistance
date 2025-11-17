@@ -40,7 +40,7 @@ router.post("/prepay", authMiddleware, async (req, res) => {
         });
         console.log(privateKey.slice(0, 100));
         const commission = Math.floor(task.offer * 100 * 0.02);
-        const out_trade_no = `TASKFEE_${task_id}_${Date.now()}`;
+        const out_trade_no = `TASKFEE_${task_id}_${String(Date.now()).slice(-8)}`;
 
         const [
             [user]
@@ -118,7 +118,7 @@ router.post("/prepay-fixed", authMiddleware, async (req, res) => {
         const offerFen = Math.floor(parseFloat(task.offer) * 100);
         const commissionFen = include_commission ? Math.max(Math.floor(parseFloat(task.offer) * 100 * 0.02), 1) : 0;
         const totalFen = offerFen + commissionFen;
-        const out_trade_no = `TASK_${task_id}_FIXED_${Date.now()}`;
+        const out_trade_no = `TASK_${task_id}_FIXED_${String(Date.now()).slice(-8)}`;
 
         const [[user]] = await db.query("SELECT openid FROM users WHERE id = ?", [userId]);
 
@@ -168,6 +168,108 @@ router.post("/prepay-fixed", authMiddleware, async (req, res) => {
     }
 });
 
+router.post("/prepay-second-hand-fixed", authMiddleware, async (req, res) => {
+    try {
+        const { task_id } = req.body;
+        const userId = req.user.id;
+
+        const [[task]] = await db.query("SELECT * FROM tasks WHERE id = ?", [task_id]);
+        if (!task) return res.status(404).json({ success: false, message: "任务不存在" });
+
+        const offerFen = Math.floor(parseFloat(task.offer) * 100);
+        const totalFen = offerFen;
+        const out_trade_no = `TASK_${task_id}_SECOND_${String(Date.now()).slice(-8)}`;
+
+        await db.query(
+            `INSERT INTO task_payments (task_id, payer_user_id, receiver_id, amount, out_trade_no, status)
+             VALUES (?, ?, ?, ?, ?, 'pending')`,
+            [task_id, userId, null, totalFen, out_trade_no]
+        );
+
+        const timestamp = Math.floor(Date.now() / 1000).toString();
+        const nonceStr = crypto.randomBytes(16).toString("hex");
+        const url = "/v3/pay/transactions/jsapi";
+        const fullUrl = `https://api.mch.weixin.qq.com${url}`;
+
+        const [[user]] = await db.query("SELECT openid FROM users WHERE id = ?", [userId]);
+
+        const body = JSON.stringify({
+            appid,
+            mchid,
+            description: `二手购买-报酬${(offerFen/100).toFixed(2)}元`,
+            out_trade_no,
+            notify_url,
+            amount: { total: totalFen, currency: "CNY" },
+            payer: { openid: user.openid }
+        });
+
+        const signature = generateSignature("POST", url, timestamp, nonceStr, body);
+        const authorization = `WECHATPAY2-SHA256-RSA2048 mchid="${mchid}",serial_no="${serial_no}",nonce_str="${nonceStr}",timestamp="${timestamp}",signature="${signature}"`;
+
+        const response = await axios.post(fullUrl, body, { headers: { Authorization: authorization, "Content-Type": "application/json" } });
+        const prepay_id = response.data.prepay_id;
+        const payNonceStr = crypto.randomBytes(16).toString("hex");
+        const pkg = `prepay_id=${prepay_id}`;
+        const payMessage = `${appid}\n${timestamp}\n${payNonceStr}\n${pkg}\n`;
+        const paySign = crypto.createSign("RSA-SHA256").update(payMessage).sign(privateKey, "base64");
+
+        res.json({ success: true, paymentParams: { timeStamp: timestamp, nonceStr: payNonceStr, package: pkg, signType: "RSA", paySign } });
+    } catch (err) {
+        console.error("❌ 二手固定价预下单失败:", err);
+        res.status(500).json({ success: false, message: "服务异常" });
+    }
+});
+
+router.post("/prepay-second-hand-complete", authMiddleware, async (req, res) => {
+    try {
+        const { task_id } = req.body;
+        const userId = req.user.id;
+
+        const [[task]] = await db.query("SELECT pay_amount, title FROM tasks WHERE id = ?", [task_id]);
+        if (!task) return res.status(404).json({ success: false, message: "任务不存在" });
+
+        const amountFen = Math.floor(parseFloat(task.pay_amount) * 100);
+        const out_trade_no = `TASK_${task_id}_SECOND_DONE_${String(Date.now()).slice(-8)}`;
+
+        await db.query(
+            `INSERT INTO task_payments (task_id, payer_user_id, receiver_id, amount, out_trade_no, status)
+             VALUES (?, ?, ?, ?, ?, 'pending')`,
+            [task_id, userId, null, amountFen, out_trade_no]
+        );
+
+        const timestamp = Math.floor(Date.now() / 1000).toString();
+        const nonceStr = crypto.randomBytes(16).toString("hex");
+        const url = "/v3/pay/transactions/jsapi";
+        const fullUrl = `https://api.mch.weixin.qq.com${url}`;
+
+        const [[user]] = await db.query("SELECT openid FROM users WHERE id = ?", [userId]);
+
+        const body = JSON.stringify({
+            appid,
+            mchid,
+            description: `二手订单完成支付-¥${(amountFen/100).toFixed(2)}`,
+            out_trade_no,
+            notify_url,
+            amount: { total: amountFen, currency: "CNY" },
+            payer: { openid: user.openid }
+        });
+
+        const signature = generateSignature("POST", url, timestamp, nonceStr, body);
+        const authorization = `WECHATPAY2-SHA256-RSA2048 mchid="${mchid}",serial_no="${serial_no}",nonce_str="${nonceStr}",timestamp="${timestamp}",signature="${signature}"`;
+
+        const response = await axios.post(fullUrl, body, { headers: { Authorization: authorization, "Content-Type": "application/json" } });
+        const prepay_id = response.data.prepay_id;
+        const payNonceStr = crypto.randomBytes(16).toString("hex");
+        const pkg = `prepay_id=${prepay_id}`;
+        const payMessage = `${appid}\n${timestamp}\n${payNonceStr}\n${pkg}\n`;
+        const paySign = crypto.createSign("RSA-SHA256").update(payMessage).sign(privateKey, "base64");
+
+        res.json({ success: true, paymentParams: { timeStamp: timestamp, nonceStr: payNonceStr, package: pkg, signType: "RSA", paySign } });
+    } catch (err) {
+        console.error("❌ 二手完成支付预下单失败:", err);
+        res.status(500).json({ success: false, message: "服务异常" });
+    }
+});
 router.post("/payment-notify", express.raw({
     type: '*/*'
 }), async (req, res) => {
@@ -223,6 +325,42 @@ router.post("/payment-notify", express.raw({
             await db.query(
                 `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
                 [task.employer_id, '💰 支付成功', `你已成功支付任务《${task.title}》，等待接单人完成任务～`]
+            );
+        } else if (/^TASK_\d+_SECOND_\d+$/.test(outTradeNo)) {
+            const match = outTradeNo.match(/^TASK_(\d+)_SECOND_/);
+            taskId = parseInt(match[1]);
+            const [[task]] = await db.query(`SELECT title, employer_id, offer FROM tasks WHERE id = ?`, [taskId]);
+            const [[pay]] = await db.query(`SELECT payer_user_id FROM task_payments WHERE out_trade_no = ?`, [outTradeNo]);
+            const buyerId = pay?.payer_user_id;
+            if (!task || !buyerId) throw new Error(`二手购买缺少记录 task_id: ${taskId}`);
+            await db.query(
+                `UPDATE tasks SET employee_id = ?, has_paid = 1, status = 1, pay_amount = ? WHERE id = ?`,
+                [buyerId, parseFloat(task.offer), taskId]
+            );
+            // 二手购买：资金暂不直接入账，留到完成时；如需即时入账可打开下一行
+            // await db.query(`UPDATE users SET balance = balance + ? WHERE id = ?`, [parseFloat(task.offer), task.employer_id]);
+            await db.query(
+                `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?), (?, 'task', ?, ?)`,
+                [
+                    buyerId, '💰 购买成功', `你已购买《${task.title}》，请尽快完成交易`,
+                    task.employer_id, '💰 收款成功', `你发布的《${task.title}》已收到款项，等待买家完成交易`
+                ]
+            );
+        } else if (/^TASK_\d+_SECOND_DONE_\d+$/.test(outTradeNo)) {
+            const match = outTradeNo.match(/^TASK_(\d+)_SECOND_DONE_/);
+            taskId = parseInt(match[1]);
+            const [[task]] = await db.query(`SELECT title, employer_id, pay_amount FROM tasks WHERE id = ?`, [taskId]);
+            const [[pay]] = await db.query(`SELECT payer_user_id FROM task_payments WHERE out_trade_no = ?`, [outTradeNo]);
+            const payerId = pay?.payer_user_id;
+            if (!task || !payerId) throw new Error(`二手完成支付缺少记录 task_id: ${taskId}`);
+            await db.query(`UPDATE tasks SET status = 2, has_paid = 1, completed_time = NOW(), employer_done = 1, employee_done = 1 WHERE id = ?`, [taskId]);
+            await db.query(`UPDATE users SET balance = balance + ? WHERE id = ?`, [parseFloat(task.pay_amount), task.employer_id]);
+            await db.query(
+                `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?), (?, 'task', ?, ?)`,
+                [
+                    payerId, '✅ 支付完成', `你已完成订单并支付，感谢支持！`,
+                    task.employer_id, '💰 收款成功', `二手订单《${task.title}》已收款，交易完成`
+                ]
             );
         }
 

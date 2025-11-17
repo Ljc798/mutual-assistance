@@ -9,9 +9,9 @@
             <text class="task-reward">¥{{task.displayPrice}}</text>
         </view>
         <view class="task-info">
-            <view class="task-time">期望完成时间：{{formattedDDL}}前</view>
+            <view class="task-time" wx:if="{{task.category !== '二手交易'}}">期望完成时间：{{formattedDDL}}前</view>
             <view class="task-location">交易地点：{{task.position}}</view>
-            <view class="task-address">交付地点：{{task.address}}</view>
+            <view class="task-address" wx:if="{{task.category !== '二手交易'}}">交付地点：{{task.address}}</view>
         </view>
     </view>
 
@@ -83,7 +83,8 @@
     <!-- 出价和接单按钮 -->
     <view wx:if="{{!isOwner}}" class="button-container">
         <button class="bidding-button" bindtap="openPopup" wx:if="{{canLeaveMessage && task.mode === 'bidding'}}">出价</button>
-        <button class="accept-button" bindtap="acceptFixedTask" wx:if="{{canLeaveMessage && task.mode === 'fixed'}}">接单</button>
+        <button class="accept-button" bindtap="buySecondHand" wx:if="{{canLeaveMessage && task.mode === 'fixed' && task.category === '二手交易'}}">购买</button>
+        <button class="accept-button" bindtap="acceptFixedTask" wx:if="{{canLeaveMessage && task.mode === 'fixed' && task.category !== '二手交易'}}">接单</button>
         <button class="accept-button" bindtap="goToChat" data-targetid="{{task.employer_id}}" data-username="{{task.employer_name}}" wx:if="{{canLeaveMessage}}">聊一聊</button>
     </view>
 
