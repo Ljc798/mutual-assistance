@@ -5,9 +5,15 @@ Page({
         activeTab: 'vip', // 当前选中的tab
         selectedPlanId: null,
         user: [],
-        showCompareModal: false,
-        plans: [], // 当前tab下的套餐
-        allPlans: { vip: [], svip: [] }, // 分类缓存
+        showPopup: false,
+        plans: [],
+        allPlans: { vip: [], svip: [] },
+        benefits: [
+            { icon: '/assets/icons/mianyongjin.svg', name: '免佣发布' },
+            { icon: '/assets/icons/ChatGPT.svg', name: 'AI额度提升' },
+            { icon: '/assets/icons/jilijin.svg', name: '激励金奖励' },
+            { icon: '/assets/icons/zhekou.svg', name: '商城折扣' },
+        ],
     },
 
     onLoad() {
@@ -138,6 +144,17 @@ Page({
             },
         });
     },
+    payNow() {
+        this.handlePay();
+    },
+
+    showBenefitPopup() {
+        this.setData({ showPopup: true });
+    },
+    closePopup() {
+        this.setData({ showPopup: false });
+    },
+    noop() { },
 
     goBack() {
         wx.navigateBack({ delta: 1 });
