@@ -254,9 +254,15 @@ Page({
         const { title, detail, selectedCategory, reward, takeCode, takeName, takeTel, DDL, address, position } = this.data;
         let isValid = true;
 
-        // 检查必填字段
-        if (!title || !detail || !selectedCategory || !reward || !DDL || !address || !position) {
-            isValid = false;
+        // 检查必填字段（二手交易不要求 DDL 和送达地点）
+        if (selectedCategory === '二手交易') {
+            if (!title || !detail || !selectedCategory || !reward || !position) {
+                isValid = false;
+            }
+        } else {
+            if (!title || !detail || !selectedCategory || !reward || !DDL || !address || !position) {
+                isValid = false;
+            }
         }
 
         // 根据任务分类进行额外校验
@@ -269,9 +275,13 @@ Page({
         }
 
         // 简介icon显示条件（除detail和reward外都非空）
-        const summaryFieldsFilled = !!(title && selectedCategory && DDL && address && position && ((selectedCategory === '代拿快递' && takeCode) || (selectedCategory === '代拿外卖' && takeName && takeTel) || (selectedCategory !== '代拿快递' && selectedCategory !== '代拿外卖')));
+        const summaryFieldsFilled = selectedCategory === '二手交易'
+            ? !!(title && selectedCategory && position)
+            : !!(title && selectedCategory && DDL && address && position && ((selectedCategory === '代拿快递' && takeCode) || (selectedCategory === '代拿外卖' && takeName && takeTel) || (selectedCategory !== '代拿快递' && selectedCategory !== '代拿外卖')));
         // 报价icon显示条件（除reward外都非空）
-        const priceFieldsFilled = !!(title && detail && selectedCategory && DDL && address && position && ((selectedCategory === '代拿快递' && takeCode) || (selectedCategory === '代拿外卖' && takeName && takeTel) || (selectedCategory !== '代拿快递' && selectedCategory !== '代拿外卖')));
+        const priceFieldsFilled = selectedCategory === '二手交易'
+            ? !!(title && detail && selectedCategory && position)
+            : !!(title && detail && selectedCategory && DDL && address && position && ((selectedCategory === '代拿快递' && takeCode) || (selectedCategory === '代拿外卖' && takeName && takeTel) || (selectedCategory !== '代拿快递' && selectedCategory !== '代拿外卖')));
         this.setData({
             showPriceSuggestIcon: priceFieldsFilled,
             showSummaryIcon: summaryFieldsFilled,
@@ -354,17 +364,17 @@ Page({
             school_id: schoolId,
             category: selectedCategory,
             position,
-            address,
-            DDL,
+            address: selectedCategory === '二手交易' ? '' : address,
+            DDL: selectedCategory === '二手交易' ? null : DDL,
             title,
             offer,
             detail,
             takeaway_code: takeCode || '',
             takeaway_tel: takeTel || null,
             takeaway_name: takeName || '',
-            publish_method: method,
+            publish_method: selectedCategory === '二手交易' ? 'vip' : method,
             mode: mode,
-            status: method === 'pay' ? -1 : 0
+            status: selectedCategory === '二手交易' ? 0 : (method === 'pay' ? -1 : 0)
         };
 
         try {
@@ -385,6 +395,13 @@ Page({
             }
 
             const taskId = createRes.data.task_id;
+
+            if (selectedCategory === '二手交易') {
+                wx.showToast({ title: '发布成功', icon: 'success' });
+                await requestSubscribe([TMP.DISPATCH, TMP.STATUS, TMP.DONE, TMP.BID]);
+                wx.redirectTo({ url: '/pages/home/home' });
+                return;
+            }
 
             if (mode === 'fixed') {
                 if (method === 'pay') {

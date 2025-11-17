@@ -34,11 +34,15 @@ router.post("/create", authMiddleware, async (req, res) => {
         mode
     } = req.body;
 
-    if (!employer_id || !school_id || !category || !position || !address || !DDL || !title || !offer || !detail || !publish_method || !mode) {
-        return res.status(400).json({
-            success: false,
-            message: "缺少必要参数"
-        });
+    const isSecondHand = category === '二手交易';
+    if (isSecondHand) {
+        if (!employer_id || !school_id || !category || !position || !title || !offer || !detail || !publish_method || !mode) {
+            return res.status(400).json({ success: false, message: "缺少必要参数(二手交易)" });
+        }
+    } else {
+        if (!employer_id || !school_id || !category || !position || !address || !DDL || !title || !offer || !detail || !publish_method || !mode) {
+            return res.status(400).json({ success: false, message: "缺少必要参数" });
+        }
     }
 
     try {
@@ -91,14 +95,17 @@ router.post("/create", authMiddleware, async (req, res) => {
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
+        const ddlValue = isSecondHand ? null : dayjs(DDL).format("YYYY-MM-DD HH:mm:ss");
+        const addrValue = isSecondHand ? '' : address;
+
         const values = [
             employer_id,
             null,
             category,
             status,
             position,
-            address,
-            dayjs(DDL).format("YYYY-MM-DD HH:mm:ss"),
+            addrValue,
+            ddlValue,
             title,
             offer,
             detail,

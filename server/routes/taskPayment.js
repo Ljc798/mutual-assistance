@@ -47,9 +47,9 @@ router.post("/prepay", authMiddleware, async (req, res) => {
         ] = await db.query("SELECT openid FROM users WHERE id = ?", [userId]);
 
         await db.query(
-            `INSERT INTO task_payments (task_id, payer_openid, receiver_id, amount, out_trade_no, status) 
+            `INSERT INTO task_payments (task_id, payer_user_id, receiver_id, amount, out_trade_no, status) 
    VALUES (?, ?, ?, ?, ?, 'pending')`,
-            [task_id, user.openid, userId, commission, out_trade_no]
+            [task_id, userId, null, commission, out_trade_no]
         );
 
         const timestamp = Math.floor(Date.now() / 1000).toString();
@@ -123,9 +123,9 @@ router.post("/prepay-fixed", authMiddleware, async (req, res) => {
         const [[user]] = await db.query("SELECT openid FROM users WHERE id = ?", [userId]);
 
         await db.query(
-            `INSERT INTO task_payments (task_id, payer_openid, receiver_id, amount, out_trade_no, status)
+            `INSERT INTO task_payments (task_id, payer_user_id, receiver_id, amount, out_trade_no, status)
              VALUES (?, ?, ?, ?, ?, 'pending')`,
-            [task_id, user.openid, null, totalFen, out_trade_no]
+            [task_id, userId, null, totalFen, out_trade_no]
         );
 
         const timestamp = Math.floor(Date.now() / 1000).toString();

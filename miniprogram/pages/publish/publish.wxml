@@ -39,8 +39,8 @@
         </view>
     </view>
 
-    <!-- 截止日期 -->
-    <view class="field">
+    <!-- 截止日期（非二手交易显示） -->
+    <view class="field" wx:if="{{selectedCategory !== '二手交易'}}">
         <text class="label">预期完成日期</text>
         <picker mode="date" bindchange="handleDateInput">
             <view class="picker">
@@ -49,7 +49,7 @@
         </picker>
     </view>
 
-    <view class="field">
+    <view class="field" wx:if="{{selectedCategory !== '二手交易'}}">
         <text class="label">选择时间</text>
         <picker mode="time" bindchange="handleTimeInput">
             <view class="picker">
@@ -63,7 +63,8 @@
         <input type="text" placeholder="请输入交易地点/线上交易" bindinput="handlePositionInput" data-key="position" value="{{position}}" />
     </view>
 
-    <view class="field">
+    <!-- 送达地点（非二手交易显示） -->
+    <view class="field" wx:if="{{selectedCategory !== '二手交易'}}">
         <text>送达地点</text>
         <input type="text" placeholder="请输入交付地点/线上交易" bindinput="handleAddressInput" data-key="address" value="{{address}}" />
     </view>
