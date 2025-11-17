@@ -10,6 +10,7 @@ const {
     sendTaskAssignedToEmployee,
     sendOrderStatusNotify
 } = require('../utils/wechat');
+const authMiddleware = require('./authMiddleware');
 
 // ==== 微信支付配置 ====
 const appid = process.env.WX_APPID;
@@ -30,14 +31,14 @@ function generateSignature(method, url, timestamp, nonceStr, body) {
     return sign.sign(privateKey, 'base64');
 }
 
-router.post('/create', async (req, res) => {
+router.post('/create', authMiddleware, async (req, res) => {
     const {
-        openid,
         bid_id,
         description
     } = req.body;
+    const userId = req.user.id;
 
-    if (!openid || !bid_id || !description) {
+    if (!userId || !bid_id || !description) {
         return res.status(400).json({
             success: false,
             message: '参数不完整'
@@ -69,9 +70,9 @@ router.post('/create', async (req, res) => {
         const out_trade_no = `TASK_${task_id}_EMP_${receiver_id}_${Date.now()}`;
 
         await db.query(
-            `INSERT INTO task_payments (task_id, bid_id, payer_openid, receiver_id, out_trade_no, amount, status)
+            `INSERT INTO task_payments (task_id, bid_id, payer_user_id, receiver_id, out_trade_no, amount, status)
              VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
-            [task_id, bid_id, openid, receiver_id, out_trade_no, amount]
+            [task_id, bid_id, userId, receiver_id, out_trade_no, amount]
         );
 
         // 3. 构造微信支付请求
@@ -80,6 +81,8 @@ router.post('/create', async (req, res) => {
         const fullUrl = `https://api.mch.weixin.qq.com${url}`;
         const timestamp = Math.floor(Date.now() / 1000).toString();
         const nonceStr = crypto.randomBytes(16).toString('hex');
+
+        const [[user]] = await db.query('SELECT openid FROM users WHERE id = ?', [userId]);
 
         const body = JSON.stringify({
             appid,
@@ -92,7 +95,7 @@ router.post('/create', async (req, res) => {
                 currency: 'CNY'
             },
             payer: {
-                openid
+                openid: user.openid
             }
         });
 

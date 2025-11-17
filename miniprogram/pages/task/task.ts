@@ -331,12 +331,11 @@ Page({
                     return;
                 }
 
-                const openid = getApp().globalData.userInfo?.openid;
                 wx.request({
                     url: `${BASE_URL}/payment/create`,
                     method: 'POST',
+                    header: { Authorization: `Bearer ${wx.getStorageSync("token")}` },
                     data: {
-                        openid,
                         taskId,
                         bid_id: bidId,
                         receiverId,
