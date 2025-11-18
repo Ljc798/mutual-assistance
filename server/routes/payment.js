@@ -241,7 +241,7 @@ router.post('/notify', express.raw({
                     serviceType: task.title,
                     pickupAddr: task.position,
                     deliveryAddr: task.address,
-                    fee: amount,
+                    fee: basePrice,
                     assignTime: new Date()
                 });
             }
@@ -258,9 +258,19 @@ router.post('/notify', express.raw({
                 );
                 sendToUser(task.employer_id, {
                     type: 'notify',
-                    content: `💰 你已成功支付任务《${task.title}》，等待接单人完成任务～`,
+                    content: `💰 你已成功支付任务《${task.title}》，折后金额¥${(finalCents/100).toFixed(2)}，等待接单人完成任务～`,
                     created_time: new Date().toISOString()
                 });
+
+                // 记录发布折扣台账
+                const [[payer]] = await db.query('SELECT vip_level FROM users WHERE id = ?', [task.employer_id]);
+                const sourceLevel = Number(payer?.vip_level || 0);
+                if (discountCents > 0) {
+                    await db.query(
+                        `INSERT INTO user_benefit_ledger (user_id, task_id, type, amount_cents, source_vip_level, note) VALUES (?, ?, 'publish_discount', ?, ?, ?)`,
+                        [task.employer_id, taskId, discountCents, sourceLevel, `选标支付折扣，订单号 ${outTradeNo}`]
+                    );
+                }
 
                 // 发微信订阅消息给雇主（支付成功通知）
                 const [

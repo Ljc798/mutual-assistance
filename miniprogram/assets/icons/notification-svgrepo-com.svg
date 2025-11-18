@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="-2 0 34 34" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    
+    <title>notification</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+        <linearGradient x1="50%" y1="0%" x2="50%" y2="100%" id="linearGradient-1">
+            <stop stop-color="#FFC923" offset="0%">
+</stop>
+            <stop stop-color="#FFAD41" offset="100%">
+</stop>
+        </linearGradient>
+        <linearGradient x1="50%" y1="0%" x2="50%" y2="100%" id="linearGradient-2">
+            <stop stop-color="#FE9F15" offset="0%">
+</stop>
+            <stop stop-color="#FFB03C" offset="100%">
+</stop>
+        </linearGradient>
+        <linearGradient x1="50%" y1="0%" x2="50%" y2="100%" id="linearGradient-3">
+            <stop stop-color="#FFB637" offset="0%">
+</stop>
+            <stop stop-color="#FFBE2F" offset="100%">
+</stop>
+        </linearGradient>
+        <linearGradient x1="50%" y1="0%" x2="50%" y2="100%" id="linearGradient-4">
+            <stop stop-color="#FFC226" offset="0%">
+</stop>
+            <stop stop-color="#FFE825" offset="100%">
+</stop>
+        </linearGradient>
+        <linearGradient x1="50%" y1="0%" x2="50%" y2="100%" id="linearGradient-5">
+            <stop stop-color="#EB2E2E" offset="0%">
+</stop>
+            <stop stop-color="#D71919" offset="100%">
+</stop>
+        </linearGradient>
+    </defs>
+    <g id="icons" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="ui-gambling-website-lined-icnos-casinoshunter" transform="translate(-1385.000000, -1904.000000)" fill-rule="nonzero">
+            <g id="4" transform="translate(50.000000, 1871.000000)">
+                <g id="notification" transform="translate(1335.000000, 33.000000)">
+                    <path d="M26,24.6895899 L26,14 C26,7.92486775 21.0751322,3 15,3 C8.92486775,3 4,7.92486775 4,14 L4,24.6895899 L6,24.6895899 C8.6862915,24.6895899 11.6862915,24.6895899 15,24.6895899 C18.3137085,24.6895899 21.3137085,24.6895899 24,24.6895899 L26,24.6895899 Z" id="Path" fill="url(#linearGradient-1)">
+</path>
+                    <path d="M26.5,23 C28.4329966,23 30,24.5670034 30,26.5 C30,28.4329966 28.4329966,30 26.5,30 L3.5,30 C1.56700338,30 0,28.4329966 0,26.5 C0,24.5670034 1.56700338,23 3.5,23 L26.5,23 Z" id="Path" fill="url(#linearGradient-2)">
+</path>
+                    <path d="M21,34 C21,30.6862915 18.3137085,28 15,28 C11.6862915,28 9,30.6862915 9,34 L21,34 Z" id="Oval" fill="url(#linearGradient-3)" transform="translate(15.000000, 31.000000) rotate(-180.000000) translate(-15.000000, -31.000000) ">
+</path>
+                    <path d="M17,2.13162821e-14 L13,2.13162821e-14 L11,2.13162821e-14 L11,1.56280256 C11,3.49579918 12.5670034,5.06280256 14.5,5.06280256 L15.5,5.06280256 C17.4329966,5.06280256 19,3.49579918 19,1.56280256 L19,2.13162821e-14 L17,2.13162821e-14 Z" id="Rectangle-Copy-11" fill="url(#linearGradient-4)" transform="translate(15.000000, 2.531401) rotate(-180.000000) translate(-15.000000, -2.531401) ">
+</path>
+                    <path d="M24,3 C21.2385763,3 19,5.23857625 19,8 C19,10.7614237 21.2385763,13 24,13 C26.7614237,13 29,10.7614237 29,8 C29,5.23857625 26.7614237,3 24,3 Z" id="Path" fill="url(#linearGradient-5)">
+</path>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

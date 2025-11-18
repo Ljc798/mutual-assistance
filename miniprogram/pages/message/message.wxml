@@ -6,7 +6,7 @@
     <!-- 系统通知入口 -->
     <view class="system-notification-box" bindtap="goToSystemNotifications">
         <view class="left">
-            <image src="/assets/icons/bell-fill.svg" class="bell-icon" />
+            <image src="/assets/icons/notification-svgrepo-com.svg" class="bell-icon" />
             <view class="text-area">
                 <text class="title">系统通知</text>
                 <text class="preview">{{ latestNotification.content || '暂无新通知' }}</text>

@@ -337,7 +337,7 @@ router.post("/payment-notify", express.raw({
             const discountFen = Math.max(0, baseTotal - finalFen);
             await db.query(
                 `UPDATE tasks SET has_paid = 1, status = 0, pay_amount = ?, discount_amount_cents = ?, final_paid_amount_cents = ?, is_discount_applied = ? WHERE id = ?`,
-                [finalFen / 100, discountFen, finalFen, discountFen > 0 ? 1 : 0, taskId]
+                [parseFloat(task.offer), discountFen, finalFen, discountFen > 0 ? 1 : 0, taskId]
             );
             if (discountFen > 0 && payerId) {
                 await db.query(

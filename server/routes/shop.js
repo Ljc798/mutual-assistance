@@ -193,7 +193,7 @@ router.post('/create-order', authMiddleware, async (req, res) => {
         // 限购检查
         if (item.limit_per_user && Number(item.limit_per_user) > 0) {
             const [[cnt]] = await db.query(
-                `SELECT COUNT(*) AS c FROM shop_orders WHERE user_id = ? AND item_id = ? AND status = 'paid'`,
+                `SELECT COUNT(*) AS c FROM shop_orders WHERE user_id = ? AND item_id = ?`,
                 [userId, item_id]
             );
             if (Number(cnt.c) >= Number(item.limit_per_user)) {
@@ -211,7 +211,7 @@ router.post('/create-order', authMiddleware, async (req, res) => {
         const total_fee = Math.floor(item.price * 100 * discount);
 
         await db.query(
-            `INSERT INTO shop_orders (user_id, item_id, out_trade_no, status) VALUES (?, ?, ?, 'pending')`,
+            `INSERT INTO shop_orders (user_id, item_id, out_trade_no) VALUES (?, ?, ?)`,
             [userId, item_id, out_trade_no]
         );
 
@@ -288,7 +288,7 @@ router.post('/notify', express.raw({ type: '*/*' }), async (req, res) => {
 
         // ✅ 更新订单状态 + 减库存
         await db.query(
-            `UPDATE shop_orders SET status = 'paid', paid_at = NOW(), transaction_id = ? WHERE out_trade_no = ?`,
+            `UPDATE shop_orders SET paid_at = NOW(), transaction_id = ? WHERE out_trade_no = ?`,
             [transactionId, outTradeNo]
         );
         // 库存字段已移除，跳过库存扣减
