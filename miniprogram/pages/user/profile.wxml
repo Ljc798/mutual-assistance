@@ -109,10 +109,20 @@
         <block wx:elif="{{activeTab === 1}}">
             <block wx:for="{{reviews}}" wx:key="id">
                 <view class="review-card">
-                    <text class="review-text">“{{item.comment}}”</text>
-                    <view class="review-meta">
-                        <text class="reviewer">{{item.reviewer_name}}</text>
-                        <rating star-size="24" stars="{{item.rating}}" />
+                    <view class="review-row">
+                        <image class="review-avatar" src="{{item.avatar}}" mode="aspectFill" />
+                        <view class="review-main">
+                            <view class="review-top">
+                                <text class="reviewer">{{item.reviewer_name}}</text>
+                                <view class="stars">
+                                    <block wx:for="{{item.stars}}" wx:key="index">
+                                        <text class="star">{{ item === 'full' ? '★' : (item === 'half' ? '⯪' : '☆') }}</text>
+                                    </block>
+                                </view>
+                            </view>
+                            <view class="review-text">“{{item.comment}}”</view>
+                            <view class="review-time">{{item.created_time}}</view>
+                        </view>
                     </view>
                 </view>
             </block>

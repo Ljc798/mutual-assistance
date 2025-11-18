@@ -46,7 +46,7 @@
                     <text class="action-text">
                         <!-- 文本提示逻辑 -->
                         <block wx:if="{{item.employer_done && item.employee_done}}">
-                            任务已完成 ✅
+                            任务已完成
                         </block>
                         <block wx:elif="{{item.hasConfirmed}}">
                             待对方确认...
@@ -97,8 +97,20 @@
         <view class="modal-content">
             <view class="modal-title">{{reviewReadOnly ? '评价详情' : '发布评价'}}</view>
             <view class="rating-row">
-                <slider min="0" max="10" step="1" value="{{ratingHalf}}" bindchange="onRatingChange" disabled="{{reviewReadOnly}}" />
-                <text class="rating-text">{{ratingLabel}}</text>
+                <view class="stars-input" wx:if="{{!reviewReadOnly}}">
+                    <block wx:for="{{[0,1,2,3,4]}}" wx:key="index">
+                        <view class="star-box">
+                            <view class="star-half left" data-index="{{index}}" data-half="1" bindtap="onStarTap">{{ (index*2) < ratingHalf ? ( (index*2+1) <= ratingHalf ? '★' : '⯪') : '☆' }}</view>
+                            <view class="star-half right" data-index="{{index}}" data-half="2" bindtap="onStarTap"></view>
+                        </view>
+                    </block>
+                </view>
+                <view class="stars-readonly" wx:if="{{reviewReadOnly}}">
+                    <block wx:for="{{[0,1,2,3,4]}}" wx:key="index">
+                        <text class="star">{{ (index*2) < ratingHalf ? ( (index*2+1) <= ratingHalf ? '★' : '⯪') : '☆' }}</text>
+                    </block>
+                </view>
+                <view class="rating-text">{{ratingLabel}}</view>
             </view>
             <textarea class="review-text" placeholder="请输入评价" value="{{reviewText}}" bindinput="onReviewInput" disabled="{{reviewReadOnly}}"></textarea>
             <view class="modal-buttons" wx:if="{{!reviewReadOnly}}">

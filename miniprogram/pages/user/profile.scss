@@ -444,3 +444,20 @@
     opacity: 0.7;
     transition: all 0.1s ease;
 }
+.review-card {
+  background: #fff;
+  margin: 20rpx;
+  padding: 20rpx;
+  border-radius: 16rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.06);
+}
+.review-meta { display: flex; justify-content: space-between; align-items: center; }
+.reviewer { font-weight: 600; color: #333; }
+.stars { display: flex; gap: 6rpx; }
+.star { color: #FFB400; font-size: 28rpx; }
+.review-text { color: #444; font-size: 26rpx; margin-top: 8rpx; }
+.review-time { color: #999; font-size: 22rpx; }
+.review-row { display: flex; gap: 12rpx; align-items: flex-start; }
+.review-avatar { width: 68rpx; height: 68rpx; border-radius: 50%; }
+.review-main { flex: 1; }
+.review-top { display: flex; justify-content: space-between; align-items: center; }

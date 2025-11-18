@@ -3,6 +3,18 @@ const router = express.Router();
 const crypto = require('crypto');
 const axios = require('axios');
 const redis = require('../utils/redis');
+function normalizeLevel(level) {
+  if (level === null || level === undefined) return 0;
+  if (typeof level === 'string') {
+    const s = level.toLowerCase();
+    if (s === 'vip') return 1;
+    if (s === 'svip') return 2;
+    const n = parseInt(s, 10);
+    return Number.isFinite(n) ? n : 0;
+  }
+  const n = Number(level);
+  return Number.isFinite(n) ? n : 0;
+}
 const jwt = require('jsonwebtoken');
 const db = require('../config/db');
 const authMiddleware = require('./authMiddleware');
@@ -100,7 +112,7 @@ router.post("/redeem-point", authMiddleware, async (req, res) => { // 添加了�
         // 限购检查（积分兑换）
         if (item.limit_per_user && Number(item.limit_per_user) > 0) {
             const [[cnt]] = await connection.query(
-                `SELECT COUNT(*) AS c FROM shop_orders WHERE user_id = ? AND item_id = ? AND status IN ('paid','redeemed')`,
+                `SELECT COUNT(*) AS c FROM shop_orders WHERE user_id = ? AND item_id = ?`,
                 [user_id, item_id]
             );
             if (Number(cnt.c) >= Number(item.limit_per_user)) {
@@ -115,7 +127,7 @@ router.post("/redeem-point", authMiddleware, async (req, res) => { // 添加了�
         );
         // 库存字段已移除，跳过库存扣减
         await connection.query(
-            `INSERT INTO shop_orders (user_id, item_id, status) VALUES (?, ?, 'redeemed')`, [user_id, item_id]
+            `INSERT INTO shop_orders (user_id, item_id) VALUES (?, ?)`, [user_id, item_id]
         );
 
         // 特殊逻辑处理（新：通用 effect_type）

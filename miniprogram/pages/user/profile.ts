@@ -1,7 +1,7 @@
 import { BASE_URL } from "../../config/env";
 
 Page({
-    data: {
+  data: {
         userId: null,             // 当前查看的用户 ID
         userInfo: {},             // 用户基本信息
         reputation: {},           // 信誉数据
@@ -15,8 +15,9 @@ Page({
         selectedPostId: null,
         reportReasons: ["骚扰辱骂", "不实信息", "违规广告", "违法内容", "色情低俗", "其他"],
         selectedReasonIndex: -1,
-        reportDetail: '',
-    },
+    reportDetail: '',
+    reviews: [],
+  },
 
     onLoad(options) {
         const app = getApp();
@@ -130,8 +131,7 @@ Page({
             // 切换到帖子
             this.loadUserPosts();
         } else if (index === 1) {
-            // 切换到评价
-            //   this.fetchEvaluations(this.data.userId);
+            this.fetchEvaluations(this.data.userId);
         }
     },
 
@@ -250,4 +250,49 @@ Page({
         });
     },
 
+    fetchEvaluations(userId: number) {
+        const token = wx.getStorageSync('token');
+        wx.request({
+            url: `${BASE_URL}/user/${userId}/reviews`,
+            method: 'GET',
+            header: { Authorization: `Bearer ${token}` },
+            success: (res: any) => {
+                if (res.data?.success) {
+                    const list = (res.data.reviews || []).map((r: any) => ({
+                        id: r.id,
+                        comment: r.comment,
+                        rating: parseFloat(r.rating || 0),
+                        stars: this.makeStars(parseFloat(r.rating || 0)),
+                        reviewer_name: r.reviewer_masked_name,
+                        avatar: r.reviewer_avatar || '',
+                        created_time: this.formatLocal(r.created_time)
+                    }));
+                    this.setData({ reviews: list });
+                }
+            }
+        });
+    },
+
+    makeStars(rating: number) {
+        const half = Math.round((rating || 0) * 2);
+        const full = Math.floor(half / 2);
+        const hasHalf = half % 2 === 1;
+        const arr: string[] = [];
+        for (let i = 0; i < 5; i++) {
+            if (i < full) arr.push('full');
+            else if (i === full && hasHalf) arr.push('half');
+            else arr.push('empty');
+        }
+        return arr;
+    },
+
+    formatLocal(ts: string) {
+        const d = new Date(ts);
+        const y = d.getFullYear();
+        const m = (d.getMonth()+1).toString().padStart(2,'0');
+        const day = d.getDate().toString().padStart(2,'0');
+        const hh = d.getHours().toString().padStart(2,'0');
+        const mm = d.getMinutes().toString().padStart(2,'0');
+        return `${y}-${m}-${day} ${hh}:${mm}`;
+    },
 });

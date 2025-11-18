@@ -127,8 +127,8 @@ Page({
                             statusCode: task.status,
                             status: this.translateStatus(task.status),
                             title: task.title,
-                            salaryNow: (task.status >= 1 ? (task.status === 2 && hasDiscount ? finalPaid : task.pay_amount) : task.offer).toFixed(2),
-                            salaryOriginal: (task.status === 2 && hasDiscount ? originalPaid : 0).toFixed(2),
+                            salaryNow: (task.status >= 1 ? (task.status === 2 && hasDiscount ? finalPaid : task.pay_amount) : task.offer),
+                            salaryOriginal: (task.status === 2 && hasDiscount ? originalPaid : 0),
                             hasDiscount,
                             time: this.formatTime(task.DDL),
                             actionText,
@@ -389,6 +389,16 @@ Page({
 
     onRatingChange(e) {
         const ratingHalf = e.detail.value;
+        const label = this.ratingToLabel(ratingHalf / 2);
+        this.setData({ ratingHalf, ratingLabel: label });
+    },
+
+    onStarTap(e) {
+        const idx = Number(e.currentTarget.dataset.index);
+        const half = Number(e.currentTarget.dataset.half); // 1 左半 → +1；2 右半 → +2
+        let ratingHalf = idx * 2 + half;
+        if (ratingHalf < 0) ratingHalf = 0;
+        if (ratingHalf > 10) ratingHalf = 10;
         const label = this.ratingToLabel(ratingHalf / 2);
         this.setData({ ratingHalf, ratingLabel: label });
     },

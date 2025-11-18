@@ -20,28 +20,6 @@
         </view>
     </view>
 
-    <view class="section-title">用户评价</view>
-    <view class="review-list">
-        <block wx:for="{{reviews}}" wx:key="id">
-            <view class="review-item">
-                <image class="review-avatar" src="{{item.avatar}}" mode="aspectFill" />
-                <view class="review-content">
-                    <view class="review-header">
-                        <text class="review-name">{{item.name}}</text>
-                        <view class="review-stars">
-                            <block wx:for="{{item.stars}}" wx:key="index">
-                                <text class="star">{{item === 'full' ? '★' : (item === 'half' ? '⯪' : '☆')}}</text>
-                            </block>
-                            <text class="review-rating">{{item.rating}}分</text>
-                        </view>
-                    </view>
-                    <view class="review-meta">{{item.time}}</view>
-                    <view class="review-text">{{item.comment}}</view>
-                </view>
-            </view>
-        </block>
-    </view>
-
     <view class="credit-badge" bindtap="goToReputation">
         <image class="star-icon" src="/assets/icons/star-1-svgrepo-com.svg"></image>
         <text class="credit-text">信誉{{reputation.total_score}}分</text>

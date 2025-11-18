@@ -1,7 +1,7 @@
 # 使用 Node.js 官方镜像
 # FROM node:20.18.0
 
-FROM swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/node:20.18.0
+FROM crpi-xytu8km14wdop1p3.cn-shanghai.personal.cr.aliyuncs.com/mutual_campus/node:20.18.0-alpine
 
 
 # 设置工作目录

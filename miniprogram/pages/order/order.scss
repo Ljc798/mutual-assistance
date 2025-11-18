@@ -151,11 +151,14 @@
     color: white;
     padding: 16rpx 24rpx;
     border-radius: 999rpx;
+    white-space: nowrap;
     text-align: center;
 }
 
 .order-action {
     margin-top: 20rpx;
+    display: flex;
+    justify-content: space-between;
 }
 
 .action-text {
@@ -191,6 +194,15 @@
     text-align: center;
     margin-bottom: 20rpx;
 }
+.rating-row { display: flex; flex-direction: column; align-items: center; gap: 12rpx; }
+.stars-input { display: flex; gap: 12rpx; justify-content: center; }
+.stars-readonly { display: flex; gap: 12rpx; justify-content: center; }
+.star-box { position: relative; width: 52rpx; height: 52rpx; display: flex; align-items: center; justify-content: center; }
+.star-half.left, .star-half.right { position: absolute; top: 0; bottom: 0; width: 50%; }
+.star-half.left { left: 0; }
+.star-half.right { right: 0; }
+.star { color: #FFB400; font-size: 40rpx; }
+.rating-text { color: #666; font-size: 28rpx; }
 
 .cancel-textarea {
     height: 200rpx;

@@ -280,7 +280,6 @@ Page({
             url: '/pages/agreements/privacy'
         });
     },
-});
     fetchReviews() {
         const app = getApp();
         const uid = app.globalData?.userInfo?.id;
@@ -319,3 +318,4 @@ Page({
         }
         return arr;
     },
+});
