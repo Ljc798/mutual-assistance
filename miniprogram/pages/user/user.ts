@@ -87,10 +87,14 @@ Page({
         const now = new Date();
         const expire = user.vip_expire_time ? new Date(user.vip_expire_time) : null;
         const isVip = expire && expire > now;
+        const vipLevel = Number(user.vip_level || 0);
+        const isSVIP = isVip && vipLevel === 2;
 
         this.setData({
             userInfo: user,
             isVip,
+            vipLevel,
+            isSVIP,
             vip_expire_time: isVip ? this.formatDate(expire) : ''
         });
     },

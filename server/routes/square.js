@@ -41,11 +41,12 @@ router.get("/posts", async (req, res) => {
         `(SELECT COUNT(*) FROM square_likes WHERE square_id = s.id AND user_id = ${db.escape(user_id)})` :
         `0`;
 
-    const query = `
+        const query = `
         SELECT s.*, 
                u.username, 
                u.avatar_url, 
                u.vip_expire_time,
+               u.vip_level,
                ${likeSubquery} AS isLiked
         FROM square s
         LEFT JOIN users u ON s.user_id = u.id
@@ -305,6 +306,7 @@ router.get("/detail", async (req, res) => {
                    u.username, 
                    u.avatar_url, 
                    u.vip_expire_time,
+                   u.vip_level,
                    (SELECT COUNT(*) FROM square_likes WHERE square_id = s.id AND user_id = ?) AS isLiked
             FROM square s
             LEFT JOIN users u ON s.user_id = u.id
@@ -686,7 +688,7 @@ router.get("/public/:id/posts", async (req, res) => {
         ? `(SELECT COUNT(*) FROM square_likes WHERE square_id = s.id AND user_id = ${db.escape(viewer_id)})`
         : `0`;
 
-    const query = `
+        const query = `
         SELECT 
             s.id, 
             s.content, 
@@ -697,6 +699,7 @@ router.get("/public/:id/posts", async (req, res) => {
             u.username, 
             u.avatar_url, 
             u.vip_expire_time,
+            u.vip_level,
             ${likeSubquery} AS isLiked
         FROM square s
         LEFT JOIN users u ON s.user_id = u.id

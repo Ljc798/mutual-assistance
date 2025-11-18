@@ -44,13 +44,23 @@
         </view>
     </view>
 
-    <view class="vip-card" wx:if="{{isVip}}" bindtap="goToVipPage">
-        <image class="vip-badge" src="/assets/icons/huiyuanVIP.svg" />
-        <view class="vip-info">
-            <text class="vip-label">VIP 用户</text>
-            <text class="vip-expire">到期时间：{{vip_expire_time}}</text>
+    <view wx:if="{{isVip}}" bindtap="goToVipPage">
+        <view class="vip-card" wx:if="{{vipLevel === 1}}">
+            <image class="vip-badge" src="/assets/icons/huiyuanVIP.svg" />
+            <view class="vip-info">
+                <text class="vip-label">VIP 用户</text>
+                <text class="vip-expire">到期时间：{{vip_expire_time}}</text>
+            </view>
+            <button class="vip-renew-btn" size="mini">续 费</button>
         </view>
-        <button class="vip-renew-btn" size="mini">续 费</button>
+        <view class="svip-card" wx:if="{{vipLevel === 2}}">
+            <image class="vip-badge" src="/assets/icons/huiyuanVIP-2.svg" />
+            <view class="vip-info">
+                <text class="svip-label">SVIP 用户</text>
+                <text class="vip-expire">到期时间：{{vip_expire_time}}</text>
+            </view>
+            <button class="svip-renew-btn" size="mini">续 费</button>
+        </view>
     </view>
 
     <!-- 非 VIP 展示普通盒子 -->

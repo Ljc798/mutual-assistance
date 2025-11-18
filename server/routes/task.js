@@ -1001,22 +1001,29 @@ router.post("/:id/confirm-done", authMiddleware, async (req, res) => {
             }
         } else {
             await db.query(`UPDATE tasks SET status = 2, completed_time = NOW() WHERE id = ?`, [taskId]);
-            await db.query(`UPDATE users SET balance = balance + ? WHERE id = ?`, [task.pay_amount, task.employee_id]);
+            const [[emp]] = await db.query(`SELECT vip_expire_time, vip_level FROM users WHERE id = ?`, [task.employee_id]);
+            const active = emp?.vip_expire_time && new Date(emp.vip_expire_time) > new Date();
+            const level = Number(emp?.vip_level || 0);
+            const bonusRate = active ? (level === 2 ? 0.08 : level === 1 ? 0.03 : 0) : 0;
+            const bonus = Math.floor(parseFloat(task.pay_amount) * bonusRate);
+            await db.query(`UPDATE users SET balance = balance + ? WHERE id = ?`, [parseFloat(task.pay_amount) + bonus, task.employee_id]);
 
             await db.query(
                 `INSERT INTO notifications (user_id, type, title, content) VALUES
              (?, 'task', '✅ 任务完成', '你参与的任务《${task.title}》已圆满完成，期待与您的下一次相遇 🎉'),
-             (?, 'task', '💰 打款通知', '任务《${task.title}》已完成，报酬 ¥${task.pay_amount} 已到账你的钱包')`,
+             (?, 'task', '💰 打款通知', '任务《${task.title}》已完成，报酬 ¥${task.pay_amount}${bonus>0?` + 会员加成 ¥${bonus}`:''} 已到账你的钱包')`,
                 [task.employer_id, task.employee_id]
             );
         }
 
         try {
+            const repMul = active ? (level === 2 ? 2.0 : level === 1 ? 1.5 : 1.0) : 1.0;
+            const repGain = Math.floor(2 * repMul);
             await addReputationLog(
                 task.employee_id,
                 "complete_task",
-                2,
-                `完成任务《${task.title}》，信誉+2`
+                repGain,
+                `完成任务《${task.title}》，信誉+${repGain}`
             );
 
             await db.query(
@@ -1036,7 +1043,7 @@ router.post("/:id/confirm-done", authMiddleware, async (req, res) => {
         });
         sendToUser(task.employee_id, {
             type: 'notify',
-            content: `💰 任务《${task.title}》已结单，报酬¥${task.pay_amount}已到账钱包，信誉分+2`,
+            content: `💰 任务《${task.title}》已结单，报酬¥${task.pay_amount}${bonus>0?` + 会员加成 ¥${bonus}`:''}已到账钱包，信誉分+${repGain}`,
             created_time: new Date().toISOString()
         });
 

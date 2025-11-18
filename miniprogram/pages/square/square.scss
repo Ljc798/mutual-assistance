@@ -137,12 +137,16 @@
 }
 
 /* ✨ VIP 用户名样式：渐变 + 动画 */
-.vip-username {
+.svip-username {
     background: linear-gradient(90deg, #FFD700, #FF69B4, #FFD700);
     background-size: 400%;
     color: transparent;
     -webkit-background-clip: text;
     animation: shimmer 5s linear infinite;
+}
+
+.vip-username-red {
+    color: #ff3b30;
 }
 
 /* 🎖️ VIP 徽章样式 */
@@ -152,6 +156,13 @@
     margin-left: 15rpx;
     animation: shine 2s ease-in-out infinite;
     filter: drop-shadow(0 0 6rpx gold);
+}
+
+.svip-badge {
+    width: 70rpx;
+    height: 70rpx;
+    margin-left: 15rpx;
+    filter: drop-shadow(0 0 6rpx #a67c00);
 }
 
 /* ✨ 流光动画 */

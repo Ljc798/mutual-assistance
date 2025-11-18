@@ -72,19 +72,15 @@ router.post("/checkin", authMiddleware, async (req, res) => {
         }
 
         // 判断 VIP
-        const [
-            [user]
-        ] = await conn.query(
-            `SELECT vip_expire_time FROM users WHERE id = ?`,
+        const [[user]] = await conn.query(
+            `SELECT vip_expire_time, vip_level FROM users WHERE id = ?`,
             [user_id]
         );
-
         const now = new Date();
-        const isVip = user && user.vip_expire_time && new Date(user.vip_expire_time) > now;
-        if (isVip) {
-            totalPoints *= 2;
-            console.log(`🎖️ 用户 ${user_id} 是 VIP，积分翻倍：${totalPoints}`);
-        }
+        const isActive = user && user.vip_expire_time && new Date(user.vip_expire_time) > now;
+        const level = Number(user?.vip_level || 0);
+        const multiplier = isActive ? (level === 2 ? 2.0 : level === 1 ? 1.5 : 1.0) : 1.0;
+        totalPoints = Math.floor(totalPoints * multiplier);
 
         // 插入签到记录
         await conn.query(
@@ -103,7 +99,7 @@ router.post("/checkin", authMiddleware, async (req, res) => {
         await conn.commit();
 
         // ✅ 提交后再执行信誉逻辑（避免死锁）
-        const reputationDelta = isVip ? 0.2 : 0.1;
+        const reputationDelta = isActive ? (level === 2 ? 0.2 : level === 1 ? 0.15 : 0.1) : 0.1;
         addReputationLog(
                 user_id,
                 "daily_checkin",
@@ -126,7 +122,7 @@ router.post("/checkin", authMiddleware, async (req, res) => {
             consecutive_days,
             total_days,
             earned_points: totalPoints,
-            is_vip: isVip,
+            is_vip: isActive,
         });
     } catch (err) {
         await conn.rollback();

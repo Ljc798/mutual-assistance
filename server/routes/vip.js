@@ -147,12 +147,12 @@ router.post('/notify', express.raw({
             const userId = parseInt(match[1]);
             const [
                 [order]
-            ] = await db.query(`SELECT plan, user_id, price, days FROM vip_orders o JOIN vip_plans p ON o.plan = p.name WHERE o.out_trade_no = ?`, [outTradeNo]);
+            ] = await db.query(`SELECT plan, user_id, price, days, level FROM vip_orders o JOIN vip_plans p ON o.plan = p.name WHERE o.out_trade_no = ?`, [outTradeNo]);
             const days = order.days;
 
             await db.query(
-                `UPDATE users SET vip_expire_time = IF(vip_expire_time > NOW(), DATE_ADD(vip_expire_time, INTERVAL ? DAY), DATE_ADD(NOW(), INTERVAL ? DAY)) WHERE id = ?`,
-                [days, days, userId]
+                `UPDATE users SET vip_expire_time = IF(vip_expire_time > NOW(), DATE_ADD(vip_expire_time, INTERVAL ? DAY), DATE_ADD(NOW(), INTERVAL ? DAY)), vip_level = ? WHERE id = ?`,
+                [days, days, Number(order.level || 1), userId]
             );
 
             // 🛎️ 发一条 VIP 购买成功通知

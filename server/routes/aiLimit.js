@@ -19,7 +19,14 @@ module.exports = async function aiLimit(req, res, next) {
     // 从数据库查询会员等级
     const [userRows] = await db.query("SELECT vip_level FROM users WHERE id = ?", [userId]);
     const vipLevel = userRows[0]?.vip_level ?? 0;
-    const limit = LIMITS[vipLevel];
+    let limit = LIMITS[vipLevel];
+
+    // 读取永久/每日附加额度（Redis）
+    const dailyBonusStr = await redis.get(`ai_daily_bonus:${userId}`);
+    const dailyBonus = parseInt(dailyBonusStr || '0', 10);
+    if (limit !== -1) {
+      limit = limit + Math.max(0, dailyBonus);
+    }
 
     // 🟢 SVIP无限制
     if (limit === -1) {
@@ -49,10 +56,19 @@ module.exports = async function aiLimit(req, res, next) {
       await redis.expire(redisKey, DAY_SECONDS);
     }
 
+    // 永久额度扣减（如果设置了）
+    const quotaStr = await redis.get(`ai_quota:${userId}`);
+    const quotaRemain = parseInt(quotaStr || '0', 10);
+    if (quotaRemain > 0 && limit !== Infinity) {
+      await redis.decr(`ai_quota:${userId}`);
+    }
+
     // 把当前使用信息挂在 req 上，方便后续接口使用
     req.aiUsageInfo = {
       used: current + 1,
-      limit
+      limit,
+      dailyBonus,
+      quotaRemain: Math.max(0, quotaRemain - (quotaRemain > 0 ? 1 : 0))
     };
 
     next();

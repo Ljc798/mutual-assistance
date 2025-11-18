@@ -40,6 +40,11 @@ router.post("/prepay", authMiddleware, async (req, res) => {
         });
         console.log(privateKey.slice(0, 100));
         const commission = Math.floor(task.offer * 100 * 0.02);
+        const [[uinfo]] = await db.query(`SELECT vip_level, vip_expire_time FROM users WHERE id = ?`, [userId]);
+        const active = uinfo?.vip_expire_time && new Date(uinfo.vip_expire_time) > new Date();
+        const level = Number(uinfo?.vip_level || 0);
+        const discount = active ? (level === 2 ? 0.92 : level === 1 ? 0.97 : 1.0) : 1.0;
+        const commissionAfter = Math.floor(commission * discount);
         const out_trade_no = `TASKFEE_${task_id}_${String(Date.now()).slice(-8)}`;
 
         const [
@@ -49,7 +54,7 @@ router.post("/prepay", authMiddleware, async (req, res) => {
         await db.query(
             `INSERT INTO task_payments (task_id, payer_user_id, receiver_id, amount, out_trade_no, status) 
    VALUES (?, ?, ?, ?, ?, 'pending')`,
-            [task_id, userId, null, commission, out_trade_no]
+            [task_id, userId, null, commissionAfter, out_trade_no]
         );
 
         const timestamp = Math.floor(Date.now() / 1000).toString();
@@ -64,7 +69,7 @@ router.post("/prepay", authMiddleware, async (req, res) => {
             out_trade_no,
             notify_url,
             amount: {
-                total: commission,
+                total: commissionAfter,
                 currency: "CNY"
             },
             payer: {
@@ -117,7 +122,12 @@ router.post("/prepay-fixed", authMiddleware, async (req, res) => {
 
         const offerFen = Math.floor(parseFloat(task.offer) * 100);
         const commissionFen = include_commission ? Math.max(Math.floor(parseFloat(task.offer) * 100 * 0.02), 1) : 0;
-        const totalFen = offerFen + commissionFen;
+        const baseTotal = offerFen + commissionFen;
+        const [[uinfo]] = await db.query(`SELECT vip_level, vip_expire_time FROM users WHERE id = ?`, [userId]);
+        const active = uinfo?.vip_expire_time && new Date(uinfo.vip_expire_time) > new Date();
+        const level = Number(uinfo?.vip_level || 0);
+        const discount = active ? (level === 2 ? 0.92 : level === 1 ? 0.97 : 1.0) : 1.0;
+        const totalFen = Math.floor(baseTotal * discount);
         const out_trade_no = `TASK_${task_id}_FIXED_${String(Date.now()).slice(-8)}`;
 
         const [[user]] = await db.query("SELECT openid FROM users WHERE id = ?", [userId]);
@@ -134,8 +144,8 @@ router.post("/prepay-fixed", authMiddleware, async (req, res) => {
         const fullUrl = `https://api.mch.weixin.qq.com${url}`;
 
         const desc = commissionFen > 0
-            ? `佣金${(commissionFen/100).toFixed(2)}+报酬${(offerFen/100).toFixed(2)}共${(totalFen/100).toFixed(2)}元`
-            : `报酬${(offerFen/100).toFixed(2)}元`;
+            ? `佣金${(commissionFen/100).toFixed(2)}+报酬${(offerFen/100).toFixed(2)}（会员折扣）共${(totalFen/100).toFixed(2)}元`
+            : `报酬${(offerFen/100).toFixed(2)}（会员折扣）`;
 
         const body = JSON.stringify({
             appid,

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
 const axios = require('axios');
+const redis = require('../utils/redis');
 const jwt = require('jsonwebtoken');
 const db = require('../config/db');
 const authMiddleware = require('./authMiddleware');
@@ -29,19 +30,15 @@ function generateSignature(method, url, timestamp, nonceStr, body) {
 router.get("/items", async (req, res) => {
     try {
         const [items] = await db.query(
-            `SELECT id, name, type, cost, description, total, remaining, price, exchange_type 
-             FROM shop_items WHERE available = 1`
+            `SELECT id, name, type, cost, description, price, exchange_type,
+                    level, effect_type, effect_value, duration_days, limit_per_user, sort, icon, available
+             FROM shop_items WHERE available = 1
+             ORDER BY sort ASC, id ASC`
         );
-        res.json({
-            success: true,
-            items
-        });
+        res.json({ success: true, items });
     } catch (err) {
         console.error("❌ 获取商城商品失败:", err);
-        res.status(500).json({
-            success: false,
-            message: "服务器错误"
-        });
+        res.status(500).json({ success: false, message: "服务器错误" });
     }
 });
 
@@ -63,11 +60,7 @@ router.post("/redeem-point", authMiddleware, async (req, res) => { // 添加了�
     try {
         await connection.beginTransaction();
 
-        const [
-            [item]
-        ] = await connection.query(
-            `SELECT * FROM shop_items WHERE id = ? FOR UPDATE`, [item_id]
-        );
+        const [[item]] = await connection.query(`SELECT * FROM shop_items WHERE id = ? FOR UPDATE`, [item_id]);
         if (!item) {
             await connection.rollback();
             return res.status(404).json({
@@ -82,13 +75,7 @@ router.post("/redeem-point", authMiddleware, async (req, res) => { // 添加了�
                 message: "该商品不支持积分兑换"
             });
         }
-        if (item.remaining <= 0) {
-            await connection.rollback();
-            return res.status(400).json({
-                success: false,
-                message: "商品库存不足"
-            });
-        }
+        // 库存字段已移除，跳过库存检查
 
         const [
             [user]
@@ -110,44 +97,67 @@ router.post("/redeem-point", authMiddleware, async (req, res) => { // 添加了�
             });
         }
 
+        // 限购检查（积分兑换）
+        if (item.limit_per_user && Number(item.limit_per_user) > 0) {
+            const [[cnt]] = await connection.query(
+                `SELECT COUNT(*) AS c FROM shop_orders WHERE user_id = ? AND item_id = ? AND status IN ('paid','redeemed')`,
+                [user_id, item_id]
+            );
+            if (Number(cnt.c) >= Number(item.limit_per_user)) {
+                await connection.rollback();
+                return res.status(400).json({ success: false, message: '已达该商品限购次数' });
+            }
+        }
+
         // 执行扣除积分、减少库存、写入订单
         await connection.query(
             `UPDATE users SET points = points - ? WHERE id = ?`, [item.cost, user_id]
         );
+        // 库存字段已移除，跳过库存扣减
         await connection.query(
-            `UPDATE shop_items SET remaining = remaining - 1 WHERE id = ?`, [item_id]
-        );
-        await connection.query(
-            `INSERT INTO shop_orders (user_id, item_id) VALUES (?, ?)`, [user_id, item_id]
+            `INSERT INTO shop_orders (user_id, item_id, status) VALUES (?, ?, 'redeemed')`, [user_id, item_id]
         );
 
-        // 特殊逻辑处理
-        if (item.effect === "remove_ad") {
-            await connection.query(
-                `UPDATE users SET free_counts = free_counts + 1 WHERE id = ?`, [user_id]
-            );
-        } else if (item.effect === "vip") {
+        // 特殊逻辑处理（新：通用 effect_type）
+        const effectType = (item.effect_type || '').toLowerCase();
+        const effectValue = (() => { try { return JSON.parse(item.effect_value || '{}') } catch { return {} } })();
+        const durationDays = Number(item.duration_days || 0);
+        const level = Number(item.level || 0);
+
+        if (effectType === 'vip') {
             const now = new Date();
             const currentExpire = user.vip_expire_time ? new Date(user.vip_expire_time) : now;
             const baseTime = currentExpire > now ? currentExpire : now;
-            const addedDays = item.days || 7;
-            const newExpire = new Date(baseTime.getTime() + addedDays * 24 * 60 * 60 * 1000);
-            const formattedExpire = newExpire.toISOString().slice(0, 19).replace("T", " ");
-
-            await connection.query(
-                `UPDATE users SET vip_expire_time = ? WHERE id = ?`, [formattedExpire, user_id]
-            );
-
-            // 🛎️ 发一条通知
-            await connection.query(
-                `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'shop', ?, ?)`,
-                [
-                    user_id,
-                    '🎁 商品兑换成功',
-                    `你成功兑换了【${item.name}】，请尽快查看兑换记录或等待处理。`
-                ]
-            );
+            const addedDays = durationDays > 0 ? durationDays : (item.days || 7);
+            const newExpire = new Date(baseTime.getTime() + addedDays * 86400000);
+            const formattedExpire = newExpire.toISOString().slice(0, 19).replace('T', ' ');
+            const newLevel = Math.max(Number(user.vip_level || 0), level);
+            await connection.query(`UPDATE users SET vip_expire_time = ?, vip_level = ? WHERE id = ?`, [formattedExpire, newLevel, user_id]);
+        } else if (effectType === 'ai_quota') {
+            const inc = Number(effectValue.amount || 0);
+            const field = String(effectValue.field || 'ai_quota');
+            if (inc > 0) {
+                if (field === 'ai_quota') {
+                    await redis.incrby(`ai_quota:${user_id}`, inc);
+                } else if (field === 'ai_daily_quota') {
+                    await redis.incrby(`ai_daily_bonus:${user_id}`, inc);
+                }
+            }
+        } else if (effectType === 'ai_boost') {
+            const days = durationDays > 0 ? durationDays : Number(effectValue.days || 1);
+            await connection.query(`UPDATE users SET ai_speed_boost_expire_time = IF(ai_speed_boost_expire_time > NOW(), DATE_ADD(ai_speed_boost_expire_time, INTERVAL ? DAY), DATE_ADD(NOW(), INTERVAL ? DAY)) WHERE id = ?`, [days, days, user_id]);
+        } else if (effectType === 'deposit_free_once') {
+            const times = Number(effectValue.times || 1);
+            await connection.query(`UPDATE users SET deposit_free_times = deposit_free_times + ? WHERE id = ?`, [times, user_id]);
+        } else if (effectType === 'remove_ad') {
+            await connection.query(`UPDATE users SET free_counts = free_counts + 1 WHERE id = ?`, [user_id]);
         }
+
+        // 通用通知
+        await connection.query(
+            `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'shop', ?, ?)`,
+            [ user_id, '🎁 商品兑换成功', `你成功兑换了【${item.name}】，权益已生效或已加入账户。` ]
+        );
 
         await connection.commit();
         res.json({
@@ -180,11 +190,25 @@ router.post('/create-order', authMiddleware, async (req, res) => {
             return res.status(400).json({ success: false, message: '该商品不支持支付购买' });
         }
 
+        // 限购检查
+        if (item.limit_per_user && Number(item.limit_per_user) > 0) {
+            const [[cnt]] = await db.query(
+                `SELECT COUNT(*) AS c FROM shop_orders WHERE user_id = ? AND item_id = ? AND status = 'paid'`,
+                [userId, item_id]
+            );
+            if (Number(cnt.c) >= Number(item.limit_per_user)) {
+                return res.status(400).json({ success: false, message: '已达该商品限购次数' });
+            }
+        }
+
         const [[user]] = await db.query(`SELECT openid FROM users WHERE id = ?`, [userId]);
         if (!user) return res.status(400).json({ success: false, message: '用户不存在' });
 
-        const out_trade_no = `SHOP_${userId}_${item_id}_${Date.now()}`;
-        const total_fee = Math.round(item.price * 100); // 单位：分
+        const out_trade_no = `SHOP_${userId}_${item_id}_${String(Date.now()).slice(-8)}`;
+        const [[userInfo]] = await db.query(`SELECT vip_level FROM users WHERE id = ?`, [userId]);
+        const level = Number(userInfo?.vip_level || 0);
+        const discount = level === 2 ? 0.90 : level === 1 ? 0.95 : 1.0;
+        const total_fee = Math.floor(item.price * 100 * discount);
 
         await db.query(
             `INSERT INTO shop_orders (user_id, item_id, out_trade_no, status) VALUES (?, ?, ?, 'pending')`,
@@ -230,13 +254,9 @@ router.post('/create-order', authMiddleware, async (req, res) => {
 
         res.json({
             success: true,
-            paymentParams: {
-                timeStamp: timestamp,
-                nonceStr: payNonceStr,
-                package: pkg,
-                signType: "RSA",
-                paySign
-            }
+            discount_rate: discount,
+            final_total: total_fee,
+            paymentParams: { timeStamp: timestamp, nonceStr: payNonceStr, package: pkg, signType: "RSA", paySign }
         });
 
     } catch (err) {
@@ -271,19 +291,39 @@ router.post('/notify', express.raw({ type: '*/*' }), async (req, res) => {
             `UPDATE shop_orders SET status = 'paid', paid_at = NOW(), transaction_id = ? WHERE out_trade_no = ?`,
             [transactionId, outTradeNo]
         );
-        await db.query(`UPDATE shop_items SET remaining = remaining - 1 WHERE id = ?`, [item.id]);
+        // 库存字段已移除，跳过库存扣减
 
-        // ✅ 执行虚拟效果逻辑
-        if (item.effect === "vip") {
-            const [[user]] = await db.query(`SELECT vip_expire_time FROM users WHERE id = ?`, [userId]);
+        // ✅ 执行虚拟效果逻辑（通用 effect_type）
+        const effectType = (item.effect_type || '').toLowerCase();
+        const effectValue = (() => { try { return JSON.parse(item.effect_value || '{}') } catch { return {} } })();
+        const durationDays = Number(item.duration_days || 0);
+        const level = Number(item.level || 0);
+
+        if (effectType === 'vip') {
+            const [[user]] = await db.query(`SELECT vip_expire_time, vip_level FROM users WHERE id = ?`, [userId]);
             const now = new Date();
-            const base = user.vip_expire_time && new Date(user.vip_expire_time) > now
-                ? new Date(user.vip_expire_time)
-                : now;
-            const newExpire = new Date(base.getTime() + (item.days || 7) * 86400 * 1000);
-            const formatted = newExpire.toISOString().slice(0, 19).replace("T", " ");
-            await db.query(`UPDATE users SET vip_expire_time = ? WHERE id = ?`, [formatted, userId]);
-        } else if (item.effect === "remove_ad") {
+            const base = user.vip_expire_time && new Date(user.vip_expire_time) > now ? new Date(user.vip_expire_time) : now;
+            const newExpire = new Date(base.getTime() + (durationDays || 7) * 86400000);
+            const formatted = newExpire.toISOString().slice(0, 19).replace('T', ' ');
+            const newLevel = Math.max(Number(user.vip_level || 0), level);
+            await db.query(`UPDATE users SET vip_expire_time = ?, vip_level = ? WHERE id = ?`, [formatted, newLevel, userId]);
+        } else if (effectType === 'ai_quota') {
+            const inc = Number(effectValue.amount || 0);
+            const field = String(effectValue.field || 'ai_quota');
+            if (inc > 0) {
+                if (field === 'ai_quota') {
+                    await redis.incrby(`ai_quota:${userId}`, inc);
+                } else if (field === 'ai_daily_quota') {
+                    await redis.incrby(`ai_daily_bonus:${userId}`, inc);
+                }
+            }
+        } else if (effectType === 'ai_boost') {
+            const days = durationDays > 0 ? durationDays : Number(effectValue.days || 1);
+            await db.query(`UPDATE users SET ai_speed_boost_expire_time = IF(ai_speed_boost_expire_time > NOW(), DATE_ADD(ai_speed_boost_expire_time, INTERVAL ? DAY), DATE_ADD(NOW(), INTERVAL ? DAY)) WHERE id = ?`, [days, days, userId]);
+        } else if (effectType === 'deposit_free_once') {
+            const times = Number(effectValue.times || 1);
+            await db.query(`UPDATE users SET deposit_free_times = deposit_free_times + ? WHERE id = ?`, [times, userId]);
+        } else if (effectType === 'remove_ad') {
             await db.query(`UPDATE users SET free_counts = free_counts + 1 WHERE id = ?`, [userId]);
         }
 

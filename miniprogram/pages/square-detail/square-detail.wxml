@@ -5,8 +5,9 @@
         <image class="back-btn" src="/assets/icons/fanhui.svg" bindtap="goBack" />
         <image class="user-avatar" src="{{post.avatar_url}}" mode="aspectFill"  catchtap="goToProfile" data-userid="{{post.user_id}}"/>
         <view class="username-area">
-            <text class="username {{post.isVip ? 'vip-username' : ''}}" catchtap="goToProfile" data-userid="{{post.user_id}}">{{post.username}}</text>
-            <image wx:if="{{post.isVip}}" src="/assets/icons/vip-2.svg" class="vip-badge" />
+            <text class="username {{post.isSVIP ? 'svip-username' : (post.isVIP ? 'vip-username-red' : '')}}" catchtap="goToProfile" data-userid="{{post.user_id}}">{{post.username}}</text>
+            <image wx:if="{{post.isVIP}}" src="/assets/icons/vip-2.svg" class="vip-badge" />
+            <image wx:if="{{post.isSVIP}}" src="/assets/icons/huiyuanVIP-2.svg" class="vip-badge svip" />
         </view>
     </view>
 

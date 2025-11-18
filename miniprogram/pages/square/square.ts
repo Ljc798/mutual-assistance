@@ -185,8 +185,7 @@ Page({
             success: (res: any) => {
                 if (res.data.success) {
                     let newPosts = res.data.posts || [];
-                    const isVip = (vipTime) =>
-                        vipTime && new Date(vipTime).getTime() > Date.now();
+                    const isVipActive = (vipTime) => vipTime && new Date(vipTime).getTime() > Date.now();
 
                     newPosts = newPosts.map(post => {
                         const approvedImages = (post.images || []).filter(img => img.status === "pass");
@@ -194,12 +193,18 @@ Page({
                             url: img.url,
                             status: img.status || "checking"
                         }));
+                        const level = Number(post.vip_level || 0);
+                        const active = isVipActive(post.vip_expire_time);
+                        const isSVIP = active && level === 2;
+                        const isVIP = active && level === 1;
                         return {
                             ...post,
                             images: reviewedImages,
                             approvedImages,
                             isLiked: post.isLiked || false,
-                            isVip: isVip(post.vip_expire_time),
+                            isVip: isVIP || isSVIP,
+                            isSVIP,
+                            isVIP,
                             created_time: this.formatTime(post.created_time)
                         };
                     });

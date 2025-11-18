@@ -11,7 +11,7 @@
                 <view class="item-info">
                     <view class="item-name">{{item.name}}</view>
                     <view class="item-desc">{{item.description}}</view>
-                    <view class="item-meta">剩余：{{item.remaining}} / {{item.total}}</view>
+                    <view class="item-meta">{{item.available ? '上架' : '下架'}} · 每人限购：{{item.limit_per_user || '不限'}}次</view>
                     <view class="item-price">
                         <block wx:if="{{item.exchange_type == 'point'}}">
                             所需积分：<text class="highlight">{{item.cost}}</text>

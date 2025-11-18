@@ -234,6 +234,32 @@
     box-shadow: 0 6rpx 10rpx rgba(246, 177, 0, 0.2);
 }
 
+.svip-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(to right, #1c1c1c, #2e2e2e);
+    border: 2rpx solid #1c1c1c;
+    border-radius: 20rpx;
+    margin: 30rpx 20rpx 0;
+    padding: 24rpx 32rpx;
+    box-shadow: 0 6rpx 10rpx rgba(26, 26, 26, 0.3);
+}
+
+.svip-label {
+    font-size: 30rpx;
+    font-weight: bold;
+    color: #ffd15a;
+}
+
+.svip-renew-btn {
+    background-color: #ffd15a;
+    color: #1c1c1c;
+    font-size: 24rpx;
+    padding: 10rpx 24rpx;
+    border-radius: 32rpx;
+}
+
 .vip-badge {
     width: 64rpx;
     height: 64rpx;
