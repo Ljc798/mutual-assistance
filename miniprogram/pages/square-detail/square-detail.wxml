@@ -117,7 +117,7 @@
                     <image class="comment-avatar" src="{{item.avatar_url}}" mode="aspectFill"  catchtap="goToProfile" data-userid="{{item.user_id}}"/>
                     <view class="comment-content">
                         <view class="comment-main">
-                            <text class="comment-username {{item.isVip ? 'vip-username' : ''}}" catchtap="goToProfile" data-userid="{{item.user_id}}">{{item.username}}</text>
+                            <text class="comment-username {{item.isSVIP ? 'svip-username' : (item.isVIP ? 'vip-username-red' : '')}}" catchtap="goToProfile" data-userid="{{item.user_id}}">{{item.username}}</text>
                             <text class="comment-text">{{item.content}}</text>
                             <view class="comment-row">
                                 <text class="comment-time">{{item.created_time}}</text>
@@ -140,7 +140,7 @@
                                 <view class="sub-comment-content">
                                     <view class="comment-main">
                                         <view class="comment-header">
-                                            <text class="comment-username {{item.isVip ? 'vip-username' : ''}}" catchtap="goToProfile" data-userid="{{item.user_id}}">{{item.username}} 回复 {{item.reply_to_username}}</text>
+                                            <text class="comment-username {{item.isSVIP ? 'svip-username' : (item.isVIP ? 'vip-username-red' : '')}}" catchtap="goToProfile" data-userid="{{item.user_id}}">{{item.username}} 回复 {{item.reply_to_username}}</text>
                                         </view>
                                         <text class="comment-text">{{item.content}}</text>
                                         <view class="comment-row">

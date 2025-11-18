@@ -211,7 +211,13 @@ Component({
                 });
             });
 
-            const { remaining, limit } = res.data;
+            let { remaining, limit } = res.data as any;
+            if (typeof remaining === 'string') {
+                remaining = remaining === '无限' ? -1 : 0;
+            }
+            if (limit === null || limit === undefined) {
+                limit = -1;
+            }
             this.setData({ remaining, limit });
         },
     }

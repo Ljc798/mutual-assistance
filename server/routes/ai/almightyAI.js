@@ -96,9 +96,10 @@ router.get("/usage", authMiddleware, aiLimitCheckOnly, async (req, res) => {
         limit,
         used
     } = req.aiUsageInfo;
+    const unlimited = limit === Infinity;
     res.json({
-        remaining: limit === Infinity ? "无限" : Math.max(limit - used, 0),
-        limit,
+        remaining: unlimited ? -1 : Math.max(limit - used, 0),
+        limit: unlimited ? -1 : limit,
     });
 });
 

@@ -372,8 +372,10 @@ router.get("/comments", async (req, res) => {
                 u.username, 
                 u.avatar_url,
                 u.vip_expire_time,
+                u.vip_level,
                 COALESCE(pu.username, '') AS reply_to_username, 
                 pu.vip_expire_time AS reply_to_vip_expire_time,
+                pu.vip_level AS reply_to_vip_level,
                 (SELECT COUNT(*) FROM comment_likes WHERE comment_id = c.id AND user_id = ?) AS isLiked
              FROM square_comments c 
              LEFT JOIN users u ON c.user_id = u.id 

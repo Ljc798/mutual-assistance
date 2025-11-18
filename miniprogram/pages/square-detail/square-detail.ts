@@ -168,20 +168,28 @@ Page({
             success: (res: any) => {
                 if (res.data.success) {
                     const comments = res.data.comments.map(comment => {
-                        const isVip = comment.vip_expire_time && new Date(comment.vip_expire_time).getTime() > Date.now();
+                        const active = comment.vip_expire_time && new Date(comment.vip_expire_time).getTime() > Date.now();
+                        const level = Number(comment.vip_level || 0);
+                        const isSVIP = active && level === 2;
+                        const isVIP = active && level === 1;
 
                         comment = {
                             ...comment,
-                            isVip,
+                            isSVIP,
+                            isVIP,
                             created_time: this.formatTime2(comment.created_time),
-                            children: comment.children?.map(child => {
-                                const isVip = child.vip_expire_time && new Date(child.vip_expire_time).getTime() > Date.now();
+                            children: (comment.children || []).map(child => {
+                                const cActive = child.vip_expire_time && new Date(child.vip_expire_time).getTime() > Date.now();
+                                const cLevel = Number(child.vip_level || 0);
+                                const cIsSVIP = cActive && cLevel === 2;
+                                const cIsVIP = cActive && cLevel === 1;
                                 return {
                                     ...child,
-                                    isVip,
+                                    isSVIP: cIsSVIP,
+                                    isVIP: cIsVIP,
                                     created_time: this.formatTime2(child.created_time)
                                 };
-                            }) || []
+                            })
                         };
 
                         return comment;

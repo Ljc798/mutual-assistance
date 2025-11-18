@@ -335,10 +335,16 @@ Page({
             const commission = this.calculateCommissionInFen(offer);
             const offerFen = Math.floor(offer * 100);
             const totalFen = offerFen + commission;
+            const level = Number(app.globalData?.userInfo?.vip_level || 0);
+            const discount = level === 2 ? 0.92 : level === 1 ? 0.97 : 1.0;
+            const memberTotalFen = Math.floor(totalFen * discount);
+            const discountLabel = level === 2 ? 'SVIP 92折' : level === 1 ? 'VIP 97折' : '';
             this.setData({
                 commissionAmount: (commission / 100).toFixed(2),
                 offerAmount: (offerFen / 100).toFixed(2),
                 totalAmount: (totalFen / 100).toFixed(2),
+                memberTotalAmount: (memberTotalFen / 100).toFixed(2),
+                discountLabel,
                 showCommissionPopup: true,
             });
         } catch (e) {

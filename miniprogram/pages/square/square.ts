@@ -115,7 +115,12 @@ Page({
                     }
 
                     if (is_vip) {
-                        content += "\n（VIP双倍积分）";
+                        const level = Number(getApp().globalData?.userInfo?.vip_level || 0);
+                        if (level === 2) {
+                            content += "\n（SVIP 2倍积分）";
+                        } else if (level === 1) {
+                            content += "\n（VIP 1.5倍积分）";
+                        }
                     }
 
                     wx.showModal({

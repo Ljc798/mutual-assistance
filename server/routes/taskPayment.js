@@ -328,13 +328,26 @@ router.post("/payment-notify", express.raw({
             taskId = parseInt(match[1]);
             const [[task]] = await db.query(`SELECT title, employer_id, offer FROM tasks WHERE id = ?`, [taskId]);
             if (!task) throw new Error(`找不到任务记录 task_id: ${taskId}`);
+            const [[payRow]] = await db.query(`SELECT amount, payer_user_id FROM task_payments WHERE out_trade_no = ?`, [outTradeNo]);
+            const finalFen = Number(payRow?.amount || 0);
+            const payerId = payRow?.payer_user_id;
+            const offerFen = Math.floor(parseFloat(task.offer) * 100);
+            const commissionFen = Math.max(Math.floor(parseFloat(task.offer) * 100 * 0.02), 1);
+            const baseTotal = finalFen <= offerFen ? offerFen : (offerFen + commissionFen);
+            const discountFen = Math.max(0, baseTotal - finalFen);
             await db.query(
-                `UPDATE tasks SET has_paid = 1, status = 0, pay_amount = ? WHERE id = ?`,
-                [parseFloat(task.offer), taskId]
+                `UPDATE tasks SET has_paid = 1, status = 0, pay_amount = ?, discount_amount_cents = ?, final_paid_amount_cents = ?, is_discount_applied = ? WHERE id = ?`,
+                [finalFen / 100, discountFen, finalFen, discountFen > 0 ? 1 : 0, taskId]
             );
+            if (discountFen > 0 && payerId) {
+                await db.query(
+                    `INSERT INTO user_benefit_ledger (user_id, task_id, type, amount_cents, source_vip_level, note) VALUES (?, ?, 'publish_discount', ?, (SELECT vip_level FROM users WHERE id = ?), ?)`,
+                    [payerId, taskId, discountFen, payerId, `发布折扣，订单号 ${outTradeNo}`]
+                );
+            }
             await db.query(
                 `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
-                [task.employer_id, '💰 支付成功', `你已成功支付任务《${task.title}》，等待接单人完成任务～`]
+                [task.employer_id, '💰 支付成功', `你已成功支付任务《${task.title}》，折后金额¥${(finalFen/100).toFixed(2)}，等待接单人完成任务～`]
             );
         } else if (/^TASK_\d+_SECOND_\d+$/.test(outTradeNo)) {
             const match = outTradeNo.match(/^TASK_(\d+)_SECOND_/);

@@ -145,6 +145,9 @@
             </view>
             <view class="popup-option" wx:if="{{mode === 'fixed'}}" bindtap="choosePublishMethod" data-method="pay">
                 💰 支付佣金（¥{{commissionAmount}}）+报酬（¥{{offerAmount}}）共¥{{totalAmount}}
+                <block wx:if="{{memberTotalAmount}}">
+                    <view class="member-line">会员价：¥{{memberTotalAmount}}（{{discountLabel}}）</view>
+                </block>
             </view>
             <view class="popup-option" wx:if="{{mode === 'bidding'}}" bindtap="choosePublishMethod" data-method="pay">
                 💰 支付佣金 ¥{{commissionAmount}}
