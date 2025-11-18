@@ -251,11 +251,17 @@ router.get("/my", authMiddleware, async (req, res) => {
     try {
         let baseSQL = `
         SELECT 
-          id, employer_id, employee_id, status, title, offer, DDL, employer_done, employee_done, pay_amount, category, mode, has_paid,
-          discount_amount_cents, final_paid_amount_cents, is_discount_applied,
-          EXISTS(SELECT 1 FROM task_reviews r WHERE r.task_id = tasks.id AND r.reviewer_id = ?) AS has_review
-        FROM tasks
-        WHERE (employer_id = ? OR employee_id = ?)
+          t.id, t.employer_id, t.employee_id, t.status, t.title, t.offer, t.DDL, t.employer_done, t.employee_done, t.pay_amount, t.category, t.mode, t.has_paid,
+          t.discount_amount_cents, t.final_paid_amount_cents, t.is_discount_applied,
+          CASE 
+            WHEN t.status = 2 AND emp.vip_level = 2 AND emp.vip_expire_time > NOW() THEN FLOOR(t.pay_amount * 100 * 0.08)
+            WHEN t.status = 2 AND emp.vip_level = 1 AND emp.vip_expire_time > NOW() THEN FLOOR(t.pay_amount * 100 * 0.03)
+            ELSE 0
+          END AS employee_bonus_cents,
+          EXISTS(SELECT 1 FROM task_reviews r WHERE r.task_id = t.id AND r.reviewer_id = ?) AS has_review
+        FROM tasks t
+        LEFT JOIN users emp ON emp.id = t.employee_id
+        WHERE (t.employer_id = ? OR t.employee_id = ?)
       `;
         const params = [userId, userId, userId];
 
@@ -1008,19 +1014,20 @@ router.post("/:id/confirm-done", authMiddleware, async (req, res) => {
             const active = emp?.vip_expire_time && new Date(emp.vip_expire_time) > new Date();
             const level = Number(emp?.vip_level || 0);
             const bonusRate = active ? (level === 2 ? 0.08 : level === 1 ? 0.03 : 0) : 0;
-            const bonus = Math.floor(parseFloat(task.pay_amount) * bonusRate);
-            await db.query(`UPDATE users SET balance = balance + ? WHERE id = ?`, [parseFloat(task.pay_amount) + bonus, task.employee_id]);
-            if (bonus > 0) {
+            const payCents = Math.round(parseFloat(task.pay_amount) * 100);
+            const bonusCents = Math.floor(payCents * bonusRate);
+            await db.query(`UPDATE users SET balance = balance + ? WHERE id = ?`, [(payCents + bonusCents) / 100, task.employee_id]);
+            if (bonusCents > 0) {
                 await db.query(
                     `INSERT INTO user_benefit_ledger (user_id, task_id, type, amount_cents, source_vip_level, note) VALUES (?, ?, 'bonus', ?, (SELECT vip_level FROM users WHERE id = ?), ?)`,
-                    [task.employee_id, taskId, Math.floor(bonus * 100), task.employee_id, `任务完成会员加成，任务#${taskId}`]
+                    [task.employee_id, taskId, bonusCents, task.employee_id, `任务完成会员加成，任务#${taskId}`]
                 );
             }
 
             await db.query(
                 `INSERT INTO notifications (user_id, type, title, content) VALUES
              (?, 'task', '✅ 任务完成', '你参与的任务《${task.title}》已圆满完成，期待与您的下一次相遇 🎉'),
-             (?, 'task', '💰 打款通知', '任务《${task.title}》已完成，报酬 ¥${task.pay_amount}${bonus>0?` + 会员加成 ¥${bonus}`:''} 已到账你的钱包')`,
+             (?, 'task', '💰 打款通知', '任务《${task.title}》已完成，报酬 ¥${task.pay_amount}${bonusCents>0?` + 会员加成 ¥${(bonusCents/100)}`:''} 已到账你的钱包')`,
                 [task.employer_id, task.employee_id]
             );
         }
@@ -1053,7 +1060,8 @@ router.post("/:id/confirm-done", authMiddleware, async (req, res) => {
             const actNote = empNote?.vip_expire_time && new Date(empNote.vip_expire_time) > new Date();
             const lvlNote = Number(empNote?.vip_level || 0);
             const rateNote = actNote ? (lvlNote === 2 ? 0.08 : lvlNote === 1 ? 0.03 : 0) : 0;
-            bonusNote = Math.floor(parseFloat(task.pay_amount) * rateNote);
+            const payCentsNote = Math.round(parseFloat(task.pay_amount) * 100);
+            bonusNote = Math.floor(payCentsNote * rateNote) / 100;
             const repMulNote = actNote ? (lvlNote === 2 ? 2.0 : lvlNote === 1 ? 1.5 : 1.0) : 1.0;
             repGainNote = Math.floor(2 * repMulNote);
         } catch {}
@@ -1150,6 +1158,22 @@ router.post("/:id/accept", authMiddleware, async (req, res) => {
         return res.json({ success: true, message: "接单成功" });
     } catch (err) {
         console.error("❌ 接单失败:", err);
+        return res.status(500).json({ success: false, message: "服务器错误" });
+    }
+});
+
+router.post("/:id/mark-unpaid", authMiddleware, async (req, res) => {
+    const taskId = parseInt(req.params.id);
+    const userId = req.user.id;
+    if (isNaN(taskId)) return res.status(400).json({ success: false, message: "任务ID非法" });
+    try {
+        const [[task]] = await db.query("SELECT id, employer_id FROM tasks WHERE id = ?", [taskId]);
+        if (!task) return res.status(404).json({ success: false, message: "任务不存在" });
+        if (task.employer_id !== userId) return res.status(403).json({ success: false, message: "仅雇主可标记未支付" });
+        await db.query("UPDATE tasks SET status = -1 WHERE id = ?", [taskId]);
+        return res.json({ success: true });
+    } catch (err) {
+        console.error("❌ 标记未支付失败:", err);
         return res.status(500).json({ success: false, message: "服务器错误" });
     }
 });

@@ -4,6 +4,7 @@ const http = require("http");
 const WebSocket = require("ws");
 const dayjs = require("dayjs");
 require('./routes/classReminder').start();
+require('./routes/vipCron').start();
 
 const taskRouter = require("./routes/task");
 const userRouter = require("./routes/user");

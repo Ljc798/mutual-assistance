@@ -121,15 +121,17 @@ Page({
                         const finalPaid = (task.final_paid_amount_cents || 0) / 100;
                         const originalPaid = ((task.final_paid_amount_cents || 0) + (task.discount_amount_cents || 0)) / 100;
                         const hasDiscount = !!task.is_discount_applied && finalPaid > 0 && originalPaid > 0;
+                        const bonus = (task.employee_bonus_cents || 0) / 100;
 
                         return {
                             orderId: task.id,
                             statusCode: task.status,
                             status: this.translateStatus(task.status),
                             title: task.title,
-                            salaryNow: (task.status >= 1 ? (task.status === 2 && hasDiscount ? finalPaid : task.pay_amount) : task.offer),
-                            salaryOriginal: (task.status === 2 && hasDiscount ? originalPaid : 0),
+                            salaryNow: (task.status >= 1 ? (task.status === 2 ? (role === 'employee' ? (task.pay_amount + bonus) : (hasDiscount ? finalPaid : task.pay_amount)) : task.pay_amount) : task.offer),
+                            salaryOriginal: (task.status === 2 ? (role === 'employee' ? task.pay_amount : (hasDiscount ? originalPaid : 0)) : 0),
                             hasDiscount,
+                            hasBonus: role === 'employee' && task.status === 2 && bonus > 0,
                             time: this.formatTime(task.DDL),
                             actionText,
                             showDoneButton,

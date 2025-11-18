@@ -16,10 +16,15 @@ module.exports = async function aiLimit(req, res, next) {
       return res.status(401).json({ error: "未登录用户无法使用AI服务" });
     }
 
-    // 从数据库查询会员等级
-    const [userRows] = await db.query("SELECT vip_level FROM users WHERE id = ?", [userId]);
-    const vipLevel = userRows[0]?.vip_level ?? 0;
-    let limit = LIMITS[vipLevel];
+    // 从数据库查询会员等级与到期
+    const [userRows] = await db.query("SELECT vip_level, vip_expire_time, svip_expire_time FROM users WHERE id = ?", [userId]);
+    const row = userRows[0] || {};
+    const now = new Date();
+    const vipActive = row.vip_expire_time && new Date(row.vip_expire_time) > now;
+    const svipActive = row.svip_expire_time && new Date(row.svip_expire_time) > now;
+    const baseLevel = Number(row.vip_level || 0);
+    const effectiveLevel = svipActive ? 2 : (vipActive ? baseLevel : 0);
+    let limit = LIMITS[effectiveLevel];
 
     // 读取永久/每日附加额度（Redis）
     const dailyBonusStr = await redis.get(`ai_daily_bonus:${userId}`);
@@ -38,11 +43,13 @@ module.exports = async function aiLimit(req, res, next) {
     const today = new Date().toISOString().split("T")[0];
     const redisKey = `ai_usage:${userId}:${today}`;
 
-    // 获取当前次数
+    // 获取当前次数与永久额度
     const current = parseInt(await redis.get(redisKey) || "0", 10);
+    const quotaStr = await redis.get(`ai_quota:${userId}`);
+    const quotaRemain = parseInt(quotaStr || '0', 10);
 
     // 判断是否超限
-    if (current >= limit) {
+    if (current >= limit && quotaRemain <= 0) {
       return res.status(429).json({
         error: `今日AI对话次数已达上限（${limit} 次），请明日再试或升级会员`,
         limit,
@@ -57,8 +64,6 @@ module.exports = async function aiLimit(req, res, next) {
     }
 
     // 永久额度扣减（如果设置了）
-    const quotaStr = await redis.get(`ai_quota:${userId}`);
-    const quotaRemain = parseInt(quotaStr || '0', 10);
     if (quotaRemain > 0 && limit !== Infinity) {
       await redis.decr(`ai_quota:${userId}`);
     }

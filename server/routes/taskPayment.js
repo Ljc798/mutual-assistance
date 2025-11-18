@@ -344,6 +344,13 @@ router.post("/payment-notify", express.raw({
                     `INSERT INTO user_benefit_ledger (user_id, task_id, type, amount_cents, source_vip_level, note) VALUES (?, ?, 'publish_discount', ?, (SELECT vip_level FROM users WHERE id = ?), ?)`,
                     [payerId, taskId, discountFen, payerId, `发布折扣，订单号 ${outTradeNo}`]
                 );
+                const d = new Date();
+                const monthStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+                await db.query(
+                    `INSERT INTO user_discount_limits (user_id, month, monthly_limit_cents, used_cents) VALUES (?, ?, 0, ?) 
+                     ON DUPLICATE KEY UPDATE used_cents = used_cents + VALUES(used_cents), updated_at = NOW()`,
+                    [payerId, monthStr, discountFen]
+                );
             }
             await db.query(
                 `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,

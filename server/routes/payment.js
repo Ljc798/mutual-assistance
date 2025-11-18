@@ -61,13 +61,33 @@ router.post('/create', authMiddleware, async (req, res) => {
             });
         }
 
-        const {
-            task_id,
-            receiver_id,
-            price
-        } = bid;
-        const amount = Math.round(price * 100); // 单位：分
-        const out_trade_no = `TASK_${task_id}_EMP_${receiver_id}_${Date.now()}`;
+        const { task_id, receiver_id, price } = bid;
+        const [[uinfo]] = await db.query('SELECT vip_level FROM users WHERE id = ?', [userId]);
+        const lvl = Number(uinfo?.vip_level || 0);
+        const discountRate = lvl === 2 ? 0.92 : (lvl === 1 ? 0.97 : 1.0);
+        const baseCents = Math.round(price * 100);
+        const plannedDiscount = baseCents - Math.floor(baseCents * discountRate);
+        // 折扣额度限制
+        const d = new Date();
+        const monthStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        const [[limitRow]] = await db.query(
+            `SELECT monthly_limit_cents, used_cents FROM user_discount_limits WHERE user_id = ? AND month = ?`,
+            [userId, monthStr]
+        );
+        let discountApplied = plannedDiscount;
+        if (limitRow && Number(limitRow.monthly_limit_cents) > 0) {
+            const remaining = Math.max(0, Number(limitRow.monthly_limit_cents) - Number(limitRow.used_cents));
+            discountApplied = Math.max(0, Math.min(plannedDiscount, remaining));
+        }
+        // 若无记录则先初始化（额度默认为0表示不限）
+        if (!limitRow) {
+            await db.query(
+                `INSERT INTO user_discount_limits (user_id, month, monthly_limit_cents, used_cents) VALUES (?, ?, 0, 0)`,
+                [userId, monthStr]
+            );
+        }
+        const amount = baseCents - discountApplied;
+        const out_trade_no = `TASK_${task_id}_EMP_${receiver_id}_${String(Date.now()).slice(-8)}`;
 
         await db.query(
             `INSERT INTO task_payments (task_id, bid_id, payer_user_id, receiver_id, out_trade_no, amount, status)
@@ -90,10 +110,7 @@ router.post('/create', authMiddleware, async (req, res) => {
             description,
             out_trade_no,
             notify_url,
-            amount: {
-                total: amount,
-                currency: 'CNY'
-            },
+            amount: { total: amount, currency: 'CNY' },
             payer: {
                 openid: user.openid
             }
@@ -200,12 +217,20 @@ router.post('/notify', express.raw({
             const taskId = parseInt(match[1]);
             const employeeId = parseInt(match[2]);
 
+            const [[bidRow]] = await db.query('SELECT price FROM task_bids WHERE id = ?', [bidId]);
+            const basePrice = parseFloat(bidRow?.price || 0);
+            const finalCents = Math.round(parseFloat(decryptedData.amount.total));
+            const baseCents = Math.round(basePrice * 100);
+            const discountCents = Math.max(0, baseCents - finalCents);
+
             // ✅ 更新任务表：委派
             await db.query(
                 `UPDATE tasks 
-                 SET employee_id = ?, selected_bid_id = ?, status = 1, has_paid = 1, pay_amount = ?, payment_transaction_id = ? 
+                 SET employee_id = ?, selected_bid_id = ?, status = 1, has_paid = 1, 
+                     pay_amount = ?, payment_transaction_id = ?, 
+                     discount_amount_cents = ?, final_paid_amount_cents = ?, is_discount_applied = ?
                  WHERE id = ?`,
-                [employeeId, bidId, amount, transactionId, taskId]
+                [employeeId, bidId, basePrice, transactionId, discountCents, finalCents, discountCents > 0 ? 1 : 0, taskId]
             );
 
 
@@ -269,6 +294,13 @@ router.post('/notify', express.raw({
                     await db.query(
                         `INSERT INTO user_benefit_ledger (user_id, task_id, type, amount_cents, source_vip_level, note) VALUES (?, ?, 'publish_discount', ?, ?, ?)`,
                         [task.employer_id, taskId, discountCents, sourceLevel, `选标支付折扣，订单号 ${outTradeNo}`]
+                    );
+                    const month = new Date();
+                    const monthStr = `${month.getFullYear()}-${String(month.getMonth()+1).padStart(2,'0')}`;
+                    await db.query(
+                        `INSERT INTO user_discount_limits (user_id, month, monthly_limit_cents, used_cents) VALUES (?, ?, 0, ?) 
+                         ON DUPLICATE KEY UPDATE used_cents = used_cents + VALUES(used_cents), updated_at = NOW()`,
+                        [task.employer_id, monthStr, discountCents]
                     );
                 }
 

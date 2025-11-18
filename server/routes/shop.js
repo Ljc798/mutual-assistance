@@ -127,7 +127,7 @@ router.post("/redeem-point", authMiddleware, async (req, res) => { // 添加了�
         );
         // 库存字段已移除，跳过库存扣减
         await connection.query(
-            `INSERT INTO shop_orders (user_id, item_id) VALUES (?, ?)`, [user_id, item_id]
+            `INSERT INTO shop_orders (user_id, item_id, exchange_method) VALUES (?, ?, 'point')`, [user_id, item_id]
         );
 
         // 特殊逻辑处理（新：通用 effect_type）
@@ -138,13 +138,27 @@ router.post("/redeem-point", authMiddleware, async (req, res) => { // 添加了�
 
         if (effectType === 'vip') {
             const now = new Date();
-            const currentExpire = user.vip_expire_time ? new Date(user.vip_expire_time) : now;
-            const baseTime = currentExpire > now ? currentExpire : now;
+            const vipExp = user.vip_expire_time ? new Date(user.vip_expire_time) : null;
+            const svipExp = user.svip_expire_time ? new Date(user.svip_expire_time) : null;
             const addedDays = durationDays > 0 ? durationDays : (item.days || 7);
-            const newExpire = new Date(baseTime.getTime() + addedDays * 86400000);
-            const formattedExpire = newExpire.toISOString().slice(0, 19).replace('T', ' ');
-            const newLevel = Math.max(normalizeLevel(user.vip_level || 0), level);
-            await connection.query(`UPDATE users SET vip_expire_time = ?, vip_level = ? WHERE id = ?`, [formattedExpire, newLevel, user_id]);
+            if (level === 2) {
+                // SVIP：续期 svip，到期后回到 VIP；若当前是 VIP，也同时给 VIP 续期
+                const baseSvip = svipExp && svipExp > now ? svipExp : now;
+                const newSvip = new Date(baseSvip.getTime() + addedDays * 86400000);
+                const svipStr = newSvip.toISOString().slice(0, 19).replace('T', ' ');
+                await connection.query(`UPDATE users SET svip_expire_time = ?, vip_level = 2 WHERE id = ?`, [svipStr, user_id]);
+                const vipActive = vipExp && vipExp > now;
+                if (vipActive) {
+                    const newVip = new Date(vipExp.getTime() + addedDays * 86400000);
+                    const vipStr = newVip.toISOString().slice(0, 19).replace('T', ' ');
+                    await connection.query(`UPDATE users SET vip_expire_time = ? WHERE id = ?`, [vipStr, user_id]);
+                }
+            } else {
+                const baseVip = vipExp && vipExp > now ? vipExp : now;
+                const newVip = new Date(baseVip.getTime() + addedDays * 86400000);
+                const vipStr = newVip.toISOString().slice(0, 19).replace('T', ' ');
+                await connection.query(`UPDATE users SET vip_expire_time = ?, vip_level = 1 WHERE id = ?`, [vipStr, user_id]);
+            }
         } else if (effectType === 'ai_quota') {
             const inc = Number(effectValue.amount || 0);
             const field = String(effectValue.field || 'ai_quota');
@@ -217,13 +231,16 @@ router.post('/create-order', authMiddleware, async (req, res) => {
         if (!user) return res.status(400).json({ success: false, message: '用户不存在' });
 
         const out_trade_no = `SHOP_${userId}_${item_id}_${String(Date.now()).slice(-8)}`;
-        const [[userInfo]] = await db.query(`SELECT vip_level FROM users WHERE id = ?`, [userId]);
+        const [[userInfo]] = await db.query(`SELECT vip_level, vip_expire_time, svip_expire_time FROM users WHERE id = ?`, [userId]);
+        const now = new Date();
+        const vipActive = userInfo?.vip_expire_time && new Date(userInfo.vip_expire_time) > now;
+        const svipActive = userInfo?.svip_expire_time && new Date(userInfo.svip_expire_time) > now;
         const level = Number(userInfo?.vip_level || 0);
-        const discount = level === 2 ? 0.90 : level === 1 ? 0.95 : 1.0;
+        const discount = svipActive ? 0.90 : (vipActive && level === 1 ? 0.95 : 1.0);
         const total_fee = Math.floor(item.price * 100 * discount);
 
         await db.query(
-            `INSERT INTO shop_orders (user_id, item_id, out_trade_no) VALUES (?, ?, ?)`,
+            `INSERT INTO shop_orders (user_id, item_id, out_trade_no, exchange_method) VALUES (?, ?, ?, 'money')`,
             [userId, item_id, out_trade_no]
         );
 
@@ -312,13 +329,26 @@ router.post('/notify', express.raw({ type: '*/*' }), async (req, res) => {
         const level = normalizeLevel(item.level);
 
         if (effectType === 'vip') {
-            const [[user]] = await db.query(`SELECT vip_expire_time, vip_level FROM users WHERE id = ?`, [userId]);
+            const [[user]] = await db.query(`SELECT vip_expire_time, svip_expire_time, vip_level FROM users WHERE id = ?`, [userId]);
             const now = new Date();
-            const base = user.vip_expire_time && new Date(user.vip_expire_time) > now ? new Date(user.vip_expire_time) : now;
-            const newExpire = new Date(base.getTime() + (durationDays || 7) * 86400000);
-            const formatted = newExpire.toISOString().slice(0, 19).replace('T', ' ');
-            const newLevel = Math.max(normalizeLevel(user.vip_level || 0), level);
-            await db.query(`UPDATE users SET vip_expire_time = ?, vip_level = ? WHERE id = ?`, [formatted, newLevel, userId]);
+            if (level === 2) {
+                const baseSvip = user.svip_expire_time && new Date(user.svip_expire_time) > now ? new Date(user.svip_expire_time) : now;
+                const newSvip = new Date(baseSvip.getTime() + (durationDays || 7) * 86400000);
+                const svipStr = newSvip.toISOString().slice(0, 19).replace('T', ' ');
+                await db.query(`UPDATE users SET svip_expire_time = ?, vip_level = 2 WHERE id = ?`, [svipStr, userId]);
+                const vipActive = user.vip_expire_time && new Date(user.vip_expire_time) > now;
+                if (vipActive) {
+                    const newVip = new Date(new Date(user.vip_expire_time).getTime() + (durationDays || 7) * 86400000);
+                    const vipStr = newVip.toISOString().slice(0, 19).replace('T', ' ');
+                    await db.query(`UPDATE users SET vip_expire_time = ? WHERE id = ?`, [vipStr, userId]);
+                }
+            } else {
+                const baseVip = user.vip_expire_time && new Date(user.vip_expire_time) > now ? new Date(user.vip_expire_time) : now;
+                const newVip = new Date(baseVip.getTime() + (durationDays || 7) * 86400000);
+                const vipStr = newVip.toISOString().slice(0, 19).replace('T', ' ');
+                const newLevel = Math.max(normalizeLevel(user.vip_level || 0), 1);
+                await db.query(`UPDATE users SET vip_expire_time = ?, vip_level = ? WHERE id = ?`, [vipStr, newLevel, userId]);
+            }
         } else if (effectType === 'ai_quota') {
             const inc = Number(effectValue.amount || 0);
             const field = String(effectValue.field || 'ai_quota');

@@ -53,6 +53,8 @@ router.post("/save-timetable-config", async (req, res) => {
     const conn = db;
     const formattedDate = moment(start_date).format("YYYY-MM-DD");
 
+    const [[exist]] = await conn.query("SELECT 1 FROM timetable_config WHERE user_id = ? LIMIT 1", [user_id]);
+
     await conn.query("DELETE FROM timetable_config WHERE user_id = ?", [user_id]);
 
     await conn.query(
@@ -69,6 +71,16 @@ router.post("/save-timetable-config", async (req, res) => {
         period_9, period_10
       ]
     );
+
+    // 首次绑定课表，赠送 3 天 VIP 并设置 vip_level=1
+    if (!exist) {
+      const now = new Date();
+      const [[u]] = await conn.query("SELECT vip_expire_time FROM users WHERE id = ?", [user_id]);
+      const base = u?.vip_expire_time && new Date(u.vip_expire_time) > now ? new Date(u.vip_expire_time) : now;
+      const newVip = new Date(base.getTime() + 3 * 86400000);
+      const vipStr = moment(newVip).format("YYYY-MM-DD HH:mm:ss");
+      await conn.query("UPDATE users SET vip_expire_time = ?, vip_level = 1 WHERE id = ?", [vipStr, user_id]);
+    }
 
     return res.json({ success: true, message: "课表配置已保存" });
 

@@ -87,17 +87,18 @@ Page({
     // ✅ 统一更新 data（含 VIP 判断）
     updateUserData(user: any) {
         const now = new Date();
-        const expire = user.vip_expire_time ? new Date(user.vip_expire_time) : null;
-        const isVip = expire && expire > now;
         const vipLevel = Number(user.vip_level || 0);
-        const isSVIP = isVip && vipLevel === 2;
+        const isSVIP = vipLevel === 2;
+        const isVip = vipLevel >= 1;
+        const expireRaw = isSVIP ? user.svip_expire_time : user.vip_expire_time;
+        const expire = expireRaw ? new Date(expireRaw) : null;
 
         this.setData({
             userInfo: user,
             isVip,
             vipLevel,
             isSVIP,
-            vip_expire_time: isVip ? this.formatDate(expire) : ''
+            vip_expire_time: expire ? this.formatDate(expire) : ''
         });
     },
 

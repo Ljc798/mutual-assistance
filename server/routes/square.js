@@ -46,6 +46,7 @@ router.get("/posts", async (req, res) => {
                u.username, 
                u.avatar_url, 
                u.vip_expire_time,
+               u.svip_expire_time,
                u.vip_level,
                ${likeSubquery} AS isLiked
         FROM square s
@@ -78,12 +79,10 @@ router.get("/posts", async (req, res) => {
             ...post,
             images: images
                 .filter(img => img.square_id === post.id)
-                .map(img => ({
-                    url: img.image_url,
-                    status: img.audit_status
-                })),
+                .map(img => ({ url: img.image_url, status: img.audit_status })),
             isLiked: Boolean(post.isLiked),
-            isVip: post.vip_expire_time && new Date(post.vip_expire_time) > now
+            isSVIP: Number(post.vip_level || 0) === 2,
+            isVIP: Number(post.vip_level || 0) >= 1
         }));
 
         res.json({
@@ -306,6 +305,7 @@ router.get("/detail", async (req, res) => {
                    u.username, 
                    u.avatar_url, 
                    u.vip_expire_time,
+                   u.svip_expire_time,
                    u.vip_level,
                    (SELECT COUNT(*) FROM square_likes WHERE square_id = s.id AND user_id = ?) AS isLiked
             FROM square s
@@ -322,6 +322,8 @@ router.get("/detail", async (req, res) => {
 
         const post = posts[0];
         post.isLiked = Boolean(post.isLiked);
+        post.isSVIP = Number(post.vip_level || 0) === 2;
+        post.isVIP = Number(post.vip_level || 0) >= 1;
 
         const [images] = await db.query(
             "SELECT image_url, audit_status FROM square_images WHERE square_id = ?",
