@@ -122,7 +122,7 @@ router.post("/redeem-point", authMiddleware, async (req, res) => { // 添加了�
         const effectType = (item.effect_type || '').toLowerCase();
         const effectValue = (() => { try { return JSON.parse(item.effect_value || '{}') } catch { return {} } })();
         const durationDays = Number(item.duration_days || 0);
-        const level = Number(item.level || 0);
+        const level = normalizeLevel(item.level);
 
         if (effectType === 'vip') {
             const now = new Date();
@@ -131,7 +131,7 @@ router.post("/redeem-point", authMiddleware, async (req, res) => { // 添加了�
             const addedDays = durationDays > 0 ? durationDays : (item.days || 7);
             const newExpire = new Date(baseTime.getTime() + addedDays * 86400000);
             const formattedExpire = newExpire.toISOString().slice(0, 19).replace('T', ' ');
-            const newLevel = Math.max(Number(user.vip_level || 0), level);
+            const newLevel = Math.max(normalizeLevel(user.vip_level || 0), level);
             await connection.query(`UPDATE users SET vip_expire_time = ?, vip_level = ? WHERE id = ?`, [formattedExpire, newLevel, user_id]);
         } else if (effectType === 'ai_quota') {
             const inc = Number(effectValue.amount || 0);
@@ -297,7 +297,7 @@ router.post('/notify', express.raw({ type: '*/*' }), async (req, res) => {
         const effectType = (item.effect_type || '').toLowerCase();
         const effectValue = (() => { try { return JSON.parse(item.effect_value || '{}') } catch { return {} } })();
         const durationDays = Number(item.duration_days || 0);
-        const level = Number(item.level || 0);
+        const level = normalizeLevel(item.level);
 
         if (effectType === 'vip') {
             const [[user]] = await db.query(`SELECT vip_expire_time, vip_level FROM users WHERE id = ?`, [userId]);
@@ -305,7 +305,7 @@ router.post('/notify', express.raw({ type: '*/*' }), async (req, res) => {
             const base = user.vip_expire_time && new Date(user.vip_expire_time) > now ? new Date(user.vip_expire_time) : now;
             const newExpire = new Date(base.getTime() + (durationDays || 7) * 86400000);
             const formatted = newExpire.toISOString().slice(0, 19).replace('T', ' ');
-            const newLevel = Math.max(Number(user.vip_level || 0), level);
+            const newLevel = Math.max(normalizeLevel(user.vip_level || 0), level);
             await db.query(`UPDATE users SET vip_expire_time = ?, vip_level = ? WHERE id = ?`, [formatted, newLevel, userId]);
         } else if (effectType === 'ai_quota') {
             const inc = Number(effectValue.amount || 0);

@@ -57,12 +57,17 @@ Page({
                 wx.hideLoading();
                 if (res.data.success) {
                     let post = res.data.post;
-                    const isVip = post.vip_expire_time && new Date(post.vip_expire_time).getTime() > Date.now();
+                    const active = post.vip_expire_time && new Date(post.vip_expire_time).getTime() > Date.now();
+                    const level = Number(post.vip_level || 0);
+                    const isSVIP = active && level === 2;
+                    const isVIP = active && level === 1;
 
                     post = {
                         ...post,
                         isLiked: Boolean(post.isLiked),
-                        isVip,
+                        isVip: isVIP || isSVIP,
+                        isSVIP,
+                        isVIP,
                         created_time: this.formatTime(post.created_time)
                     };
                     console.log(post);

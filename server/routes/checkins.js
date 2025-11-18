@@ -104,7 +104,7 @@ router.post("/checkin", authMiddleware, async (req, res) => {
                 user_id,
                 "daily_checkin",
                 reputationDelta,
-                isVip ?
+                isActive ?
                 `VIP签到加信誉+${reputationDelta.toFixed(1)}` :
                 `每日签到加信誉+${reputationDelta.toFixed(1)}`
             )

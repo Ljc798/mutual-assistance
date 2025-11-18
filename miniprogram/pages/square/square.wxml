@@ -31,7 +31,7 @@
                     <view class="username-area touch-small">
                         <text class="username {{item.isSVIP ? 'svip-username' : (item.isVIP ? 'vip-username-red' : '')}}" catchtap="goToProfile" data-userid="{{item.user_id}}">{{item.username}}</text>
                         <image wx:if="{{item.isVIP}}" src="/assets/icons/vip-2.svg" class="vip-badge" />
-                        <image wx:if="{{item.isSVIP}}" src="/assets/icons/huiyuanVIP-2.svg" class="svip-badge" />
+                        <image wx:if="{{item.isSVIP}}" src="/assets/icons/svip.svg" class="svip-badge" />
                     </view>
                     <view class="more-button touch-small" catchtap="onReportTap" data-postid="{{item.id}}">
                         <image src="/assets/icons/menu-dots-svgrepo-com.svg" class="more-icon" />

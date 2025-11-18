@@ -7,7 +7,7 @@
         <view class="username-area">
             <text class="username {{post.isSVIP ? 'svip-username' : (post.isVIP ? 'vip-username-red' : '')}}" catchtap="goToProfile" data-userid="{{post.user_id}}">{{post.username}}</text>
             <image wx:if="{{post.isVIP}}" src="/assets/icons/vip-2.svg" class="vip-badge" />
-            <image wx:if="{{post.isSVIP}}" src="/assets/icons/huiyuanVIP-2.svg" class="vip-badge svip" />
+            <image wx:if="{{post.isSVIP}}" src="/assets/icons/svip.svg" class="vip-badge svip" />
         </view>
     </view>
 

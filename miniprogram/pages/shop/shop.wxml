@@ -18,9 +18,15 @@
                         </block>
                         <block wx:if="{{item.exchange_type == 'money'}}">
                             价格：<text class="highlight">¥{{item.price}}</text>
+                            <block wx:if="{{item.memberPrice}}">
+                                <text class="member-tag">（会员价 ¥{{item.memberPrice}} {{item.discountLabel}}）</text>
+                            </block>
                         </block>
                         <block wx:if="{{item.exchange_type == 'both'}}">
                             积分：<text class="highlight">{{item.cost}}</text> 或 ¥<text class="highlight">{{item.price}}</text>
+                            <block wx:if="{{item.memberPrice}}">
+                                <text class="member-tag">（会员价 ¥{{item.memberPrice}} {{item.discountLabel}}）</text>
+                            </block>
                         </block>
                     </view>
                 </view>

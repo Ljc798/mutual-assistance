@@ -54,7 +54,7 @@
             <button class="vip-renew-btn" size="mini">续 费</button>
         </view>
         <view class="svip-card" wx:if="{{vipLevel === 2}}">
-            <image class="vip-badge" src="/assets/icons/huiyuanVIP-2.svg" />
+            <image class="vip-badge" src="/assets/icons/huiyuanVIP.svg" />
             <view class="vip-info">
                 <text class="svip-label">SVIP 用户</text>
                 <text class="vip-expire">到期时间：{{vip_expire_time}}</text>
@@ -80,7 +80,7 @@
             <text>我的空间</text>
         </view>
         <view class="action-item" bindtap="goToShop">
-            <text>商城</text>
+            <text>积分商城</text>
         </view>
         <view class="action-item" bindtap="goToEditProfile">
             <text>个人信息</text>

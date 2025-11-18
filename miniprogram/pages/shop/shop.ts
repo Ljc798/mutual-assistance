@@ -42,8 +42,15 @@ Page({
             method: 'GET',
             success: (res) => {
                 if (res.data.success) {
-                    console.log(res.data);
-                    this.setData({ items: res.data.items });
+                    const app = getApp();
+                    const level = Number(app?.globalData?.userInfo?.vip_level || 0);
+                    const discount = level === 2 ? 0.90 : level === 1 ? 0.95 : 1.0;
+                    const items = (res.data.items || []).map((it: any) => ({
+                        ...it,
+                        memberPrice: it.price ? (Math.floor(it.price * 100 * discount) / 100).toFixed(2) : null,
+                        discountLabel: level === 2 ? '已享受9折' : level === 1 ? '已享受95折' : ''
+                    }));
+                    this.setData({ items });
                 } else {
                     wx.showToast({ title: '获取商品失败', icon: 'none' });
                 }
