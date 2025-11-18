@@ -1,5 +1,8 @@
 # 使用 Node.js 官方镜像
-FROM node:20.18.0
+# FROM node:20.18.0
+
+FROM swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/node:20.18.0
+
 
 # 设置工作目录
 WORKDIR /app
