@@ -123,12 +123,9 @@
 }
 
 
-.order-salary {
-    font-weight: bold;
-    color: #ff5500;
-    font-size: 28rpx;
-    margin-left: 10rpx;
-}
+.order-salary { display: flex; align-items: baseline; gap: 8rpx; }
+.price-current { color: #ff5500; font-weight: 700; font-size: 28rpx; }
+.price-original { color: #999; font-size: 22rpx; text-decoration: line-through; }
 
 .action-buttons {
     display: flex;

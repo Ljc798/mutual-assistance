@@ -36,7 +36,10 @@
                 <!-- 截止时间与价格 -->
                 <view class="order-footer">
                     <text class="order-title">截止日期：{{item.time}}</text>
-                    <text class="order-salary">{{item.salary}}</text>
+                    <view class="order-salary">
+                        <text class="price-current">¥{{item.salaryNow}}</text>
+                        <text wx:if="{{item.statusCode === 2 && item.hasDiscount}}" class="price-original">（¥{{item.salaryOriginal}}）</text>
+                    </view>
                 </view>
 
                 <view class="order-action">

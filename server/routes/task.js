@@ -252,6 +252,7 @@ router.get("/my", authMiddleware, async (req, res) => {
         let baseSQL = `
         SELECT 
           id, employer_id, employee_id, status, title, offer, DDL, employer_done, employee_done, pay_amount, category, mode, has_paid,
+          discount_amount_cents, final_paid_amount_cents, is_discount_applied,
           EXISTS(SELECT 1 FROM task_reviews r WHERE r.task_id = tasks.id AND r.reviewer_id = ?) AS has_review
         FROM tasks
         WHERE (employer_id = ? OR employee_id = ?)

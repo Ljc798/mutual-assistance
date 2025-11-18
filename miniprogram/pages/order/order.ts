@@ -118,12 +118,18 @@ Page({
                             actionText = '订单已完成';
                         }
 
+                        const finalPaid = (task.final_paid_amount_cents || 0) / 100;
+                        const originalPaid = ((task.final_paid_amount_cents || 0) + (task.discount_amount_cents || 0)) / 100;
+                        const hasDiscount = !!task.is_discount_applied && finalPaid > 0 && originalPaid > 0;
+
                         return {
                             orderId: task.id,
                             statusCode: task.status,
                             status: this.translateStatus(task.status),
                             title: task.title,
-                            salary: `¥${task.status >= 1 ? task.pay_amount : task.offer}`,
+                            salaryNow: (task.status >= 1 ? (task.status === 2 && hasDiscount ? finalPaid : task.pay_amount) : task.offer).toFixed(2),
+                            salaryOriginal: (task.status === 2 && hasDiscount ? originalPaid : 0).toFixed(2),
+                            hasDiscount,
                             time: this.formatTime(task.DDL),
                             actionText,
                             showDoneButton,
