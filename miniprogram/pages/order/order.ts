@@ -132,7 +132,8 @@ Page({
                             employee_done: employeeDone,  // 👈 还有这个
                             hasConfirmed,
                             category: task.category,
-                            mode: task.mode
+                            mode: task.mode,
+                            hasReview: !!task.has_review
                         };
                     });
 
@@ -270,7 +271,7 @@ Page({
             console.error('❌ 查询取消次数失败:', err);
           }
         });
-      },
+    },
 
     // 关闭弹窗
     closeCancelModal() {
@@ -338,5 +339,83 @@ Page({
             }
         });
     },
+
+    ratingToLabel(r) {
+        if (r >= 4.5) return '超级好评';
+        if (r >= 3.0) return '好评';
+        if (r >= 2.0) return '一般';
+        if (r >= 1.0) return '差评';
+        return '超级差评';
+    },
+
+    openReview(e) {
+        const taskId = e.currentTarget.dataset.orderId;
+        const token = wx.getStorageSync('token');
+        wx.request({
+            url: `${BASE_URL}/task/${taskId}/review`,
+            method: 'GET',
+            header: { Authorization: `Bearer ${token}` },
+            success: (res) => {
+                const review = res.data?.review || null;
+                if (review) {
+                    const ratingHalf = Math.round(parseFloat(review.rating) * 2);
+                    this.setData({
+                        showReviewModal: true,
+                        reviewReadOnly: true,
+                        ratingHalf,
+                        ratingLabel: this.ratingToLabel(ratingHalf / 2),
+                        reviewText: review.comment || '',
+                        currentReviewTaskId: taskId
+                    });
+                } else {
+                    this.setData({
+                        showReviewModal: true,
+                        reviewReadOnly: false,
+                        ratingHalf: 8,
+                        ratingLabel: this.ratingToLabel(4),
+                        reviewText: '',
+                        currentReviewTaskId: taskId
+                    });
+                }
+            }
+        });
+    },
+
+    onRatingChange(e) {
+        const ratingHalf = e.detail.value;
+        const label = this.ratingToLabel(ratingHalf / 2);
+        this.setData({ ratingHalf, ratingLabel: label });
+    },
+
+    onReviewInput(e) {
+        this.setData({ reviewText: e.detail.value });
+    },
+
+    closeReview() {
+        this.setData({ showReviewModal: false, reviewReadOnly: false, reviewText: '', currentReviewTaskId: null });
+    },
+
+    submitReview() {
+        const token = wx.getStorageSync('token');
+        const taskId = this.data.currentReviewTaskId;
+        const rating = this.data.ratingHalf / 2;
+        const comment = this.data.reviewText;
+        wx.request({
+            url: `${BASE_URL}/task/${taskId}/review`,
+            method: 'POST',
+            header: { Authorization: `Bearer ${token}` },
+            data: { rating, comment },
+            success: (res) => {
+                if (res.data.success) {
+                    wx.showToast({ title: '评价成功', icon: 'success' });
+                    this.setData({ showReviewModal: false });
+                    this.fetchOrders();
+                } else {
+                    wx.showToast({ title: res.data.message || '评价失败', icon: 'none' });
+                }
+            },
+            fail: () => wx.showToast({ title: '网络错误', icon: 'none' })
+        });
+    }
 
 });

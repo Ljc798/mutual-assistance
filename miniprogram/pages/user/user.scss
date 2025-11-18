@@ -2,6 +2,38 @@
     min-height: 100vh;
 }
 
+.section-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  margin: 30rpx 20rpx 10rpx;
+}
+
+.review-list {
+  padding: 0 20rpx 30rpx;
+}
+.review-item {
+  display: flex;
+  gap: 16rpx;
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 16rpx;
+  margin-bottom: 14rpx;
+  box-shadow: 0 6rpx 12rpx rgba(0,0,0,0.06);
+}
+.review-avatar {
+  width: 84rpx;
+  height: 84rpx;
+  border-radius: 50%;
+}
+.review-content { flex: 1; }
+.review-header { display: flex; align-items: center; justify-content: space-between; }
+.review-name { font-weight: 600; color: #333; }
+.review-stars { display: flex; align-items: center; gap: 6rpx; }
+.star { color: #FFB400; font-size: 28rpx; }
+.review-rating { color: #666; font-size: 24rpx; margin-left: 8rpx; }
+.review-meta { color: #999; font-size: 22rpx; margin: 6rpx 0; }
+.review-text { color: #444; font-size: 26rpx; }
+
 .header {
     display: flex;
     align-items: center;

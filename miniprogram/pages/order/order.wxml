@@ -58,6 +58,9 @@
                         <view wx:if="{{item.statusCode === 1 && !item.hasConfirmed}}" class="action-button" bindtap="handleMarkDone" data-order-id="{{item.orderId}}">
                             我已完成
                         </view>
+                        <view wx:if="{{item.statusCode === 2}}" class="action-button" bindtap="openReview" data-order-id="{{item.orderId}}" data-role="{{item.role}}">
+                            {{item.hasReview ? '查看评价' : '待评价'}}
+                        </view>
                     </view>
                 </view>
             </view>
@@ -85,6 +88,23 @@
                 <button class="confirm-btn" bindtap="confirmCancelTask">确认取消</button>
             </view>
 
+        </view>
+    </view>
+    <view wx:if="{{showReviewModal}}" class="modal-overlay">
+        <view class="modal-content">
+            <view class="modal-title">{{reviewReadOnly ? '评价详情' : '发布评价'}}</view>
+            <view class="rating-row">
+                <slider min="0" max="10" step="1" value="{{ratingHalf}}" bindchange="onRatingChange" disabled="{{reviewReadOnly}}" />
+                <text class="rating-text">{{ratingLabel}}</text>
+            </view>
+            <textarea class="review-text" placeholder="请输入评价" value="{{reviewText}}" bindinput="onReviewInput" disabled="{{reviewReadOnly}}"></textarea>
+            <view class="modal-buttons" wx:if="{{!reviewReadOnly}}">
+                <button class="cancel-btn" bindtap="closeReview">取消</button>
+                <button class="confirm-btn" bindtap="submitReview">发布</button>
+            </view>
+            <view class="modal-buttons" wx:if="{{reviewReadOnly}}">
+                <button class="confirm-btn" bindtap="closeReview">关闭</button>
+            </view>
         </view>
     </view>
 </view>

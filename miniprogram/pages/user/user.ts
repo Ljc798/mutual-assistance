@@ -10,11 +10,13 @@ Page({
         reputation: null,      // 后端信誉数据
         starCount: 0,          // 星星数量
         creditLevel: '',       // 等级文案
+        reviews: [],
     },
 
     onLoad() {
         this.loadUserInfo(); // 页面加载时获取用户信息
         this.fetchReputation();
+        this.fetchReviews();
     },
 
     onShow() {
@@ -279,3 +281,41 @@ Page({
         });
     },
 });
+    fetchReviews() {
+        const app = getApp();
+        const uid = app.globalData?.userInfo?.id;
+        const token = wx.getStorageSync('token');
+        if (!uid || !token) return;
+        wx.request({
+            url: `${BASE_URL}/user/${uid}/reviews`,
+            method: 'GET',
+            header: { Authorization: `Bearer ${token}` },
+            success: (res) => {
+                if (res.data?.success) {
+                    const list = (res.data.reviews || []).map((r: any) => ({
+                        id: r.id,
+                        avatar: r.reviewer_avatar,
+                        name: r.reviewer_masked_name,
+                        rating: r.rating,
+                        stars: this.makeStars(r.rating),
+                        time: this.formatDate(new Date(r.created_time)),
+                        comment: r.comment
+                    }));
+                    this.setData({ reviews: list });
+                }
+            }
+        });
+    },
+
+    makeStars(r: number) {
+        const half = Math.round((r || 0) * 2);
+        const full = Math.floor(half / 2);
+        const hasHalf = half % 2 === 1;
+        const arr: string[] = [];
+        for (let i = 0; i < 5; i++) {
+            if (i < full) arr.push('full');
+            else if (i === full && hasHalf) arr.push('half');
+            else arr.push('empty');
+        }
+        return arr;
+    },

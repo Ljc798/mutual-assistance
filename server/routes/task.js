@@ -250,11 +250,13 @@ router.get("/my", authMiddleware, async (req, res) => {
 
     try {
         let baseSQL = `
-        SELECT id, employer_id, employee_id, status, title, offer, DDL, employer_done, employee_done, pay_amount, category, mode, has_paid
+        SELECT 
+          id, employer_id, employee_id, status, title, offer, DDL, employer_done, employee_done, pay_amount, category, mode, has_paid,
+          EXISTS(SELECT 1 FROM task_reviews r WHERE r.task_id = tasks.id AND r.reviewer_id = ?) AS has_review
         FROM tasks
         WHERE (employer_id = ? OR employee_id = ?)
       `;
-        const params = [userId, userId];
+        const params = [userId, userId, userId];
 
         if (role === "employer") {
             baseSQL += " AND employer_id = ?";
@@ -1181,6 +1183,54 @@ router.post("/assign", authMiddleware, async (req, res) => {
         return res.json({ success: true, message: "指派成功" });
     } catch (err) {
         console.error("❌ 二手竞价指派失败:", err);
+        return res.status(500).json({ success: false, message: "服务器错误" });
+    }
+});
+
+router.get("/:id/review", authMiddleware, async (req, res) => {
+    const taskId = parseInt(req.params.id);
+    const userId = req.user.id;
+    if (isNaN(taskId)) return res.status(400).json({ success: false, message: "任务ID非法" });
+    try {
+        const [rows] = await db.query("SELECT * FROM task_reviews WHERE task_id = ? AND reviewer_id = ? LIMIT 1", [taskId, userId]);
+        return res.json({ success: true, review: rows[0] || null });
+    } catch (err) {
+        console.error("❌ 获取评价失败:", err);
+        return res.status(500).json({ success: false, message: "服务器错误" });
+    }
+});
+
+router.post("/:id/review", authMiddleware, async (req, res) => {
+    const taskId = parseInt(req.params.id);
+    const userId = req.user.id;
+    const { rating, comment } = req.body || {};
+    if (isNaN(taskId) || !rating) return res.status(400).json({ success: false, message: "参数错误" });
+    try {
+        const [[task]] = await db.query("SELECT id, employer_id, employee_id, status FROM tasks WHERE id = ?", [taskId]);
+        if (!task) return res.status(404).json({ success: false, message: "任务不存在" });
+        if (parseInt(task.status) !== 2) return res.status(400).json({ success: false, message: "仅已完成任务可评价" });
+
+        let role = '';
+        let revieweeId = null;
+        if (userId === task.employer_id) { role = 'employer'; revieweeId = task.employee_id; }
+        else if (userId === task.employee_id) { role = 'employee'; revieweeId = task.employer_id; }
+        else return res.status(403).json({ success: false, message: "非任务参与者不可评价" });
+
+        const [[exists]] = await db.query("SELECT id FROM task_reviews WHERE task_id = ? AND reviewer_id = ? LIMIT 1", [taskId, userId]);
+        if (exists) return res.status(400).json({ success: false, message: "已评价" });
+
+        await db.query(
+            "INSERT INTO task_reviews (task_id, reviewer_id, reviewee_id, role, rating, comment) VALUES (?, ?, ?, ?, ?, ?)",
+            [taskId, userId, revieweeId, role, parseFloat(rating), comment || '']
+        );
+
+        const isGood = parseFloat(rating) >= 3.0;
+        const delta = isGood ? 2 : -3;
+        await addReputationLog(revieweeId, "task_review", delta, isGood ? "获得好评，信誉+2" : "收到差评，信誉-3");
+
+        return res.json({ success: true });
+    } catch (err) {
+        console.error("❌ 提交评价失败:", err);
         return res.status(500).json({ success: false, message: "服务器错误" });
     }
 });

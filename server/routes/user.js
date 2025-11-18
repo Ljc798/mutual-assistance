@@ -497,6 +497,45 @@ router.post("/vip/activate", authMiddleware, async (req, res) => {
     }
 });
 
+// 获取某用户收到的任务评价
+router.get("/:id/reviews", async (req, res) => {
+  const userId = parseInt(req.params.id);
+  if (isNaN(userId)) return res.status(400).json({ success: false, message: "用户ID非法" });
+  try {
+    const [rows] = await db.query(
+      `SELECT r.id, r.task_id, r.reviewer_id, r.rating, r.comment, r.created_time,
+              u.username, u.avatar_url
+       FROM task_reviews r
+       JOIN users u ON u.id = r.reviewer_id
+       WHERE r.reviewee_id = ?
+       ORDER BY r.created_time DESC
+       LIMIT 100`,
+      [userId]
+    );
+
+    function maskName(name) {
+      if (!name) return "***";
+      const n = String(name);
+      if (n.length <= 2) return n[0] + "***" + (n[1] || "");
+      return n[0] + "***" + n[n.length - 1];
+    }
+
+    const reviews = rows.map(r => ({
+      id: r.id,
+      task_id: r.task_id,
+      rating: parseFloat(r.rating),
+      comment: r.comment || "",
+      created_time: r.created_time,
+      reviewer_avatar: r.avatar_url || "",
+      reviewer_masked_name: maskName(r.username || "")
+    }));
+    return res.json({ success: true, reviews });
+  } catch (err) {
+    console.error("❌ 获取用户评价失败:", err);
+    return res.status(500).json({ success: false, message: "服务器错误" });
+  }
+});
+
 // 📌 获取用户信息（使用 authMiddleware 来验证 token）
 router.get("/info", authMiddleware, async (req, res) => {
     const userId = req.user.id; // 从 token 中提取 id
