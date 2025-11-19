@@ -178,7 +178,9 @@ router.post("/redeem-point", authMiddleware, async (req, res) => { // 添加了�
             }
         } else if (effectType === 'ai_boost') {
             const days = durationDays > 0 ? durationDays : Number(effectValue.days || 1);
-            await connection.query(`UPDATE users SET ai_speed_boost_expire_time = IF(ai_speed_boost_expire_time > NOW(), DATE_ADD(ai_speed_boost_expire_time, INTERVAL ? DAY), DATE_ADD(NOW(), INTERVAL ? DAY)) WHERE id = ?`, [days, days, user_id]);
+            if (days > 0) {
+                await connection.query(`UPDATE users SET ai_speed_boost_days = ai_speed_boost_days + ? WHERE id = ?`, [days, user_id]);
+            }
         } else if (effectType === 'deposit_free_once') {
             const times = Number(effectValue.times || 1);
             const [[col]] = await connection.query("SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'deposit_free_times'");
@@ -379,7 +381,9 @@ router.post('/notify', express.raw({ type: '*/*' }), async (req, res) => {
             }
         } else if (effectType === 'ai_boost') {
             const days = durationDays > 0 ? durationDays : Number(effectValue.days || 1);
-            await db.query(`UPDATE users SET ai_speed_boost_expire_time = IF(ai_speed_boost_expire_time > NOW(), DATE_ADD(ai_speed_boost_expire_time, INTERVAL ? DAY), DATE_ADD(NOW(), INTERVAL ? DAY)) WHERE id = ?`, [days, days, userId]);
+            if (days > 0) {
+                await db.query(`UPDATE users SET ai_speed_boost_days = ai_speed_boost_days + ? WHERE id = ?`, [days, userId]);
+            }
         } else if (effectType === 'deposit_free_once') {
             const times = Number(effectValue.times || 1);
             const [[col]] = await db.query("SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'deposit_free_times'");

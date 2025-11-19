@@ -2,6 +2,7 @@
 const express = require("express");
 const axios = require("axios");
 const authMiddleware = require("../authMiddleware");
+const db = require("../../config/db");
 const aiLimitCheckOnly = require('../aiLimitCheckOnly');
 const aiLimit = require('../aiLimit');
 
@@ -29,9 +30,28 @@ router.post("/", authMiddleware, aiLimit, async (req, res) => {
         }
 
         const difyUserId = req.user.id;
+
+        const [[userRow]] = await db.query(
+            "SELECT vip_level, vip_expire_time, svip_expire_time, ai_speed_boost_days FROM users WHERE id = ?",
+            [difyUserId]
+        );
+        const now = new Date();
+        const vipActive = userRow?.vip_expire_time && new Date(userRow.vip_expire_time) > now;
+        const svipActive = userRow?.svip_expire_time && new Date(userRow.svip_expire_time) > now;
+        const baseLevel = Number(userRow?.vip_level || 0);
+        const effectiveLevel = svipActive ? 2 : (vipActive ? baseLevel : 0);
+        const boostActive = Number(userRow?.ai_speed_boost_days || 0) > 0;
+        let delay = 2;
+        if (effectiveLevel === 2) {
+            delay = 0;
+        } else if (effectiveLevel === 1 || boostActive) {
+            delay = 1;
+        }
+
         const payload = {
             inputs: {
-                user_id: difyUserId
+                user_id: difyUserId,
+                delay
             },
             query,
             response_mode: "blocking",

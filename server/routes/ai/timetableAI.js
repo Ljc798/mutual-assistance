@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../../config/db'); // mysql2/promise pool
+const db = require('../../config/db');
 const aiLimit = require('../aiLimit')
 
 // --- 安全检查：只允许 SELECT ---

@@ -28,10 +28,19 @@ async function scanAndSyncVipLevels() {
   }
 }
 
+async function scanAndDecreaseAiBoost() {
+  try {
+    await db.query(`UPDATE users SET ai_speed_boost_days = GREATEST(ai_speed_boost_days - 1, 0) WHERE ai_speed_boost_days > 0`);
+  } catch (e) {
+    console.error('❌ 扣减 AI 加速字段失败:', e?.message || e);
+  }
+}
+
 function start() {
   // 每天 00:05 运行一次
   cron.schedule('0 5 0 * * *', () => {
     scanAndSyncVipLevels().catch(err => console.error('vipCron error', err));
+    scanAndDecreaseAiBoost().catch(err => console.error('aiBoostCron error', err));
   }, { timezone: 'Asia/Shanghai' });
   console.log('⏰ vipCron started: daily at 00:05 (Asia/Shanghai)');
 }

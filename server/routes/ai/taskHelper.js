@@ -32,6 +32,24 @@ router.post("/extract", authMiddleware, aiLimit, async (req, res) => {
         let difyRes;
         const isVoice = !!voice;
 
+        // 计算延迟
+        const [[userRow]] = await db.query(
+            "SELECT vip_level, vip_expire_time, svip_expire_time, ai_speed_boost_days FROM users WHERE id = ?",
+            [Number(req.user?.id || 0)]
+        );
+        const now = new Date();
+        const vipActive = userRow?.vip_expire_time && new Date(userRow.vip_expire_time) > now;
+        const svipActive = userRow?.svip_expire_time && new Date(userRow.svip_expire_time) > now;
+        const baseLevel = Number(userRow?.vip_level || 0);
+        const effectiveLevel = svipActive ? 2 : (vipActive ? baseLevel : 0);
+        const boostActive = Number(userRow?.ai_speed_boost_days || 0) > 0;
+        let delay = 2;
+        if (effectiveLevel === 2) {
+            delay = 0;
+        } else if (effectiveLevel === 1 || boostActive) {
+            delay = 1;
+        }
+
         // ✅ 如果是语音请求：使用 remote_url 上传文件
         if (isVoice) {
             const payload = {
@@ -44,6 +62,7 @@ router.post("/extract", authMiddleware, aiLimit, async (req, res) => {
                     user_input: user_input,
                     voice: voice,
                     api_key: VOICE_API_KEY,
+                    delay
                 },
 
             };
@@ -65,6 +84,7 @@ router.post("/extract", authMiddleware, aiLimit, async (req, res) => {
                 inputs: {
                     tag: tag || "field_filling",
                     user_input: user_input || "",
+                    delay
                 },
             };
 

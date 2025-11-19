@@ -14,8 +14,8 @@ Component({
         apiUrl: { type: String, value: `${BASE_URL}/ai/almighty` }
     },
 
-        data: {
-            ballPosition: { x: 0, y: 0 },
+    data: {
+        ballPosition: { x: 0, y: 0 },
         // 拖动/点击判定
         isDragging: false,
         startX: 0,
@@ -30,12 +30,13 @@ Component({
         chatInput: "",
         conversationId: "",
         isLoading: false,
-            scrollIntoView: "",
-            remaining: 0,
-            limit: 0,
-            dailyBonus: 0,
-            quotaRemain: 0,
-        },
+        scrollIntoView: "",
+        remaining: 0,
+        limit: 0,
+        dailyBonus: 0,
+        quotaRemain: 0,
+        isSVIP: false,
+    },
 
     lifetimes: {
         attached() {
@@ -47,6 +48,9 @@ Component({
                     y: systemInfo.windowHeight - 200
                 }
             });
+            const app = getApp();
+            const level = Number(app?.globalData?.userInfo?.vip_level || 0);
+            this.setData({ isSVIP: level === 2 });
         },
 
         ready() {
@@ -221,6 +225,10 @@ Component({
                 limit = -1;
             }
             this.setData({ remaining, limit, dailyBonus: Number(daily_bonus || 0), quotaRemain: Number(quota_remain || 0) });
+            // 同步 SVIP 状态（防止组件挂载时未加载用户信息）
+            const app = getApp();
+            const level = Number(app?.globalData?.userInfo?.vip_level || 0);
+            this.setData({ isSVIP: level === 2 });
         },
     }
 });
