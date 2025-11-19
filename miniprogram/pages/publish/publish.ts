@@ -100,6 +100,8 @@ Page({
         mode: 'fixed',
         remaining: 0,
         limit: 0,
+        dailyBonus: 0,
+        quotaRemain: 0,
     },
 
     async onLoad() {
@@ -108,7 +110,7 @@ Page({
 
     async fetchAiUsage() {
         const token = wx.getStorageSync("token");
-        const res = await new Promise((resolve, reject) => {
+        const res: any = await new Promise((resolve, reject) => {
             wx.request({
                 url: `${BASE_URL}/ai/almighty/usage`,
                 header: { Authorization: `Bearer ${token}` },
@@ -117,8 +119,8 @@ Page({
             });
         });
 
-        const { remaining, limit } = res.data;
-        this.setData({ remaining, limit });
+        const { remaining, limit, daily_bonus, quota_remain } = res.data || {};
+        this.setData({ remaining, limit, dailyBonus: Number(daily_bonus || 0), quotaRemain: Number(quota_remain || 0) });
     },
 
     // 处理任务分类选择

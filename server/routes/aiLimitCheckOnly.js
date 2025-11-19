@@ -1,4 +1,3 @@
-const redis = require("../utils/redis.js")
 const db = require("../config/db.js")
 
 async function aiLimitCheckOnly(req, res, next) {
@@ -10,34 +9,29 @@ async function aiLimitCheckOnly(req, res, next) {
     }
 
     try {
-        // 查询会员等级
-        const [
-            [user]
-        ] = await db.query(
-            "SELECT vip_level FROM users WHERE id = ?",
+        const [[row]] = await db.query("SELECT vip_level, vip_expire_time, svip_expire_time, ai_quota, ai_daily_quota FROM users WHERE id = ?", [userId]);
+        const now = new Date();
+        const vipActive = row?.vip_expire_time && new Date(row.vip_expire_time) > now;
+        const svipActive = row?.svip_expire_time && new Date(row.svip_expire_time) > now;
+        const baseLevel = Number(row?.vip_level || 0);
+        const level = svipActive ? 2 : (vipActive ? baseLevel : 0);
+        const limits = { 0: 5, 1: 25, 2: Infinity };
+        let limit = limits[level] ?? 5;
+        const [[tbl]] = await db.query("SELECT COUNT(*) AS c FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ai_usage'");
+        if (Number(tbl?.c || 0) === 0) {
+            await db.query("CREATE TABLE ai_usage (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, INDEX idx_user_date (user_id, created_at))");
+        }
+        const [[usedRow]] = await db.query(
+            "SELECT COUNT(*) AS used FROM ai_usage WHERE user_id = ? AND DATE(created_at) = CURDATE()",
             [userId]
         );
-        const level = user?.vip_level ?? 0;
-
-        // 不同等级的限制次数
-        const limits = {
-            0: 5,
-            1: 25,
-            2: Infinity
-        };
-        const limit = limits[level] ?? 5;
-
-        // Redis 中的每日计数 key
-        const key = `ai_usage:${userId}:${new Date().toISOString().slice(0, 10)}`;
-        let current = await redis.get(key);
-        current = current ? parseInt(current) : 0;
-
-        // 不增加计数，只传递当前状态
-        req.aiUsageInfo = {
-            used: current,
-            limit
-        };
-
+        const used = Number(usedRow?.used || 0);
+        const dailyBonus = Number(row?.ai_daily_quota || 0);
+        const quotaRemain = Number(row?.ai_quota || 0);
+        if (limit !== Infinity) {
+            limit = limit + Math.max(0, dailyBonus);
+        }
+        req.aiUsageInfo = { used, limit, dailyBonus, quotaRemain };
         next();
     } catch (error) {
         console.error("❌ aiLimitCheckOnly 出错:", error);

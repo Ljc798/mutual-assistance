@@ -14,8 +14,8 @@ Component({
         apiUrl: { type: String, value: `${BASE_URL}/ai/almighty` }
     },
 
-    data: {
-        ballPosition: { x: 0, y: 0 },
+        data: {
+            ballPosition: { x: 0, y: 0 },
         // 拖动/点击判定
         isDragging: false,
         startX: 0,
@@ -30,10 +30,12 @@ Component({
         chatInput: "",
         conversationId: "",
         isLoading: false,
-        scrollIntoView: "",
-        remaining: 0,
-        limit: 0,
-    },
+            scrollIntoView: "",
+            remaining: 0,
+            limit: 0,
+            dailyBonus: 0,
+            quotaRemain: 0,
+        },
 
     lifetimes: {
         attached() {
@@ -211,14 +213,14 @@ Component({
                 });
             });
 
-            let { remaining, limit } = res.data as any;
+            let { remaining, limit, daily_bonus, quota_remain } = res.data as any;
             if (typeof remaining === 'string') {
                 remaining = remaining === '无限' ? -1 : 0;
             }
             if (limit === null || limit === undefined) {
                 limit = -1;
             }
-            this.setData({ remaining, limit });
+            this.setData({ remaining, limit, dailyBonus: Number(daily_bonus || 0), quotaRemain: Number(quota_remain || 0) });
         },
     }
 });

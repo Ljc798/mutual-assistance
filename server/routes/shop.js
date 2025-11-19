@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
 const axios = require('axios');
-const redis = require('../utils/redis');
 function normalizeLevel(level) {
   if (level === null || level === undefined) return 0;
   if (typeof level === 'string') {
@@ -161,13 +160,21 @@ router.post("/redeem-point", authMiddleware, async (req, res) => { // 添加了�
             }
         } else if (effectType === 'ai_quota') {
             const inc = Number(effectValue.amount || 0);
-            const field = String(effectValue.field || 'ai_quota');
+            const fieldRaw = String(effectValue.field || 'ai_quota');
+            const f = fieldRaw.toLowerCase();
             if (inc > 0) {
-                if (field === 'ai_quota') {
-                    await redis.incrby(`ai_quota:${user_id}`, inc);
-                } else if (field === 'ai_daily_quota') {
-                    await redis.incrby(`ai_daily_bonus:${user_id}`, inc);
+                const colName = f.includes('daily') ? 'ai_daily_quota' : 'ai_quota';
+                const [[col]] = await connection.query("SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = ?", [colName]);
+                if (Number(col?.cnt || 0) === 0) {
+                    await connection.query(`ALTER TABLE users ADD COLUMN ${colName} INT NOT NULL DEFAULT 0`);
                 }
+                const [[cur]] = await connection.query(`SELECT ${colName} AS v FROM users WHERE id = ?`, [user_id]);
+                const current = Number(cur?.v || 0);
+                if (!f.includes('daily') && current + inc > 50) {
+                    await connection.rollback();
+                    return res.status(400).json({ success: false, message: 'AI额度已达上限50，无法继续购买' });
+                }
+                await connection.query(`UPDATE users SET ${colName} = ${colName} + ? WHERE id = ?`, [inc, user_id]);
             }
         } else if (effectType === 'ai_boost') {
             const days = durationDays > 0 ? durationDays : Number(effectValue.days || 1);
@@ -355,13 +362,20 @@ router.post('/notify', express.raw({ type: '*/*' }), async (req, res) => {
             }
         } else if (effectType === 'ai_quota') {
             const inc = Number(effectValue.amount || 0);
-            const field = String(effectValue.field || 'ai_quota');
+            const fieldRaw = String(effectValue.field || 'ai_quota');
+            const f = fieldRaw.toLowerCase();
             if (inc > 0) {
-                if (field === 'ai_quota') {
-                    await redis.incrby(`ai_quota:${userId}`, inc);
-                } else if (field === 'ai_daily_quota') {
-                    await redis.incrby(`ai_daily_bonus:${userId}`, inc);
+                const colName = f.includes('daily') ? 'ai_daily_quota' : 'ai_quota';
+                const [[col]] = await db.query("SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = ?", [colName]);
+                if (Number(col?.cnt || 0) === 0) {
+                    await db.query(`ALTER TABLE users ADD COLUMN ${colName} INT NOT NULL DEFAULT 0`);
                 }
+                const [[cur]] = await db.query(`SELECT ${colName} AS v FROM users WHERE id = ?`, [userId]);
+                const current = Number(cur?.v || 0);
+                if (!f.includes('daily') && current + inc > 50) {
+                    return res.status(400).json({ success: false, message: 'AI额度已达上限50，无法继续购买' });
+                }
+                await db.query(`UPDATE users SET ${colName} = ${colName} + ? WHERE id = ?`, [inc, userId]);
             }
         } else if (effectType === 'ai_boost') {
             const days = durationDays > 0 ? durationDays : Number(effectValue.days || 1);

@@ -29,6 +29,7 @@
         <view class="usage-info">
             <text wx:if="{{limit === -1}}">💎 无限次对话特权已开启</text>
             <text wx:elif="{{remaining >= 0}}">💬 今日剩余 {{remaining}} / {{limit}} 次</text>
+            <text class="quota" wx:if="{{limit !== -1}}">🎟️ 额外额度 {{quotaRemain}} 次</text>
             <text wx:else>正在获取剩余次数...</text>
         </view>
         <view class="chat-input-container">

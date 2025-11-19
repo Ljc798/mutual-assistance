@@ -1,13 +1,7 @@
-const redis = require('../utils/redis');
 const db = require('../config/db');
-const DAY_SECONDS = 24 * 60 * 60;
 
 // 不同会员等级对应的每日限额
-const LIMITS = {
-  0: 5,   // 普通用户
-  1: 25,  // VIP
-  2: -1   // SVIP，无限次
-};
+const LIMITS = { 0: 5, 1: 25, 2: Infinity };
 
 module.exports = async function aiLimit(req, res, next) {
   try {
@@ -17,64 +11,55 @@ module.exports = async function aiLimit(req, res, next) {
     }
 
     // 从数据库查询会员等级与到期
-    const [userRows] = await db.query("SELECT vip_level, vip_expire_time, svip_expire_time FROM users WHERE id = ?", [userId]);
+    const [userRows] = await db.query("SELECT vip_level, vip_expire_time, svip_expire_time, ai_quota, ai_daily_quota FROM users WHERE id = ?", [userId]);
     const row = userRows[0] || {};
     const now = new Date();
     const vipActive = row.vip_expire_time && new Date(row.vip_expire_time) > now;
     const svipActive = row.svip_expire_time && new Date(row.svip_expire_time) > now;
     const baseLevel = Number(row.vip_level || 0);
     const effectiveLevel = svipActive ? 2 : (vipActive ? baseLevel : 0);
-    let limit = LIMITS[effectiveLevel];
-
-    // 读取永久/每日附加额度（Redis）
-    const dailyBonusStr = await redis.get(`ai_daily_bonus:${userId}`);
-    const dailyBonus = parseInt(dailyBonusStr || '0', 10);
-    if (limit !== -1) {
+    let limit = LIMITS[effectiveLevel] ?? 5;
+    const dailyBonus = Number(row.ai_daily_quota || 0);
+    if (limit !== Infinity) {
       limit = limit + Math.max(0, dailyBonus);
     }
 
-    // 🟢 SVIP无限制
-    if (limit === -1) {
-      req.aiUsageInfo = { used: 0, limit: Infinity };
+    if (limit === Infinity) {
+      req.aiUsageInfo = { used: 0, limit: Infinity, dailyBonus, quotaRemain: Number(row.ai_quota || 0) };
       return next();
     }
 
-    // 生成 Redis key
-    const today = new Date().toISOString().split("T")[0];
-    const redisKey = `ai_usage:${userId}:${today}`;
+    const [[tbl]] = await db.query("SELECT COUNT(*) AS c FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ai_usage'");
+    if (Number(tbl?.c || 0) === 0) {
+      await db.query("CREATE TABLE ai_usage (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, INDEX idx_user_date (user_id, created_at))");
+    }
 
-    // 获取当前次数与永久额度
-    const current = parseInt(await redis.get(redisKey) || "0", 10);
-    const quotaStr = await redis.get(`ai_quota:${userId}`);
-    const quotaRemain = parseInt(quotaStr || '0', 10);
+    const [[usedRow]] = await db.query(
+      "SELECT COUNT(*) AS used FROM ai_usage WHERE user_id = ? AND DATE(created_at) = CURDATE()",
+      [userId]
+    );
+    const used = Number(usedRow?.used || 0);
+    const quotaRemain = Number(row.ai_quota || 0);
 
-    // 判断是否超限
-    if (current >= limit && quotaRemain <= 0) {
+    if (used >= limit && quotaRemain <= 0) {
       return res.status(429).json({
-        error: `今日AI对话次数已达上限（${limit} 次），请明日再试或升级会员`,
+        error: `今日AI对话次数已达上限（${limit} 次）`,
         limit,
-        used: current
+        used
       });
     }
 
-    // 自增 + 设置过期
-    await redis.incr(redisKey);
-    if (current === 0) {
-      await redis.expire(redisKey, DAY_SECONDS);
+    if (used < limit) {
+      await db.query("INSERT INTO ai_usage (user_id, created_at) VALUES (?, NOW())", [userId]);
+      req.aiUsageInfo = { used: used + 1, limit, dailyBonus, quotaRemain };
+      return next();
     }
 
-    // 永久额度扣减（如果设置了）
-    if (quotaRemain > 0 && limit !== Infinity) {
-      await redis.decr(`ai_quota:${userId}`);
+    if (quotaRemain > 0) {
+      await db.query("UPDATE users SET ai_quota = ai_quota - 1 WHERE id = ?", [userId]);
+      req.aiUsageInfo = { used, limit, dailyBonus, quotaRemain: Math.max(0, quotaRemain - 1) };
+      return next();
     }
-
-    // 把当前使用信息挂在 req 上，方便后续接口使用
-    req.aiUsageInfo = {
-      used: current + 1,
-      limit,
-      dailyBonus,
-      quotaRemain: Math.max(0, quotaRemain - (quotaRemain > 0 ? 1 : 0))
-    };
 
     next();
   } catch (err) {

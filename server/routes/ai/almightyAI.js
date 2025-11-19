@@ -92,14 +92,13 @@ router.post("/", authMiddleware, aiLimit, async (req, res) => {
 });
 
 router.get("/usage", authMiddleware, aiLimitCheckOnly, async (req, res) => {
-    const {
-        limit,
-        used
-    } = req.aiUsageInfo;
+    const { limit, used, dailyBonus, quotaRemain } = req.aiUsageInfo;
     const unlimited = limit === Infinity;
     res.json({
         remaining: unlimited ? -1 : Math.max(limit - used, 0),
         limit: unlimited ? -1 : limit,
+        daily_bonus: unlimited ? 0 : Math.max(dailyBonus || 0, 0),
+        quota_remain: quotaRemain || 0
     });
 });
 
