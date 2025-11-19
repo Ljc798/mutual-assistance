@@ -531,7 +531,15 @@ Page({
                             });
                         });
                     } catch (payErr) {
-                        wx.showToast({ title: '支付未完成', icon: 'none' });
+                        wx.showToast({ title: '支付未完成，已生成待支付草稿', icon: 'none' });
+                        await new Promise((resolve) => {
+                            wx.request({
+                                url: `${BASE_URL}/task/${taskId}/mark-unpaid`,
+                                method: 'POST',
+                                header: { Authorization: `Bearer ${token}` },
+                                complete: resolve
+                            });
+                        });
                         return;
                     }
 

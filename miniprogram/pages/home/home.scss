@@ -262,3 +262,297 @@
 .price-finished {
     color: #52c41a;
 }
+
+/* 待办科技感样式 */
+.todo-container {
+    margin: 16rpx 24rpx;
+    padding: 16rpx;
+    border-radius: 16rpx;
+    background: linear-gradient(135deg, rgba(25, 25, 35, 0.95), rgba(30, 30, 50, 0.9));
+    box-shadow: 0 6rpx 16rpx rgba(0, 0, 0, 0.22), inset 0 0 16rpx rgba(120, 200, 255, 0.12);
+    border: 2rpx solid rgba(120, 200, 255, 0.3);
+    backdrop-filter: blur(8rpx);
+    min-height: 160rpx;
+}
+
+.todo-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16rpx;
+}
+
+.todo-title {
+    font-size: 30rpx;
+    color: #e6f7ff;
+    letter-spacing: 2rpx;
+}
+
+.todo-actions .todo-add {
+    width: 56rpx;
+    height: 56rpx;
+    border-radius: 28rpx;
+    background: linear-gradient(135deg, #2f54eb, #1890ff);
+    color: #fff;
+    font-size: 32rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6rpx 12rpx rgba(24, 144, 255, 0.4);
+    border: none;
+}
+
+.todo-scroll {
+    display: flex;
+    white-space: nowrap;
+    height: 150rpx;
+    overflow: hidden;
+}
+
+.todo-card {
+    display: inline-flex;
+    flex-direction: column;
+    min-width: 360rpx;
+    min-height: 120rpx;
+    margin-right: 12rpx;
+    padding: 12rpx 14rpx;
+    border-radius: 12rpx;
+    background: linear-gradient(135deg, rgba(32, 40, 62, 0.9), rgba(36, 48, 80, 0.9));
+    border: 2rpx solid rgba(120, 200, 255, 0.25);
+    width: 95%;
+}
+
+.todo-card .todo-type {
+    font-size: 20rpx;
+    color: #91d5ff;
+}
+
+.todo-card .todo-main {
+    margin-top: 6rpx;
+    font-size: 26rpx;
+    color: #e6f7ff;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.todo-card {
+    margin-top: 4rpx;
+    font-size: 22rpx;
+    color: #b5dfff;
+}
+
+.todo-time {
+    color: #ccc;
+}
+
+.todo-hot {
+    border-color: #ff7875;
+    box-shadow: 0 0 12rpx rgba(255, 120, 117, 0.3);
+}
+
+.modal-mask {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-card {
+    width: 80%;
+    background: #0b1a2b;
+    border-radius: 16rpx;
+    padding: 24rpx;
+    border: 2rpx solid rgba(120, 200, 255, 0.35);
+}
+
+.modal-input {
+    width: 100%;
+    height: 72rpx;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 12rpx;
+    margin-bottom: 16rpx;
+    padding: 0 16rpx;
+    color: #e6f7ff;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 16rpx;
+}
+
+.modal-btn {
+    padding: 14rpx 24rpx;
+    border-radius: 12rpx;
+    border: none;
+}
+
+.modal-btn.cancel {
+    background: #27364f;
+    color: #b5dfff;
+}
+
+.modal-btn.ok {
+    background: linear-gradient(135deg, #2f54eb, #1890ff);
+    color: #fff;
+}
+
+.todo-empty {
+    height: 120rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #b5dfff;
+    font-size: 26rpx;
+}
+
+.todo-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12rpx;
+}
+
+.todo-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20rpx;
+    border-radius: 14rpx;
+    background: linear-gradient(135deg, rgba(32, 40, 62, 0.9), rgba(36, 48, 80, 0.9));
+    border: 2rpx solid rgba(120, 200, 255, 0.25);
+    margin-bottom: 12rpx;
+}
+
+
+.todo-row.done {
+    opacity: 0.6;
+}
+
+.todo-row.done .todo-title {
+    text-decoration: line-through;
+    color: #9aa7b0;
+}
+
+.todo-left {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 16rpx;
+}
+
+.todo-texts {
+    display: flex;
+    flex-direction: row;
+    gap: 6rpx;
+}
+
+
+.todo-checkbox {
+    width: 32rpx;
+    height: 32rpx;
+    border-radius: 6rpx;
+    border: 2rpx solid #91d5ff;
+    margin-top: 4rpx; /* 让它跟文字垂直居中 */
+}
+
+
+.todo-row.done .todo-checkbox {
+    background: #91d5ff;
+}
+
+.todo-title-line {
+    display: flex;
+    align-items: center;
+    gap: 10rpx;
+}
+
+.todo-title {
+    font-size: 28rpx;
+    color: #e6f7ff;
+}
+
+.todo-pri {
+    width: 12rpx;
+    height: 12rpx;
+    border-radius: 6rpx;
+}
+
+.todo-pri.pri0 {
+    background: #8c8c8c;
+}
+
+.todo-pri.pri1 {
+    background: #faad14;
+}
+
+.todo-pri.pri2 {
+    background: #f5222d;
+}
+
+.list-actions {
+    display: flex;
+    flex-direction: row;
+    max-width: 15%;
+}
+
+.todo-act {
+    padding: 6rpx 20rpx;
+    border-radius: 10rpx;
+    background: #2a3d5e;
+    color: #e6f7ff;
+    font-size: 24rpx;
+    height: auto;
+    line-height: 32rpx;
+    white-space: nowrap;
+}
+
+.todo-act.danger {
+    background: #6a3131;
+    color: #ffd6d6;
+}
+
+
+
+/* 新增：纵向滚动区域高度限制为两行 */
+.todo-list-scroll {
+    height: 240rpx;
+    overflow: hidden;
+}
+
+/* 新增：弹窗选择器样式与多行输入 */
+.modal-textarea {
+    width: 100%;
+    min-height: 120rpx;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 12rpx;
+    margin-bottom: 16rpx;
+    padding: 12rpx 16rpx;
+    color: #e6f7ff;
+}
+
+.modal-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12rpx;
+}
+
+.modal-label {
+    color: #b5dfff;
+    font-size: 26rpx;
+}
+
+.picker-display {
+    color: #e6f7ff;
+    font-size: 26rpx;
+    padding: 10rpx 16rpx;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 10rpx;
+}

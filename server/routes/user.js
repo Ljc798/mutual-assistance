@@ -119,7 +119,7 @@ router.post("/phone-login", async (req, res) => {
 
             await db.query(`
           INSERT INTO user_reputation (user_id, total_score, completed_tasks, canceled_tasks, reports_received, average_rating, reliability_index)
-          VALUES (?, 80.00, 0, 0, 0, 4.00, 1.0000)
+          VALUES (?, 75.00, 0, 0, 0, 3.50, 1.0000)
         `, [user.id]);
         }
 

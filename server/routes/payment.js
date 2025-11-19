@@ -87,12 +87,13 @@ router.post('/create', authMiddleware, async (req, res) => {
             );
         }
         const amount = baseCents - discountApplied;
+        const safeAmount = Math.max(amount, 1);
         const out_trade_no = `TASK_${task_id}_EMP_${receiver_id}_${String(Date.now()).slice(-8)}`;
 
         await db.query(
             `INSERT INTO task_payments (task_id, bid_id, payer_user_id, receiver_id, out_trade_no, amount, status)
              VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
-            [task_id, bid_id, userId, receiver_id, out_trade_no, amount]
+            [task_id, bid_id, userId, receiver_id, out_trade_no, safeAmount]
         );
 
         // 3. 构造微信支付请求
@@ -110,7 +111,7 @@ router.post('/create', authMiddleware, async (req, res) => {
             description,
             out_trade_no,
             notify_url,
-            amount: { total: amount, currency: 'CNY' },
+            amount: { total: safeAmount, currency: 'CNY' },
             payer: {
                 openid: user.openid
             }

@@ -1,20 +1,36 @@
 interface Task {
-    id: string;  // 任务 ID
+    id: string;
     title: string;
-    category: string;  // 任务分类
-    DDL: string;  // 期望完成时间
-    position: string;  // 任务地点
-    address: string;  // 交付地点
-    takeCode?: string;  // 取件码（快递）
-    takeName?: string;  // 外卖名字
-    takeTel?: number;  // 手机尾号
-    detail: string;  // 任务简介
-    offer: number | string;  // 报酬
-    pay_amount?: number | string; // 实际成交价（新加）
-    status: number;  // 任务状态（0: 待接单, 1: 进行中, 2: 已完成）
-    formattedDDL?: string; // 格式化后的时间
-    formattedStatus?: string; // 格式化后的状态
-    displayPrice?: string; // 显示价格字段（新增）
+    category: string;
+    DDL: string;
+    position: string;
+    address: string;
+    takeCode?: string;
+    takeName?: string;
+    takeTel?: number;
+    detail: string;
+    offer: number | string;
+    pay_amount?: number | string;
+    status: number;
+    formattedDDL?: string;
+    formattedStatus?: string;
+    displayPrice?: string;
+    mode?: string;
+    has_paid?: number;
+}
+
+type TodoType = 'task' | 'course' | 'personal';
+interface TodoItem {
+    id: string;
+    type: TodoType;
+    title: string;
+    timeText: string;
+    highlight: boolean;
+    link?: string;
+    todoId?: number;
+    isDone?: boolean;
+    priority?: number;
+    content?: string;
 }
 
 import { BASE_URL } from '../../config/env';
@@ -38,10 +54,26 @@ Page({
             { label: '已完成', value: 2 },
         ],
         activeFilter: 'all',
+
+        todos: [] as TodoItem[],
+        showAddTodoModal: false,
+        newTodoText: '',
+        newTodoTime: '',
+        newTodoContent: '',
+        newTodoPriority: 0,
+        newDueDate: '',
+        newDueTime: '',
+        editTodoId: -1,
+        today: '',
+        isSavingTodo: false,
     },
 
     onLoad() {
         this.loadTasks(); // 加载任务数据
+        this.loadTodos();
+        const d = new Date();
+        const pad = (n: number) => n.toString().padStart(2, '0');
+        this.setData({ today: `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}` });
     },
 
     onShow() {
@@ -57,6 +89,7 @@ Page({
         app.globalData.selectedTaskSchoolId = userSchoolId;
 
         this.loadTasks(); // 加载任务
+        this.loadTodos();
     },
 
     onPullDownRefresh() {
@@ -127,6 +160,237 @@ Page({
           }
         });
       },
+
+    loadTodos() {
+        const app = getApp();
+        const userId = app.globalData.userInfo?.id;
+        const token = wx.getStorageSync('token');
+        const now = new Date();
+        const pad = (n: number) => n.toString().padStart(2, '0');
+        const fmtHM = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+
+        const personalReq = new Promise<TodoItem[]>((resolve) => {
+            if (!token) return resolve([]);
+            wx.request({
+                url: `${BASE_URL}/todo/list`,
+                method: 'GET',
+                header: { Authorization: `Bearer ${token}` },
+                success: (res: any) => {
+                    if (res.data?.success && Array.isArray(res.data.todos)) {
+                        const arr = res.data.todos.filter((t: any) => t.type === 'personal').map((t: any) => {
+                            const dt = t.due_time ? new Date(t.due_time) : null;
+                            return {
+                                id: `p_${t.id}`,
+                                type: 'personal' as TodoType,
+                                title: t.title,
+                                timeText: dt ? `${pad(dt.getMonth()+1)}-${pad(dt.getDate())} ${fmtHM(dt)}` : '',
+                                highlight: dt ? (dt.getTime() - now.getTime() < 2 * 3600 * 1000 && dt.getTime() > now.getTime()) : false,
+                                todoId: t.id,
+                                isDone: !!t.is_done,
+                                priority: Number(t.priority || 0),
+                                content: t.content || ''
+                            } as TodoItem;
+                        });
+                        resolve(arr);
+                    } else resolve([]);
+                },
+                fail: () => resolve([])
+            });
+        });
+
+        const tasksReq = new Promise<TodoItem[]>((resolve) => {
+            if (!userId || !token) return resolve([]);
+            wx.request({
+                url: `${BASE_URL}/task/my`,
+                method: 'GET',
+                header: { Authorization: `Bearer ${token}` },
+                data: { userId },
+                success: (res: any) => {
+                    if (res.data.success && Array.isArray(res.data.tasks)) {
+                        const items = res.data.tasks
+                            .filter((t: any) => t.employee_id === userId && t.status === 1)
+                            .slice(0, 5)
+                            .map((t: any) => {
+                                const ddl = new Date(t.DDL);
+                                return {
+                                    id: `task_${t.id}`,
+                                    type: 'task' as TodoType,
+                                    title: t.title,
+                                    timeText: `截止 ${pad(ddl.getMonth() + 1)}-${pad(ddl.getDate())} ${fmtHM(ddl)}`,
+                                    highlight: ddl.getTime() - now.getTime() < 3 * 3600 * 1000,
+                                    link: `/pages/task/task?taskId=${t.id}`
+                                };
+                            });
+                        resolve(items);
+                    } else resolve([]);
+                },
+                fail: () => resolve([])
+            });
+        });
+
+        const courseReq = new Promise<TodoItem[]>((resolve) => {
+            if (!userId) return resolve([]);
+            wx.request({
+                url: `${BASE_URL}/timetable/get-timetable-config`,
+                method: 'GET',
+                data: { user_id: userId },
+                success: (cfgRes: any) => {
+                    if (!cfgRes.data?.success) return resolve([]);
+                    const startDateStr = cfgRes.data.data.start_date;
+                    const startDate = new Date(startDateStr);
+                    const diffDays = Math.floor((now.getTime() - startDate.getTime()) / 86400000);
+                    const week = Math.floor(diffDays / 7) + 1;
+                    const weekday = ((now.getDay() + 6) % 7) + 1;
+                    wx.request({
+                        url: `${BASE_URL}/timetable/daily`,
+                        method: 'GET',
+                        data: { user_id: userId, week, weekday },
+                        success: (dayRes: any) => {
+                            if (!dayRes.data?.success) return resolve([]);
+                            const list = (dayRes.data.data || [])
+                                .map((c: any) => {
+                                    const st = new Date(c.time_start);
+                                    return {
+                                        id: `course_${c.id}`,
+                                        type: 'course' as TodoType,
+                                        title: c.course_name,
+                                        timeText: `${fmtHM(st)} 开课 · ${c.location || ''}`,
+                                        highlight: st.getTime() - now.getTime() < 3600 * 1000 && st.getTime() > now.getTime(),
+                                        link: `/pages/course/course?course_id=${c.id}`
+                                    };
+                                })
+                                .slice(0, 5);
+                            resolve(list);
+                        },
+                        fail: () => resolve([])
+                    });
+                },
+                fail: () => resolve([])
+            });
+        });
+
+        Promise.all([tasksReq, courseReq, personalReq]).then(([t1, t2, p]) => {
+            const merged = [...t1, ...t2, ...p];
+            this.setData({ todos: merged });
+        });
+    },
+
+    openAddTodo() {
+        this.setData({ showAddTodoModal: true, newTodoText: '', newTodoTime: '', newTodoContent: '', newTodoPriority: 0, newDueDate: '', newDueTime: '', editTodoId: -1, isSavingTodo: false });
+    },
+
+    closeAddTodo() {
+        this.setData({ showAddTodoModal: false });
+    },
+
+    onNewTodoText(e: any) {
+        this.setData({ newTodoText: e.detail.value });
+    },
+
+    onNewTodoTime(e: any) { this.setData({ newTodoTime: e.detail.value }); },
+    onNewTodoContent(e: any) { this.setData({ newTodoContent: e.detail.value }); },
+    onPriorityPicker(e: any) { this.setData({ newTodoPriority: Number(e.detail.value) }); },
+    onDueDateChange(e: any) { this.setData({ newDueDate: e.detail.value }); },
+    onDueTimeChange(e: any) { this.setData({ newDueTime: e.detail.value }); },
+
+    savePersonalTodo() {
+        const { newTodoText, newTodoContent, newTodoPriority, newDueDate, newDueTime, editTodoId } = this.data as any;
+        if (!newTodoText) { wx.showToast({ title: '请输入事项', icon: 'none' }); return; }
+        const token = wx.getStorageSync('token');
+        const app = getApp();
+        if (!token || !app.globalData?.userInfo?.id) { wx.showToast({ title: '请先登录', icon: 'none' }); return; }
+        if (this.data.isSavingTodo) return;
+        this.setData({ isSavingTodo: true });
+        const due = newDueDate && newDueTime ? `${newDueDate} ${newDueTime}:00` : (newDueDate ? `${newDueDate} 00:00:00` : null);
+        const payload: any = { type: 'personal', title: newTodoText, content: newTodoContent, due_time: due, priority: newTodoPriority };
+        if (editTodoId && editTodoId > 0) {
+            wx.request({
+                url: `${BASE_URL}/todo/${editTodoId}/update`,
+                method: 'POST',
+                header: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                data: payload,
+                success: (res: any) => {
+                    if (res.data?.success) {
+                        wx.showToast({ title: '已更新', icon: 'success' });
+                        this.setData({ showAddTodoModal: false, isSavingTodo: false });
+                        this.loadTodos();
+                    } else {
+                        wx.showToast({ title: res.data?.message || '更新失败', icon: 'none' });
+                        this.setData({ isSavingTodo: false });
+                    }
+                },
+                fail: () => { wx.showToast({ title: '网络错误', icon: 'none' }); this.setData({ isSavingTodo: false }); }
+            });
+        } else {
+            wx.request({
+                url: `${BASE_URL}/todo/create`,
+                method: 'POST',
+                header: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                data: payload,
+                success: (res: any) => {
+                    if (res.data?.success) {
+                        wx.showToast({ title: '已添加', icon: 'success' });
+                        this.setData({ showAddTodoModal: false, isSavingTodo: false });
+                        this.loadTodos();
+                    } else {
+                        wx.showToast({ title: res.data?.message || '添加失败', icon: 'none' });
+                        this.setData({ isSavingTodo: false });
+                    }
+                },
+                fail: () => { wx.showToast({ title: '网络错误', icon: 'none' }); this.setData({ isSavingTodo: false }); }
+            });
+        }
+    },
+
+    toggleTodoDone(e: any) {
+        const idx = e.currentTarget.dataset.index;
+        const item = this.data.todos[idx] as TodoItem;
+        if (!item || item.type !== 'personal' || !item.todoId) return;
+        const token = wx.getStorageSync('token');
+        wx.request({
+            url: `${BASE_URL}/todo/${item.todoId}/update`,
+            method: 'POST',
+            header: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            data: { is_done: !item.isDone },
+            success: () => this.loadTodos(),
+            fail: () => wx.showToast({ title: '网络错误', icon: 'none' })
+        });
+    },
+
+    deleteTodo(e: any) {
+        const idx = e.currentTarget.dataset.index;
+        const item = this.data.todos[idx] as TodoItem;
+        if (!item || item.type !== 'personal' || !item.todoId) return;
+        const token = wx.getStorageSync('token');
+        wx.request({
+            url: `${BASE_URL}/todo/${item.todoId}`,
+            method: 'DELETE',
+            header: { Authorization: `Bearer ${token}` },
+            success: () => this.loadTodos(),
+            fail: () => wx.showToast({ title: '网络错误', icon: 'none' })
+        });
+    },
+
+    openEditTodo(e: any) {
+        const idx = e.currentTarget.dataset.index;
+        const item = this.data.todos[idx] as TodoItem;
+        if (!item || item.type !== 'personal' || !item.todoId) return;
+        const dt = item.timeText || '';
+        const datePart = dt.split(' ')[0] || '';
+        const timePart = dt.split(' ')[1] || '';
+        const normalizedDate = /^(\d{1,2})-(\d{1,2})$/.test(datePart)
+          ? `${new Date().getFullYear()}-${datePart.replace('-', '-')}`
+          : datePart;
+        this.setData({ showAddTodoModal: true, editTodoId: item.todoId, newTodoText: item.title, newTodoContent: item.content || '', newTodoPriority: item.priority || 0, newDueDate: normalizedDate || '', newDueTime: timePart || '' });
+    },
+
+    tapTodo(e: any) {
+        const idx = e.currentTarget.dataset.index;
+        const item = this.data.todos[idx] as TodoItem;
+        if (item?.link) {
+            wx.navigateTo({ url: item.link });
+        }
+    },
 
     handleCategoryClick(e: any) {
         const category = e.currentTarget.dataset.category;

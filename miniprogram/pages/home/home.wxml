@@ -72,6 +72,70 @@
         </view>
     </view>
 
+    <!-- 待办事项 -->
+    <view class="todo-container">
+        <view class="todo-header">
+            <text class="todo-title">待办</text>
+            <view class="todo-actions">
+                <button class="todo-add" bindtap="openAddTodo">+</button>
+            </view>
+        </view>
+        <view wx:if="{{todos.length === 0}}" class="todo-empty">暂无待办，点 + 添加</view>
+        <scroll-view wx:else class="todo-list-scroll" scroll-y="true">
+            <block wx:for="{{todos}}" wx:key="id">
+                <view wx:if="{{item.type === 'personal'}}" class="todo-row {{item.isDone ? 'done' : ''}}">
+                    <view class="todo-left">
+                        <view class="todo-checkbox" bindtap="toggleTodoDone" data-index="{{index}}"></view>
+                        <view class="todo-texts" bindtap="openEditTodo" data-index="{{index}}">
+                            <view class="todo-title-line">
+                                <text class="todo-title">{{item.title}}</text>
+                                <text class="todo-pri pri{{item.priority||0}}"></text>
+                            </view>
+                            <text class="todo-time">{{item.timeText}}</text>
+                        </view>
+                    </view>
+                    <view class="list-actions">
+                        <button class="todo-act danger" bindtap="deleteTodo" data-index="{{index}}">删除</button>
+                    </view>
+                </view>
+                <view wx:else class="todo-card {{item.highlight ? 'todo-hot' : ''}}" bindtap="tapTodo" data-index="{{index}}">
+                    <view class="todo-type">{{item.type === 'task' ? '任务' : '课程'}}</view>
+                    <view class="todo-main">{{item.title}}</view>
+                    <view class="todo-time">{{item.timeText}}</view>
+                </view>
+            </block>
+        </scroll-view>
+    </view>
+
+    <view wx:if="{{showAddTodoModal}}" class="modal-mask">
+        <view class="modal-card">
+            <input class="modal-input" placeholder="标题" bindinput="onNewTodoText" value="{{newTodoText}}" />
+            <textarea class="modal-textarea" placeholder="内容" bindinput="onNewTodoContent" value="{{newTodoContent}}"></textarea>
+            <view class="modal-row">
+                <text class="modal-label">优先级</text>
+                <picker mode="selector" range="{{['普通','高','紧急']}}" bindchange="onPriorityPicker">
+                    <view class="picker-display">{{newTodoPriority==2?'紧急':(newTodoPriority==1?'高':'普通')}}</view>
+                </picker>
+            </view>
+            <view class="modal-row">
+                <text class="modal-label">截止日期</text>
+                <picker mode="date" start="{{today}}" bindchange="onDueDateChange">
+                    <view class="picker-display">{{newDueDate||'请选择日期'}}</view>
+                </picker>
+            </view>
+            <view class="modal-row">
+                <text class="modal-label">截止时间</text>
+                <picker mode="time" bindchange="onDueTimeChange">
+                    <view class="picker-display">{{newDueTime||'请选择时间'}}</view>
+                </picker>
+            </view>
+            <view class="modal-actions">
+                <button class="modal-btn cancel" bindtap="closeAddTodo">取消</button>
+                <button class="modal-btn ok" bindtap="savePersonalTodo" disabled="{{isSavingTodo}}">保存</button>
+            </view>
+        </view>
+    </view>
+
     <!-- 筛选条 -->
     <view class="filter-bar">
         <block wx:for="{{filters}}" wx:key="value">

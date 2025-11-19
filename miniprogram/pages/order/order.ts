@@ -81,6 +81,7 @@ Page({
                         return true;
                     });
 
+console.log(res.data);
 
                     const mapped = filtered.map(task => {
                         let actionText = '';
@@ -118,26 +119,42 @@ Page({
                             actionText = '订单已完成';
                         }
 
-                        const finalPaid = (task.final_paid_amount_cents || 0) / 100;
-                        const originalPaid = ((task.final_paid_amount_cents || 0) + (task.discount_amount_cents || 0)) / 100;
+                        const offerNow = Number(task.offer || 0);
+                        const payAmount = Number(task.pay_amount || 0);
+                        const finalPaid = Number(task.final_paid_amount_cents || 0) / 100;
+                        const originalPaid = (Number(task.final_paid_amount_cents || 0) + Number(task.discount_amount_cents || 0)) / 100;
                         const hasDiscount = !!task.is_discount_applied && finalPaid > 0 && originalPaid > 0;
-                        const bonus = (task.employee_bonus_cents || 0) / 100;
+                        const bonus = Number(task.employee_bonus_cents || 0) / 100;
+
+                        const salaryNow = (task.status >= 1
+                            ? (task.status === 2
+                                ? (role === 'employee' ? payAmount : (hasDiscount ? finalPaid : payAmount))
+                                : payAmount)
+                            : offerNow);
+
+                        const salaryOriginal = (task.status === 2
+                            ? (role === 'employee' ? payAmount : (hasDiscount ? originalPaid : 0))
+                            : 0);
+
+                        const hasBonus = (role === 'employee' && task.status === 2 && bonus > 0);
+                        const showOriginal = (task.status === 2) && ((hasDiscount || hasBonus)) && (salaryOriginal !== salaryNow);
 
                         return {
                             orderId: task.id,
                             statusCode: task.status,
                             status: this.translateStatus(task.status),
                             title: task.title,
-                            salaryNow: (task.status >= 1 ? (task.status === 2 ? (role === 'employee' ? (task.pay_amount + bonus) : (hasDiscount ? finalPaid : task.pay_amount)) : task.pay_amount) : task.offer),
-                            salaryOriginal: (task.status === 2 ? (role === 'employee' ? task.pay_amount : (hasDiscount ? originalPaid : 0)) : 0),
+                            salaryNow,
+                            salaryOriginal,
                             hasDiscount,
-                            hasBonus: role === 'employee' && task.status === 2 && bonus > 0,
+                            hasBonus,
+                            showOriginal,
                             time: this.formatTime(task.DDL),
                             actionText,
                             showDoneButton,
                             role,
-                            employer_done: employerDone,  // 👈 加这个
-                            employee_done: employeeDone,  // 👈 还有这个
+                            employer_done: employerDone,
+                            employee_done: employeeDone,
                             hasConfirmed,
                             category: task.category,
                             mode: task.mode,

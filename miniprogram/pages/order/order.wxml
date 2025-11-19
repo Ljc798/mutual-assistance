@@ -38,7 +38,7 @@
                     <text class="order-title">截止日期：{{item.time}}</text>
                     <view class="order-salary">
                         <text class="price-current">¥{{item.salaryNow}}</text>
-                        <text wx:if="{{item.statusCode === 2 && (item.hasDiscount || item.hasBonus)}}" class="price-original">（¥{{item.salaryOriginal}}）</text>
+                        <text wx:if="{{item.showOriginal}}" class="price-original">（¥{{item.salaryOriginal}}）</text>
                     </view>
                 </view>
 

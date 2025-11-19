@@ -43,7 +43,7 @@ router.get("/items", async (req, res) => {
     try {
         const [items] = await db.query(
             `SELECT id, name, type, cost, description, price, exchange_type,
-                    level, effect_type, effect_value, duration_days, limit_per_user, sort, icon, available
+                    level, effect_value, duration_days, limit_per_user, sort, icon, available
              FROM shop_items WHERE available = 1
              ORDER BY sort ASC, id ASC`
         );
@@ -130,8 +130,8 @@ router.post("/redeem-point", authMiddleware, async (req, res) => { // 添加了�
             `INSERT INTO shop_orders (user_id, item_id, exchange_method) VALUES (?, ?, 'point')`, [user_id, item_id]
         );
 
-        // 特殊逻辑处理（新：通用 effect_type）
-        const effectType = (item.effect_type || '').toLowerCase();
+        // 特殊逻辑处理（新：通用 type）
+        const effectType = (item.type || '').toLowerCase();
         const effectValue = (() => { try { return JSON.parse(item.effect_value || '{}') } catch { return {} } })();
         const durationDays = Number(item.duration_days || 0);
         const level = normalizeLevel(item.level);
@@ -174,6 +174,10 @@ router.post("/redeem-point", authMiddleware, async (req, res) => { // 添加了�
             await connection.query(`UPDATE users SET ai_speed_boost_expire_time = IF(ai_speed_boost_expire_time > NOW(), DATE_ADD(ai_speed_boost_expire_time, INTERVAL ? DAY), DATE_ADD(NOW(), INTERVAL ? DAY)) WHERE id = ?`, [days, days, user_id]);
         } else if (effectType === 'deposit_free_once') {
             const times = Number(effectValue.times || 1);
+            const [[col]] = await connection.query("SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'deposit_free_times'");
+            if (Number(col?.cnt || 0) === 0) {
+                await connection.query("ALTER TABLE users ADD COLUMN deposit_free_times INT NOT NULL DEFAULT 0");
+            }
             await connection.query(`UPDATE users SET deposit_free_times = deposit_free_times + ? WHERE id = ?`, [times, user_id]);
         } else if (effectType === 'remove_ad') {
             await connection.query(`UPDATE users SET free_counts = free_counts + 1 WHERE id = ?`, [user_id]);
@@ -322,8 +326,8 @@ router.post('/notify', express.raw({ type: '*/*' }), async (req, res) => {
         );
         // 库存字段已移除，跳过库存扣减
 
-        // ✅ 执行虚拟效果逻辑（通用 effect_type）
-        const effectType = (item.effect_type || '').toLowerCase();
+        // ✅ 执行虚拟效果逻辑（通用 type）
+        const effectType = (item.type || '').toLowerCase();
         const effectValue = (() => { try { return JSON.parse(item.effect_value || '{}') } catch { return {} } })();
         const durationDays = Number(item.duration_days || 0);
         const level = normalizeLevel(item.level);
@@ -364,6 +368,10 @@ router.post('/notify', express.raw({ type: '*/*' }), async (req, res) => {
             await db.query(`UPDATE users SET ai_speed_boost_expire_time = IF(ai_speed_boost_expire_time > NOW(), DATE_ADD(ai_speed_boost_expire_time, INTERVAL ? DAY), DATE_ADD(NOW(), INTERVAL ? DAY)) WHERE id = ?`, [days, days, userId]);
         } else if (effectType === 'deposit_free_once') {
             const times = Number(effectValue.times || 1);
+            const [[col]] = await db.query("SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'deposit_free_times'");
+            if (Number(col?.cnt || 0) === 0) {
+                await db.query("ALTER TABLE users ADD COLUMN deposit_free_times INT NOT NULL DEFAULT 0");
+            }
             await db.query(`UPDATE users SET deposit_free_times = deposit_free_times + ? WHERE id = ?`, [times, userId]);
         } else if (effectType === 'remove_ad') {
             await db.query(`UPDATE users SET free_counts = free_counts + 1 WHERE id = ?`, [userId]);

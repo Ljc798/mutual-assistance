@@ -26,20 +26,12 @@ router.get('/callback', (req, res) => {
   return res.status(401).send('invalid signature');
 });
 
-// 2) 接收微信推送（POST）
-// 兼容三种模式：明文 / 兼容 / 安全。安全模式带 msg_signature。
-router.post('/callback', async (req, res) => {
+router.post('/callback', express.raw({ type: '*/*' }), async (req, res) => {
   try {
-    // 先拿原始 XML
-    const xml = await getRawBody(req, {
-      length: req.headers['content-length'],
-      limit: '2mb',
-      encoding: true,
-    });
+    const xml = Buffer.isBuffer(req.body) ? req.body.toString('utf8') : (typeof req.body === 'string' ? req.body : '');
 
     const { signature, timestamp, nonce, msg_signature } = req.query;
 
-    // 解析 XML
     const parsed = await xml2js.parseStringPromise(xml, { explicitArray: false });
     // 明文模式下，message = parsed.xml
     let message = parsed?.xml || {};

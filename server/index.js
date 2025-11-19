@@ -13,6 +13,7 @@ const uploadsRouter = require("./routes/uploads");
 const checkinsRouter = require("./routes/checkins");
 const shopRouter = require("./routes/shop");
 const paymentRouter = require("./routes/payment");
+const depositRouter = require("./routes/deposit");
 const timetableRouter = require("./routes/timetable");
 const timetableConfigRouter = require("./routes/timetableConfig");
 const messagesRouter = require("./routes/messages");
@@ -25,6 +26,7 @@ const orderRouter = require("./routes/order");
 const schoolRouter = require("./routes/school");
 const aiRouter = require("./routes/ai/aiRouter");
 const wechatRouter = require("./routes/wechat");
+const todoRouter = require("./routes/todo");
 
 const { registerUser, unregisterUser, sendToUser, broadcastNotify } = require("./routes/ws-helper");
 
@@ -51,6 +53,7 @@ app.use("/api/uploads", uploadsRouter);
 app.use("/api/checkins", checkinsRouter);
 app.use("/api/shop", shopRouter);
 app.use("/api/payment", paymentRouter);
+app.use("/api/deposit", depositRouter);
 app.use("/api/timetable", timetableRouter);
 app.use("/api/timetableConfig", timetableConfigRouter);
 app.use("/api/messages", messagesRouter);
@@ -63,6 +66,7 @@ app.use("/api/order", orderRouter);
 app.use("/api/school", schoolRouter);
 app.use("/api/ai", aiRouter);
 app.use("/api/wechat", wechatRouter);
+app.use("/api/todo", todoRouter);
 
 app.get("/", (req, res) => {
     res.redirect("https://admin.mutualcampus.top");

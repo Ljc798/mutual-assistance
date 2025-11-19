@@ -30,18 +30,24 @@ router.post("/create", authMiddleware, async (req, res) => {
         takeaway_code,
         takeaway_tel,
         takeaway_name,
-        publish_method, 
+        publish_method,
         mode
     } = req.body;
 
     const isSecondHand = category === '二手交易';
     if (isSecondHand) {
         if (!employer_id || !school_id || !category || !position || !title || !offer || !detail || !publish_method || !mode) {
-            return res.status(400).json({ success: false, message: "缺少必要参数(二手交易)" });
+            return res.status(400).json({
+                success: false,
+                message: "缺少必要参数(二手交易)"
+            });
         }
     } else {
         if (!employer_id || !school_id || !category || !position || !address || !DDL || !title || !offer || !detail || !publish_method || !mode) {
-            return res.status(400).json({ success: false, message: "缺少必要参数" });
+            return res.status(400).json({
+                success: false,
+                message: "缺少必要参数"
+            });
         }
     }
 
@@ -254,8 +260,11 @@ router.get("/my", authMiddleware, async (req, res) => {
           t.id, t.employer_id, t.employee_id, t.status, t.title, t.offer, t.DDL, t.employer_done, t.employee_done, t.pay_amount, t.category, t.mode, t.has_paid,
           t.discount_amount_cents, t.final_paid_amount_cents, t.is_discount_applied,
           CASE 
-            WHEN t.status = 2 AND emp.vip_level = 2 AND emp.vip_expire_time > NOW() THEN FLOOR(t.pay_amount * 100 * 0.08)
-            WHEN t.status = 2 AND emp.vip_level = 1 AND emp.vip_expire_time > NOW() THEN FLOOR(t.pay_amount * 100 * 0.03)
+            WHEN t.status = 2 THEN (
+              SELECT COALESCE(SUM(amount_cents), 0) 
+              FROM user_benefit_ledger l 
+              WHERE l.user_id = t.employee_id AND l.task_id = t.id AND l.type = 'bonus'
+            )
             ELSE 0
           END AS employee_bonus_cents,
           EXISTS(SELECT 1 FROM task_reviews r WHERE r.task_id = t.id AND r.reviewer_id = ?) AS has_review
@@ -983,6 +992,8 @@ router.post("/:id/confirm-done", authMiddleware, async (req, res) => {
         }
 
         // ✅ 双方都确认
+        let level = 0;
+        let grantCents = 0;
         if (task.category === '二手交易') {
             if (task.mode === 'fixed') {
                 // 二手一口价：买家已在下单时付款，完成时打款给卖家（employer）
@@ -994,6 +1005,8 @@ router.post("/:id/confirm-done", authMiddleware, async (req, res) => {
                  (?, 'task', '💰 收款通知', '二手订单《${task.title}》已完成，收入 ¥${task.pay_amount} 已入账')`,
                     [task.employee_id, task.employer_id]
                 );
+                const [[lr]] = await db.query(`SELECT vip_level FROM users WHERE id = ?`, [task.employee_id]);
+                level = Number(lr?.vip_level || 0);
             } else if (task.mode === 'bidding') {
                 // 二手竞价：完成时由买家付款；未付款则不结单、不打款
                 if (task.has_paid === 1) {
@@ -1004,36 +1017,60 @@ router.post("/:id/confirm-done", authMiddleware, async (req, res) => {
                      (?, 'task', '✅ 订单完成', '二手订单《${task.title}》已完成')`,
                         [task.employee_id, task.employer_id]
                     );
+                    const [[lr]] = await db.query(`SELECT vip_level FROM users WHERE id = ?`, [task.employee_id]);
+                    level = Number(lr?.vip_level || 0);
                 } else {
-                    return res.json({ success: true, message: '已确认，请买家完成支付后自动结单' });
+                    return res.json({
+                        success: true,
+                        message: '已确认，请买家完成支付后自动结单'
+                    });
                 }
             }
         } else {
             await db.query(`UPDATE tasks SET status = 2, completed_time = NOW() WHERE id = ?`, [taskId]);
-            const [[emp]] = await db.query(`SELECT vip_expire_time, vip_level FROM users WHERE id = ?`, [task.employee_id]);
-            const active = emp?.vip_expire_time && new Date(emp.vip_expire_time) > new Date();
-            const level = Number(emp?.vip_level || 0);
-            const bonusRate = active ? (level === 2 ? 0.08 : level === 1 ? 0.03 : 0) : 0;
+            const [[emp]] = await db.query(`SELECT vip_level FROM users WHERE id = ?`, [task.employee_id]);
+            level = Number(emp?.vip_level || 0);
+            const bonusRate = level === 2 ? 0.08 : (level === 1 ? 0.03 : 0);
             const payCents = Math.round(parseFloat(task.pay_amount) * 100);
-            const bonusCents = Math.floor(payCents * bonusRate);
-            await db.query(`UPDATE users SET balance = balance + ? WHERE id = ?`, [(payCents + bonusCents) / 100, task.employee_id]);
-            if (bonusCents > 0) {
+            const plannedBonusCents = Math.floor(payCents * bonusRate);
+
+            const monthStr = dayjs().format('YYYY-MM');
+            const [[usedRow]] = await db.query(
+                `SELECT COALESCE(SUM(amount_cents), 0) AS used_cents FROM user_benefit_ledger WHERE user_id = ? AND type = 'bonus' AND DATE_FORMAT(created_at,'%Y-%m') = ?`,
+                [task.employee_id, monthStr]
+            );
+            const usedCents = Number(usedRow?.used_cents || 0);
+            const limitL1 = Number(1000);
+            const limitL2 = Number(3000);
+            const monthlyLimit = level === 2 ? limitL2 : (level === 1 ? limitL1 : 0);
+            const remaining = Math.max(0, monthlyLimit - usedCents);
+            grantCents = Math.min(plannedBonusCents, remaining);
+
+            await db.query(`UPDATE users SET balance = balance + ? WHERE id = ?`, [(payCents + grantCents) / 100, task.employee_id]);
+            if (grantCents > 0) {
                 await db.query(
-                    `INSERT INTO user_benefit_ledger (user_id, task_id, type, amount_cents, source_vip_level, note) VALUES (?, ?, 'bonus', ?, (SELECT vip_level FROM users WHERE id = ?), ?)`,
-                    [task.employee_id, taskId, bonusCents, task.employee_id, `任务完成会员加成，任务#${taskId}`]
+                    `INSERT INTO user_benefit_ledger (user_id, task_id, type, amount_cents, source_vip_level, note) VALUES (?, ?, 'bonus', ?, ?, ?)`,
+                    [task.employee_id, taskId, grantCents, level, `任务完成会员加成（当月剩余额度 ${Math.max(0, remaining - grantCents)} 分），任务#${taskId}`]
                 );
             }
 
             await db.query(
                 `INSERT INTO notifications (user_id, type, title, content) VALUES
              (?, 'task', '✅ 任务完成', '你参与的任务《${task.title}》已圆满完成，期待与您的下一次相遇 🎉'),
-             (?, 'task', '💰 打款通知', '任务《${task.title}》已完成，报酬 ¥${task.pay_amount}${bonusCents>0?` + 会员加成 ¥${(bonusCents/100)}`:''} 已到账你的钱包')`,
+             (?, 'task', '💰 打款通知', '任务《${task.title}》已完成，报酬 ¥${task.pay_amount}${grantCents>0?` + 会员加成 ¥${(grantCents/100)}`:''} 已到账你的钱包')`,
                 [task.employer_id, task.employee_id]
             );
+
+            const [[dep]] = await db.query('SELECT id, amount_cents FROM user_deposits WHERE user_id = ? AND task_id = ? AND status = "frozen" LIMIT 1', [task.employee_id, taskId]);
+            if (dep && Number(dep.amount_cents || 0) > 0) {
+                await db.query('UPDATE user_deposits SET status = "refunded", refunded_at = NOW() WHERE id = ?', [dep.id]);
+                await db.query('UPDATE users SET balance = balance + ? WHERE id = ?', [Number(dep.amount_cents) / 100, task.employee_id]);
+                await db.query('INSERT INTO notifications (user_id, type, title, content) VALUES (?, "task", "🔁 保证金已退回", "任务完成，保证金已退回你的钱包")', [task.employee_id]);
+            }
         }
 
         try {
-            const repMul = active ? (level === 2 ? 2.0 : level === 1 ? 1.5 : 1.0) : 1.0;
+            const repMul = level === 2 ? 2.0 : (level === 1 ? 1.5 : 1.0);
             const repGain = Math.floor(2 * repMul);
             await addReputationLog(
                 task.employee_id,
@@ -1052,19 +1089,9 @@ router.post("/:id/confirm-done", authMiddleware, async (req, res) => {
             console.warn("⚠️ 更新信誉失败（忽略不中断）:", repErr.message);
         }
 
-        // 重新计算用于通知展示的会员加成与信誉值
-        let bonusNote = 0;
-        let repGainNote = 2;
-        try {
-            const [[empNote]] = await db.query(`SELECT vip_expire_time, vip_level FROM users WHERE id = ?`, [task.employee_id]);
-            const actNote = empNote?.vip_expire_time && new Date(empNote.vip_expire_time) > new Date();
-            const lvlNote = Number(empNote?.vip_level || 0);
-            const rateNote = actNote ? (lvlNote === 2 ? 0.08 : lvlNote === 1 ? 0.03 : 0) : 0;
-            const payCentsNote = Math.round(parseFloat(task.pay_amount) * 100);
-            bonusNote = Math.floor(payCentsNote * rateNote) / 100;
-            const repMulNote = actNote ? (lvlNote === 2 ? 2.0 : lvlNote === 1 ? 1.5 : 1.0) : 1.0;
-            repGainNote = Math.floor(2 * repMulNote);
-        } catch {}
+        // 通知展示的会员加成与信誉值（基于本次实际发放与等级）
+        const bonusNote = grantCents / 100;
+        const repGainNote = Math.floor(2 * (level === 2 ? 2.0 : (level === 1 ? 1.5 : 1.0)));
 
         sendToUser(task.employer_id, {
             type: 'notify',
@@ -1132,17 +1159,68 @@ router.post("/:id/accept", authMiddleware, async (req, res) => {
     const taskId = parseInt(req.params.id);
     const employeeId = req.user.id;
     if (isNaN(taskId)) {
-        return res.status(400).json({ success: false, message: "任务 ID 非法" });
+        return res.status(400).json({
+            success: false,
+            message: "任务 ID 非法"
+        });
     }
     try {
-        const [[task]] = await db.query("SELECT id, status, mode, employer_id, title FROM tasks WHERE id = ?", [taskId]);
-        if (!task) return res.status(404).json({ success: false, message: "任务不存在" });
-        if (parseInt(task.status) !== 0) return res.status(400).json({ success: false, message: "任务当前不可接单" });
-        if (task.mode !== 'fixed') return res.status(400).json({ success: false, message: "仅支持一口价任务接单" });
+        const [
+            [task]
+        ] = await db.query("SELECT id, status, mode, employer_id, title, pay_amount FROM tasks WHERE id = ?", [taskId]);
+        if (!task) return res.status(404).json({
+            success: false,
+            message: "任务不存在"
+        });
+        if (parseInt(task.status) !== 0) return res.status(400).json({
+            success: false,
+            message: "任务当前不可接单"
+        });
+        if (task.mode !== 'fixed') return res.status(400).json({
+            success: false,
+            message: "仅支持一口价任务接单"
+        });
+        const [
+            [hasFrozen]
+        ] = await db.query('SELECT id FROM user_deposits WHERE user_id = ? AND task_id = ? AND status = "frozen" LIMIT 1', [employeeId, taskId]);
+        if (!hasFrozen) {
+            const [[levelRow]] = await db.query('SELECT vip_level FROM users WHERE id = ?', [employeeId]);
+            const [[rep]] = await db.query('SELECT total_score FROM user_reputation WHERE user_id = ?', [employeeId]);
+            const [[col]] = await db.query("SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'deposit_free_times'");
+            const hasCol = Number(col?.cnt || 0) > 0;
+            const score = Number(rep?.total_score || 50);
+            let percent = 0;
+            if (score > 85) percent = 0;
+            else if (score > 70) percent = 10;
+            else if (score > 60) percent = 20;
+            else if (score > 50) percent = 50;
+            else percent = 80;
+            const baseCents = Math.round(Number((task.pay_amount || task.offer) || 0) * 100);
+            let requiredCents = Math.floor(baseCents * (percent / 100));
+            const level = Number(levelRow?.vip_level || 0);
+            if (level === 2) requiredCents = 0;
+            if (level === 1 && requiredCents > 0) requiredCents = Math.floor(requiredCents * 0.8);
+            let exempt = false;
+            if (hasCol) {
+                const [[user]] = await db.query('SELECT deposit_free_times FROM users WHERE id = ?', [employeeId]);
+                exempt = Number(user?.deposit_free_times || 0) > 0;
+            }
+            if (!exempt && requiredCents > 0) {
+                return res.status(400).json({ success: false, message: "需先缴纳保证金", deposit_required_cents: requiredCents, vip_level: level });
+            }
+            if (requiredCents === 0) {
+                if (exempt && hasCol) {
+                    await db.query('UPDATE users SET deposit_free_times = deposit_free_times - 1 WHERE id = ? AND deposit_free_times > 0', [employeeId]);
+                }
+                await db.query('INSERT INTO user_deposits (user_id, task_id, amount_cents, status, created_at) VALUES (?, ?, 0, "frozen", NOW())', [employeeId, taskId]);
+            }
+        }
 
         await db.query("UPDATE tasks SET employee_id = ?, status = 1 WHERE id = ?", [employeeId, taskId]);
 
-        const [[payment]] = await db.query(
+        const [
+            [payment]
+        ] = await db.query(
             "SELECT id FROM task_payments WHERE task_id = ? AND out_trade_no LIKE ? ORDER BY id DESC LIMIT 1",
             [taskId, `TASK_${taskId}_FIXED_%`]
         );
@@ -1155,43 +1233,85 @@ router.post("/:id/accept", authMiddleware, async (req, res) => {
             [task.employer_id, '📦 任务已被接单', `你的任务《${task.title}》已被接单，已进入进行中`]
         );
 
-        return res.json({ success: true, message: "接单成功" });
+        return res.json({
+            success: true,
+            message: "接单成功"
+        });
     } catch (err) {
         console.error("❌ 接单失败:", err);
-        return res.status(500).json({ success: false, message: "服务器错误" });
+        return res.status(500).json({
+            success: false,
+            message: "服务器错误"
+        });
     }
 });
 
 router.post("/:id/mark-unpaid", authMiddleware, async (req, res) => {
     const taskId = parseInt(req.params.id);
     const userId = req.user.id;
-    if (isNaN(taskId)) return res.status(400).json({ success: false, message: "任务ID非法" });
+    if (isNaN(taskId)) return res.status(400).json({
+        success: false,
+        message: "任务ID非法"
+    });
     try {
-        const [[task]] = await db.query("SELECT id, employer_id FROM tasks WHERE id = ?", [taskId]);
-        if (!task) return res.status(404).json({ success: false, message: "任务不存在" });
-        if (task.employer_id !== userId) return res.status(403).json({ success: false, message: "仅雇主可标记未支付" });
+        const [
+            [task]
+        ] = await db.query("SELECT id, employer_id FROM tasks WHERE id = ?", [taskId]);
+        if (!task) return res.status(404).json({
+            success: false,
+            message: "任务不存在"
+        });
+        if (task.employer_id !== userId) return res.status(403).json({
+            success: false,
+            message: "仅雇主可标记未支付"
+        });
         await db.query("UPDATE tasks SET status = -1 WHERE id = ?", [taskId]);
-        return res.json({ success: true });
+        return res.json({
+            success: true
+        });
     } catch (err) {
         console.error("❌ 标记未支付失败:", err);
-        return res.status(500).json({ success: false, message: "服务器错误" });
+        return res.status(500).json({
+            success: false,
+            message: "服务器错误"
+        });
     }
 });
 
 router.post("/assign", authMiddleware, async (req, res) => {
-    const { task_id, bid_id, receiver_id } = req.body;
+    const {
+        task_id,
+        bid_id,
+        receiver_id
+    } = req.body;
     const userId = req.user.id;
     if (!task_id || !bid_id || !receiver_id) {
-        return res.status(400).json({ success: false, message: "缺少参数" });
+        return res.status(400).json({
+            success: false,
+            message: "缺少参数"
+        });
     }
     try {
-        const [[task]] = await db.query("SELECT id, category, mode, employer_id, title FROM tasks WHERE id = ?", [task_id]);
-        if (!task) return res.status(404).json({ success: false, message: "任务不存在" });
+        const [
+            [task]
+        ] = await db.query("SELECT id, category, mode, employer_id, title FROM tasks WHERE id = ?", [task_id]);
+        if (!task) return res.status(404).json({
+            success: false,
+            message: "任务不存在"
+        });
         if (task.category !== '二手交易' || task.mode !== 'bidding') {
-            return res.status(400).json({ success: false, message: "仅二手竞价任务支持无支付指派" });
+            return res.status(400).json({
+                success: false,
+                message: "仅二手竞价任务支持无支付指派"
+            });
         }
-        const [[bid]] = await db.query("SELECT price FROM task_bids WHERE id = ? AND task_id = ?", [bid_id, task_id]);
-        if (!bid) return res.status(404).json({ success: false, message: "投标不存在" });
+        const [
+            [bid]
+        ] = await db.query("SELECT price FROM task_bids WHERE id = ? AND task_id = ?", [bid_id, task_id]);
+        if (!bid) return res.status(404).json({
+            success: false,
+            message: "投标不存在"
+        });
 
         await db.query(
             `UPDATE tasks SET employee_id = ?, selected_bid_id = ?, status = 1, has_paid = 0, pay_amount = ? WHERE id = ?`,
@@ -1205,44 +1325,85 @@ router.post("/assign", authMiddleware, async (req, res) => {
             [receiver_id, task.employer_id]
         );
 
-        return res.json({ success: true, message: "指派成功" });
+        return res.json({
+            success: true,
+            message: "指派成功"
+        });
     } catch (err) {
         console.error("❌ 二手竞价指派失败:", err);
-        return res.status(500).json({ success: false, message: "服务器错误" });
+        return res.status(500).json({
+            success: false,
+            message: "服务器错误"
+        });
     }
 });
 
 router.get("/:id/review", authMiddleware, async (req, res) => {
     const taskId = parseInt(req.params.id);
     const userId = req.user.id;
-    if (isNaN(taskId)) return res.status(400).json({ success: false, message: "任务ID非法" });
+    if (isNaN(taskId)) return res.status(400).json({
+        success: false,
+        message: "任务ID非法"
+    });
     try {
         const [rows] = await db.query("SELECT * FROM task_reviews WHERE task_id = ? AND reviewer_id = ? LIMIT 1", [taskId, userId]);
-        return res.json({ success: true, review: rows[0] || null });
+        return res.json({
+            success: true,
+            review: rows[0] || null
+        });
     } catch (err) {
         console.error("❌ 获取评价失败:", err);
-        return res.status(500).json({ success: false, message: "服务器错误" });
+        return res.status(500).json({
+            success: false,
+            message: "服务器错误"
+        });
     }
 });
 
 router.post("/:id/review", authMiddleware, async (req, res) => {
     const taskId = parseInt(req.params.id);
     const userId = req.user.id;
-    const { rating, comment } = req.body || {};
-    if (isNaN(taskId) || !rating) return res.status(400).json({ success: false, message: "参数错误" });
+    const {
+        rating,
+        comment
+    } = req.body || {};
+    if (isNaN(taskId) || !rating) return res.status(400).json({
+        success: false,
+        message: "参数错误"
+    });
     try {
-        const [[task]] = await db.query("SELECT id, employer_id, employee_id, status FROM tasks WHERE id = ?", [taskId]);
-        if (!task) return res.status(404).json({ success: false, message: "任务不存在" });
-        if (parseInt(task.status) !== 2) return res.status(400).json({ success: false, message: "仅已完成任务可评价" });
+        const [
+            [task]
+        ] = await db.query("SELECT id, employer_id, employee_id, status FROM tasks WHERE id = ?", [taskId]);
+        if (!task) return res.status(404).json({
+            success: false,
+            message: "任务不存在"
+        });
+        if (parseInt(task.status) !== 2) return res.status(400).json({
+            success: false,
+            message: "仅已完成任务可评价"
+        });
 
         let role = '';
         let revieweeId = null;
-        if (userId === task.employer_id) { role = 'employer'; revieweeId = task.employee_id; }
-        else if (userId === task.employee_id) { role = 'employee'; revieweeId = task.employer_id; }
-        else return res.status(403).json({ success: false, message: "非任务参与者不可评价" });
+        if (userId === task.employer_id) {
+            role = 'employer';
+            revieweeId = task.employee_id;
+        } else if (userId === task.employee_id) {
+            role = 'employee';
+            revieweeId = task.employer_id;
+        } else return res.status(403).json({
+            success: false,
+            message: "非任务参与者不可评价"
+        });
 
-        const [[exists]] = await db.query("SELECT id FROM task_reviews WHERE task_id = ? AND reviewer_id = ? LIMIT 1", [taskId, userId]);
-        if (exists) return res.status(400).json({ success: false, message: "已评价" });
+        const [
+            [exists]
+        ] = await db.query("SELECT id FROM task_reviews WHERE task_id = ? AND reviewer_id = ? LIMIT 1", [taskId, userId]);
+        if (exists) return res.status(400).json({
+            success: false,
+            message: "已评价"
+        });
 
         await db.query(
             "INSERT INTO task_reviews (task_id, reviewer_id, reviewee_id, role, rating, comment) VALUES (?, ?, ?, ?, ?, ?)",
@@ -1253,10 +1414,29 @@ router.post("/:id/review", authMiddleware, async (req, res) => {
         const delta = isGood ? 2 : -3;
         await addReputationLog(revieweeId, "task_review", delta, isGood ? "获得好评，信誉+2" : "收到差评，信誉-3");
 
-        return res.json({ success: true });
+        const [
+            [stat]
+        ] = await db.query(
+            "SELECT AVG(rating) AS avg_rating FROM task_reviews WHERE reviewee_id = ?",
+            [revieweeId]
+        );
+        const avgRating = stat && stat.avg_rating != null ? parseFloat(stat.avg_rating) : null;
+        if (avgRating != null) {
+            await db.query(
+                "UPDATE user_reputation SET average_rating = ?, updated_at = NOW() WHERE user_id = ?",
+                [avgRating, revieweeId]
+            );
+        }
+
+        return res.json({
+            success: true
+        });
     } catch (err) {
         console.error("❌ 提交评价失败:", err);
-        return res.status(500).json({ success: false, message: "服务器错误" });
+        return res.status(500).json({
+            success: false,
+            message: "服务器错误"
+        });
     }
 });
 

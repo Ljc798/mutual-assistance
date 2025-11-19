@@ -39,12 +39,20 @@ router.post("/prepay", authMiddleware, async (req, res) => {
             message: "任务不存在"
         });
         console.log(privateKey.slice(0, 100));
-        const commission = Math.floor(task.offer * 100 * 0.02);
-        const [[uinfo]] = await db.query(`SELECT vip_level, vip_expire_time FROM users WHERE id = ?`, [userId]);
-        const active = uinfo?.vip_expire_time && new Date(uinfo.vip_expire_time) > new Date();
+        const commission = Math.max(Math.floor(task.offer * 100 * 0.02), 1);
+        const [[uinfo]] = await db.query(`SELECT vip_level FROM users WHERE id = ?`, [userId]);
         const level = Number(uinfo?.vip_level || 0);
-        const discount = active ? (level === 2 ? 0.92 : level === 1 ? 0.97 : 1.0) : 1.0;
-        const commissionAfter = Math.floor(commission * discount);
+        const rate = level === 2 ? 0.92 : (level === 1 ? 0.97 : 1.0);
+        const plannedDiscount = commission - Math.floor(commission * rate);
+        const d = new Date();
+        const monthStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        const [[limitRow]] = await db.query(`SELECT monthly_limit_cents, used_cents FROM user_discount_limits WHERE user_id = ? AND month = ?`, [userId, monthStr]);
+        let discountApplied = plannedDiscount;
+        if (limitRow && Number(limitRow.monthly_limit_cents) > 0) {
+            const remaining = Math.max(0, Number(limitRow.monthly_limit_cents) - Number(limitRow.used_cents));
+            discountApplied = Math.max(0, Math.min(plannedDiscount, remaining));
+        }
+        const commissionAfter = Math.max(commission - discountApplied, 1);
         const out_trade_no = `TASKFEE_${task_id}_${String(Date.now()).slice(-8)}`;
 
         const [
@@ -53,7 +61,7 @@ router.post("/prepay", authMiddleware, async (req, res) => {
 
         await db.query(
             `INSERT INTO task_payments (task_id, payer_user_id, receiver_id, amount, out_trade_no, status) 
-   VALUES (?, ?, ?, ?, ?, 'pending')`,
+  VALUES (?, ?, ?, ?, ?, 'pending')`,
             [task_id, userId, null, commissionAfter, out_trade_no]
         );
 
@@ -123,11 +131,20 @@ router.post("/prepay-fixed", authMiddleware, async (req, res) => {
         const offerFen = Math.floor(parseFloat(task.offer) * 100);
         const commissionFen = include_commission ? Math.max(Math.floor(parseFloat(task.offer) * 100 * 0.02), 1) : 0;
         const baseTotal = offerFen + commissionFen;
-        const [[uinfo]] = await db.query(`SELECT vip_level, vip_expire_time FROM users WHERE id = ?`, [userId]);
-        const active = uinfo?.vip_expire_time && new Date(uinfo.vip_expire_time) > new Date();
+        const [[uinfo]] = await db.query(`SELECT vip_level FROM users WHERE id = ?`, [userId]);
         const level = Number(uinfo?.vip_level || 0);
-        const discount = active ? (level === 2 ? 0.92 : level === 1 ? 0.97 : 1.0) : 1.0;
-        const totalFen = Math.floor(baseTotal * discount);
+        const rate = level === 2 ? 0.92 : (level === 1 ? 0.97 : 1.0);
+        const plannedDiscount = baseTotal - Math.floor(baseTotal * rate);
+        const d = new Date();
+        const monthStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        const [[limitRow]] = await db.query(`SELECT monthly_limit_cents, used_cents FROM user_discount_limits WHERE user_id = ? AND month = ?`, [userId, monthStr]);
+        let discountApplied = plannedDiscount;
+        if (limitRow && Number(limitRow.monthly_limit_cents) > 0) {
+            const remaining = Math.max(0, Number(limitRow.monthly_limit_cents) - Number(limitRow.used_cents));
+            discountApplied = Math.max(0, Math.min(plannedDiscount, remaining));
+        }
+        let totalFen = baseTotal - discountApplied;
+        if (totalFen < 1) totalFen = 1;
         const out_trade_no = `TASK_${task_id}_FIXED_${String(Date.now()).slice(-8)}`;
 
         const [[user]] = await db.query("SELECT openid FROM users WHERE id = ?", [userId]);
@@ -280,6 +297,7 @@ router.post("/prepay-second-hand-complete", authMiddleware, async (req, res) => 
         res.status(500).json({ success: false, message: "服务异常" });
     }
 });
+
 router.post("/payment-notify", express.raw({
     type: '*/*'
 }), async (req, res) => {
@@ -316,11 +334,31 @@ router.post("/payment-notify", express.raw({
             const match = outTradeNo.match(/^TASKFEE_(\d+)_/);
             taskId = parseInt(match[1]);
             await db.query(`UPDATE tasks SET status = 0 WHERE id = ?`, [taskId]);
-            const [[task]] = await db.query(`SELECT title, employer_id FROM tasks WHERE id = ?`, [taskId]);
+            const [[task]] = await db.query(`SELECT title, employer_id, offer FROM tasks WHERE id = ?`, [taskId]);
             if (task && task.employer_id) {
                 await db.query(
                     `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
                     [task.employer_id, '📢 任务发布成功', `你发布的任务《${task.title}》已成功上线，等待接单人～`]
+                );
+            }
+            const [[payRow]] = await db.query(`SELECT amount, payer_user_id FROM task_payments WHERE out_trade_no = ?`, [outTradeNo]);
+            const finalFen = Number(payRow?.amount || 0);
+            const payerId = payRow?.payer_user_id;
+            const commissionFen = Math.max(Math.floor(parseFloat(task.offer) * 100 * 0.02), 1);
+            const discountFen = Math.max(0, commissionFen - finalFen);
+            if (discountFen > 0 && payerId) {
+                const [[payer]] = await db.query('SELECT vip_level FROM users WHERE id = ?', [payerId]);
+                const sourceLevel = Number(payer?.vip_level || 0);
+                await db.query(
+                    `INSERT INTO user_benefit_ledger (user_id, task_id, type, amount_cents, source_vip_level, note) VALUES (?, ?, 'publish_discount', ?, ?, ?)`,
+                    [payerId, taskId, discountFen, sourceLevel, `发布支付折扣，订单号 ${outTradeNo}`]
+                );
+                const d = new Date();
+                const monthStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+                await db.query(
+                    `INSERT INTO user_discount_limits (user_id, month, monthly_limit_cents, used_cents) VALUES (?, ?, 0, ?) 
+                     ON DUPLICATE KEY UPDATE used_cents = used_cents + VALUES(used_cents), updated_at = NOW()`,
+                    [payerId, monthStr, discountFen]
                 );
             }
         } else if (/^TASK_\d+_FIXED_/.test(outTradeNo)) {

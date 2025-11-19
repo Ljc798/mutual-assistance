@@ -144,7 +144,7 @@
             </scroll-view>
             <view class="popup-footnotes">
                 <view class="note">1.任务保障金：按成交价比例发放，每月最高50元。</view>
-                <view class="note">2.任务激励与发单折扣：VIP每月累计最高20元，SVIP每月最高40元，超过部分不再累积。</view>
+                <view class="note">2.任务激励与发单折扣：VIP每月累计最高10元，SVIP每月最高30元，超过部分不再累积。</view>
                 <view class="note">3.保证金减免：根据等级按比例减免，SVIP可全免。</view>
             </view>
             <button class="close-btn" bindtap="closePopup">我知道了</button>
