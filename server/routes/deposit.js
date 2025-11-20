@@ -34,10 +34,13 @@ router.get('/requirement', authMiddleware, async (req, res) => {
     if (!task) return res.status(404).json({ success: false, message: '任务不存在' });
     const [[rep]] = await db.query('SELECT total_score FROM user_reputation WHERE user_id = ?', [userId]);
     const [[levelRow]] = await db.query('SELECT vip_level FROM users WHERE id = ?', [userId]);
-    const [[col]] = await db.query("SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'deposit_free_times'");
-    const hasCol = Number(col?.cnt || 0) > 0;
-    const [[user]] = hasCol ? await db.query('SELECT deposit_free_times FROM users WHERE id = ?', [userId]) : [[{ deposit_free_times: 0 }]];
     const [[frozen]] = await db.query('SELECT id FROM user_deposits WHERE user_id = ? AND task_id = ? AND status = "frozen" LIMIT 1', [userId, taskId]);
+
+    const level = Number(levelRow?.vip_level || 0);
+    if (level === 2) {
+      return res.json({ success: true, deposit_required_cents: 0, rule_percent: 0, vip_level: level, exempt_available: false, already_frozen: !!frozen });
+    }
+
     const score = Number(rep?.total_score || 50);
     let percent = 0;
     if (score > 85) percent = 0;
@@ -45,13 +48,12 @@ router.get('/requirement', authMiddleware, async (req, res) => {
     else if (score > 60) percent = 20;
     else if (score > 50) percent = 50;
     else percent = 80;
+
     const baseCents = Math.round(Number((task.pay_amount || task.offer) || 0) * 100);
     let requiredCents = Math.floor(baseCents * (percent / 100));
-    const level = Number(levelRow?.vip_level || 0);
-    if (level === 2) requiredCents = 0;
     if (level === 1 && requiredCents > 0) requiredCents = Math.floor(requiredCents * 0.8);
-    const exempt = Number(user?.deposit_free_times || 0) > 0;
-    return res.json({ success: true, deposit_required_cents: exempt ? 0 : requiredCents, rule_percent: percent, vip_level: level, exempt_available: exempt, already_frozen: !!frozen });
+
+    return res.json({ success: true, deposit_required_cents: requiredCents, rule_percent: percent, vip_level: level, exempt_available: false, already_frozen: !!frozen });
   } catch (err) {
     console.error('❌ 保证金需求计算失败:', err);
     return res.status(500).json({ success: false, message: '服务器错误' });
@@ -70,9 +72,7 @@ router.post('/freeze', authMiddleware, async (req, res) => {
     if (!task) return res.status(404).json({ success: false, message: '任务不存在' });
     const [[rep]] = await db.query('SELECT total_score FROM user_reputation WHERE user_id = ?', [userId]);
     const [[levelRow]] = await db.query('SELECT vip_level, openid FROM users WHERE id = ?', [userId]);
-    const [[col]] = await db.query("SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'deposit_free_times'");
-    const hasCol = Number(col?.cnt || 0) > 0;
-    const [[user]] = hasCol ? await db.query('SELECT deposit_free_times, openid FROM users WHERE id = ?', [userId]) : [[{ deposit_free_times: 0, openid: levelRow?.openid }]];
+
     const score = Number(rep?.total_score || 50);
     let percent = 0;
     if (score > 85) percent = 0;
@@ -80,18 +80,14 @@ router.post('/freeze', authMiddleware, async (req, res) => {
     else if (score > 60) percent = 20;
     else if (score > 50) percent = 50;
     else percent = 80;
+
     const baseCents = Math.round(Number((task.pay_amount || task.offer) || 0) * 100);
     let requiredCents = Math.floor(baseCents * (percent / 100));
     const level = Number(levelRow?.vip_level || 0);
     if (level === 2) requiredCents = 0;
     if (level === 1 && requiredCents > 0) requiredCents = Math.floor(requiredCents * 0.8);
-    const exempt = Number(user?.deposit_free_times || 0) > 0;
-    if (exempt) requiredCents = 0;
 
     if (requiredCents === 0) {
-      if (hasCol) {
-        await db.query('UPDATE users SET deposit_free_times = deposit_free_times - 1 WHERE id = ? AND deposit_free_times > 0', [userId]);
-      }
       await db.query(
         'INSERT INTO user_deposits (user_id, task_id, amount_cents, status, created_at) VALUES (?, ?, 0, "frozen", NOW())',
         [userId, taskId]
@@ -118,7 +114,7 @@ router.post('/freeze', authMiddleware, async (req, res) => {
       out_trade_no,
       notify_url,
       amount: { total: requiredCents, currency: 'CNY' },
-      payer: { openid: user.openid }
+      payer: { openid: levelRow?.openid }
     });
 
     const signature = generateSignature(method, url, timestamp, nonceStr, body);

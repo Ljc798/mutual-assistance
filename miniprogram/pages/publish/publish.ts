@@ -102,10 +102,14 @@ Page({
         limit: 0,
         dailyBonus: 0,
         quotaRemain: 0,
+        isSVIP: false,
     },
 
     async onLoad() {
         this.fetchAiUsage();
+        const app = getApp();
+        const level = Number(app?.globalData?.userInfo?.vip_level || 0);
+        this.setData({ isSVIP: level === 2 });
     },
 
     async fetchAiUsage() {
@@ -121,6 +125,9 @@ Page({
 
         const { remaining, limit, daily_bonus, quota_remain } = res.data || {};
         this.setData({ remaining, limit, dailyBonus: Number(daily_bonus || 0), quotaRemain: Number(quota_remain || 0) });
+        const app = getApp();
+        const level = Number(app?.globalData?.userInfo?.vip_level || 0);
+        this.setData({ isSVIP: level === 2 });
     },
 
     // 处理任务分类选择

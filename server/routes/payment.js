@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
 const axios = require('axios');
-const db = require('../config/db'); // ⬅️ 确保你有引入数据库配置
+const db = require('../config/db');
 const {
     sendToUser
 } = require("./ws-helper");
@@ -319,7 +319,7 @@ router.post('/notify', express.raw({
                         orderNo: taskId, // 订单号
                         title: task.title, // 任务标题
                         status: `进行中`, // 状态文字
-                        time: new Date().toISOString().slice(0, 16).replace('T', ' '), // 2025-09-11 15:33
+                        time: new Date().toISOString().slice(0, 16).replace('T', ' '),
                         taskId: taskId // 跳转任务详情
                     });
                 }

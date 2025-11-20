@@ -99,7 +99,6 @@ router.post("/phone-login", async (req, res) => {
 
         } else {
             const now = new Date();
-            now.setHours(now.getHours() + 8);
 
             const newUser = {
                 wxid: uuidv4(),

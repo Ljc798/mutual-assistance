@@ -2,17 +2,18 @@ const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
 const axios = require('axios');
+
 function normalizeLevel(level) {
-  if (level === null || level === undefined) return 0;
-  if (typeof level === 'string') {
-    const s = level.toLowerCase();
-    if (s === 'vip') return 1;
-    if (s === 'svip') return 2;
-    const n = parseInt(s, 10);
+    if (level === null || level === undefined) return 0;
+    if (typeof level === 'string') {
+        const s = level.toLowerCase();
+        if (s === 'vip') return 1;
+        if (s === 'svip') return 2;
+        const n = parseInt(s, 10);
+        return Number.isFinite(n) ? n : 0;
+    }
+    const n = Number(level);
     return Number.isFinite(n) ? n : 0;
-  }
-  const n = Number(level);
-  return Number.isFinite(n) ? n : 0;
 }
 const jwt = require('jsonwebtoken');
 const db = require('../config/db');
@@ -46,10 +47,16 @@ router.get("/items", async (req, res) => {
              FROM shop_items WHERE available = 1
              ORDER BY sort ASC, id ASC`
         );
-        res.json({ success: true, items });
+        res.json({
+            success: true,
+            items
+        });
     } catch (err) {
         console.error("❌ 获取商城商品失败:", err);
-        res.status(500).json({ success: false, message: "服务器错误" });
+        res.status(500).json({
+            success: false,
+            message: "服务器错误"
+        });
     }
 });
 
@@ -71,7 +78,9 @@ router.post("/redeem-point", authMiddleware, async (req, res) => { // 添加了�
     try {
         await connection.beginTransaction();
 
-        const [[item]] = await connection.query(`SELECT * FROM shop_items WHERE id = ? FOR UPDATE`, [item_id]);
+        const [
+            [item]
+        ] = await connection.query(`SELECT * FROM shop_items WHERE id = ? FOR UPDATE`, [item_id]);
         if (!item) {
             await connection.rollback();
             return res.status(404).json({
@@ -110,13 +119,18 @@ router.post("/redeem-point", authMiddleware, async (req, res) => { // 添加了�
 
         // 限购检查（积分兑换）
         if (item.limit_per_user && Number(item.limit_per_user) > 0) {
-            const [[cnt]] = await connection.query(
+            const [
+                [cnt]
+            ] = await connection.query(
                 `SELECT COUNT(*) AS c FROM shop_orders WHERE user_id = ? AND item_id = ?`,
                 [user_id, item_id]
             );
             if (Number(cnt.c) >= Number(item.limit_per_user)) {
                 await connection.rollback();
-                return res.status(400).json({ success: false, message: '已达该商品限购次数' });
+                return res.status(400).json({
+                    success: false,
+                    message: '已达该商品限购次数'
+                });
             }
         }
 
@@ -131,7 +145,13 @@ router.post("/redeem-point", authMiddleware, async (req, res) => { // 添加了�
 
         // 特殊逻辑处理（新：通用 type）
         const effectType = (item.type || '').toLowerCase();
-        const effectValue = (() => { try { return JSON.parse(item.effect_value || '{}') } catch { return {} } })();
+        const effectValue = (() => {
+            try {
+                return JSON.parse(item.effect_value || '{}')
+            } catch {
+                return {}
+            }
+        })();
         const durationDays = Number(item.duration_days || 0);
         const level = normalizeLevel(item.level);
 
@@ -164,15 +184,22 @@ router.post("/redeem-point", authMiddleware, async (req, res) => { // 添加了�
             const f = fieldRaw.toLowerCase();
             if (inc > 0) {
                 const colName = f.includes('daily') ? 'ai_daily_quota' : 'ai_quota';
-                const [[col]] = await connection.query("SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = ?", [colName]);
+                const [
+                    [col]
+                ] = await connection.query("SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = ?", [colName]);
                 if (Number(col?.cnt || 0) === 0) {
                     await connection.query(`ALTER TABLE users ADD COLUMN ${colName} INT NOT NULL DEFAULT 0`);
                 }
-                const [[cur]] = await connection.query(`SELECT ${colName} AS v FROM users WHERE id = ?`, [user_id]);
+                const [
+                    [cur]
+                ] = await connection.query(`SELECT ${colName} AS v FROM users WHERE id = ?`, [user_id]);
                 const current = Number(cur?.v || 0);
                 if (!f.includes('daily') && current + inc > 50) {
                     await connection.rollback();
-                    return res.status(400).json({ success: false, message: 'AI额度已达上限50，无法继续购买' });
+                    return res.status(400).json({
+                        success: false,
+                        message: 'AI额度已达上限50，无法继续购买'
+                    });
                 }
                 await connection.query(`UPDATE users SET ${colName} = ${colName} + ? WHERE id = ?`, [inc, user_id]);
             }
@@ -183,7 +210,9 @@ router.post("/redeem-point", authMiddleware, async (req, res) => { // 添加了�
             }
         } else if (effectType === 'deposit_free_once') {
             const times = Number(effectValue.times || 1);
-            const [[col]] = await connection.query("SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'deposit_free_times'");
+            const [
+                [col]
+            ] = await connection.query("SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'deposit_free_times'");
             if (Number(col?.cnt || 0) === 0) {
                 await connection.query("ALTER TABLE users ADD COLUMN deposit_free_times INT NOT NULL DEFAULT 0");
             }
@@ -195,7 +224,7 @@ router.post("/redeem-point", authMiddleware, async (req, res) => { // 添加了�
         // 通用通知
         await connection.query(
             `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'shop', ?, ?)`,
-            [ user_id, '🎁 商品兑换成功', `你成功兑换了【${item.name}】，权益已生效或已加入账户。` ]
+            [user_id, '🎁 商品兑换成功', `你成功兑换了【${item.name}】，权益已生效或已加入账户。`]
         );
 
         await connection.commit();
@@ -219,32 +248,54 @@ router.post("/redeem-point", authMiddleware, async (req, res) => { // 添加了�
 // 🧾 创建微信支付订单
 router.post('/create-order', authMiddleware, async (req, res) => {
     try {
-        const { item_id } = req.body;
+        const {
+            item_id
+        } = req.body;
         const userId = req.user.id;
 
-        const [[item]] = await db.query(`SELECT * FROM shop_items WHERE id = ?`, [item_id]);
-        if (!item) return res.status(404).json({ success: false, message: "商品不存在" });
+        const [
+            [item]
+        ] = await db.query(`SELECT * FROM shop_items WHERE id = ?`, [item_id]);
+        if (!item) return res.status(404).json({
+            success: false,
+            message: "商品不存在"
+        });
 
         if (item.exchange_type !== 'money' && item.exchange_type !== 'both') {
-            return res.status(400).json({ success: false, message: '该商品不支持支付购买' });
+            return res.status(400).json({
+                success: false,
+                message: '该商品不支持支付购买'
+            });
         }
 
         // 限购检查
         if (item.limit_per_user && Number(item.limit_per_user) > 0) {
-            const [[cnt]] = await db.query(
+            const [
+                [cnt]
+            ] = await db.query(
                 `SELECT COUNT(*) AS c FROM shop_orders WHERE user_id = ? AND item_id = ?`,
                 [userId, item_id]
             );
             if (Number(cnt.c) >= Number(item.limit_per_user)) {
-                return res.status(400).json({ success: false, message: '已达该商品限购次数' });
+                return res.status(400).json({
+                    success: false,
+                    message: '已达该商品限购次数'
+                });
             }
         }
 
-        const [[user]] = await db.query(`SELECT openid FROM users WHERE id = ?`, [userId]);
-        if (!user) return res.status(400).json({ success: false, message: '用户不存在' });
+        const [
+            [user]
+        ] = await db.query(`SELECT openid FROM users WHERE id = ?`, [userId]);
+        if (!user) return res.status(400).json({
+            success: false,
+            message: '用户不存在'
+        });
 
         const out_trade_no = `SHOP_${userId}_${item_id}_${String(Date.now()).slice(-8)}`;
-        const [[userInfo]] = await db.query(`SELECT vip_level, vip_expire_time, svip_expire_time FROM users WHERE id = ?`, [userId]);
+        const [
+            [userInfo]
+        ] = await db.query(`SELECT vip_level, vip_expire_time, svip_expire_time FROM users WHERE id = ?`, [userId]);
         const now = new Date();
         const vipActive = userInfo?.vip_expire_time && new Date(userInfo.vip_expire_time) > now;
         const svipActive = userInfo?.svip_expire_time && new Date(userInfo.svip_expire_time) > now;
@@ -298,7 +349,13 @@ router.post('/create-order', authMiddleware, async (req, res) => {
             success: true,
             discount_rate: discount,
             final_total: total_fee,
-            paymentParams: { timeStamp: timestamp, nonceStr: payNonceStr, package: pkg, signType: "RSA", paySign }
+            paymentParams: {
+                timeStamp: timestamp,
+                nonceStr: payNonceStr,
+                package: pkg,
+                signType: "RSA",
+                paySign
+            }
         });
 
     } catch (err) {
@@ -310,22 +367,30 @@ router.post('/create-order', authMiddleware, async (req, res) => {
     }
 });
 
-router.post('/notify', express.raw({ type: '*/*' }), async (req, res) => {
+router.post('/notify', express.raw({
+    type: '*/*'
+}), async (req, res) => {
     try {
         const bodyStr = Buffer.isBuffer(req.body) ? req.body.toString('utf8') : req.body;
         const notifyData = typeof bodyStr === 'string' ? JSON.parse(bodyStr) : bodyStr;
-        const { resource } = notifyData;
+        const {
+            resource
+        } = notifyData;
         if (!resource || !apiV3Key) throw new Error("缺少 resource 或 apiV3Key");
 
         const decrypted = decryptResource(resource, apiV3Key);
         const outTradeNo = decrypted.out_trade_no;
         const transactionId = decrypted.transaction_id;
 
-        const [[order]] = await db.query(`SELECT * FROM shop_orders WHERE out_trade_no = ?`, [outTradeNo]);
+        const [
+            [order]
+        ] = await db.query(`SELECT * FROM shop_orders WHERE out_trade_no = ?`, [outTradeNo]);
         if (!order) throw new Error("订单不存在");
 
         const userId = order.user_id;
-        const [[item]] = await db.query(`SELECT * FROM shop_items WHERE id = ?`, [order.item_id]);
+        const [
+            [item]
+        ] = await db.query(`SELECT * FROM shop_items WHERE id = ?`, [order.item_id]);
         if (!item) throw new Error("商品不存在");
 
         // ✅ 更新订单状态 + 减库存
@@ -337,12 +402,20 @@ router.post('/notify', express.raw({ type: '*/*' }), async (req, res) => {
 
         // ✅ 执行虚拟效果逻辑（通用 type）
         const effectType = (item.type || '').toLowerCase();
-        const effectValue = (() => { try { return JSON.parse(item.effect_value || '{}') } catch { return {} } })();
+        const effectValue = (() => {
+            try {
+                return JSON.parse(item.effect_value || '{}')
+            } catch {
+                return {}
+            }
+        })();
         const durationDays = Number(item.duration_days || 0);
         const level = normalizeLevel(item.level);
 
         if (effectType === 'vip') {
-            const [[user]] = await db.query(`SELECT vip_expire_time, svip_expire_time, vip_level FROM users WHERE id = ?`, [userId]);
+            const [
+                [user]
+            ] = await db.query(`SELECT vip_expire_time, svip_expire_time, vip_level FROM users WHERE id = ?`, [userId]);
             const now = new Date();
             if (level === 2) {
                 const baseSvip = user.svip_expire_time && new Date(user.svip_expire_time) > now ? new Date(user.svip_expire_time) : now;
@@ -368,25 +441,40 @@ router.post('/notify', express.raw({ type: '*/*' }), async (req, res) => {
             const f = fieldRaw.toLowerCase();
             if (inc > 0) {
                 const colName = f.includes('daily') ? 'ai_daily_quota' : 'ai_quota';
-                const [[col]] = await db.query("SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = ?", [colName]);
+                const [
+                    [col]
+                ] = await db.query("SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = ?", [colName]);
                 if (Number(col?.cnt || 0) === 0) {
                     await db.query(`ALTER TABLE users ADD COLUMN ${colName} INT NOT NULL DEFAULT 0`);
                 }
-                const [[cur]] = await db.query(`SELECT ${colName} AS v FROM users WHERE id = ?`, [userId]);
+                const [
+                    [cur]
+                ] = await db.query(`SELECT ${colName} AS v FROM users WHERE id = ?`, [userId]);
                 const current = Number(cur?.v || 0);
                 if (!f.includes('daily') && current + inc > 50) {
-                    return res.status(400).json({ success: false, message: 'AI额度已达上限50，无法继续购买' });
+                    return res.status(400).json({
+                        success: false,
+                        message: 'AI额度已达上限50，无法继续购买'
+                    });
                 }
                 await db.query(`UPDATE users SET ${colName} = ${colName} + ? WHERE id = ?`, [inc, userId]);
             }
         } else if (effectType === 'ai_boost') {
             const days = durationDays > 0 ? durationDays : Number(effectValue.days || 1);
-            if (days > 0) {
-                await db.query(`UPDATE users SET ai_speed_boost_days = ai_speed_boost_days + ? WHERE id = ?`, [days, userId]);
+            // 赠送今天
+            const finalDays = days + 1;
+            if (finalDays > 0) {
+                await db.query(
+                    `UPDATE users SET ai_speed_boost_days = ai_speed_boost_days + ? WHERE id = ?`,
+                    [finalDays, userId]
+                );
             }
+
         } else if (effectType === 'deposit_free_once') {
             const times = Number(effectValue.times || 1);
-            const [[col]] = await db.query("SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'deposit_free_times'");
+            const [
+                [col]
+            ] = await db.query("SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'deposit_free_times'");
             if (Number(col?.cnt || 0) === 0) {
                 await db.query("ALTER TABLE users ADD COLUMN deposit_free_times INT NOT NULL DEFAULT 0");
             }
@@ -406,15 +494,25 @@ router.post('/notify', express.raw({ type: '*/*' }), async (req, res) => {
         );
 
         console.log("✅ 虚拟商品支付完成：", outTradeNo);
-        res.status(200).json({ code: 'SUCCESS', message: 'OK' });
+        res.status(200).json({
+            code: 'SUCCESS',
+            message: 'OK'
+        });
     } catch (err) {
         console.error("❌ 支付回调处理失败（虚拟商品）:", err);
-        res.status(500).json({ code: 'FAIL', message: '处理失败' });
+        res.status(500).json({
+            code: 'FAIL',
+            message: '处理失败'
+        });
     }
 });
 
 function decryptResource(resource, key) {
-    const { ciphertext, nonce, associated_data } = resource;
+    const {
+        ciphertext,
+        nonce,
+        associated_data
+    } = resource;
     const decipher = crypto.createDecipheriv('aes-256-gcm', Buffer.from(key), Buffer.from(nonce));
     decipher.setAuthTag(Buffer.from(ciphertext, 'base64').slice(-16));
     decipher.setAAD(Buffer.from(associated_data));

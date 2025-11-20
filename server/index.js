@@ -3,6 +3,11 @@ const cors = require("cors");
 const http = require("http");
 const WebSocket = require("ws");
 const dayjs = require("dayjs");
+const utc = require('dayjs/plugin/utc');
+const timezone = require('dayjs/plugin/timezone');
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.tz.setDefault('Asia/Shanghai');
 require('./routes/classReminder').start();
 require('./routes/vipCron').start();
 
@@ -107,7 +112,7 @@ wss.on("connection", (ws) => {
                     return;
                 }
 
-                const timestamp = dayjs().add(8, "hour").format("YYYY-MM-DD HH:mm:ss");
+                const timestamp = dayjs().format("YYYY-MM-DD HH:mm:ss");
                 const roomId = getRoomId(userId, targetId);
 
                 const [result] = await db.query(
@@ -145,7 +150,7 @@ wss.on("connection", (ws) => {
                     type: "notify",
                     title: data.title || "系统通知",
                     content: data.content || "",
-                    created_time: dayjs().add(8, "hour").format("YYYY-MM-DD HH:mm:ss"),
+                    created_time: dayjs().format("YYYY-MM-DD HH:mm:ss"),
                 };
 
                 if (Array.isArray(data.to)) {

@@ -64,14 +64,12 @@ Page({
             success: (res) => {
                 if (res.data.success && Array.isArray(res.data.messages)) {
                     const history = res.data.messages.map((msg) => {
-                        const date = new Date(msg.created_time);
-                        date.setHours(date.getHours());
-                        const hours = date.getHours().toString().padStart(2, '0');
-                        const minutes = date.getMinutes().toString().padStart(2, '0');
+                        const t = String(msg.created_time);
+                        const hhmm = t.length >= 16 ? t.slice(11, 16) : '';
                         return {
                             ...msg,
                             isSelf: msg.sender_id === userId,
-                            created_time_formatted: `${hours}:${minutes}`,
+                            created_time_formatted: hhmm,
                         };
                     });
 
@@ -103,15 +101,14 @@ Page({
 
         if (![from, to].includes(localUserId) || ![from, to].includes(localTargetId)) return;
 
-        const date = new Date(msg.created_time);
-        const hours = date.getHours().toString().padStart(2, '0');
-        const minutes = date.getMinutes().toString().padStart(2, '0');
+        const t = String(msg.created_time);
+        const hhmm = t.length >= 16 ? t.slice(11, 16) : '';
 
         const newMsg = {
             ...msg,
             isSelf: from === userId,
             is_read: true,
-            created_time_formatted: `${hours}:${minutes}`,
+            created_time_formatted: hhmm,
         };
 
         this.setData({
@@ -178,8 +175,13 @@ Page({
         sendMessage(msg);
 
         const now = new Date();
-        const hours = now.getHours().toString().padStart(2, '0');
-        const minutes = now.getMinutes().toString().padStart(2, '0');
+        const yyyy = now.getFullYear();
+        const mm = (now.getMonth() + 1).toString().padStart(2, '0');
+        const dd = now.getDate().toString().padStart(2, '0');
+        const hh = now.getHours().toString().padStart(2, '0');
+        const mi = now.getMinutes().toString().padStart(2, '0');
+        const ss = now.getSeconds().toString().padStart(2, '0');
+        const createdStr = `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`;
 
         const selfMsg = {
             ...msg,
@@ -187,8 +189,8 @@ Page({
             receiver_id: targetId,
             isSelf: true,
             is_read: true,
-            created_time: now.toISOString(),
-            created_time_formatted: `${hours}:${minutes}`,
+            created_time: createdStr,
+            created_time_formatted: `${hh}:${mi}`,
         };
 
         this.setData({
