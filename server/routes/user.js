@@ -5,6 +5,16 @@ const axios = require("axios");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const SECRET_KEY = process.env.JWT_SECRET;
+const TENCENT_SMS_HOST = "sms.tencentcloudapi.com";
+const TENCENT_SMS_ACTION = "SendSms";
+const TENCENT_SMS_VERSION = "2021-01-11";
+const TENCENT_SMS_REGION = process.env.TENCENT_SMS_REGION || "ap-guangzhou";
+const TENCENT_SECRET_ID = process.env.TENCENT_SECRET_ID;
+const TENCENT_SECRET_KEY = process.env.TENCENT_SECRET_KEY;
+const TENCENT_SMS_SDKAPPID = process.env.TENCENT_SMS_SDKAPPID;
+const TENCENT_SMS_SIGN = process.env.TENCENT_SMS_SIGN;
+const TENCENT_SMS_TEMPLATE_ID = process.env.TENCENT_SMS_TEMPLATE_ID;
+const TENCENT_SMS_TEMPLATE_MINUTES = parseInt(process.env.TENCENT_SMS_TEMPLATE_MINUTES || '5', 10);
 const {
     v4: uuidv4
 } = require("uuid");
@@ -12,6 +22,8 @@ require("dotenv").config();
 const {
     getAccessToken
 } = require('../utils/wechat');
+const crypto = require("crypto");
+const redis = require("../utils/redis");
 
 
 const fs = require("fs");
@@ -150,6 +162,7 @@ router.post("/phone-login", async (req, res) => {
                 id: user.id,
                 wxid: user.wxid,
                 username: user.username,
+                phone_number: user.phone_number,
                 openid: user.openid,
                 balance: user.balance,
                 avatar_url: user.avatar_url,
@@ -256,6 +269,194 @@ router.post("/password-login", async (req, res) => {
             error: err.message,
         });
     }
+});
+
+function sha256Hex(content) {
+  return crypto.createHash("sha256").update(content).digest("hex");
+}
+
+function hmacSha256(key, msg) {
+  return crypto.createHmac("sha256", key).update(msg).digest();
+}
+
+function formatDate(ts) {
+  return new Date(ts * 1000).toISOString().slice(0, 10);
+}
+
+async function sendTencentSms(phone, code, minutes) {
+  const payload = {
+    SmsSdkAppId: TENCENT_SMS_SDKAPPID,
+    SignName: TENCENT_SMS_SIGN,
+    TemplateId: TENCENT_SMS_TEMPLATE_ID,
+    TemplateParamSet: [code, String(minutes > 0 ? minutes : 5)],
+    PhoneNumberSet: ["+86" + phone]
+  };
+  const body = JSON.stringify(payload);
+  const timestamp = Math.floor(Date.now() / 1000);
+  const date = formatDate(timestamp);
+  const httpRequestMethod = "POST";
+  const canonicalUri = "/";
+  const canonicalQueryString = "";
+  const canonicalHeaders = "content-type:application/json\nhost:" + TENCENT_SMS_HOST + "\n";
+  const signedHeaders = "content-type;host";
+  const hashedRequestPayload = sha256Hex(body);
+  const canonicalRequest = [
+    httpRequestMethod,
+    canonicalUri,
+    canonicalQueryString,
+    canonicalHeaders,
+    signedHeaders,
+    hashedRequestPayload
+  ].join("\n");
+  const credentialScope = date + "/sms/tc3_request";
+  const stringToSign = [
+    "TC3-HMAC-SHA256",
+    String(timestamp),
+    credentialScope,
+    sha256Hex(canonicalRequest)
+  ].join("\n");
+  const kDate = hmacSha256("TC3" + TENCENT_SECRET_KEY, date);
+  const kService = hmacSha256(kDate, "sms");
+  const kSigning = hmacSha256(kService, "tc3_request");
+  const signature = crypto.createHmac("sha256", kSigning).update(stringToSign).digest("hex");
+  const authorization = `TC3-HMAC-SHA256 Credential=${TENCENT_SECRET_ID}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
+  const headers = {
+    Authorization: authorization,
+    "Content-Type": "application/json",
+    Host: TENCENT_SMS_HOST,
+    "X-TC-Action": TENCENT_SMS_ACTION,
+    "X-TC-Version": TENCENT_SMS_VERSION,
+    "X-TC-Timestamp": timestamp,
+    "X-TC-Region": TENCENT_SMS_REGION
+  };
+  const { data } = await axios.post("https://" + TENCENT_SMS_HOST, body, { headers });
+  return data;
+}
+
+router.post("/sms/send-code", async (req, res) => {
+  const phone = String(req.body.phone || "").trim();
+  if (!phone || !/^\d{11}$/.test(phone)) {
+    console.warn("SMS.send invalid phone", { phone });
+    return res.status(400).json({ success: false, message: "手机号格式错误" });
+  }
+  if (!TENCENT_SECRET_ID || !TENCENT_SECRET_KEY || !TENCENT_SMS_SDKAPPID || !TENCENT_SMS_SIGN || !TENCENT_SMS_TEMPLATE_ID) {
+    console.warn("SMS.config missing", { hasId: !!TENCENT_SECRET_ID, hasKey: !!TENCENT_SECRET_KEY, appid: TENCENT_SMS_SDKAPPID, sign: TENCENT_SMS_SIGN, tpl: TENCENT_SMS_TEMPLATE_ID });
+    return res.status(500).json({ success: false, message: "短信配置缺失" });
+  }
+  try {
+    const lastKey = `sms:login:last:${phone}`;
+    const countKey = `sms:login:count:${phone}:${new Date().toISOString().slice(0,10)}`;
+    const lastTsRaw = await redis.get(lastKey);
+    const lastTs = lastTsRaw ? Number(lastTsRaw) : 0;
+    if (lastTs && Date.now() - lastTs < 60000) {
+      console.warn("SMS.rate limited", { phone, cooldownMs: Date.now() - lastTs });
+      return res.status(429).json({ success: false, message: "发送过于频繁" });
+    }
+    const countRaw = await redis.get(countKey);
+    const count = countRaw ? Number(countRaw) : 0;
+    if (count >= 5) {
+      console.warn("SMS.daily limit", { phone, count });
+      return res.status(429).json({ success: false, message: "今日发送次数已达上限" });
+    }
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    await redis.setex(`sms:login:code:${phone}`, 300, code);
+    await redis.set(lastKey, String(Date.now()));
+    await redis.set(countKey, String(count + 1));
+    await redis.expire(countKey, 86400);
+    console.info("SMS.code generated", { phone });
+    const data = await sendTencentSms(phone, code, TENCENT_SMS_TEMPLATE_MINUTES);
+    const status = data?.Response?.SendStatusSet?.[0];
+    console.info("SMS.tencent response", { code: status?.Code, message: status?.Message, minutes: TENCENT_SMS_TEMPLATE_MINUTES });
+    if (status && String(status.Code).toLowerCase() === "ok") {
+      return res.json({ success: true });
+    }
+    const errMsg = data?.Response?.Error?.Message || status?.Message || "短信发送失败";
+    console.warn("SMS.send failed", { phone, err: errMsg });
+    return res.status(500).json({ success: false, message: errMsg });
+  } catch (error) {
+    const msg = error?.response?.data?.Response?.Error?.Message || error?.message || "短信发送失败";
+    console.error("SMS.exception", msg);
+    return res.status(500).json({ success: false, message: msg });
+  }
+});
+
+router.post("/sms-login", async (req, res) => {
+  const phone = String(req.body.phone || "").trim();
+  const code = String(req.body.code || "").trim();
+  if (!phone || !/^\d{11}$/.test(phone)) {
+    return res.status(400).json({ success: false, message: "手机号格式错误" });
+  }
+  if (!code || !/^\d{4,6}$/.test(code)) {
+    return res.status(400).json({ success: false, message: "验证码格式错误" });
+  }
+  try {
+    const saved = await redis.get(`sms:login:code:${phone}`);
+    if (!saved || saved !== code) {
+      console.warn("SMS.login invalid code", { phone });
+      return res.status(400).json({ success: false, message: "验证码错误或已过期" });
+    }
+    await redis.del(`sms:login:code:${phone}`);
+    const [rows] = await db.query("SELECT * FROM users WHERE phone_number = ?", [phone]);
+    let user = rows && rows[0];
+    let isNewUser = false;
+    if (!user) {
+      const now = new Date();
+      const newUser = {
+        wxid: uuidv4(),
+        phone_number: phone,
+        username: "用户" + phone.slice(-4),
+        avatar_url: "https://mutual-campus-1348081197.cos.ap-nanjing.myqcloud.com/avatar/default.png",
+        free_counts: 5,
+        points: 10,
+        created_time: now
+      };
+      const [insertResult] = await db.query("INSERT INTO users SET ?", [newUser]);
+      newUser.id = insertResult.insertId;
+      user = newUser;
+      isNewUser = true;
+      await db.query(
+        "INSERT INTO user_reputation (user_id, total_score, completed_tasks, canceled_tasks, reports_received, average_rating, reliability_index) VALUES (?, 75.00, 0, 0, 0, 3.50, 1.0000)",
+        [user.id]
+      );
+    }
+    const token = jwt.sign({ id: user.id }, SECRET_KEY, { expiresIn: "7d" });
+    let schoolName = null;
+    const schoolId = user.school_id || null;
+    if (schoolId) {
+      try {
+        const [schoolRows] = await db.query("SELECT name FROM schools WHERE id = ?", [schoolId]);
+        if (schoolRows && schoolRows.length > 0) {
+          schoolName = schoolRows[0].name;
+        }
+      } catch (_e) {}
+    }
+    const payload = {
+      success: true,
+      token,
+      user: {
+        id: user.id,
+        wxid: user.wxid,
+        username: user.username,
+        phone_number: user.phone_number,
+        openid: user.openid,
+        balance: user.balance,
+        avatar_url: user.avatar_url,
+        free_counts: user.free_counts,
+        points: user.points,
+        vip_level: user.vip_level,
+        vip_expire_time: user.vip_expire_time,
+        created_time: user.created_time,
+        school_id: schoolId,
+        school_name: schoolName
+      },
+      isNewUser
+    };
+    console.info("SMS.login success", { userId: user.id });
+    return res.json(payload);
+  } catch (err) {
+    console.error("SMS.login exception", err?.message || err);
+    return res.status(500).json({ success: false, message: "服务器错误" });
+  }
 });
 
 

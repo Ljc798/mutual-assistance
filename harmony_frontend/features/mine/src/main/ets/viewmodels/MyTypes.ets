@@ -47,3 +47,18 @@ export class LoginFormModel implements LoginForm {
     this.password = model.password
   }
 }
+
+export interface PhoneLoginForm { phone: string; code: string }
+
+@ObservedV2
+export class PhoneLoginFormModel implements PhoneLoginForm {
+  @Trace
+  phone: string = ''
+  @Trace
+  code: string = ''
+
+  constructor(model: PhoneLoginForm) {
+    this.phone = model.phone
+    this.code = model.code
+  }
+}
