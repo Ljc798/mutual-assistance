@@ -3,7 +3,8 @@
   "description": "Please describe the basic information.",
   "dependencies": {
     "@hadss/hmrouter": "^1.2.2",
-    "@hadss/hmrouter-transitions": "^1.2.2"
+    "@hadss/hmrouter-transitions": "^1.2.2",
+    "@cashier_alipay/cashiersdk": "^15.8.39"
   },
   "devDependencies": {
     "@ohos/hypium": "1.0.24",
