@@ -23,3 +23,10 @@ export function calculateCommission(amountYuan: number): number {
   const fen = Math.floor(amountYuan * 100 * 0.02)
   return Math.max(fen, 1)
 }
+
+interface PrepayFixedPayload { task_id: number; include_commission: boolean }
+
+export async function prepayFixed(taskId: number, includeCommission: boolean, token: string): Promise<TaskPrepayResponse> {
+  const payload: PrepayFixedPayload = { task_id: taskId, include_commission: includeCommission }
+  return HttpClient.post<TaskPrepayResponse, PrepayFixedPayload>('/taskPayment/prepay-fixed', payload, buildAuthHeader(token))
+}

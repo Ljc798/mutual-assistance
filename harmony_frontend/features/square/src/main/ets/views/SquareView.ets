@@ -327,19 +327,19 @@ export struct SquareView {
               .fontSize(15)
               .fontColor($r('[basic].color.text_primary'))
               .fontWeight(FontWeight.Medium)
-            if (post.isVip) {
-              Text('VIP')
-                .fontSize(11)
-                .fontColor($r('[basic].color.white'))
-                .padding({
-                  left: 6,
-                  right: 6,
-                  top: 2,
-                  bottom: 2
-                })
-                .backgroundColor($r('[basic].color.filter_active_bg'))
-                .borderRadius(10)
-            }
+            // if (post.isVip) {
+            //   Text('VIP')
+            //     .fontSize(11)
+            //     .fontColor($r('[basic].color.white'))
+            //     .padding({
+            //       left: 6,
+            //       right: 6,
+            //       top: 2,
+            //       bottom: 2
+            //     })
+            //     .backgroundColor($r('[basic].color.filter_active_bg'))
+            //     .borderRadius(10)
+            // }
             if (post.pinned) {
               Text('置顶')
                 .fontSize(11)

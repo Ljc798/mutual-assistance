@@ -87,6 +87,7 @@ export struct TaskDetailView {
             .fontSize(13)
             .fontColor($r('[basic].color.text_secondary'))
         }
+        .alignItems(HorizontalAlign.Start)
         .width('100%')
         .padding(16)
         .backgroundColor($r('[basic].color.white'))
@@ -100,6 +101,7 @@ export struct TaskDetailView {
             .fontSize(14)
             .fontColor($r('[basic].color.text_primary'))
         }
+        .alignItems(HorizontalAlign.Start)
         .width('100%')
         .padding(16)
         .backgroundColor($r('[basic].color.white'))
@@ -114,6 +116,7 @@ export struct TaskDetailView {
               .fontSize(14)
               .fontColor($r('[basic].color.text_primary'))
           }
+          .alignItems(HorizontalAlign.Start)
           .width('100%')
           .padding(16)
           .backgroundColor($r('[basic].color.white'))
@@ -199,7 +202,7 @@ export struct TaskDetailView {
           Button('聊一聊')
             .height(44)
             .borderRadius(16)
-            .backgroundColor($r('[basic].color.search_box_bg'))
+            .backgroundColor($r('[basic].color.home_accent'))
             .onClick(() => this.handleChat())
         } else {
           Button('接单')
@@ -211,14 +214,14 @@ export struct TaskDetailView {
           Button('聊一聊')
             .height(44)
             .borderRadius(16)
-            .backgroundColor($r('[basic].color.search_box_bg'))
+            .backgroundColor($r('[basic].color.home_accent'))
             .onClick(() => this.handleChat())
         }
       } else {
         Button('编辑任务')
           .height(44)
           .borderRadius(16)
-          .backgroundColor($r('[basic].color.search_box_bg'))
+          .backgroundColor($r('[basic].color.home_accent'))
           .onClick(() => this.handleEditTask())
       }
     }

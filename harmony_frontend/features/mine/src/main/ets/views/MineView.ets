@@ -25,11 +25,11 @@ export struct MineView {
     creditLevel: '良好'
   }
   @State statistics: StatisticCard[] = this.buildStatisticsFromStorage()
-  @State vipState: VipState = this.buildVipStateFromStorage()
+  // @State vipState: VipState = this.buildVipStateFromStorage()
   @State shortcuts: ActionShortcut[] = [
     { title: '我的订单', action: 'orders' },
     { title: '我的空间', action: 'space' },
-    { title: '商城', action: 'shop' },
+    // { title: '商城', action: 'shop' },
     { title: '个人信息', action: 'profile' },
     { title: '意见反馈', action: 'feedback' }
   ]
@@ -60,10 +60,11 @@ export struct MineView {
           this.renderProfileCard()
           this.renderReputationCard()
           this.renderStatisticBoxes()
-          this.renderVipSection()
+          // this.renderVipSection()
           this.renderShortcutsCard()
           this.renderFeedbackHint()
         }
+        .height('100%')
         .padding({
           top: 0,
           bottom: 60 + this.safeArea.bottomHeight
@@ -195,21 +196,21 @@ export struct MineView {
       .padding({ top: 16, bottom: 16 })
       .layoutWeight(1)
       .alignItems(HorizontalAlign.Center)
-      .onClick(() => this.handleProtectedAction('shop'))
+      // .onClick(() => this.handleProtectedAction('shop'))
 
-      Column({ space: 6 }) {
-        Text('积分余额')
-          .fontSize(13)
-          .fontColor($r('[basic].color.text_secondary'))
-        Text(`${this.appUser.user?.points ?? 0}`)
-          .fontSize(18)
-          .fontWeight(FontWeight.Medium)
-          .fontColor($r('[basic].color.text_primary'))
-      }
-      .padding({ top: 16, bottom: 16 })
-      .layoutWeight(1)
-      .alignItems(HorizontalAlign.Center)
-      .onClick(() => this.handleProtectedAction('points'))
+      // Column({ space: 6 }) {
+      //   Text('积分余额')
+      //     .fontSize(13)
+      //     .fontColor($r('[basic].color.text_secondary'))
+      //   Text(`${this.appUser.user?.points ?? 0}`)
+      //     .fontSize(18)
+      //     .fontWeight(FontWeight.Medium)
+      //     .fontColor($r('[basic].color.text_primary'))
+      // }
+      // .padding({ top: 16, bottom: 16 })
+      // .layoutWeight(1)
+      // .alignItems(HorizontalAlign.Center)
+      // .onClick(() => this.handleProtectedAction('points'))
 
       Column({ space: 6 }) {
         Text('账户余额')
@@ -263,9 +264,7 @@ export struct MineView {
           .borderRadius(20)
           .padding({ top: 5, bottom: 5, left: 10, right: 10 })
           .onClick(() => {
-            HMRouterMgr.push({
-              pageUrl: PAGE_PATH.LOGIN_PAGE
-            })
+            HMRouterMgr.push({ pageUrl: PAGE_PATH.VIP_PAGE })
           })
       }
       .width('96%')
@@ -301,6 +300,9 @@ export struct MineView {
         Button('立即开通')
           .fontSize(14)
           .borderRadius(20)
+          .backgroundColor($r('[basic].color.vip_renew_btn'))
+          .fontColor($r('[basic].color.white'))
+          .onClick(() => { HMRouterMgr.push({ pageUrl: PAGE_PATH.VIP_PAGE }) })
       }
       .width('96%')
       .padding({
@@ -532,7 +534,7 @@ export struct MineView {
   private syncUserState() {
     this.profile = this.buildProfileFromStorage()
     this.statistics = this.buildStatisticsFromStorage()
-    this.vipState = this.buildVipStateFromStorage()
+    // this.vipState = this.buildVipStateFromStorage()
   }
   private getProfileAvatar(): ResourceStr {
     const u = this.appUser.user

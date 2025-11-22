@@ -3,7 +3,7 @@ import { AppStorageV2 } from '@kit.ArkUI'
 import { AppSafeArea, AppSelectedSchool, AppUser, PAGE_PATH, SCHOOL_SELECTION_VERSION_KEY, TaskMode, schoolPersistence,
   AppSchoolPickerContext } from 'basic'
 import { PublishCategory, PublishFormModel, PublishMethod, PUBLISH_CATEGORIES, PublishCreatePayload } from '../viewmodels/PublishTypes'
-import { calculateCommission, createTask } from '../services/PublishService'
+import { calculateCommission, createTask, prepayFixed } from '../services/PublishService'
 import { HMRouterMgr } from '@hadss/hmrouter'
 
 @Component
@@ -27,6 +27,8 @@ export struct PublishView {
   @State showTakeAwayField: boolean = false
   @State isTakeTelValid: boolean = true
   @State isSubmittingPublish: boolean = false
+  @State showPayDialog: boolean = false
+  @State payParamsText: string = ''
 
   aboutToAppear() {
     this.hasMounted = true
@@ -129,6 +131,7 @@ export struct PublishView {
       }
       this.renderCategoryDialog()
       this.renderCommissionPopup()
+      this.renderPayDialog()
     }
     .height('100%')
     .backgroundColor($r('[basic].color.page_background'))
@@ -389,10 +392,7 @@ export struct PublishView {
       promptAction.showToast({ message: '请先登录' })
       return
     }
-    if (method === 'pay') {
-      promptAction.showToast({ message: '暂未开通支付发布，请选择其他方式' })
-      return
-    }
+    const isPayPublish: boolean = method === 'pay'
     const schoolId = this.getSelectedSchoolId()
     if (schoolId <= 0) {
       promptAction.showToast({ message: '请选择学校后再发布' })
@@ -422,8 +422,18 @@ export struct PublishView {
         promptAction.showToast({ message: response.message ?? '发布失败' })
         return
       }
-      promptAction.showToast({ message: '发布成功' })
-      this.resetForm()
+      if (isPayPublish && this.form.mode === 'fixed') {
+        const taskId: number = Number(response.task_id ?? 0)
+        if (!taskId) { promptAction.showToast({ message: '发布成功但任务ID异常' }); return }
+        const prepayRes = await prepayFixed(taskId, true, token)
+        if (!prepayRes.success || !prepayRes.paymentParams) { promptAction.showToast({ message: prepayRes.message ?? '预下单失败' }); return }
+        const obj = prepayRes.paymentParams
+        this.payParamsText = JSON.stringify(obj)
+        this.showPayDialog = true
+      } else {
+        promptAction.showToast({ message: '发布成功' })
+        this.resetForm()
+      }
     } catch (error) {
       console.error('publish failed', JSON.stringify(error))
       promptAction.showToast({ message: '发布失败，请稍后重试' })
@@ -513,6 +523,58 @@ export struct PublishView {
       .fontColor($r('[basic].color.text_primary'))
       .border({ color: '#FFE1EB', width: 1 })
       .onClick((): void => { this.handleCommissionSelection(method) })
+  }
+
+  @Builder
+  private renderPayDialog() {
+    if (this.showPayDialog) {
+      Column() {
+        Column({ space: 12 }) {
+          Text('预下单成功')
+            .fontSize(18)
+            .fontWeight(FontWeight.Medium)
+          Text('支付参数如下，可用于调用原生支付：')
+            .fontSize(13)
+            .fontColor($r('[basic].color.text_secondary'))
+          Text(this.payParamsText)
+            .fontSize(12)
+            .fontColor($r('[basic].color.text_primary'))
+            .width('100%')
+          Row({ space: 12 }) {
+            Button('尝试原生支付')
+              .height(40)
+              .borderRadius(14)
+              .backgroundColor($r('[basic].color.filter_active_bg'))
+              .fontColor($r('[basic].color.white'))
+              .onClick(() => { this.tryNativePay() })
+            Button('关闭')
+              .height(40)
+              .borderRadius(14)
+              .backgroundColor($r('[basic].color.search_box_bg'))
+              .onClick(() => { this.showPayDialog = false; this.resetForm() })
+          }
+        }
+        .width('90%')
+        .padding(20)
+        .backgroundColor($r('[basic].color.white'))
+        .borderRadius(20)
+      }
+      .width('100%')
+      .height('100%')
+      .justifyContent(FlexAlign.Center)
+      .alignItems(HorizontalAlign.Center)
+      .backgroundColor('rgba(0,0,0,0.35)')
+    } else {
+      Blank()
+    }
+  }
+
+  private tryNativePay() {
+    try {
+      promptAction.showToast({ message: '已尝试调用原生支付（示例占位）' })
+    } catch (_e) {
+      promptAction.showToast({ message: '原生支付不可用' })
+    }
   }
 
   private handleSchoolTap() {

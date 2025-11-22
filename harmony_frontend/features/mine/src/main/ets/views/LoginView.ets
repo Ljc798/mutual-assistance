@@ -39,6 +39,13 @@ export struct LoginView {
     return !!(this.smsForm.phone && this.smsForm.code)
   }
 
+  @Computed
+  get canSendCode() {
+    const phone = (this.smsForm.phone || '').trim()
+    const okPhone = /^\d{11}$/.test(phone)
+    return this.agree && okPhone && !this.smsSending && this.smsCountdown === 0
+  }
+
   aboutToAppear(): void {
 
   }
@@ -115,6 +122,7 @@ export struct LoginView {
   }
 
   async onSendCode() {
+    if (!this.agree) { promptAction.showToast({ message: '请先阅读并同意权益条款' }); return }
     const phone = (this.smsForm.phone || '').trim()
     if (!/^\d{11}$/.test(phone)) { promptAction.showToast({ message: '手机号格式错误' }); return }
     if (this.smsCountdown > 0 || this.smsSending) { return }
@@ -308,10 +316,20 @@ export struct LoginView {
           .width('100%')
           .fontWeight(500)
           .margin({ bottom: 10 })
-        TextInput({ placeholder: '请输入手机号', text: $$this.smsForm.phone })
-          .placeholderColor($r('[basic].color.gray'))
-          .placeholderFont({ size: 14 })
-          .form()
+        Row({ space: 8 }) {
+          Text('+86')
+            .fontSize(14)
+            .fontColor($r('[basic].color.text_primary'))
+            .height(42)
+            .backgroundColor($r('[basic].color.white'))
+            .borderRadius(8)
+            .padding({ left: 12, right: 12 })
+          TextInput({ placeholder: '请输入手机号', text: $$this.smsForm.phone })
+            .placeholderColor($r('[basic].color.gray'))
+            .placeholderFont({ size: 14 })
+            .layoutWeight(1)
+            .form()
+        }
         Row({ space: 8 }) {
           TextInput({ placeholder: '请输入验证码', text: $$this.smsForm.code })
             .placeholderColor($r('[basic].color.gray'))
@@ -321,8 +339,9 @@ export struct LoginView {
           Button(this.smsCountdown > 0 ? `${this.smsCountdown}s` : (this.smsSending ? '发送中...' : '发送验证码'))
             .height(42)
             .borderRadius(12)
-            .backgroundColor($r('[basic].color.search_box_bg'))
-            .enabled(!this.smsSending && this.smsCountdown === 0)
+            .backgroundColor(this.canSendCode ? $r('[basic].color.filter_active_bg') : $r('[basic].color.search_box_bg'))
+            .fontColor(this.canSendCode ? $r('[basic].color.white') : $r('[basic].color.text_primary'))
+            .enabled(this.canSendCode)
             .onClick(() => { this.onSendCode() })
         }
         Row({ space: 4 }) {
@@ -332,23 +351,16 @@ export struct LoginView {
             .aspectRatio(1)
             .selectedColor($r('[basic].color.black'))
             .mark({ size: 10, strokeWidth: 1 })
-          Text() {
-            Span('查看并同意')
-            Span('《隐私条款》')
-              .fontColor('#007DFB')
-            Span('和')
-            Span('《用户协议》')
-              .fontColor('#007DFB')
-          }
-          .width('100%')
-          .fontSize(12)
-          .fontColor($r('[basic].color.gray'))
+          Text('我已阅读并同意权益说明')
+            .width('100%')
+            .fontSize(12)
+            .fontColor($r('[basic].color.gray'))
         }
         Button('登录')
-          .backgroundColor(this.smsBtnEnable ? $r('[basic].color.black') : '#D4D2D9')
-          .fontColor(this.smsBtnEnable ? $r('[basic].color.white') : $r('[basic].color.black'))
+          .backgroundColor(this.smsBtnEnable && this.agree ? $r('[basic].color.black') : '#D4D2D9')
+          .fontColor(this.smsBtnEnable && this.agree ? $r('[basic].color.white') : $r('[basic].color.black'))
           .form()
-          .enabled(this.smsBtnEnable)
+          .enabled(this.smsBtnEnable && this.agree)
           .onClick(() => { this.onSmsLogin() })
       }
       .padding(30)
