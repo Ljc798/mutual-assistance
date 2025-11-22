@@ -3,8 +3,10 @@ import { AppStorageV2 } from '@kit.ArkUI'
 import { AppSafeArea, AppSelectedSchool, AppUser, PAGE_PATH, SCHOOL_SELECTION_VERSION_KEY, TaskMode, schoolPersistence,
   AppSchoolPickerContext } from 'basic'
 import { PublishCategory, PublishFormModel, PublishMethod, PUBLISH_CATEGORIES, PublishCreatePayload } from '../viewmodels/PublishTypes'
-import { calculateCommission, createTask, prepayFixed } from '../services/PublishService'
+import { calculateCommission, createTask, prepayAliTask } from '../services/PublishService'
+import { AliPaySDK, AliPayPayResult } from 'basic'
 import { HMRouterMgr } from '@hadss/hmrouter'
+interface AliPrepayData { orderInfo?: string; orderStr?: string }
 
 @Component
 export struct PublishView {
@@ -425,11 +427,19 @@ export struct PublishView {
       if (isPayPublish && this.form.mode === 'fixed') {
         const taskId: number = Number(response.task_id ?? 0)
         if (!taskId) { promptAction.showToast({ message: '发布成功但任务ID异常' }); return }
-        const prepayRes = await prepayFixed(taskId, true, token)
-        if (!prepayRes.success || !prepayRes.paymentParams) { promptAction.showToast({ message: prepayRes.message ?? '预下单失败' }); return }
-        const obj = prepayRes.paymentParams
-        this.payParamsText = JSON.stringify(obj)
-        this.showPayDialog = true
+        const prepayRes = await prepayAliTask(taskId, true, token)
+        if (!prepayRes.success || !prepayRes.data) { promptAction.showToast({ message: prepayRes.message ?? '预下单失败' }); return }
+        const objText: string = JSON.stringify(prepayRes.data)
+        this.payParamsText = objText
+        const parsed: AliPrepayData = JSON.parse(objText) as AliPrepayData
+        const orderInfoRaw: string = (parsed.orderInfo ?? parsed.orderStr ?? '')
+        if (orderInfoRaw.length > 0) {
+          const r: AliPayPayResult = await AliPaySDK.pay({ orderInfo: orderInfoRaw, showLoading: true })
+          promptAction.showToast({ message: r.resultStatus === '9000' ? '支付成功' : '支付未完成' })
+        } else {
+          this.showPayDialog = true
+        }
+        this.resetForm()
       } else {
         promptAction.showToast({ message: '发布成功' })
         this.resetForm()

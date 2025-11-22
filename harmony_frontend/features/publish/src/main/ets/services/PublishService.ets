@@ -30,3 +30,11 @@ export async function prepayFixed(taskId: number, includeCommission: boolean, to
   const payload: PrepayFixedPayload = { task_id: taskId, include_commission: includeCommission }
   return HttpClient.post<TaskPrepayResponse, PrepayFixedPayload>('/taskPayment/prepay-fixed', payload, buildAuthHeader(token))
 }
+
+interface AliPrepayPayload { task_id: number, include_commission: boolean }
+export interface AliPrepayResponse { success: boolean, out_trade_no?: string, total_amount?: string, data?: Object, responseHttpStatus?: number, traceId?: string, message?: string }
+
+export async function prepayAliTask(taskId: number, includeCommission: boolean, token: string): Promise<AliPrepayResponse> {
+  const payload: AliPrepayPayload = { task_id: taskId, include_commission: includeCommission }
+  return HttpClient.post<AliPrepayResponse, AliPrepayPayload>('/pay/ali/prepay-task', payload, buildAuthHeader(token))
+}
