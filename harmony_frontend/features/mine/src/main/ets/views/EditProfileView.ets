@@ -10,7 +10,7 @@ import { fileIo as fs } from '@kit.CoreFileKit'
 import { common } from '@kit.AbilityKit'
 import { BusinessError } from '@ohos.base'
 import { HMRouter, HMRouterMgr } from '@hadss/hmrouter'
-import { checkUsername, checkWxid, updateProfile, UpdatePayload } from '../services/EditProfileService'
+import { checkUsername, checkWxid, updateProfile, UpdatePayload, deleteAccount } from '../services/EditProfileService'
 
 @HMRouter({ pageUrl: PAGE_PATH.EDIT_PROFILE_PAGE })
 @Component
@@ -58,6 +58,7 @@ export struct EditProfileView {
             this.renderSchoolField()
             this.renderSubmitButton()
             this.renderLogoutButton()
+            this.renderDeleteButton()
           }
           .padding({ left: 16, right: 16, bottom: 80 })
           .height('100%')
@@ -174,6 +175,16 @@ export struct EditProfileView {
       .onClick(() => this.handleLogout())
   }
 
+  @Builder
+  private renderDeleteButton() {
+    Button('注销账号')
+      .height(42)
+      .borderRadius(16)
+      .backgroundColor('#D4D2D9')
+      .fontColor($r('[basic].color.text_primary'))
+      .onClick(async () => { await this.handleDeleteAccount() })
+  }
+
   private async handleSubmit() {
     const token = this.appUser.user.token
     const idNum = Number(this.appUser.user.id ?? 0)
@@ -219,6 +230,18 @@ export struct EditProfileView {
       promptAction.showToast({ message: '更新成功' })
       HMRouterMgr.pop()
     } catch (_e) { promptAction.showToast({ message: '更新失败' }) } finally { this.isSubmitting = false }
+  }
+
+  private async handleDeleteAccount() {
+    const token = this.appUser.user.token
+    if (!token) { promptAction.showToast({ message: '请先登录' }); return }
+    try {
+      const res = await deleteAccount(token)
+      if (!res.success) { promptAction.showToast({ message: res.message ?? '注销失败' }); return }
+      userPersistence.clearUser()
+      promptAction.showToast({ message: '已注销' })
+      HMRouterMgr.push({ pageUrl: PAGE_PATH.LOGIN_PAGE })
+    } catch (_e) { promptAction.showToast({ message: '网络错误' }) }
   }
 
   private async handleUploadAvatar() {

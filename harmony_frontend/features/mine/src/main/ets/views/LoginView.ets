@@ -344,17 +344,26 @@ export struct LoginView {
             .enabled(this.canSendCode)
             .onClick(() => { this.onSendCode() })
         }
-        Row({ space: 4 }) {
+        Row({ space: 6 }) {
           Checkbox()
             .select($$this.agree)
             .width(12)
             .aspectRatio(1)
             .selectedColor($r('[basic].color.black'))
             .mark({ size: 10, strokeWidth: 1 })
-          Text('我已阅读并同意权益说明')
-            .width('100%')
+          Text('我已阅读并同意')
             .fontSize(12)
             .fontColor($r('[basic].color.gray'))
+          Column() {
+            Text('《隐私说明》')
+              .fontSize(12)
+              .fontColor('#007DFB')
+              .onClick(() => { HMRouterMgr.push({ pageUrl: PAGE_PATH.PRIVACY_PAGE }) })
+            Row() { Blank() }
+              .width(60)
+              .height(1)
+              .backgroundColor('#007DFB')
+          }
         }
         Button('登录')
           .backgroundColor(this.smsBtnEnable && this.agree ? $r('[basic].color.black') : '#D4D2D9')

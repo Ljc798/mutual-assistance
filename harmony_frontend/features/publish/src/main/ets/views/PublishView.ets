@@ -453,7 +453,19 @@ export struct PublishView {
   }
 
   private resetForm() {
-    this.form = new PublishFormModel()
+    this.form.category = ''
+    this.form.title = ''
+    this.form.detail = ''
+    this.form.takeCode = ''
+    this.form.takeName = ''
+    this.form.takeTel = ''
+    this.form.position = ''
+    this.form.address = ''
+    this.form.reward = ''
+    this.form.deadlineDate = ''
+    this.form.deadlineTime = ''
+    this.form.deadline = ''
+    this.form.mode = 'fixed'
     this.showTakeCodeField = false
     this.showTakeAwayField = false
     this.isTakeTelValid = true

@@ -350,7 +350,11 @@ export struct MineView {
   @Builder
   private renderFeedbackHint() {
     Column({ space: 6 }) {
-      Text('您的意见真的真的对我们很重要')
+      Text('您的意见对我们真的真的很重要')
+        .fontSize(13)
+        .fontColor($r('[basic].color.text_secondary'))
+        .textAlign(TextAlign.Center)
+      Text('客服电话：18679297267，邮箱：1345017151@qq.com')
         .fontSize(13)
         .fontColor($r('[basic].color.text_secondary'))
         .textAlign(TextAlign.Center)

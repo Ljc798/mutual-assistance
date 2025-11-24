@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../config/db");
+const authMiddleware = require("./authMiddleware");
 
 function getRoomId(userA, userB) {
     return [userA, userB].sort((a, b) => a - b).join("_");
@@ -203,6 +204,29 @@ router.get('/unread-count', async (req, res) => {
             error: err
         });
     }
+});
+
+// 举报聊天房间/对话
+router.post('/report', authMiddleware, async (req, res) => {
+  const userId = req.user.id;
+  const { room_id, reason = '', description = '' } = req.body || {};
+  if (!room_id || !reason) {
+    return res.status(400).json({ success: false, message: '缺少 room_id 或 reason' });
+  }
+  try {
+    await db.query(
+      'INSERT INTO chat_reports (room_id, reporter_id, reason, description) VALUES (?, ?, ?, ?)',
+      [room_id, userId, reason, description]
+    );
+    await db.query(
+      'INSERT INTO notifications (user_id, type, title, content) VALUES (?, ?, ?, ?)',
+      [10, 'report', '📢 有新的举报', `用户 ${userId} 举报了聊天房间 ${room_id}\n理由：${reason}${description ? `\n补充说明：${description}` : ''}`]
+    );
+    return res.json({ success: true, message: '举报已提交' });
+  } catch (err) {
+    console.error('❌ 聊天举报失败:', err);
+    return res.status(500).json({ success: false, message: '服务器错误' });
+  }
 });
 
 module.exports = router;

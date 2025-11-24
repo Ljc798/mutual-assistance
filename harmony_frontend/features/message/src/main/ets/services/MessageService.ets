@@ -64,3 +64,10 @@ export async function fetchLatestNotification(token: string): Promise<string> {
   }
   return response.notification.content ?? ''
 }
+
+export interface ChatReportPayload { room_id: string; reason: string; description?: string }
+interface BaseResponse { success: boolean; message?: string }
+export async function reportChat(roomId: string, reason: string, description: string | undefined, token: string): Promise<BaseResponse> {
+  const payload: ChatReportPayload = { room_id: roomId, reason, description }
+  return HttpClient.post<BaseResponse, ChatReportPayload>('/messages/report', payload, buildAuthHeader(token))
+}

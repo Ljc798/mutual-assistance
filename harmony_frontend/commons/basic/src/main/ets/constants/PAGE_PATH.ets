@@ -15,4 +15,5 @@ export class PAGE_PATH {
   static readonly MY_SPACE_PAGE: string = "MySpaceView"
   static readonly WALLET_PAGE: string = "WalletView"
   static readonly VIP_PAGE: string = "VipView"
+  static readonly PRIVACY_PAGE: string = "PrivacyView"
 }

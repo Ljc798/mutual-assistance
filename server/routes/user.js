@@ -1103,4 +1103,13 @@ router.post("/check-text", async (req, res) => {
         });
     }
 });
+router.post("/delete", authMiddleware, async (req, res) => {
+    const userId = req.user.id;
+    try {
+        await db.query("DELETE FROM users WHERE id = ?", [userId]);
+        return res.json({ success: true });
+    } catch (err) {
+        return res.status(500).json({ success: false, message: "注销失败", error: err.message });
+    }
+});
 module.exports = router;

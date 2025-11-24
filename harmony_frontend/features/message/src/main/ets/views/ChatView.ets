@@ -4,6 +4,7 @@ import { AppSafeArea, AppUser, PAGE_PATH } from 'basic'
 import { HMRouter, HMRouterMgr } from '@hadss/hmrouter'
 import { AppCurrentChat, ChatMessageItem } from '../viewmodels/ChatVM'
 import { ChatClient, fetchHistory, markRead } from '../services/ChatService'
+import { reportChat } from '../services/MessageService'
 
 @HMRouter({ pageUrl: PAGE_PATH.CHAT_PAGE })
 @Component
@@ -14,6 +15,8 @@ export struct ChatView {
   private readonly chatVM: AppCurrentChat = AppStorageV2.connect(AppCurrentChat, () => new AppCurrentChat())!
   @State messages: ChatMessageItem[] = []
   @State inputText: string = ''
+  @State showReportModal: boolean = false
+  @State reportText: string = ''
   private client?: ChatClient
 
   aboutToAppear() {
@@ -65,6 +68,7 @@ export struct ChatView {
         .height('100%')
         .scrollBar(BarState.Off)
       }
+      this.renderReportDialog()
       Column() { this.renderInputBar() }
         .position({ left: 0, right: 0, bottom: (this.safeArea.bottomHeight ?? 0) })
     }
@@ -86,8 +90,13 @@ export struct ChatView {
         .fontWeight(FontWeight.Medium)
         .fontColor($r('[basic].color.white'))
       Blank()
+      Text('举报')
+        .fontSize(14)
+        .fontColor($r('[basic].color.white'))
+        .onClick(() => { this.showReportModal = true })
     }
     .padding({ top: this.safeArea.topHeight + 10, bottom: 12, left: 16, right: 16 })
+    .margin({bottom: 5})
     .width('100%')
     .backgroundColor($r('[basic].color.home_header_bg'))
   }
@@ -97,34 +106,36 @@ export struct ChatView {
     Row() {
       if (!it.isSelf) {
         Image(this.getAvatarSource(this.chatVM.avatarUrl))
-          .width(32)
-          .height(32)
+          .width(40)
+          .height(40)
           .borderRadius(16)
           .objectFit(ImageFit.Cover)
           .backgroundColor('#F2F2F2')
       }
       Column() {
+        Text(this.formatTime(it.createdTime))
+          .fontSize(11)
+          .fontColor($r('[basic].color.text_secondary'))
         Text(it.content)
           .fontSize(14)
           .fontColor($r('[basic].color.text_primary'))
           .padding({ left: 10, right: 10, top: 8, bottom: 8 })
           .backgroundColor(it.isSelf ? '#FFE1EB' : $r('[basic].color.white'))
           .borderRadius(14)
-        Text(it.createdTime)
-          .fontSize(11)
-          .fontColor($r('[basic].color.text_secondary'))
       }
+      .margin({left:5, right: 5})
       .layoutWeight(1)
       .alignItems(it.isSelf ? HorizontalAlign.End : HorizontalAlign.Start)
       if (it.isSelf) {
         Image(this.getAvatarSource(this.appUser.user.avatar_url ?? ''))
-          .width(32)
-          .height(32)
+          .width(40)
+          .height(40)
           .borderRadius(16)
           .objectFit(ImageFit.Cover)
           .backgroundColor('#F2F2F2')
       }
     }
+    .alignItems(VerticalAlign.Center)
     .padding({ left: 8, right: 8 })
   }
 
@@ -174,5 +185,72 @@ export struct ChatView {
   private getAvatarSource(url: string): ResourceStr {
     if (!url) { return $r('[basic].media.ic_public_user') }
     return url as ResourceStr
+  }
+
+  private formatTime(value: string): string {
+    try {
+      const d = new Date(value)
+      const mm = (d.getMonth() + 1).toString().padStart(2, '0')
+      const dd = d.getDate().toString().padStart(2, '0')
+      const hh = d.getHours().toString().padStart(2, '0')
+      const mi = d.getMinutes().toString().padStart(2, '0')
+      return `${mm}月${dd}日 ${hh}:${mi}`
+    } catch (_e) {
+      return value
+    }
+  }
+
+  @Builder
+  private renderReportDialog() {
+    if (!this.showReportModal) { Blank() } else {
+      Column() {
+        Column({ space: 12 }) {
+          Text('举报对话')
+            .fontSize(18)
+            .fontWeight(FontWeight.Medium)
+          TextArea({ placeholder: '请输入举报原因（必填）' })
+            .height(120)
+            .backgroundColor($r('[basic].color.search_box_bg'))
+            .padding(12)
+            .borderRadius(12)
+            .onChange((v: string) => this.reportText = v)
+          Row({ space: 12 }) {
+            Button('取消')
+              .height(40)
+              .borderRadius(16)
+              .backgroundColor($r('[basic].color.search_box_bg'))
+              .fontColor('#333')
+              .onClick(() => { this.showReportModal = false; this.reportText = '' })
+            Button('提交')
+              .height(40)
+              .borderRadius(16)
+              .backgroundColor($r('[basic].color.filter_active_bg'))
+              .fontColor($r('[basic].color.white'))
+              .onClick(() => { this.handleSubmitReport() })
+          }
+        }
+        .width('90%')
+        .padding(20)
+        .backgroundColor($r('[basic].color.white'))
+        .borderRadius(20)
+      }
+      .width('100%')
+      .height('100%')
+      .justifyContent(FlexAlign.Center)
+      .alignItems(HorizontalAlign.Center)
+      .backgroundColor('rgba(0,0,0,0.35)')
+    }
+  }
+
+  private async handleSubmitReport() {
+    const text = (this.reportText || '').trim()
+    if (!text) { promptAction.showToast({ message: '请填写举报原因' }); return }
+    const token = this.appUser.user.token
+    if (!token) { promptAction.showToast({ message: '请先登录' }); return }
+    try {
+      const res = await reportChat(this.chatVM.roomId, text, undefined, token)
+      if (res.success) { promptAction.showToast({ message: '已提交举报' }); this.showReportModal = false; this.reportText = '' }
+      else { promptAction.showToast({ message: res.message ?? '举报失败' }) }
+    } catch (_e) { promptAction.showToast({ message: '网络错误' }) }
   }
 }

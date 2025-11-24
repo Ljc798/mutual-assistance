@@ -27,3 +27,9 @@ export async function checkWxid(wxid: string, id?: number): Promise<CheckAvailab
 export async function updateProfile(payload: UpdatePayload, token: string): Promise<BaseResponse> {
   return HttpClient.post<BaseResponse, UpdatePayload>('/user/update', payload, auth(token))
 }
+
+export interface DeletePayload { reason: string }
+export async function deleteAccount(token: string): Promise<BaseResponse> {
+  const payload: DeletePayload = { reason: 'user_request' }
+  return HttpClient.post<BaseResponse, DeletePayload>('/user/delete', payload, auth(token))
+}

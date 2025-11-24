@@ -106,6 +106,7 @@ export struct MessageView {
             .maxLines(1)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
         }
+        .alignItems(HorizontalAlign.Start)
       }
       .width('98%')
       .margin({top: 10})
@@ -144,46 +145,75 @@ export struct MessageView {
   @Builder
   private renderChatItem(item: ChatPreview) {
     Row({ space: 12 }) {
+
+      // --- Avatar ---
       Image(this.getAvatarSource(item.avatarUrl))
-        .width(48)
-        .height(48)
-        .borderRadius(24)
+        .width(48).height(48).borderRadius(24)
         .objectFit(ImageFit.Cover)
         .backgroundColor('#F2F2F2')
+
+      // --- 文本内容区 ---
       Column({ space: 6 }) {
-        Row({ space: 6 }) {
+
+        // ========== 第一行：用户名 + 时间 ==========
+        Flex({
+          justifyContent: FlexAlign.SpaceBetween,
+          alignItems: ItemAlign.Center
+        }) {
+
+          // 左侧用户名
           Text(item.username)
             .fontSize(15)
             .fontWeight(FontWeight.Medium)
             .maxLines(1)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
-          Blank()
+            .layoutWeight(1)
+            .constraintSize({ maxWidth: '70%' }) // ⭐ 防止文本过长
+
+          // 右侧时间
           Text(item.timestamp)
             .fontSize(12)
             .fontColor($r('[basic].color.text_secondary'))
+            .margin({ left: 8 })
         }
-        Row({ space: 8 }) {
+        .width('75%')
+
+        // ========== 第二行：消息 + 未读 ==========
+        Flex({
+          justifyContent: FlexAlign.SpaceBetween,
+          alignItems: ItemAlign.Center
+        }) {
+
+          // 左侧最新消息
           Text(item.lastMessage)
             .fontSize(13)
             .fontColor($r('[basic].color.text_secondary'))
             .maxLines(1)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
+            .layoutWeight(1)
+            .constraintSize({ maxWidth: '80%' }) // ⭐ 为角标留出空间
+
+          // 未读角标
           if (item.unread > 0) {
             Text(item.unread > 99 ? '99+' : `${item.unread}`)
               .fontSize(11)
-              .fontColor($r('[basic].color.white'))
+              .fontColor('#fff')
               .padding({ left: 6, right: 6, top: 2, bottom: 2 })
               .backgroundColor('#FF4D4F')
               .borderRadius(10)
+              .constraintSize({ minWidth: 20 }) // ⭐ 确保角标有最小宽度
           }
         }
+        .width('75%')
       }
+      .flexGrow(1)
     }
     .padding({ left: 16, right: 16, top: 14, bottom: 14 })
-    .backgroundColor($r('[basic].color.white'))
+    .backgroundColor('#fff')
     .borderRadius(18)
-    .onClick((): void => { this.handleChatTap(item) })
+    .onClick(() => this.handleChatTap(item))
   }
+
 
   @Builder
   private renderRefreshHeader() {
