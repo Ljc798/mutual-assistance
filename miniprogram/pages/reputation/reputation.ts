@@ -26,7 +26,7 @@ Page({
         }
 
         wx.request({
-            url: `${BASE_URL}/user/reputation/${userId}`, // ✅ 改这里
+            url: `${BASE_URL}/user/reputation/${userId}`, 
             success: (res: any) => {
                 if (!res.data.success) return;
 

@@ -81,12 +81,15 @@ export struct SquareView {
   @State isSubmittingReport: boolean = false
   @State isSubmittingCheckin: boolean = false
   @State checkinSubTitle: string = '签到领积分'
+  @State postModels: SquarePostModel[] = []
 
   aboutToAppear() {
     this.hasMounted = true
     this.syncSchoolSelection()
     this.lastSyncedVersion = this.schoolVersion
     this.bootstrap()
+    this.resetPagingState()
+    this.loadPosts(false)
   }
 
   aboutToRender() {
@@ -287,7 +290,7 @@ export struct SquareView {
 
   @Builder
   private renderPostList() {
-    if (this.posts.length === 0) {
+    if (this.postModels.length === 0) {
       Column({ space: 12 }) {
         Text('暂时没有帖子')
           .fontSize(14)
@@ -300,16 +303,16 @@ export struct SquareView {
       .padding({ top: 60 })
     } else {
       Column({ space: 12 }) {
-        ForEach(this.posts, (post: SquarePost) => {
-          this.renderPostCard(post)
-        }, (post: SquarePost) => `${post.id}`)
+        ForEach(this.postModels, (post: SquarePostModel) => {
+          this.renderPostCardModel(post)
+        }, (post: SquarePostModel) => `${post.id}`)
         this.renderListFooter()
       }
     }
   }
 
   @Builder
-  private renderPostCard(post: SquarePost) {
+  private renderPostCardModel(post: SquarePostModel) {
     Column({ space: 12 }) {
       Row({ space: 12 }) {
         Image(this.getAvatarSource(post.avatarUrl))
@@ -387,9 +390,9 @@ export struct SquareView {
             .fontSize(13)
             .fontColor($r('[basic].color.text_secondary'))
         }
-        .onClick((): void => {
-          this.toggleLike(post)
-        })
+      .onClick((): void => {
+          this.toggleLikeModel(post)
+      })
 
         Row({ space: 6 }) {
           Image($r('app.media.icon_square_comment'))
@@ -423,7 +426,7 @@ export struct SquareView {
   }
 
   @Builder
-  private renderPostImages(post: SquarePost) {
+  private renderPostImages(post: SquarePostModel) {
     Scroll() {
       Row({ space: 10 }) {
         ForEach(post.images, (imageItem: SquareImageDTO, index: number) => {
@@ -771,6 +774,9 @@ export struct SquareView {
       }
       this.currentPage = nextPage
       this.hasMore = list.length === this.pageSize
+      const ms: SquarePostModel[] = []
+      for (let i = 0; i < this.posts.length; i++) { ms.push(new SquarePostModel(this.posts[i])) }
+      this.postModels = ms
     } catch (error) {
       console.error('[SquareView] loadPosts.error', error?.message ?? error)
       this.showToast('获取帖子失败，请稍后重试')
@@ -1113,6 +1119,23 @@ export struct SquareView {
     }
   }
 
+  private async toggleLikeModel(post: SquarePostModel) {
+    const userId = this.appUser.user.id
+    const token = this.appUser.user.token
+    if (!userId || !token) {
+      this.showToast('请先登录')
+      return
+    }
+    try {
+      const payload: SquareLikePayload = { user_id: userId, square_id: post.id }
+      if (post.isLiked) { await unlikeSquarePost(payload, token); post.isLiked = false; post.likesCount = Math.max(0, post.likesCount - 1) }
+      else { await likeSquarePost(payload, token); post.isLiked = true; post.likesCount = post.likesCount + 1 }
+    } catch (error) {
+      console.error('点赞失败', JSON.stringify(error))
+      this.showToast('操作失败，请稍后重试')
+    }
+  }
+
   private openDetail(postId: number) {
     const target = this.posts.find((p: SquarePost) => p.id === postId)
     if (!target) {
@@ -1143,6 +1166,44 @@ export struct SquareView {
     this.hasMore = true
     this.isLoadingMore = false
     this.posts = []
+    this.postModels = []
+  }
+}
+@ObservedV2
+export class SquarePostModel implements SquarePost {
+  @Trace id: number
+  @Trace userId: number
+  @Trace username: string
+  @Trace avatarUrl: string
+  @Trace content: string
+  @Trace category: string
+  @Trace likesCount: number
+  @Trace commentsCount: number
+  @Trace createdTime: string
+  @Trace formattedTime: string
+  @Trace isLiked: boolean
+  @Trace isVip: boolean
+  @Trace pinned: boolean
+  @Trace schoolId?: number
+  @Trace images: SquareImageDTO[]
+  @Trace approvedImages: SquareImageDTO[]
+  constructor(dto: SquarePost) {
+    this.id = dto.id
+    this.userId = dto.userId
+    this.username = dto.username
+    this.avatarUrl = dto.avatarUrl
+    this.content = dto.content
+    this.category = dto.category
+    this.likesCount = dto.likesCount
+    this.commentsCount = dto.commentsCount
+    this.createdTime = dto.createdTime
+    this.formattedTime = dto.formattedTime
+    this.isLiked = dto.isLiked
+    this.isVip = dto.isVip
+    this.pinned = dto.pinned
+    this.schoolId = dto.schoolId
+    this.images = dto.images
+    this.approvedImages = dto.approvedImages
   }
 }
 interface UploadImageResponse { success: boolean; imageUrl?: string }

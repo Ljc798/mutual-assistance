@@ -16,6 +16,7 @@ export struct SquareDetailView {
   private readonly detailVM: AppCurrentSquareDetail = AppStorageV2.connect(AppCurrentSquareDetail, () => new AppCurrentSquareDetail())!
   private readonly appUser: AppUser = AppStorageV2.connect(AppUser, () => new AppUser())!
   @State comments: SquareCommentItem[] = []
+  @State commentModels: SquareCommentModel[] = []
   @State commentInput: string = ''
   @State isSubmittingComment: boolean = false
   @State replyToCommentId: number = 0
@@ -153,9 +154,9 @@ export struct SquareDetailView {
           .fontSize(15)
           .fontColor($r('[basic].color.text_primary'))
         Column({ space: 8 }) {
-          ForEach(this.comments, (item: SquareCommentItem) => {
-            this.CommentCard(item)
-          }, (item: SquareCommentItem) => `c-${item.id}`)
+          ForEach(this.commentModels, (item: SquareCommentModel) => {
+            this.CommentCardModel(item)
+          }, (item: SquareCommentModel) => `c-${item.id}`)
         }
       }
       .width('100%')
@@ -167,7 +168,7 @@ export struct SquareDetailView {
   }
 
   @Builder
-  private CommentCard(item: SquareCommentItem) {
+  private CommentCardModel(item: SquareCommentModel) {
     Column({ space: 8 }) {
       Row({ space: 10 }) {
         Image(this.getAvatarSource(item.avatarUrl ?? ''))
@@ -207,14 +208,14 @@ export struct SquareDetailView {
               .fontSize(12)
               .fontColor($r('[basic].color.text_secondary'))
           }
-          .onClick(() => this.toggleCommentLike(item))
+          .onClick(() => this.toggleCommentLikeModel(item))
         }
       }
       .onClick(() => this.prepareReply(item))
       if (item.children.length > 0) {
         Column({ space: 6 }) {
           ForEach(item.children, (child: SquareCommentItem) => {
-            this.CommentCard(child)
+            this.CommentCardModel(new SquareCommentModel(child))
           }, (child: SquareCommentItem) => `c-${child.id}`)
         }
         .padding({ left: 32 })
@@ -286,6 +287,9 @@ export struct SquareDetailView {
       if (detail) { this.detailVM.setPost(detail) }
       const list: SquareCommentItem[] = await fetchSquareComments(postId, viewerId)
       this.comments = list
+      const ms: SquareCommentModel[] = []
+      for (let i = 0; i < list.length; i++) { ms.push(new SquareCommentModel(list[i])) }
+      this.commentModels = ms
     } catch (error) {
       promptAction.showToast({ message: '加载失败' })
     }
@@ -312,7 +316,7 @@ export struct SquareDetailView {
     }
   }
 
-  private async toggleCommentLike(item: SquareCommentItem) {
+  private async toggleCommentLikeModel(item: SquareCommentModel) {
     const userId = this.appUser.user.id
     if (!userId) { promptAction.showToast({ message: '请先登录' }); return }
     try {
@@ -325,8 +329,8 @@ export struct SquareDetailView {
         item.isLiked = true
         item.likesCount += 1
       }
-      const next = this.comments.slice()
-      this.comments = next
+      const next = this.commentModels.slice()
+      this.commentModels = next
     } catch (error) {
       promptAction.showToast({ message: '操作失败' })
     }
@@ -361,33 +365,19 @@ export struct SquareDetailView {
         children: []
       }
       if (parentId && rootParentId) {
-        const next = this.comments.map((c: SquareCommentItem) => {
+        const next = this.commentModels.map((c: SquareCommentModel) => {
           if (c.id === rootParentId) {
             const children: SquareCommentItem[] = c.children.slice()
             children.push(newItem)
-            return {
-              id: c.id,
-              userId: c.userId,
-              squareId: c.squareId,
-              content: c.content,
-              parentId: c.parentId,
-              rootParentId: c.rootParentId,
-              likesCount: c.likesCount,
-              createdTime: c.createdTime,
-              username: c.username,
-              avatarUrl: c.avatarUrl,
-              isVip: c.isVip,
-              replyToUsername: c.replyToUsername,
-              isLiked: c.isLiked,
-              children: children
-            }
+            c.children = children
+            return c
           }
           return c
         })
-        this.comments = next
+        this.commentModels = next
       } else {
-        const next2: SquareCommentItem[] = [newItem].concat(this.comments)
-        this.comments = next2
+        const next2: SquareCommentModel[] = [new SquareCommentModel(newItem)].concat(this.commentModels)
+        this.commentModels = next2
       }
       this.commentInput = ''
       this.clearReply()
@@ -435,5 +425,39 @@ export struct SquareDetailView {
       images: p.images,
       approvedImages: p.approvedImages
     }
+  }
+}
+
+@ObservedV2
+export class SquareCommentModel implements SquareCommentItem {
+  @Trace id: number
+  @Trace userId: number
+  @Trace squareId: number
+  @Trace content: string
+  @Trace parentId?: number
+  @Trace rootParentId?: number
+  @Trace likesCount: number
+  @Trace createdTime: string
+  @Trace username: string
+  @Trace avatarUrl: string
+  @Trace isVip: boolean
+  @Trace replyToUsername?: string
+  @Trace isLiked: boolean
+  @Trace children: SquareCommentItem[]
+  constructor(dto: SquareCommentItem) {
+    this.id = dto.id
+    this.userId = dto.userId
+    this.squareId = dto.squareId
+    this.content = dto.content
+    this.parentId = dto.parentId
+    this.rootParentId = dto.rootParentId
+    this.likesCount = dto.likesCount
+    this.createdTime = dto.createdTime
+    this.username = dto.username
+    this.avatarUrl = dto.avatarUrl ?? ''
+    this.isVip = dto.isVip
+    this.replyToUsername = dto.replyToUsername
+    this.isLiked = dto.isLiked
+    this.children = dto.children
   }
 }

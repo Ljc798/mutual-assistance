@@ -13,6 +13,7 @@ export struct NotificationsView {
   private readonly appUser: AppUser = AppStorageV2.connect(AppUser, () => new AppUser())!
   @State list: NotificationItem[] = []
   @State isRefreshing: boolean = false
+  @State models: NotificationItemModel[] = []
 
   aboutToAppear() {
     this.loadAll()
@@ -26,6 +27,9 @@ export struct NotificationsView {
     try {
       const items = await fetchNotifications(token)
       this.list = items
+      const ms: NotificationItemModel[] = []
+      for (let i = 0; i < items.length; i++) { ms.push(new NotificationItemModel(items[i])) }
+      this.models = ms
     } catch (_e) {
       promptAction.showToast({ message: '获取通知失败' })
     } finally {
@@ -70,7 +74,7 @@ export struct NotificationsView {
       Button('全部已读')
         .height(32)
         .borderRadius(12)
-        .backgroundColor($r('[basic].color.search_box_bg'))
+        .backgroundColor($r('[basic].color.price_bidding'))
         .onClick(() => this.handleMarkAllRead())
     }
     .padding({ top: this.safeArea.topHeight + 10, bottom: 12, left: 16, right: 16 })
@@ -96,89 +100,96 @@ export struct NotificationsView {
       .borderRadius(18)
     } else {
       Column({ space: 10 }) {
-        ForEach(this.list, (item: NotificationItem) => {
+        ForEach(this.models, (item: NotificationItemModel) => {
           this.renderItem(item)
-        }, (item: NotificationItem) => `${item.id}`)
+        }, (item: NotificationItemModel) => `${item.id}`)
       }
     }
   }
 
   @Builder
-  private renderItem(item: NotificationItem) {
+  private renderItem(item: NotificationItemModel) {
     Row({ space: 12 }) {
       Column({ space: 4 }) {
-        Text(item.title)
-          .fontSize(15)
-          .fontWeight(FontWeight.Medium)
-          .fontColor(item.isRead ? $r('[basic].color.text_secondary') : $r('[basic].color.text_primary'))
-          .maxLines(1)
-          .textOverflow({ overflow: TextOverflow.Ellipsis })
-        Text(item.content)
-          .fontSize(13)
-          .fontColor($r('[basic].color.text_secondary'))
-          .maxLines(2)
-          .textOverflow({ overflow: TextOverflow.Ellipsis })
-        Text(item.createdTime)
-          .fontSize(12)
-          .fontColor($r('[basic].color.text_secondary'))
-      }
-      Blank()
-      if (!item.isRead) {
-        Button('标记已读')
-          .height(28)
-          .borderRadius(12)
-          .backgroundColor($r('[basic].color.search_box_bg'))
-          .onClick(() => this.handleMarkRead(item))
+        Row() {
+          Text(item.title)
+            .fontSize(15)
+            .fontWeight(FontWeight.Medium)
+            .fontColor(item.isRead ? $r('[basic].color.text_primary') : $r('[basic].color.text_primary'))
+            .maxLines(1)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+            .textAlign(TextAlign.Start)
+          if (!item.isRead) {
+            Button('标记已读')
+              .height(28)
+              .borderRadius(12)
+              .backgroundColor($r('[basic].color.home_accent'))
+              .onClick(() => this.handleMarkRead(item))
+          }
+        }
+        .width('100%')
+        .justifyContent(FlexAlign.SpaceBetween)
+        Column() {
+          Text(item.content)
+            .fontSize(13)
+            .fontColor(item.isRead ? $r('[basic].color.text_secondary') : $r('[basic].color.text_secondary'))
+            .maxLines(2)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+          Text(this.formatTime(item.createdTime))
+            .fontSize(12)
+            .fontColor($r('[basic].color.text_secondary'))
+            .textAlign(TextAlign.End)
+        }
+        .justifyContent(FlexAlign.SpaceBetween)
+        .width('100%')
       }
     }
     .padding({ left: 16, right: 16, top: 14, bottom: 14 })
-    .backgroundColor($r('[basic].color.white'))
+    .backgroundColor(item.isRead ? $r('[basic].color.search_box_bg') : $r('[basic].color.white'))
     .borderRadius(18)
   }
 
-  private async handleMarkRead(item: NotificationItem) {
+  private formatTime(value: string): string {
+    try {
+      const d = new Date(value)
+      const yy = d.getFullYear().toString()
+      const mm = (d.getMonth() + 1).toString().padStart(2, '0')
+      const dd = d.getDate().toString().padStart(2, '0')
+      const hh = d.getHours().toString().padStart(2, '0')
+      const mi = d.getMinutes().toString().padStart(2, '0')
+      return `${yy}-${mm}-${dd} ${hh}:${mi}`
+    } catch (_e) { return value }
+  }
+
+  private async handleMarkRead(item: NotificationItemModel) {
     const token = this.appUser.user.token
     if (!token) { return }
-    try {
-      await markRead(item.id, token)
-      const next = this.list.slice()
-      for (let i = 0; i < next.length; i++) {
-        if (next[i].id === item.id) {
-          const updated: NotificationItem = {
-            id: next[i].id,
-            title: next[i].title,
-            content: next[i].content,
-            createdTime: next[i].createdTime,
-            isRead: true
-          }
-          next[i] = updated
-          break
-        }
-      }
-      this.list = next
-    } catch (_e) {
-      promptAction.showToast({ message: '操作失败' })
-    }
+    const prev = item.isRead
+    item.isRead = true
+    try { await markRead(item.id, token) } catch (_e) { item.isRead = prev; promptAction.showToast({ message: '操作失败' }) }
   }
 
   private async handleMarkAllRead() {
     const token = this.appUser.user.token
     if (!token) { return }
-    try {
-      await markAllRead(token)
-      const next = this.list.slice()
-      for (let i = 0; i < next.length; i++) {
-        next[i] = {
-          id: next[i].id,
-          title: next[i].title,
-          content: next[i].content,
-          createdTime: next[i].createdTime,
-          isRead: true
-        }
-      }
-      this.list = next
-    } catch (_e) {
-      promptAction.showToast({ message: '操作失败' })
-    }
+    const prev: boolean[] = this.models.map(m => m.isRead)
+    for (let i = 0; i < this.models.length; i++) { this.models[i].isRead = true }
+    try { await markAllRead(token) } catch (_e) { for (let i = 0; i < this.models.length; i++) { this.models[i].isRead = prev[i] }; promptAction.showToast({ message: '操作失败' }) }
+  }
+}
+
+@ObservedV2
+export class NotificationItemModel implements NotificationItem {
+  @Trace id: number
+  @Trace title: string
+  @Trace content: string
+  @Trace createdTime: string
+  @Trace isRead: boolean
+  constructor(dto: NotificationItem) {
+    this.id = dto.id
+    this.title = dto.title
+    this.content = dto.content
+    this.createdTime = dto.createdTime
+    this.isRead = dto.isRead
   }
 }

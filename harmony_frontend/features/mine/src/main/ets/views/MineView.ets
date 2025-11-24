@@ -1,6 +1,6 @@
 import promptAction from '@ohos.promptAction'
 import { AppStorageV2 } from '@kit.ArkUI'
-import { AppSafeArea, PAGE_PATH, AppUser, USER_LOGIN_TIME_KEY } from 'basic'
+import { AppSafeArea, PAGE_PATH, AppUser, USER_LOGIN_TIME_KEY, userPersistence, UserInfo } from 'basic'
 import {
   ActionShortcut,
   ReputationSummary,
@@ -9,6 +9,8 @@ import {
   VipState
 } from '../viewmodels/MyTypes'
 import { HMRouterMgr } from '@hadss/hmrouter'
+import { fetchReputation } from '../services/ReputationService'
+import { fetchProfile } from '../services/UserInfoService'
 
 @Component
 export struct MineView {
@@ -39,10 +41,12 @@ export struct MineView {
 
   aboutToAppear() {
     this.syncUserState()
+    this.refreshProfileAndReputation()
   }
 
   onPageShow() {
     this.syncUserState()
+    this.refreshProfileAndReputation()
   }
 
   aboutToRender() {
@@ -539,6 +543,49 @@ export struct MineView {
     this.profile = this.buildProfileFromStorage()
     this.statistics = this.buildStatisticsFromStorage()
     // this.vipState = this.buildVipStateFromStorage()
+  }
+
+  private async refreshProfileAndReputation() {
+    const token = this.appUser.user?.token ?? ''
+    if (token.length > 0) {
+      try {
+        const resp = await fetchProfile(token)
+        if (resp.success && resp.user) {
+          const u = resp.user
+          const merged: UserInfo = {
+            id: u.id,
+            username: u.username,
+            avatar_url: u.avatar_url,
+            wxid: u.wxid,
+            phone_number: u.phone_number,
+            openid: u.openid,
+            points: u.points,
+            free_counts: u.free_counts,
+            balance: u.balance,
+            vip_expire_time: u.vip_expire_time,
+            vip_level: u.vip_level,
+            school_id: u.school_id,
+            school_name: u.school_name,
+            token: token
+          }
+          userPersistence.persistUser(merged)
+          this.profile = this.buildProfileFromStorage()
+          this.statistics = this.buildStatisticsFromStorage()
+        }
+      } catch (_e) {}
+    }
+    const uid = this.appUser.user?.id
+    if (uid) {
+      try {
+        const rep = await fetchReputation(uid)
+        const score = Math.max(0, Math.min(100, Number(rep.totalScore || 0)))
+        const avg = Math.max(0, Math.min(5, Number(rep.averageRating || 0)))
+        const normalized = 0.3 * (score / 100) + 0.7 * (avg / 5)
+        const stars = Math.round(normalized * 5 * 10) / 10
+        const level = stars >= 4.5 ? '优秀' : stars >= 4.0 ? '良好' : stars >= 3.0 ? '合格' : '需提升'
+        this.reputation = { totalScore: score, weightedScore: stars, creditLevel: level }
+      } catch (_e) {}
+    }
   }
   private getProfileAvatar(): ResourceStr {
     const u = this.appUser.user
