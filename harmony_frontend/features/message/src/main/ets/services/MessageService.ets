@@ -25,13 +25,24 @@ function parseRoomId(roomId: string, selfId: number): number {
 }
 
 function formatTimestamp(value: string): string {
-  const date = new Date(value)
-  const pad = (num: number): string => num < 10 ? `0${num}` : `${num}`
-  const month = pad(date.getMonth() + 1)
-  const day = pad(date.getDate())
-  const hour = pad(date.getHours())
-  const minute = pad(date.getMinutes())
-  return `${month}月${day}日 ${hour}:${minute}`
+  try {
+    if (value.length >= 16 && value.includes('-') && value.includes(':') && value.indexOf('T') === -1) {
+      const month = value.substring(5, 7)
+      const day = value.substring(8, 10)
+      const hour = value.substring(11, 13)
+      const minute = value.substring(14, 16)
+      return `${month}月${day}日 ${hour}:${minute}`
+    }
+    const date = new Date(value)
+    const pad = (num: number): string => num < 10 ? `0${num}` : `${num}`
+    const month = pad(date.getMonth() + 1)
+    const day = pad(date.getDate())
+    const hour = pad(date.getHours())
+    const minute = pad(date.getMinutes())
+    return `${month}月${day}日 ${hour}:${minute}`
+  } catch (_e) {
+    return value
+  }
 }
 
 export async function fetchChatPreviews(userId: number, token: string): Promise<ChatPreview[]> {

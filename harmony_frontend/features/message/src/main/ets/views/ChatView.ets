@@ -34,6 +34,7 @@ export struct ChatView {
       const userIdNum: number = Number(this.appUser.user.id ?? 0)
       const list = await fetchHistory(this.chatVM.roomId, userIdNum)
       this.messages = list
+      this.scrollBottom()
       await markRead(this.chatVM.roomId, userIdNum)
       this.client = new ChatClient(userIdNum, this.chatVM.roomId, this.chatVM.targetId)
       this.client.connect((msg: ChatMessageItem) => {
@@ -42,7 +43,6 @@ export struct ChatView {
         this.messages = arr
         this.scrollBottom()
       })
-      this.scrollBottom()
     } catch (_e) {
       promptAction.showToast({ message: '聊天加载失败' })
     }
@@ -62,12 +62,13 @@ export struct ChatView {
               this.MessageBubble(it)
             }, (it: ChatMessageItem) => `${it.id}`)
           }
-          .padding({ left: 12, right: 12, bottom: 80 })
-          .height('100%')
+          .padding({ left: 12, right: 12, bottom: 80 + (this.safeArea.bottomHeight ?? 0) })
         }
-        .height('100%')
+        .layoutWeight(1)
         .scrollBar(BarState.Off)
       }
+      .height('100%')
+      .justifyContent(FlexAlign.Start)
       this.renderReportDialog()
       Column() { this.renderInputBar() }
         .position({ left: 0, right: 0, bottom: (this.safeArea.bottomHeight ?? 0) })
@@ -75,6 +76,7 @@ export struct ChatView {
     .height('100%')
     .width('100%')
     .backgroundColor($r('[basic].color.page_background'))
+
   }
 
   @Builder
@@ -165,18 +167,6 @@ export struct ChatView {
     if (!text) { return }
     const userId = this.appUser.user.id
     if (!userId || !this.chatVM.roomId) { return }
-    const local: ChatMessageItem = {
-      id: Date.now(),
-      roomId: this.chatVM.roomId,
-      senderId: userId,
-      receiverId: this.chatVM.targetId,
-      content: text,
-      createdTime: new Date().toISOString().slice(0, 16).replace('T', ' '),
-      isSelf: true
-    }
-    const arr = this.messages.slice()
-    arr.push(local)
-    this.messages = arr
     this.inputText = ''
     this.client?.sendText(text)
     this.scrollBottom()
@@ -189,6 +179,15 @@ export struct ChatView {
 
   private formatTime(value: string): string {
     try {
+      // 服务端标准：YYYY-MM-DD HH:mm:ss（不含时区）→ 直接切片
+      if (value.length >= 16 && value.includes('-') && value.includes(':') && value.indexOf('T') === -1) {
+        const mm = value.substring(5, 7)
+        const dd = value.substring(8, 10)
+        const hh = value.substring(11, 13)
+        const mi = value.substring(14, 16)
+        return `${mm}月${dd}日 ${hh}:${mi}`
+      }
+      // ISO 风格（含 T/Z）或其他可被 Date 识别的字符串 → 使用本地时区
       const d = new Date(value)
       const mm = (d.getMonth() + 1).toString().padStart(2, '0')
       const dd = d.getDate().toString().padStart(2, '0')

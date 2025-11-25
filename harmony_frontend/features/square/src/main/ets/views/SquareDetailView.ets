@@ -1,19 +1,30 @@
 import promptAction from '@ohos.promptAction'
 import { AppStorageV2 } from '@kit.ArkUI'
-import { AppSafeArea, PAGE_PATH, AppUser, SquareCommentItem } from 'basic'
+import { AppSafeArea, PAGE_PATH, AppUser, SquareCommentItem, AppImagePreview } from 'basic'
 import { SquarePost } from '../viewmodels/SquareTypes'
 import { SquareImageDTO, SquareLikePayload } from '../viewmodels/SquareTypes'
 import { HMRouter, HMRouterMgr } from '@hadss/hmrouter'
 import { AppCurrentSquareDetail } from '../viewmodels/SquareDetailVM'
-import { fetchSquareDetail, fetchSquareComments, createSquareComment, likeSquareComment, unlikeSquareComment } from '../services/SquareDetailService'
+import {
+  fetchSquareDetail,
+  fetchSquareComments,
+  createSquareComment,
+  likeSquareComment,
+  unlikeSquareComment
+} from '../services/SquareDetailService'
 import { likeSquarePost, unlikeSquarePost } from '../services/SquareService'
+import http from '@ohos.net.http'
+import { fileIo as fs } from '@kit.CoreFileKit'
+import { photoAccessHelper } from '@kit.MediaLibraryKit'
+import { common } from '@kit.AbilityKit'
 
 @Entry
 @HMRouter({ pageUrl: PAGE_PATH.SQUARE_DETAIL_PAGE })
 @Component
 export struct SquareDetailView {
   safeArea: AppSafeArea = AppStorageV2.connect(AppSafeArea, () => new AppSafeArea())!
-  private readonly detailVM: AppCurrentSquareDetail = AppStorageV2.connect(AppCurrentSquareDetail, () => new AppCurrentSquareDetail())!
+  private readonly detailVM: AppCurrentSquareDetail =
+    AppStorageV2.connect(AppCurrentSquareDetail, () => new AppCurrentSquareDetail())!
   private readonly appUser: AppUser = AppStorageV2.connect(AppUser, () => new AppUser())!
   @State comments: SquareCommentItem[] = []
   @State commentModels: SquareCommentModel[] = []
@@ -22,6 +33,10 @@ export struct SquareDetailView {
   @State replyToCommentId: number = 0
   @State replyRootParentId: number = 0
   @State replyToName: string = ''
+  private readonly previewVM: AppImagePreview = AppStorageV2.connect(AppImagePreview, () => new AppImagePreview())!
+  @State previewVisible: boolean = false
+  @State previewIndex: number = 0
+  @State previewImages: string[] = []
 
   build() {
     Stack() {
@@ -38,6 +53,8 @@ export struct SquareDetailView {
       .width('100%')
       .height('100%')
       .justifyContent(FlexAlign.Start)
+
+      // 预览采用独立页面
       this.renderCommentEditor()
     }
     .height('100%')
@@ -64,7 +81,12 @@ export struct SquareDetailView {
     .justifyContent(FlexAlign.SpaceBetween)
     .alignItems(VerticalAlign.Center)
     .width('100%')
-    .padding({ top: this.safeArea.topHeight + 10, bottom: 12, left: 16, right: 16 })
+    .padding({
+      top: this.safeArea.topHeight + 10,
+      bottom: 12,
+      left: 16,
+      right: 16
+    })
     .backgroundColor($r('[basic].color.home_header_bg'))
   }
 
@@ -85,85 +107,113 @@ export struct SquareDetailView {
       .alignItems(HorizontalAlign.Center)
       .padding({ top: 60 })
     } else {
-    Column({ space: 12 }) {
-      Row({ space: 12 }) {
-        Image(this.getAvatarSource(this.detailVM.post!.avatarUrl))
-          .width(40)
-          .height(40)
-          .borderRadius(20)
-          .objectFit(ImageFit.Cover)
-          .backgroundColor($r('[basic].color.search_box_bg'))
-        Column({ space: 4 }) {
-          Text(this.detailVM.post!.username)
-            .fontSize(15)
-            .fontColor($r('[basic].color.text_primary'))
-            .fontWeight(FontWeight.Medium)
-          Text(this.detailVM.post!.formattedTime)
-            .fontSize(12)
-            .fontColor($r('[basic].color.text_secondary'))
-        }
-        .alignItems(HorizontalAlign.Start)
-        .layoutWeight(1)
+      Column({ space: 12 }) {
         Row({ space: 12 }) {
-          Row({ space: 6 }) {
-            Image(this.detailVM.post!.isLiked ? $r('app.media.icon_heart_fill') : $r('app.media.icon_heart_line'))
-              .width(20)
-              .height(20)
-            Text(`${this.detailVM.post!.likesCount}`)
+          Image(this.getAvatarSource(this.detailVM.post!.avatarUrl))
+            .width(40)
+            .height(40)
+            .borderRadius(20)
+            .objectFit(ImageFit.Cover)
+            .backgroundColor($r('[basic].color.search_box_bg'))
+          Column({ space: 4 }) {
+            Text(this.detailVM.post!.username)
+              .fontSize(15)
+              .fontColor($r('[basic].color.text_primary'))
+              .fontWeight(FontWeight.Medium)
+            Text(this.detailVM.post!.formattedTime)
               .fontSize(12)
               .fontColor($r('[basic].color.text_secondary'))
           }
-          .onClick(() => this.toggleLikePost())
-          Text(`#${this.detailVM.post!.category}`)
-            .fontSize(12)
-            .fontColor($r('[basic].color.text_secondary'))
-        }
-      }
-      .width('100%')
-      .padding(16)
-      .backgroundColor($r('[basic].color.white'))
-      .borderRadius(16)
+          .alignItems(HorizontalAlign.Start)
+          .layoutWeight(1)
 
-      Column({ space: 10 }) {
-        Text(this.detailVM.post!.content)
-          .fontSize(15)
-          .fontColor($r('[basic].color.text_primary'))
-          .lineHeight(22)
-          .textAlign(TextAlign.Start)
-        if (this.detailVM.post!.approvedImages.length > 0) {
-          Scroll() {
-            Row({ space: 10 }) {
-              ForEach(this.detailVM.post!.approvedImages, (img: SquareImageDTO, index: number) => {
-                Image(img.url as ResourceStr)
-                  .width(160)
-                  .height(120)
-                  .borderRadius(16)
-                  .objectFit(ImageFit.Cover)
-              }, (_: SquareImageDTO, index: number) => `img-${index}`)
+          Row({ space: 12 }) {
+            Row({ space: 6 }) {
+              Image(this.detailVM.post!.isLiked ? $r('app.media.icon_heart_fill') : $r('app.media.icon_heart_line'))
+                .width(20)
+                .height(20)
+              Text(`${this.detailVM.post!.likesCount}`)
+                .fontSize(12)
+                .fontColor($r('[basic].color.text_secondary'))
+            }
+            .onClick(() => this.toggleLikePost())
+
+            Text(`#${this.detailVM.post!.category}`)
+              .fontSize(12)
+              .fontColor($r('[basic].color.text_secondary'))
+          }
+        }
+        .width('100%')
+        .padding(16)
+        .backgroundColor($r('[basic].color.white'))
+        .borderRadius(16)
+
+        Column({ space: 10 }) {
+          Text(this.detailVM.post!.content)
+            .fontSize(15)
+            .fontColor($r('[basic].color.text_primary'))
+            .lineHeight(22)
+            .textAlign(TextAlign.Start)
+          if (this.detailVM.post!.approvedImages.length > 0) {
+            Scroll() {
+              Row({ space: 10 }) {
+                ForEach(this.detailVM.post!.approvedImages, (img: SquareImageDTO, index: number) => {
+                  Image(img.url as ResourceStr)
+                    .width(160)
+                    .height(120)
+                    .borderRadius(16)
+                    .objectFit(ImageFit.Cover)
+                    .onClick(() => this.openPreviewPage(this.detailVM.post!.approvedImages.map((it: SquareImageDTO) => it.url), index))
+                }, (_: SquareImageDTO, index: number) => `img-${index}`)
+              }
+            }
+            .scrollable(ScrollDirection.Horizontal)
+          }
+        }
+        .width('100%')
+        .padding(16)
+        .backgroundColor($r('[basic].color.white'))
+        .borderRadius(16)
+
+        Column({ space: 10 }) {
+          Text('评论区')
+            .fontSize(15)
+            .fontColor($r('[basic].color.text_primary'))
+          if (this.commentModels.length === 0) {
+            Column({ space: 8 }) {
+              Row() {
+                Text('暂无评论，来抢首评吧')
+                  .fontSize(13)
+                  .fontColor($r('[basic].color.text_secondary'))
+              }
+              .width('100%')
+              .padding({
+                left: 12,
+                right: 12,
+                top: 12,
+                bottom: 12
+              })
+              .backgroundColor($r('[basic].color.white'))
+              .borderRadius(12)
+            }
+          } else {
+            Column({ space: 8 }) {
+              ForEach(this.commentModels, (item: SquareCommentModel) => {
+                this.CommentCardModel(item)
+              }, (item: SquareCommentModel) => `c-${item.id}`)
             }
           }
-          .scrollable(ScrollDirection.Horizontal)
         }
+        .width('100%')
+        .padding(16)
+        .backgroundColor(Color.Transparent)
       }
-      .width('100%')
-      .padding(16)
-      .backgroundColor($r('[basic].color.white'))
-      .borderRadius(16)
-      Column({ space: 10 }) {
-        Text('评论区')
-          .fontSize(15)
-          .fontColor($r('[basic].color.text_primary'))
-        Column({ space: 8 }) {
-          ForEach(this.commentModels, (item: SquareCommentModel) => {
-            this.CommentCardModel(item)
-          }, (item: SquareCommentModel) => `c-${item.id}`)
-        }
-      }
-      .width('100%')
-      .padding(16)
-      .backgroundColor(Color.Transparent)
-    }
-    .padding({ left: 16, right: 16, top: 16, bottom: 16 })
+      .padding({
+        left: 16,
+        right: 16,
+        top: 16,
+        bottom: 160 + (this.safeArea.bottomHeight ?? 0)
+      })
     }
   }
 
@@ -176,7 +226,7 @@ export struct SquareDetailView {
           .height(28)
           .borderRadius(14)
           .objectFit(ImageFit.Cover)
-        Column({ space: 4 }) {
+        Column({ space: 6 }) {
           Row({ space: 6 }) {
             Text(item.username)
               .fontSize(14)
@@ -187,30 +237,42 @@ export struct SquareDetailView {
                 .fontColor($r('[basic].color.text_secondary'))
               Text(item.replyToUsername)
                 .fontSize(12)
-                .fontColor($r('[basic].color.filter_active_bg'))
+              .fontColor($r('[basic].color.text_primary'))
             }
           }
-          Text(item.content)
-            .fontSize(14)
-            .fontColor($r('[basic].color.text_primary'))
-            .textAlign(TextAlign.Start)
-          Text(item.createdTime)
-            .fontSize(12)
-            .fontColor($r('[basic].color.text_secondary'))
-        }
-        .layoutWeight(1)
-        Column({ space: 6 }) {
-          Row({ space: 6 }) {
-            Image(item.isLiked ? $r('app.media.icon_heart_fill') : $r('app.media.icon_heart_line'))
-              .width(18)
-              .height(18)
-            Text(`${item.likesCount}`)
+          .width('100%')
+          .justifyContent(FlexAlign.Start)
+
+          Row() {
+            Text(item.content)
+              .fontSize(14)
+              .fontColor($r('[basic].color.text_primary'))
+              .lineHeight(20)
+              .textAlign(TextAlign.Start)
+          }
+          .width('100%')
+          .justifyContent(FlexAlign.Start)
+
+          Row() {
+            Text(this.formatTime(item.createdTime))
               .fontSize(12)
               .fontColor($r('[basic].color.text_secondary'))
+            Row({ space: 6 }) {
+              Image(item.isLiked ? $r('app.media.icon_heart_fill') : $r('app.media.icon_heart_line'))
+                .width(18)
+                .height(18)
+              Text(`${item.likesCount}`)
+                .fontSize(12)
+                .fontColor($r('[basic].color.text_secondary'))
+            }
+            .onClick(() => this.toggleCommentLikeModel(item))
           }
-          .onClick(() => this.toggleCommentLikeModel(item))
+          .width('100%')
+          .justifyContent(FlexAlign.SpaceBetween)
         }
+        .layoutWeight(1)
       }
+      .alignItems(VerticalAlign.Top)
       .onClick(() => this.prepareReply(item))
       if (item.children.length > 0) {
         Column({ space: 6 }) {
@@ -225,7 +287,7 @@ export struct SquareDetailView {
     .backgroundColor($r('[basic].color.white'))
     .borderRadius(12)
   }
-
+  
   @Builder
   private renderCommentEditor() {
     Column({ space: 8 }) {
@@ -284,11 +346,15 @@ export struct SquareDetailView {
   private async loadDetail(postId: number, viewerId?: number) {
     try {
       const detail: SquarePost | undefined = await fetchSquareDetail(postId, viewerId)
-      if (detail) { this.detailVM.setPost(detail) }
+      if (detail) {
+        this.detailVM.setPost(detail)
+      }
       const list: SquareCommentItem[] = await fetchSquareComments(postId, viewerId)
       this.comments = list
       const ms: SquareCommentModel[] = []
-      for (let i = 0; i < list.length; i++) { ms.push(new SquareCommentModel(list[i])) }
+      for (let i = 0; i < list.length; i++) {
+        ms.push(new SquareCommentModel(list[i]))
+      }
       this.commentModels = ms
     } catch (error) {
       promptAction.showToast({ message: '加载失败' })
@@ -298,7 +364,10 @@ export struct SquareDetailView {
   private async toggleLikePost() {
     const userId = this.appUser.user.id
     const token = this.appUser.user.token
-    if (!userId || !token || !this.detailVM.post) { promptAction.showToast({ message: '请先登录' }); return }
+    if (!userId || !token || !this.detailVM.post) {
+      promptAction.showToast({ message: '请先登录' });
+      return
+    }
     try {
       const payload: SquareLikePayload = { user_id: userId, square_id: this.detailVM.post.id }
       if (this.detailVM.post.isLiked) {
@@ -318,7 +387,10 @@ export struct SquareDetailView {
 
   private async toggleCommentLikeModel(item: SquareCommentModel) {
     const userId = this.appUser.user.id
-    if (!userId) { promptAction.showToast({ message: '请先登录' }); return }
+    if (!userId) {
+      promptAction.showToast({ message: '请先登录' });
+      return
+    }
     try {
       if (item.isLiked) {
         await unlikeSquareComment(item.id, userId)
@@ -340,13 +412,25 @@ export struct SquareDetailView {
     const token = this.appUser.user.token
     const userId = this.appUser.user.id
     const content = this.commentInput.trim()
-    if (!token || !userId) { promptAction.showToast({ message: '请先登录' }); return }
-    if (!this.detailVM.post || content.length === 0) { promptAction.showToast({ message: '请输入评论内容' }); return }
+    if (!token || !userId) {
+      promptAction.showToast({ message: '请先登录' });
+      return
+    }
+    if (!this.detailVM.post || content.length === 0) {
+      promptAction.showToast({ message: '请输入评论内容' });
+      return
+    }
     this.isSubmittingComment = true
     try {
       const parentId = this.replyToCommentId > 0 ? this.replyToCommentId : undefined
       const rootParentId = this.replyToCommentId > 0 ? this.replyRootParentId : undefined
-      const res = await createSquareComment({ user_id: userId, square_id: this.detailVM.post.id, content, parent_id: parentId, root_parent_id: rootParentId }, token)
+      const res = await createSquareComment({
+        user_id: userId,
+        square_id: this.detailVM.post.id,
+        content,
+        parent_id: parentId,
+        root_parent_id: rootParentId
+      }, token)
       const newId = (res.comment_id ?? 0)
       const newItem: SquareCommentItem = {
         id: newId,
@@ -359,7 +443,8 @@ export struct SquareDetailView {
         createdTime: new Date().toISOString().slice(0, 16).replace('T', ' '),
         username: this.appUser.user.username ?? '我',
         avatarUrl: this.appUser.user.avatar_url ?? '',
-        isVip: Boolean(this.appUser.user.vip_expire_time && new Date(this.appUser.user.vip_expire_time).getTime() > Date.now()),
+        isVip: Boolean(this.appUser.user.vip_expire_time &&
+          new Date(this.appUser.user.vip_expire_time).getTime() > Date.now()),
         replyToUsername: this.replyToName || undefined,
         isLiked: false,
         children: []
@@ -426,6 +511,57 @@ export struct SquareDetailView {
       approvedImages: p.approvedImages
     }
   }
+
+  private formatTime(value: string): string {
+    try {
+      if (value.length >= 16 && value.includes('-') && value.includes(':') && value.indexOf('T') === -1) {
+        const mm = value.substring(5, 7)
+        const dd = value.substring(8, 10)
+        const hh = value.substring(11, 13)
+        const mi = value.substring(14, 16)
+        return `${mm}月${dd}日 ${hh}:${mi}`
+      }
+      const d = new Date(value)
+      const mm = (d.getMonth() + 1).toString().padStart(2, '0')
+      const dd = d.getDate().toString().padStart(2, '0')
+      const hh = d.getHours().toString().padStart(2, '0')
+      const mi = d.getMinutes().toString().padStart(2, '0')
+      return `${mm}月${dd}日 ${hh}:${mi}`
+    } catch (_e) {
+      return value
+    }
+  }
+
+  private openPreview(urls: string[], index: number) {
+    this.previewImages = urls
+    this.previewIndex = index
+    this.previewVisible = true
+  }
+
+  private async downloadCurrentImage(): Promise<void> {
+    try {
+      const url: string = this.previewImages[this.previewIndex]
+      const client = http.createHttp()
+      const res = await client.request(url, { method: http.RequestMethod.GET, expectDataType: http.HttpDataType.ARRAY_BUFFER })
+      const context = (this.getUIContext().getHostContext() as common.UIAbilityContext)
+      const cacheDir: string = context.cacheDir
+      const fname: string = `square_dl_${Date.now()}.jpg`
+      const target: string = `${cacheDir}/${fname}`
+      const file = fs.openSync(target, fs.OpenMode.CREATE | fs.OpenMode.WRITE_ONLY)
+      await fs.write(file.fd, res.result as ArrayBuffer)
+      fs.closeSync(file.fd)
+      const helper = photoAccessHelper.getPhotoAccessHelper(context)
+      await helper.createAsset(photoAccessHelper.PhotoType.IMAGE, target)
+      promptAction.showToast({ message: '已保存到相册' })
+    } catch (e) {
+      promptAction.showToast({ message: '下载失败' })
+    }
+  }
+
+  private openPreviewPage(urls: string[], index: number): void {
+    this.previewVM.set(urls, index)
+    HMRouterMgr.push({ pageUrl: PAGE_PATH.IMAGE_PREVIEW_PAGE })
+  }
 }
 
 @ObservedV2
@@ -444,6 +580,7 @@ export class SquareCommentModel implements SquareCommentItem {
   @Trace replyToUsername?: string
   @Trace isLiked: boolean
   @Trace children: SquareCommentItem[]
+
   constructor(dto: SquareCommentItem) {
     this.id = dto.id
     this.userId = dto.userId

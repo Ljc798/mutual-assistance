@@ -8,7 +8,8 @@ import {
   ProgressLoading,
   SCHOOL_SELECTION_VERSION_KEY,
   schoolPersistence,
-  AppSchoolPickerContext
+  AppSchoolPickerContext,
+  AppImagePreview
 } from 'basic'
 import { HMRouterMgr } from '@hadss/hmrouter'
 import {
@@ -40,6 +41,7 @@ import { fileIo as fs } from '@kit.CoreFileKit'
 import { common } from '@kit.AbilityKit'
 import { BusinessError } from '@ohos.base'
 import { readFileAsBytes, uploadSingle, UploadFileItem } from 'basic'
+import http from '@ohos.net.http'
 
 const MAX_IMAGES: number = 9
 
@@ -82,6 +84,7 @@ export struct SquareView {
   @State isSubmittingCheckin: boolean = false
   @State checkinSubTitle: string = '签到领积分'
   @State postModels: SquarePostModel[] = []
+  private readonly previewVM: AppImagePreview = AppStorageV2.connect(AppImagePreview, () => new AppImagePreview())!
 
   aboutToAppear() {
     this.hasMounted = true
@@ -196,6 +199,7 @@ export struct SquareView {
       this.renderFloatingButton()
       this.renderPublishModal()
       this.renderReportModal()
+      // 使用系统预览，不渲染自定义预览层
     }
     .backgroundColor($r('[basic].color.page_background'))
     .width('100%')
@@ -436,6 +440,7 @@ export struct SquareView {
               .height(120)
               .borderRadius(16)
               .objectFit(ImageFit.Cover)
+              .onClick(() => this.openPreviewPage(post.images.filter((it: SquareImageDTO) => it.status === 'pass').map((it: SquareImageDTO) => it.url), index))
           } else {
             Column() {
               Text('图片审核中')
@@ -453,6 +458,11 @@ export struct SquareView {
       }
     }
     .scrollable(ScrollDirection.Horizontal)
+  }
+
+  private openPreviewPage(urls: string[], index: number): void {
+    this.previewVM.set(urls, index)
+    HMRouterMgr.push({ pageUrl: PAGE_PATH.IMAGE_PREVIEW_PAGE })
   }
 
   @Builder

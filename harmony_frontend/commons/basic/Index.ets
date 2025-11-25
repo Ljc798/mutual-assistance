@@ -40,6 +40,8 @@ export { AuthHeader, HttpClient } from './src/main/ets/utils/HttpClient'
 export { GlobalVariable } from './src/main/ets/components/GlobalVariable'
 
 export { NavBar } from './src/main/ets/components/NavBar'
+export { AppImagePreview } from './src/main/ets/viewmodels/ImagePreviewVM'
+export { AppAvatarCrop } from './src/main/ets/viewmodels/AvatarCropVM'
 
 export { huaweiAuthManager } from './src/main/ets/utils/HuaweiAuthPlugin'
 

@@ -263,31 +263,21 @@ export struct EditProfileView {
         fs.closeSync(file.fd)
         this.avatarCachePath = target
         this.avatarCacheUri = `internal://cache/${target.split('/').pop()}`
-        // 预览用图库原始 URI，避免部分设备无法渲染 internal://cache
-        this.avatarPreviewUrl = uri
-        promptAction.showToast({ message: '头像已保存' })
-        // 直接上传并更新数据库头像
+        // 不再使用原始 URI 作为预览，等待 COS 返回的正式 URL
+        // 使用系统 request.uploadFile 上传到 COS（与原始实现一致）
         const token = this.appUser.user.token
-        const userId = Number(this.appUser.user.id ?? 0)
-        if (token && userId) {
-          const bytes = await readFileAsBytes(this.avatarCachePath)
-          const fname: string = this.avatarCachePath.split('/').pop() ?? `avatar_${Date.now()}.jpeg`
-          const item: UploadFileItem = { filename: fname, mime: 'image/jpeg', data: bytes, extra: { type: 'avatar', username: this.appUser.user.username ?? 'user' } }
-          const res = await uploadSingle(item)
-          if (res.success && res.url) {
+        if (token) {
+          const imageUrl = await this.uploadAvatarAndGetUrl(this.avatarCacheUri)
+          if (imageUrl && imageUrl.length > 0 && imageUrl !== this.getCurrentAvatarUrl()) {
             const payload: UpdatePayload = {
               username: this.appUser.user.username ?? '',
-              avatar_url: res.url,
+              avatar_url: imageUrl,
               wxid: this.appUser.user.wxid ?? '',
               school_id: Number(this.appUser.user.school_id ?? 1)
             }
             const saved = await updateProfile(payload, token)
-            if (saved.success) {
-              this.appUser.user.avatar_url = res.url
-              promptAction.showToast({ message: '头像已更新' })
-            } else {
-              promptAction.showToast({ message: saved.message ?? '头像更新失败' })
-            }
+            if (saved.success) { this.appUser.user.avatar_url = imageUrl; this.avatarPreviewUrl = imageUrl; promptAction.showToast({ message: '头像已更新' }) }
+            else { promptAction.showToast({ message: saved.message ?? '头像更新失败' }) }
           } else {
             promptAction.showToast({ message: '头像上传失败' })
           }
