@@ -65,7 +65,6 @@ router.post("/create", authMiddleware, async (req, res) => {
         }
 
         let status = 0;
-
         if (publish_method === "vip") {
             const now = new Date();
             const vipTime = user.vip_expire_time ? new Date(user.vip_expire_time) : null;

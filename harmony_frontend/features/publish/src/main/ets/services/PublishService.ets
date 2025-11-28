@@ -13,7 +13,7 @@ function buildAuthHeader(token?: string): AuthHeader | undefined {
 }
 
 export async function createTask(payload: PublishCreatePayload, token: string): Promise<PublishCreateResponse> {
-  return HttpClient.post<PublishCreateResponse, PublishCreatePayload>('/task/create', payload, buildAuthHeader(token))
+  return HttpClient.post<PublishCreateResponse, PublishCreatePayload>('/harmony/task/create', payload, buildAuthHeader(token))
 }
 
 export function calculateCommission(amountYuan: number): number {

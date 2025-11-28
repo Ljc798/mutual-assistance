@@ -132,7 +132,6 @@ export struct PublishView {
         .scrollBar(BarState.Off)
       }
       this.renderCategoryDialog()
-      this.renderCommissionPopup()
       this.renderPayDialog()
     }
     .height('100%')
@@ -381,10 +380,7 @@ export struct PublishView {
       promptAction.showToast({ message: '请选择学校后再发布' })
       return
     }
-    const rewardValue = Number.parseFloat(this.form.reward)
-    const commissionFen = calculateCommission(rewardValue)
-    this.commissionAmount = (commissionFen / 100).toFixed(2)
-    this.showCommissionPopup = true
+    this.submitTask('vip')
   }
 
   private async submitTask(method: PublishMethod): Promise<void> {
@@ -394,7 +390,7 @@ export struct PublishView {
       promptAction.showToast({ message: '请先登录' })
       return
     }
-    const isPayPublish: boolean = method === 'pay'
+    const isPayPublish: boolean = false
     const schoolId = this.getSelectedSchoolId()
     if (schoolId <= 0) {
       promptAction.showToast({ message: '请选择学校后再发布' })
@@ -424,7 +420,7 @@ export struct PublishView {
         promptAction.showToast({ message: response.message ?? '发布失败' })
         return
       }
-      if (isPayPublish && this.form.mode === 'fixed') {
+      if (this.form.mode === 'fixed') {
         const taskId: number = Number(response.task_id ?? 0)
         if (!taskId) { promptAction.showToast({ message: '发布成功但任务ID异常' }); return }
         const prepayRes = await prepayAliTask(taskId, true, token)

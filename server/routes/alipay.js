@@ -59,14 +59,6 @@ router.post('/prepay-task', authMiddleware, async (req, res) => {
     const offerFen = Math.floor(Number(task.offer) * 100)
     const commissionFen = include_commission ? Math.max(Math.floor(Number(task.offer) * 100 * 0.02), 1) : 0
     let totalFen = offerFen + commissionFen
-    const d = new Date()
-    const monthStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`
-    const [[limitRow]] = await db.query('SELECT monthly_limit_cents, used_cents FROM user_discount_limits WHERE user_id = ? AND month = ?', [userId, monthStr])
-    if (limitRow && Number(limitRow.monthly_limit_cents) > 0) {
-      const remaining = Math.max(0, Number(limitRow.monthly_limit_cents) - Number(limitRow.used_cents))
-      const planned = Math.max(0, Math.min(Math.floor(totalFen * 0.08), remaining))
-      totalFen = Math.max(1, totalFen - planned)
-    }
     const outTradeNo = `ALI_TASK_${task_id}_${String(Date.now()).slice(-8)}`
     await db.query('INSERT INTO task_payments (task_id, payer_user_id, receiver_id, amount, out_trade_no, status) VALUES (?, ?, ?, ?, ?, "pending")', [task_id, userId, null, totalFen, outTradeNo])
     const totalAmount = (totalFen / 100).toFixed(2)
@@ -103,11 +95,67 @@ router.post('/prepay-task', authMiddleware, async (req, res) => {
 
 router.post('/notify', async (req, res) => {
   try {
-    const payload = req.body || {}
+    const c = getClient()
+    const params = req.body || {}
+    const isOk = c && typeof c.checkNotifySign === 'function' ? c.checkNotifySign(params) : verifyNotifyManually(params)
+    if (!isOk) {
+      return res.status(400).send('fail')
+    }
+    const outTradeNo = params.out_trade_no
+    const tradeStatus = params.trade_status
+    const tradeNo = params.trade_no
+    const totalAmountStr = params.total_amount
+    if (!outTradeNo) return res.status(400).send('fail')
+    if (tradeStatus !== 'TRADE_SUCCESS' && tradeStatus !== 'TRADE_FINISHED') {
+      return res.status(200).send('success')
+    }
+    await db.query(
+      `UPDATE task_payments SET status = 'paid', transaction_id = ?, paid_at = NOW() WHERE out_trade_no = ?`,
+      [tradeNo || null, outTradeNo]
+    )
+    let taskId
+    if (/^ALI_TASK_\d+_/.test(outTradeNo)) {
+      const match = outTradeNo.match(/^ALI_TASK_(\d+)_/)
+      taskId = parseInt(match[1])
+      const [[task]] = await db.query(`SELECT title, employer_id, offer FROM tasks WHERE id = ?`, [taskId])
+      if (!task) throw new Error(`任务不存在: ${taskId}`)
+      const [[payRow]] = await db.query(`SELECT amount, payer_user_id FROM task_payments WHERE out_trade_no = ?`, [outTradeNo])
+      const finalFen = Number(payRow?.amount || 0)
+      const payerId = payRow?.payer_user_id
+      const offerFen = Math.floor(parseFloat(task.offer) * 100)
+      await db.query(
+        `UPDATE tasks SET has_paid = 1, status = 0, pay_amount = ?, payment_transaction_id = ? WHERE id = ?`,
+        [parseFloat(task.offer), tradeNo || null, taskId]
+      )
+      await db.query(
+        `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
+        [task.employer_id, '💰 支付成功', `你已成功支付任务《${task.title}》，支付金额¥${(finalFen/100).toFixed(2)}，等待接单人完成任务～`]
+      )
+    }
     return res.status(200).send('success')
   } catch (err) {
+    console.error('alipay notify error', err)
     return res.status(500).send('fail')
   }
 })
+
+function verifyNotifyManually(params) {
+  try {
+    const sign = params.sign
+    const signType = params.sign_type || 'RSA2'
+    if (!sign) return false
+    const entries = Object.keys(params)
+      .filter(k => k !== 'sign' && k !== 'sign_type' && params[k] !== undefined && params[k] !== null)
+      .sort()
+      .map(k => `${k}=${params[k]}`)
+    const signContent = entries.join('&')
+    const pub = readFileIfExists(process.env.ALIPAY_PUBLIC_KEY_PATH) || process.env.ALIPAY_PUBLIC_KEY
+    const verifier = require('crypto').createVerify(signType === 'RSA2' ? 'RSA-SHA256' : 'RSA-SHA1')
+    verifier.update(signContent)
+    return verifier.verify(pub, sign, 'base64')
+  } catch (_) {
+    return false
+  }
+}
 
 module.exports = router
