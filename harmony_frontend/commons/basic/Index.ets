@@ -42,12 +42,13 @@ export { GlobalVariable } from './src/main/ets/components/GlobalVariable'
 export { NavBar } from './src/main/ets/components/NavBar'
 export { AppImagePreview } from './src/main/ets/viewmodels/ImagePreviewVM'
 export { AppAvatarCrop } from './src/main/ets/viewmodels/AvatarCropVM'
+export { AppProfileTarget } from './src/main/ets/viewmodels/ProfileVM'
 
 export { huaweiAuthManager } from './src/main/ets/utils/HuaweiAuthPlugin'
 
 export { auth } from './src/main/ets/utils/Auth'
 
-export { userPersistence, USER_LOGIN_TIME_KEY } from './src/main/ets/utils/UserPersistenceManager'
+export { userPersistence, USER_LOGIN_TIME_KEY, PROFILE_TARGET_ID_KEY, SQUARE_DETAIL_ID_KEY } from './src/main/ets/utils/UserPersistenceManager'
 
 export { schoolPersistence, SCHOOL_SELECTION_VERSION_KEY } from './src/main/ets/utils/SchoolPersistenceManager'
 

@@ -1,5 +1,5 @@
 import promptAction from '@ohos.promptAction'
-import { AppStorageV2 } from '@kit.ArkUI'
+import { AppStorageV2, window } from '@kit.ArkUI'
 import { AppSafeArea, AppUser, PAGE_PATH } from 'basic'
 import { HMRouter, HMRouterMgr } from '@hadss/hmrouter'
 import { AppCurrentChat, ChatMessageItem } from '../viewmodels/ChatVM'
@@ -20,6 +20,7 @@ export struct ChatView {
   private client?: ChatClient
 
   aboutToAppear() {
+    this.setKeyboardMode()
     const userId = this.appUser.user.id
     if (!userId || !this.chatVM.roomId) { return }
     this.bootstrap()
@@ -27,6 +28,26 @@ export struct ChatView {
 
   aboutToDisappear() {
     this.client?.close()
+    this.resetKeyboardMode()
+  }
+
+  private setKeyboardMode() {
+    window.getLastWindow(getContext(this)).then(win => {
+      try {
+        // KeyboardAvoidMode.RESIZE = 1
+        // Avoid import error for KeyboardAvoidMode
+        win.getUIContext().setKeyboardAvoidMode(1)
+      } catch (_e) {}
+    })
+  }
+
+  private resetKeyboardMode() {
+    window.getLastWindow(getContext(this)).then(win => {
+      try {
+        // KeyboardAvoidMode.OFFSET = 0
+        win.getUIContext().setKeyboardAvoidMode(0)
+      } catch (_e) {}
+    })
   }
 
   private async bootstrap() {
@@ -49,34 +70,45 @@ export struct ChatView {
   }
 
   private scrollBottom() {
-    try { this.scroller.scrollEdge(Edge.Bottom) } catch (_e) {}
+    setTimeout(() => {
+      try { this.scroller.scrollEdge(Edge.Bottom) } catch (_e) {}
+    }, 100)
   }
 
   build() {
     Stack() {
       Column() {
         this.renderHeader()
-        Scroll(this.scroller) {
-          Column({ space: 10 }) {
-            ForEach(this.messages, (it: ChatMessageItem) => {
-              this.MessageBubble(it)
-            }, (it: ChatMessageItem) => `${it.id}`)
+        Stack({ alignContent: Alignment.TopStart }) {
+          Scroll(this.scroller) {
+            Column({ space: 10 }) {
+              ForEach(this.messages, (it: ChatMessageItem) => {
+                this.MessageBubble(it)
+              }, (it: ChatMessageItem) => `${it.id}`)
+            }
+            .padding({ left: 6, right: 6, bottom: 20 })
+            .justifyContent(FlexAlign.Start)
           }
-          .padding({ left: 12, right: 12, bottom: 80 + (this.safeArea.bottomHeight ?? 0) })
+          .scrollBar(BarState.Off)
         }
         .layoutWeight(1)
-        .scrollBar(BarState.Off)
+        .width('100%')
+
+        Column() {
+          this.renderInputBar()
+        }
+        .width('100%')
+        .backgroundColor($r('[basic].color.page_background'))
+        .padding({ bottom: this.safeArea.bottomHeight - 20})
       }
       .height('100%')
       .justifyContent(FlexAlign.Start)
+
       this.renderReportDialog()
-      Column() { this.renderInputBar() }
-        .position({ left: 0, right: 0, bottom: (this.safeArea.bottomHeight ?? 0) })
     }
     .height('100%')
     .width('100%')
     .backgroundColor($r('[basic].color.page_background'))
-
   }
 
   @Builder
@@ -210,14 +242,12 @@ export struct ChatView {
           TextArea({ placeholder: '请输入举报原因（必填）' })
             .height(120)
             .backgroundColor($r('[basic].color.search_box_bg'))
-            .padding(12)
             .borderRadius(12)
             .onChange((v: string) => this.reportText = v)
           Row({ space: 12 }) {
             Button('取消')
               .height(40)
               .borderRadius(16)
-              .backgroundColor($r('[basic].color.search_box_bg'))
               .fontColor('#333')
               .onClick(() => { this.showReportModal = false; this.reportText = '' })
             Button('提交')

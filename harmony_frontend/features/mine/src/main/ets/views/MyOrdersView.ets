@@ -22,8 +22,13 @@ export struct MyOrdersView {
   private readonly roleOptions: string[] = ['all', 'employer', 'employee']
   private readonly statusOptions: OrderStatusFilter[] = ['all', 0, 1, 2]
 
-  aboutToAppear() { this.bootstrap() }
-  onPageShow() { this.bootstrap() }
+  aboutToAppear() {
+    this.bootstrap()
+  }
+
+  onPageShow() {
+    this.bootstrap()
+  }
 
   private async bootstrap() {
     await this.loadOrders()
@@ -39,6 +44,7 @@ export struct MyOrdersView {
       .height('100%')
       .width('100%')
       .backgroundColor($r('[basic].color.page_background'))
+
       this.renderCancelDialog()
     }
   }
@@ -46,11 +52,22 @@ export struct MyOrdersView {
   @Builder
   private renderHeader() {
     Row() {
-      Image($r('[basic].media.ic_public_left')).width(28).aspectRatio(1).fillColor($r('[basic].color.white')).onClick(() => { HMRouterMgr.pop() })
+      Image($r('[basic].media.ic_public_left'))
+        .width(28)
+        .aspectRatio(1)
+        .fillColor($r('[basic].color.white'))
+        .onClick(() => {
+          HMRouterMgr.pop()
+        })
       Text('我的订单').fontSize(20).fontWeight(FontWeight.Medium).fontColor($r('[basic].color.white'))
       Blank()
     }
-    .padding({ top: this.safeArea.topHeight + 10, bottom: 12, left: 16, right: 16 })
+    .padding({
+      top: this.safeArea.topHeight + 10,
+      bottom: 12,
+      left: 16,
+      right: 16
+    })
     .width('100%')
     .backgroundColor($r('[basic].color.home_header_bg'))
   }
@@ -61,46 +78,90 @@ export struct MyOrdersView {
       Row({ space: 10 }) {
         ForEach(this.roleOptions, (key: string) => {
           Text(this.getRoleLabel(key as OrderRole))
-            .padding({ left: 12, right: 12, top: 8, bottom: 8 })
-            .backgroundColor(this.roleFilter === (key as OrderRole) ? $r('[basic].color.filter_active_bg') : $r('[basic].color.white'))
-            .fontColor(this.roleFilter === (key as OrderRole) ? $r('[basic].color.white') : $r('[basic].color.text_primary'))
+            .padding({
+              left: 12,
+              right: 12,
+              top: 8,
+              bottom: 8
+            })
+            .backgroundColor(this.roleFilter === (key as OrderRole) ? $r('[basic].color.filter_active_bg') :
+              $r('[basic].color.white'))
+            .fontColor(this.roleFilter === (key as OrderRole) ? $r('[basic].color.white') :
+              $r('[basic].color.text_primary'))
             .borderRadius(16)
-            .onClick(() => { this.roleFilter = key as OrderRole; this.loadOrders() })
+            .onClick(() => {
+              this.roleFilter = key as OrderRole;
+              this.loadOrders()
+            })
         }, (key: string) => key)
       }
+
       Row({ space: 10 }) {
         ForEach(this.statusOptions, (v: OrderStatusFilter) => {
           Text(this.getStatusFilterLabel(v))
-            .padding({ left: 12, right: 12, top: 8, bottom: 8 })
+            .padding({
+              left: 12,
+              right: 12,
+              top: 8,
+              bottom: 8
+            })
             .backgroundColor(this.statusFilter === v ? $r('[basic].color.filter_active_bg') : $r('[basic].color.white'))
             .fontColor(this.statusFilter === v ? $r('[basic].color.white') : $r('[basic].color.text_primary'))
             .borderRadius(16)
-            .onClick(() => { this.statusFilter = v; this.loadOrders() })
+            .onClick(() => {
+              this.statusFilter = v;
+              this.loadOrders()
+            })
         }, (v: OrderStatusFilter) => `${v}`)
       }
     }
-    .padding({ left: 16, right: 16, top: 12, bottom: 12 })
+    .padding({
+      left: 16,
+      right: 16,
+      top: 12,
+      bottom: 12
+    })
   }
 
   @Builder
   private renderList() {
     if (this.orders.length === 0) {
-      Column() { Text('暂无订单').fontSize(14).fontColor($r('[basic].color.text_secondary')).textAlign(TextAlign.Center) }
-        .padding({ top: 40 })
+      Column() {
+        Text('暂无订单').fontSize(14).fontColor($r('[basic].color.text_secondary')).textAlign(TextAlign.Center)
+      }
+      .padding({ top: 40 })
     } else {
       List({ space: 10 }) {
         ForEach(this.orders, (item: MyOrderItem) => {
           ListItem() {
-            Column({ space: 6 }) {
-              Text(item.title).fontSize(16).fontColor($r('[basic].color.text_primary')).fontWeight(FontWeight.Medium)
-              Row({ space: 12 }) {
-                Text(`金额 ¥${Number(item.offer ?? 0).toFixed(2)}`).fontSize(13).fontColor($r('[basic].color.text_secondary'))
-                Text(`截止 ${this.formatDeadline(item.DDL)}`).fontSize(13).fontColor($r('[basic].color.text_secondary'))
+            Column({ space: 12 }) {
+              Row() {
+                Text('id123')
                 Text(this.getStatusText(item.status)).fontSize(13).fontColor($r('[basic].color.text_primary'))
               }
+              .width('100%')
+              .justifyContent(FlexAlign.SpaceBetween)
+
+              Text(item.title).fontSize(16).fontColor($r('[basic].color.text_primary')).fontWeight(FontWeight.Medium)
+                .width('100%')
+              Row({ space: 12 }) {
+                Text(`截止 ${this.formatDeadline(item.DDL)}`).fontSize(13).fontColor($r('[basic].color.text_secondary'))
+                Text(`金额 ¥${Number(item.offer ?? 0).toFixed(2)}`)
+                  .fontSize(13)
+                  .fontColor($r('[basic].color.text_secondary'))
+              }
+              .width('100%')
+              .justifyContent(FlexAlign.SpaceBetween)
+
               this.renderOrderActions(item)
             }
-            .padding({ left: 16, right: 16, top: 12, bottom: 12 })
+            .width('100%')
+            .padding({
+              left: 16,
+              right: 16,
+              top: 12,
+              bottom: 12
+            })
             .backgroundColor($r('[basic].color.white'))
             .borderRadius(16)
           }
@@ -117,23 +178,31 @@ export struct MyOrdersView {
         Button('取消任务')
           .height(36)
           .borderRadius(16)
-          .backgroundColor($r('[basic].color.search_box_bg'))
-          .onClick(async () => { await this.openCancelDialog(item.id) })
+          .backgroundColor(Color.Red)
+          .onClick(async () => {
+            await this.openCancelDialog(item.id)
+          })
         Button('我已完成')
           .height(36)
           .borderRadius(16)
-          .backgroundColor($r('[basic].color.filter_active_bg'))
+          .backgroundColor(Color.Green)
           .fontColor($r('[basic].color.white'))
-          .onClick(async () => { await this.handleConfirmDone(item.id) })
+          .onClick(async () => {
+            await this.handleConfirmDone(item.id)
+          })
       } else {
         Blank()
       }
     }
+    .width('100%')
+    .justifyContent(FlexAlign.End)
   }
 
   @Builder
   private renderCancelDialog() {
-    if (!this.showCancelDialog) { Blank() } else {
+    if (!this.showCancelDialog) {
+      Blank()
+    } else {
       Column() {
         Column({ space: 10 }) {
           Text('取消任务').fontSize(18).fontWeight(FontWeight.Medium)
@@ -145,8 +214,23 @@ export struct MyOrdersView {
             .borderRadius(12)
             .onChange((v: string) => this.cancelReason = v)
           Row({ space: 12 }) {
-            Button('关闭').layoutWeight(1).height(40).borderRadius(16).backgroundColor($r('[basic].color.search_box_bg')).onClick(() => { this.closeCancelDialog() })
-            Button('提交').layoutWeight(1).height(40).borderRadius(16).backgroundColor($r('[basic].color.filter_active_bg')).fontColor($r('[basic].color.white')).onClick(async () => { await this.submitCancel() })
+            Button('关闭')
+              .layoutWeight(1)
+              .height(40)
+              .borderRadius(16)
+              .backgroundColor($r('[basic].color.search_box_bg'))
+              .onClick(() => {
+                this.closeCancelDialog()
+              })
+            Button('提交')
+              .layoutWeight(1)
+              .height(40)
+              .borderRadius(16)
+              .backgroundColor($r('[basic].color.filter_active_bg'))
+              .fontColor($r('[basic].color.white'))
+              .onClick(async () => {
+                await this.submitCancel()
+              })
           }
         }
         .width('90%')
@@ -164,10 +248,15 @@ export struct MyOrdersView {
 
   private async openCancelDialog(taskId: number) {
     const userId = Number(this.appUser.user.id ?? 0)
-    if (!userId) { this.showToast('请先登录'); return }
+    if (!userId) {
+      this.showToast('请先登录');
+      return
+    }
     this.targetCancelTaskId = taskId
     const countRes = await fetchCancelFreeCount(userId)
-    if (countRes.success) { this.freeCancelCountText = `本月剩余免费取消次数：${countRes.freeCancelCount}` }
+    if (countRes.success) {
+      this.freeCancelCountText = `本月剩余免费取消次数：${countRes.freeCancelCount}`
+    }
     this.showCancelDialog = true
   }
 
@@ -181,12 +270,26 @@ export struct MyOrdersView {
   private async submitCancel() {
     const token = this.appUser.user.token
     const userId = Number(this.appUser.user.id ?? 0)
-    if (!token || !userId) { this.showToast('请先登录'); return }
-    if (!this.cancelReason || this.cancelReason.trim().length === 0) { this.showToast('请输入取消原因'); return }
+    if (!token || !userId) {
+      this.showToast('请先登录');
+      return
+    }
+    if (!this.cancelReason || this.cancelReason.trim().length === 0) {
+      this.showToast('请输入取消原因');
+      return
+    }
     const payloadRole: OrderRole = this.roleFilter === 'employee' ? 'employee' : 'employer'
-    const payload: CancelPayload = { task_id: this.targetCancelTaskId, user_id: userId, role: payloadRole, cancel_reason: this.cancelReason }
+    const payload: CancelPayload = {
+      task_id: this.targetCancelTaskId,
+      user_id: userId,
+      role: payloadRole,
+      cancel_reason: this.cancelReason
+    }
     const res = await cancelTask(payload, token)
-    if (!res.success) { this.showToast(res.message ?? '取消失败'); return }
+    if (!res.success) {
+      this.showToast(res.message ?? '取消失败');
+      return
+    }
     this.showToast('已取消')
     this.closeCancelDialog()
     await this.loadOrders()
@@ -194,9 +297,15 @@ export struct MyOrdersView {
 
   private async handleConfirmDone(taskId: number) {
     const token = this.appUser.user.token
-    if (!token) { this.showToast('请先登录'); return }
+    if (!token) {
+      this.showToast('请先登录');
+      return
+    }
     const res = await confirmTaskDone(taskId, token)
-    if (!res.success) { this.showToast(res.message ?? '提交失败'); return }
+    if (!res.success) {
+      this.showToast(res.message ?? '提交失败');
+      return
+    }
     this.showToast('已提交完成')
     await this.loadOrders()
   }
@@ -204,7 +313,10 @@ export struct MyOrdersView {
   private async loadOrders() {
     const userId = Number(this.appUser.user.id ?? 0)
     const token = this.appUser.user.token
-    if (!userId || !token) { this.orders = []; return }
+    if (!userId || !token) {
+      this.orders = [];
+      return
+    }
     this.isLoading = true
     const query: MyOrderQuery = { userId, role: this.roleFilter, status: this.statusFilter }
     const res = await fetchMyOrders(query, token)
@@ -222,22 +334,38 @@ export struct MyOrdersView {
   }
 
   private getStatusText(s: number): string {
-    if (s === 0) { return '待接单' }
-    if (s === 1) { return '进行中' }
-    if (s === 2) { return '已完成' }
+    if (s === 0) {
+      return '待接单'
+    }
+    if (s === 1) {
+      return '进行中'
+    }
+    if (s === 2) {
+      return '已完成'
+    }
     return '其他'
   }
 
   private getRoleLabel(role: OrderRole): string {
-    if (role === 'all') { return '全部角色' }
-    if (role === 'employer') { return '我发布的' }
+    if (role === 'all') {
+      return '全部角色'
+    }
+    if (role === 'employer') {
+      return '我发布的'
+    }
     return '我帮助的'
   }
 
   private getStatusFilterLabel(v: OrderStatusFilter): string {
-    if (v === 'all') { return '全部状态' }
-    if (v === 0) { return '待接单' }
-    if (v === 1) { return '进行中' }
+    if (v === 'all') {
+      return '全部状态'
+    }
+    if (v === 0) {
+      return '待接单'
+    }
+    if (v === 1) {
+      return '进行中'
+    }
     return '已完成'
   }
 

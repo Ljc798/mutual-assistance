@@ -57,7 +57,7 @@ export struct MySpaceView {
                   Text(this.formatTime(post.created_time)).fontSize(12).fontColor($r('[basic].color.text_secondary'))
                 }
                 Blank()
-                Button('删除').height(32).borderRadius(16).backgroundColor($r('[basic].color.search_box_bg')).onClick(async () => { await this.handleDelete(post.id) })
+                Button('删除').height(32).borderRadius(16).backgroundColor(Color.Red).onClick(async () => { await this.handleDelete(post.id) })
               }
               Text(post.content).fontSize(15).fontColor($r('[basic].color.text_primary')).lineHeight(22)
             }

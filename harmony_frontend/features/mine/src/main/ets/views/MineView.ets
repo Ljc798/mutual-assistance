@@ -1,6 +1,6 @@
 import promptAction from '@ohos.promptAction'
 import { AppStorageV2 } from '@kit.ArkUI'
-import { AppSafeArea, PAGE_PATH, AppUser, USER_LOGIN_TIME_KEY, userPersistence, UserInfo } from 'basic'
+import { AppSafeArea, PAGE_PATH, AppUser, USER_LOGIN_TIME_KEY, userPersistence, UserInfo, PROFILE_TARGET_ID_KEY } from 'basic'
 import {
   ActionShortcut,
   ReputationSummary,
@@ -32,8 +32,9 @@ export struct MineView {
     { title: '我的订单', action: 'orders' },
     { title: '我的空间', action: 'space' },
     // { title: '商城', action: 'shop' },
-    { title: '个人信息', action: 'profile' },
-    { title: '意见反馈', action: 'feedback' }
+    { title: '个人信息', action: 'edit' },
+    { title: '意见反馈', action: 'feedback' },
+    { title: '隐私说明', action: 'privacy' }
   ]
   @State showFeedbackModal: boolean = false
   @State feedbackTitle: string = ''
@@ -449,7 +450,20 @@ export struct MineView {
       return
     }
     if (action === 'profile') {
-      HMRouterMgr.push({ pageUrl: PAGE_PATH.EDIT_PROFILE_PAGE })
+      const uid = Number(this.appUser.user.id ?? 0)
+      console.info('Mine.ProfileNav.SetId', JSON.stringify({ uid }))
+      AppStorage.setOrCreate(PROFILE_TARGET_ID_KEY, uid)
+      const readBack: number | undefined = AppStorage.get<number>(PROFILE_TARGET_ID_KEY)
+      console.info('Mine.ProfileNav.ReadBack', JSON.stringify({ readBack }))
+      HMRouterMgr.push({ pageUrl: PAGE_PATH.USER_PROFILE_PAGE })
+      return
+    }
+    if (action === 'privacy') {
+      HMRouterMgr.push({ pageUrl: PAGE_PATH.PRIVACY_PAGE })
+      return
+    }
+    if (action === 'edit') {
+      HMRouterMgr.push({ pageUrl: PAGE_PATH.EDIT_PROFILE_PAGE})
       return
     }
     if (action === 'orders') {

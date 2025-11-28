@@ -1,6 +1,6 @@
 import promptAction from '@ohos.promptAction'
 import { AppStorageV2 } from '@kit.ArkUI'
-import { AppSafeArea, PAGE_PATH, AppUser, TaskBidItem } from 'basic'
+import { AppSafeArea, PAGE_PATH, AppUser, TaskBidItem, PROFILE_TARGET_ID_KEY } from 'basic'
 import { HMRouter, HMRouterMgr } from '@hadss/hmrouter'
 import { AppCurrentTaskDetail } from '../viewmodels/TaskDetailVM'
 import { fetchTaskBids, submitBid, selectBid, takeTask } from '../services/TaskDetailService'
@@ -61,7 +61,6 @@ export struct TaskDetailView {
         Button('返回')
           .height(40)
           .borderRadius(16)
-          .backgroundColor($r('[basic].color.search_box_bg'))
           .onClick(() => HMRouterMgr.pop())
       }
       .width('100%')
@@ -155,6 +154,13 @@ export struct TaskDetailView {
                       .fontSize(13)
                       .fontColor($r('[basic].color.text_secondary'))
                   }
+                  .onClick(() => {
+                    console.info('TaskDetail.ProfileNav.SetId', JSON.stringify({ bidderId: bid.bidderId }))
+                    AppStorage.setOrCreate(PROFILE_TARGET_ID_KEY, bid.bidderId)
+                    const readBack: number | undefined = AppStorage.get<number>(PROFILE_TARGET_ID_KEY)
+                    console.info('TaskDetail.ProfileNav.ReadBack', JSON.stringify({ readBack }))
+                    HMRouterMgr.push({ pageUrl: PAGE_PATH.USER_PROFILE_PAGE })
+                  })
                   .layoutWeight(1)
                   if (this.isEmployer()) {
                     Button(bid.selected ? '已选择' : '选择')
@@ -253,7 +259,6 @@ export struct TaskDetailView {
               .layoutWeight(1)
               .height(44)
               .borderRadius(12)
-              .backgroundColor($r('[basic].color.search_box_bg'))
               .onClick(() => this.closeBidDialog())
             Button(this.isSubmittingBid ? '提交中...' : '提交')
               .layoutWeight(1)

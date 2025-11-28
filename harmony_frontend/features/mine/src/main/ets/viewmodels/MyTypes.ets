@@ -26,7 +26,7 @@ export interface VipState {
 
 export interface ActionShortcut {
   title: string
-  action: 'orders' | 'space' | 'shop' | 'profile' | 'feedback'
+  action: 'orders' | 'space' | 'shop' | 'profile' | 'feedback' | 'edit' | 'privacy'
 }
 
 // login

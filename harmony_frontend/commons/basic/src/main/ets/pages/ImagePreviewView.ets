@@ -58,7 +58,6 @@ export struct ImagePreviewView {
         Button('关闭')
           .height(36)
           .borderRadius(16)
-          .backgroundColor($r('[basic].color.search_box_bg'))
           .fontColor($r('[basic].color.text_primary'))
           .onClick(() => { HMRouterMgr.pop() })
         Button('下载')
@@ -70,7 +69,6 @@ export struct ImagePreviewView {
         Button('旋转90°')
           .height(36)
           .borderRadius(16)
-          .backgroundColor($r('[basic].color.search_box_bg'))
           .fontColor($r('[basic].color.text_primary'))
           .onClick(() => { this.imgAngle = (this.imgAngle + 90) % 360 })
       }

@@ -1,6 +1,6 @@
 import promptAction from '@ohos.promptAction'
 import { AppStorageV2 } from '@kit.ArkUI'
-import { AppSafeArea, PAGE_PATH, AppUser, SquareCommentItem, AppImagePreview } from 'basic'
+import { AppSafeArea, PAGE_PATH, AppUser, SquareCommentItem, AppImagePreview, PROFILE_TARGET_ID_KEY, SQUARE_DETAIL_ID_KEY } from 'basic'
 import { SquarePost } from '../viewmodels/SquareTypes'
 import { SquareImageDTO, SquareLikePayload } from '../viewmodels/SquareTypes'
 import { HMRouter, HMRouterMgr } from '@hadss/hmrouter'
@@ -26,6 +26,7 @@ export struct SquareDetailView {
   private readonly detailVM: AppCurrentSquareDetail =
     AppStorageV2.connect(AppCurrentSquareDetail, () => new AppCurrentSquareDetail())!
   private readonly appUser: AppUser = AppStorageV2.connect(AppUser, () => new AppUser())!
+  @StorageLink(SQUARE_DETAIL_ID_KEY) detailIdLink: number = 0
   @State comments: SquareCommentItem[] = []
   @State commentModels: SquareCommentModel[] = []
   @State commentInput: string = ''
@@ -115,11 +116,14 @@ export struct SquareDetailView {
             .borderRadius(20)
             .objectFit(ImageFit.Cover)
             .backgroundColor($r('[basic].color.search_box_bg'))
+            .onClick(() => this.gotoProfile(this.detailVM.post!.userId))
+          
           Column({ space: 4 }) {
             Text(this.detailVM.post!.username)
               .fontSize(15)
               .fontColor($r('[basic].color.text_primary'))
               .fontWeight(FontWeight.Medium)
+              .onClick(() => this.gotoProfile(this.detailVM.post!.userId))
             Text(this.detailVM.post!.formattedTime)
               .fontSize(12)
               .fontColor($r('[basic].color.text_secondary'))
@@ -158,7 +162,7 @@ export struct SquareDetailView {
             Scroll() {
               Row({ space: 10 }) {
                 ForEach(this.detailVM.post!.approvedImages, (img: SquareImageDTO, index: number) => {
-                  Image(img.url as ResourceStr)
+                  Image(this.getOrientedUrl(img.url) as ResourceStr)
                     .width(160)
                     .height(120)
                     .borderRadius(16)
@@ -217,6 +221,12 @@ export struct SquareDetailView {
     }
   }
 
+  private getOrientedUrl(url: string): string {
+    const hasQuery: boolean = url.indexOf('?') >= 0
+    const oriented: string = hasQuery ? `${url}&imageMogr2/auto-orient` : `${url}?imageMogr2/auto-orient`
+    return oriented
+  }
+
   @Builder
   private CommentCardModel(item: SquareCommentModel) {
     Column({ space: 8 }) {
@@ -226,17 +236,19 @@ export struct SquareDetailView {
           .height(28)
           .borderRadius(14)
           .objectFit(ImageFit.Cover)
+          .onClick(() => this.gotoProfile(item.userId))
         Column({ space: 6 }) {
           Row({ space: 6 }) {
             Text(item.username)
               .fontSize(14)
               .fontColor($r('[basic].color.text_primary'))
+              .onClick(() => this.gotoProfile(item.userId))
             if (item.replyToUsername) {
               Text('回复')
                 .fontSize(12)
                 .fontColor($r('[basic].color.text_secondary'))
-              Text(item.replyToUsername)
-                .fontSize(12)
+            Text(item.replyToUsername)
+              .fontSize(12)
               .fontColor($r('[basic].color.text_primary'))
             }
           }
@@ -287,6 +299,15 @@ export struct SquareDetailView {
     .backgroundColor($r('[basic].color.white'))
     .borderRadius(12)
   }
+
+  private gotoProfile(userId: number): void {
+    if (!userId || userId <= 0) { return }
+    console.info('Detail.ProfileNav.SetId', JSON.stringify({ userId }))
+    AppStorage.setOrCreate(PROFILE_TARGET_ID_KEY, userId)
+    const readBack: number | undefined = AppStorage.get<number>(PROFILE_TARGET_ID_KEY)
+    console.info('Detail.ProfileNav.ReadBack', JSON.stringify({ readBack }))
+    HMRouterMgr.push({ pageUrl: PAGE_PATH.USER_PROFILE_PAGE })
+  }
   
   @Builder
   private renderCommentEditor() {
@@ -299,7 +320,6 @@ export struct SquareDetailView {
           Button('取消')
             .height(26)
             .borderRadius(12)
-            .backgroundColor($r('[basic].color.search_box_bg'))
             .onClick(() => this.clearReply())
         }
       }
@@ -338,6 +358,10 @@ export struct SquareDetailView {
 
   aboutToAppear() {
     const viewerId = this.appUser.user.id
+    const incomingId: number = Number(this.detailIdLink ?? 0)
+    if (incomingId && incomingId > 0) {
+      this.detailVM.id = incomingId
+    }
     if (this.detailVM.id > 0) {
       this.loadDetail(this.detailVM.id, viewerId)
     }
@@ -559,7 +583,8 @@ export struct SquareDetailView {
   }
 
   private openPreviewPage(urls: string[], index: number): void {
-    this.previewVM.set(urls, index)
+    const oriented: string[] = urls.map((u: string) => this.getOrientedUrl(u))
+    this.previewVM.set(oriented, index)
     HMRouterMgr.push({ pageUrl: PAGE_PATH.IMAGE_PREVIEW_PAGE })
   }
 }

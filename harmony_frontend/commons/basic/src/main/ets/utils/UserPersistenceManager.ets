@@ -49,10 +49,14 @@ interface PersistClearView {
 const USER_INFO_KEY: string = 'app_user_snapshot'
 const USER_LOGIN_STATE_KEY: string = 'app_user_is_logged_in'
 export const USER_LOGIN_TIME_KEY: string = 'app_user_login_time'
+export const PROFILE_TARGET_ID_KEY: string = 'app_profile_target_id'
+export const SQUARE_DETAIL_ID_KEY: string = 'app_square_detail_id'
 const STORAGE_DEFAULTS: PersistOption[] = [
   { key: USER_INFO_KEY, defaultValue: '' },
   { key: USER_LOGIN_STATE_KEY, defaultValue: false },
-  { key: USER_LOGIN_TIME_KEY, defaultValue: 0 }
+  { key: USER_LOGIN_TIME_KEY, defaultValue: 0 },
+  { key: PROFILE_TARGET_ID_KEY, defaultValue: 0 },
+  { key: SQUARE_DETAIL_ID_KEY, defaultValue: 0 }
 ]
 
 class UserPersistenceManager {

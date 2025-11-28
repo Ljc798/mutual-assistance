@@ -65,7 +65,6 @@ app.use("/api/timetableConfig", timetableConfigRouter);
 app.use("/api/messages", messagesRouter);
 app.use("/api/wallet", walletRouter);
 app.use("/api/vip", vipRouter);
-app.use("/pay/ali", alipayRouter);
 app.use("/api/pay/ali", alipayRouter);
 app.use("/api/feedback", feedbackRouter);
 app.use("/api/notification", notificationRouter);

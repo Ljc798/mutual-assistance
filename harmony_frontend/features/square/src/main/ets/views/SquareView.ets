@@ -1,7 +1,6 @@
 import promptAction from '@ohos.promptAction'
 import { AppStorageV2 } from '@kit.ArkUI'
-import {
-  AppSafeArea,
+import { AppSafeArea,
   AppSelectedSchool,
   AppUser,
   PAGE_PATH,
@@ -9,7 +8,9 @@ import {
   SCHOOL_SELECTION_VERSION_KEY,
   schoolPersistence,
   AppSchoolPickerContext,
-  AppImagePreview
+  AppImagePreview,
+  PROFILE_TARGET_ID_KEY,
+  SQUARE_DETAIL_ID_KEY
 } from 'basic'
 import { HMRouterMgr } from '@hadss/hmrouter'
 import {
@@ -334,6 +335,9 @@ export struct SquareView {
               .fontSize(15)
               .fontColor($r('[basic].color.text_primary'))
               .fontWeight(FontWeight.Medium)
+              .onClick((): void => {
+                this.openProfile(post.userId)
+              })
             // if (post.isVip) {
             //   Text('VIP')
             //     .fontSize(11)
@@ -435,7 +439,7 @@ export struct SquareView {
       Row({ space: 10 }) {
         ForEach(post.images, (imageItem: SquareImageDTO, index: number) => {
           if (imageItem.status === 'pass') {
-            Image(imageItem.url as ResourceStr)
+            Image(this.getOrientedUrl(imageItem.url) as ResourceStr)
               .width(160)
               .height(120)
               .borderRadius(16)
@@ -460,8 +464,15 @@ export struct SquareView {
     .scrollable(ScrollDirection.Horizontal)
   }
 
+  private getOrientedUrl(url: string): string {
+    const hasQuery: boolean = url.indexOf('?') >= 0
+    const oriented: string = hasQuery ? `${url}&imageMogr2/auto-orient` : `${url}?imageMogr2/auto-orient`
+    return oriented
+  }
+
   private openPreviewPage(urls: string[], index: number): void {
-    this.previewVM.set(urls, index)
+    const oriented: string[] = urls.map((u: string) => this.getOrientedUrl(u))
+    this.previewVM.set(oriented, index)
     HMRouterMgr.push({ pageUrl: PAGE_PATH.IMAGE_PREVIEW_PAGE })
   }
 
@@ -555,7 +566,6 @@ export struct SquareView {
             .width('100%')
             .height(40)
             .borderRadius(16)
-            .backgroundColor($r('[basic].color.search_box_bg'))
             .onClick((): void => {
               this.closePublishModal()
             })
@@ -676,7 +686,6 @@ export struct SquareView {
               .layoutWeight(1)
               .height(44)
               .borderRadius(16)
-              .backgroundColor($r('[basic].color.search_box_bg'))
               .onClick((): void => {
                 this.closeReportModal()
               })
@@ -1152,6 +1161,7 @@ export struct SquareView {
       this.showToast('未找到帖子数据')
       return
     }
+    AppStorage.setOrCreate(SQUARE_DETAIL_ID_KEY, postId)
     const vm = AppStorageV2.connect(AppCurrentSquareDetail, () => new AppCurrentSquareDetail())!
     vm.setPost(target)
     HMRouterMgr.push({
@@ -1159,8 +1169,12 @@ export struct SquareView {
     })
   }
 
-  private openProfile(userId: number) {
-    this.showToast(`个人主页 ${userId} 敬请期待`)
+  private openProfile(userId: number): void {
+    console.info('ProfileNav.SetId', JSON.stringify({ userId }))
+    AppStorage.setOrCreate(PROFILE_TARGET_ID_KEY, userId)
+    const readBack: number | undefined = AppStorage.get<number>(PROFILE_TARGET_ID_KEY)
+    console.info('ProfileNav.ReadBack', JSON.stringify({ readBack }))
+    HMRouterMgr.push({ pageUrl: PAGE_PATH.USER_PROFILE_PAGE })
   }
 
   private showToast(message: string) {
