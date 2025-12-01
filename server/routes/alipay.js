@@ -53,12 +53,11 @@ router.post('/prepay-task', authMiddleware, async (req, res) => {
   if (!c) return res.status(500).json({ success: false, message: 'missing ALIPAY_APP_ID or private/public key' })
   try {
     const userId = req.user.id
-    const { task_id, include_commission } = req.body || {}
+    const { task_id } = req.body || {}
     const [[task]] = await db.query('SELECT * FROM tasks WHERE id = ?', [task_id])
     if (!task) return res.status(404).json({ success: false, message: '任务不存在' })
     const offerFen = Math.floor(Number(task.offer) * 100)
-    const commissionFen = include_commission ? Math.max(Math.floor(Number(task.offer) * 100 * 0.02), 1) : 0
-    let totalFen = offerFen + commissionFen
+    let totalFen = offerFen
     const outTradeNo = `ALI_TASK_${task_id}_${String(Date.now()).slice(-8)}`
     await db.query('INSERT INTO task_payments (task_id, payer_user_id, receiver_id, amount, out_trade_no, status) VALUES (?, ?, ?, ?, ?, "pending")', [task_id, userId, null, totalFen, outTradeNo])
     const totalAmount = (totalFen / 100).toFixed(2)
@@ -87,7 +86,28 @@ router.post('/prepay-task', authMiddleware, async (req, res) => {
     signer.update(signContent)
     const sign = signer.sign(priv, 'base64')
     const orderInfo = keys.map(k => `${k}=${encodeURIComponent(params[k])}`).join('&') + `&sign=${encodeURIComponent(sign)}`
-    return res.json({ success: true, out_trade_no: outTradeNo, total_amount: totalAmount, data: { orderInfo, orderStr: orderInfo } })
+
+    const wapParams = {
+      app_id: appId,
+      method: 'alipay.trade.wap.pay',
+      format: 'JSON',
+      charset: 'utf-8',
+      sign_type: 'RSA2',
+      timestamp,
+      version: '1.0',
+      notify_url: notifyUrl,
+      return_url: process.env.ALIPAY_RETURN_URL || notifyUrl,
+      biz_content: JSON.stringify({ subject, out_trade_no: outTradeNo, total_amount: totalAmount, product_code: 'QUICK_WAP_WAY', quit_url: process.env.ALIPAY_QUIT_URL || 'https://mutualcampus.top/' })
+    }
+    const wapKeys = Object.keys(wapParams).sort()
+    const wapSignContent = wapKeys.map(k => `${k}=${wapParams[k]}`).join('&')
+    const wapSigner = require('crypto').createSign('RSA-SHA256')
+    wapSigner.update(wapSignContent)
+    const wapSign = wapSigner.sign(priv, 'base64')
+    const gateway = process.env.ALIPAY_ENDPOINT || 'https://openapi.alipay.com/gateway.do'
+    const paymentUrl = gateway + '?' + wapKeys.map(k => `${k}=${encodeURIComponent(wapParams[k])}`).join('&') + `&sign=${encodeURIComponent(wapSign)}`
+
+    return res.json({ success: true, out_trade_no: outTradeNo, total_amount: totalAmount, data: { orderInfo, orderStr: orderInfo, paymentUrl } })
   } catch (err) {
     return res.status(500).json({ success: false, message: err.message })
   }

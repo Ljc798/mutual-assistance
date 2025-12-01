@@ -1,10 +1,113 @@
 import { AppSafeArea, AppUser, NavBar, PAGE_PATH, UserInfo, userPersistence } from 'basic'
 import { AppStorageV2, promptAction } from '@kit.ArkUI'
+import { inputMethod } from '@kit.IMEKit'
+import { emitter } from '@kit.BasicServicesKit'
 
 import { HMRouter, HMRouterMgr } from '@hadss/hmrouter'
 import { LoginFormModel, PhoneLoginFormModel } from '../viewmodels/MyTypes'
 import { passwordLoginAPI, PasswordLoginPayload, sendSmsCodeAPI, PhoneCodeLoginPayload, phoneCodeLoginAPI } from '../api/user'
 
+
+@Extend(Text)
+function verifyCodeUnitStyleInline() {
+  .fontSize(16)
+  .fontWeight(500)
+  .textAlign(TextAlign.Center)
+  .width(40)
+  .height('100%')
+  .margin({ left: 6, right: 6 })
+  .border({ width: { bottom: 1 }, color: { bottom: Color.Grey }, style: { bottom: BorderStyle.Solid } })
+}
+
+@Component
+struct VerifyCodeInlineComponent {
+  @State codeText: string = ""
+  private readonly verifyID: string = "verifyCodeInline"
+  private inputController: inputMethod.InputMethodController = inputMethod.getController()
+  @State isKeyboardShow: boolean = false
+  private verifyCodeLength: number = 6
+  private isListen: boolean = false
+  private textConfig: inputMethod.TextConfig = {
+    inputAttribute: {
+      textInputType: inputMethod.TextInputType.NUMBER,
+      enterKeyType: inputMethod.EnterKeyType.GO
+    },
+  }
+  private codeIndexArray: Array<number> = Array.from([0, 1, 2, 3, 4, 5])
+  onCodeChange: (code: string) => void = (code: string) => {}
+  onComplete: (code: string) => void = (code: string) => {}
+
+  aboutToAppear(): void {
+    this.listenBackPress()
+  }
+
+  listenBackPress() {
+    let innerEvent: emitter.InnerEvent = { eventId: 5 }
+    emitter.on(innerEvent, () => {
+      if (this.isKeyboardShow) {
+        this.inputController.hideTextInput()
+        this.isKeyboardShow = false
+      }
+    })
+  }
+
+  aboutToDisappear(): void {
+    this.off()
+    emitter.off(5)
+  }
+
+  async attachAndListen(): Promise<void> {
+    focusControl.requestFocus(this.verifyID)
+    await this.inputController.attach(true, this.textConfig)
+    this.listen()
+    this.isKeyboardShow = true
+  }
+
+  off(): void {
+    this.inputController.off("insertText")
+    this.inputController.off("deleteLeft")
+    this.isListen = false
+    this.inputController.hideTextInput()
+    this.isKeyboardShow = false
+  }
+
+  listen() {
+    if (this.isListen) { return }
+    this.inputController.on("insertText", (text: string) => {
+      if (this.codeText.length >= this.verifyCodeLength || isNaN(Number(text)) || text === ' ') { return }
+      this.codeText += text
+      this.onCodeChange(this.codeText)
+      if (this.codeText.length === this.verifyCodeLength) { this.onComplete(this.codeText) }
+    })
+    this.inputController.on("deleteLeft", (length: number) => {
+      this.codeText = this.codeText.substring(0, this.codeText.length - 1)
+      this.onCodeChange(this.codeText)
+    })
+    this.isListen = true
+  }
+
+  @Builder
+  buildVerifyCodeComponent() {
+    Flex({ direction: FlexDirection.Row, alignItems: ItemAlign.Center, justifyContent: FlexAlign.SpaceBetween }) {
+      ForEach(this.codeIndexArray, (item: number, index: number) => {
+        Text(this.codeText[item]).verifyCodeUnitStyleInline()
+      }, (item: number, index: number) => item.toString())
+    }
+    .id(this.verifyID)
+    .onBlur(() => { this.off() })
+    .backgroundColor(Color.Transparent)
+    .height(42)
+    .defaultFocus(true)
+    .onClick(() => { this.attachAndListen() })
+  }
+
+  build() {
+    Row() {
+      this.buildVerifyCodeComponent()
+    }
+    .height(42)
+  }
+}
 
 @Preview
 @HMRouter({ pageUrl: PAGE_PATH.LOGIN_PAGE })
@@ -55,7 +158,7 @@ export struct LoginView {
       return promptAction.showToast({ message: '请先勾选协议' })
     }
     if (!this.loginForm.account || !this.loginForm.password) {
-      promptAction.showToast({ message: '请输入账号和密码' })
+      promptAction.showToast({ message: '请输入手机号和验证码' })
       return
     }
     try {
@@ -213,60 +316,62 @@ export struct LoginView {
           HMRouterMgr.pop()
         }
       })
-      // Column({ space: 16 }) {
-        // Text('账号密码登录')
-        //   .fontSize(18)
-        //   .fontColor($r('[basic].color.black'))
-        //   .width('100%')
-        //   .fontWeight(500)
-        //   .margin({ bottom: 10 })
-        // TextInput({ placeholder: '请输入账号', text: $$this.loginForm.account })
-        //   .placeholderColor($r('[basic].color.gray'))
-        //   .placeholderFont({ size: 14 })
-        //   .form()
-        // TextInput({ placeholder: '请输入密码', text: $$this.loginForm.password })
-        //   .type(InputType.Password)
-        //   .showPasswordIcon(false)
-        //   .placeholderColor($r('[basic].color.gray'))
-        //   .placeholderFont({ size: 14 })
-        //   .form()
 
-        // Row({ space: 4 }) {
-        //   Checkbox()
-        //     .select($$this.agree)
-        //     .width(12)
-        //     .aspectRatio(1)
-        //     .selectedColor($r('[basic].color.black'))
-        //     .mark({ size: 10, strokeWidth: 1 })
-        //   Text() {
-        //     Span('查看并同意')
-        //     Span('《隐私条款》')
-        //       .fontColor('#007DFB')
-        //     Span('和')
-        //     Span('《用户协议》')
-        //       .fontColor('#007DFB')
-        //   }
-        //   .width('100%')
-        //   .fontSize(12)
-        //   .fontColor($r('[basic].color.gray'))
-        // }
-        //
-        // Button('登录')
-        //   .backgroundColor(this.btnEnable ? $r('[basic].color.black') : '#D4D2D9')
-        //   .fontColor(this.btnEnable ? $r('[basic].color.white') : $r('[basic].color.black'))
-        //   .form()
-        //   .enabled(this.btnEnable)
-        //   .onClick(() => {
-        //     this.onSubmit()
-        //   })
-        //
-        // Row() {
-        //   Blank()
-        //   Text('忘记密码')
-        //     .fontColor('#007DFB')
-        //     .fontSize(12)
-        // }
-        // .width('100%')
+      // Column({ space: 16 }) {
+        Text('账号密码登录')
+          .fontSize(18)
+          .fontColor($r('[basic].color.black'))
+          .width('100%')
+          .fontWeight(500)
+          .margin({ bottom: 10 })
+        TextInput({ placeholder: '请输入账号', text: $$this.loginForm.account })
+          .placeholderColor($r('[basic].color.gray'))
+          .placeholderFont({ size: 14 })
+          .form()
+        TextInput({ placeholder: '请输入密码', text: $$this.loginForm.password })
+          .type(InputType.Password)
+          .showPasswordIcon(false)
+          .placeholderColor($r('[basic].color.gray'))
+          .placeholderFont({ size: 14 })
+          .form()
+
+        Row({ space: 4 }) {
+          Checkbox()
+            .select($$this.agree)
+            .width(12)
+            .aspectRatio(1)
+            .selectedColor($r('[basic].color.black'))
+            .mark({ size: 10, strokeWidth: 1 })
+          Text() {
+            Span('查看并同意')
+            Span('《隐私条款》')
+              .fontColor('#007DFB')
+            Span('和')
+            Span('《用户协议》')
+              .fontColor('#007DFB')
+          }
+          .width('100%')
+          .fontSize(12)
+          .fontColor($r('[basic].color.gray'))
+        }
+
+        Button('登录')
+          .backgroundColor(this.btnEnable ? $r('[basic].color.black') : '#D4D2D9')
+          .fontColor(this.btnEnable ? $r('[basic].color.white') : $r('[basic].color.black'))
+          .form()
+          .enabled(this.btnEnable)
+          .onClick(() => {
+            this.onSubmit()
+          })
+
+        Row() {
+          Blank()
+          Text('忘记密码')
+            .fontColor('#007DFB')
+            .fontSize(12)
+        }
+        .width('100%')
+
         // Column({ space: 16 }) {
 
 
@@ -328,14 +433,15 @@ export struct LoginView {
             .placeholderColor($r('[basic].color.gray'))
             .placeholderFont({ size: 14 })
             .layoutWeight(1)
+            .type(InputType.PhoneNumber)
             .form()
         }
         Row({ space: 8 }) {
-          TextInput({ placeholder: '请输入验证码', text: $$this.smsForm.code })
-            .placeholderColor($r('[basic].color.gray'))
-            .placeholderFont({ size: 14 })
+          VerifyCodeInlineComponent({
+            onCodeChange: (code: string) => { this.smsForm.code = code },
+            onComplete: (code: string) => { this.smsForm.code = code }
+          })
             .layoutWeight(1)
-            .form()
           Button(this.smsCountdown > 0 ? `${this.smsCountdown}s` : (this.smsSending ? '发送中...' : '发送验证码'))
             .height(42)
             .borderRadius(12)
@@ -365,12 +471,12 @@ export struct LoginView {
               .backgroundColor('#007DFB')
           }
         }
-        Button('登录')
-          .backgroundColor(this.smsBtnEnable && this.agree ? $r('[basic].color.black') : '#D4D2D9')
-          .fontColor(this.smsBtnEnable && this.agree ? $r('[basic].color.white') : $r('[basic].color.black'))
-          .form()
-          .enabled(this.smsBtnEnable && this.agree)
-          .onClick(() => { this.onSmsLogin() })
+        // Button('登录')
+        //   .backgroundColor(this.smsBtnEnable && this.agree ? $r('[basic].color.black') : '#D4D2D9')
+        //   .fontColor(this.smsBtnEnable && this.agree ? $r('[basic].color.white') : $r('[basic].color.black'))
+        //   .form()
+        //   .enabled(this.smsBtnEnable && this.agree)
+        //   .onClick(() => { this.onSmsLogin() })
       }
       .padding(30)
     }

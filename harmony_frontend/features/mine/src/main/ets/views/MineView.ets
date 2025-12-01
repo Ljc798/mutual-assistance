@@ -57,6 +57,16 @@ export struct MineView {
     }
   }
 
+  private onLoginStateChanged() {
+    const token = this.appUser.user?.token ?? ''
+    if (token.length > 0) {
+      this.refreshProfileAndReputation()
+    } else {
+      this.reputation = { totalScore: 0, weightedScore: 0, creditLevel: '未登录' }
+      this.syncUserState()
+    }
+  }
+
   build() {
     Stack() {
       Scroll(this.scroller) {
@@ -241,85 +251,85 @@ export struct MineView {
     })
   }
 
-  @Builder
-  private renderVipSection() {
-    if (this.isVipActive()) {
-      Row() {
-        Image($r('app.media.huiyuan_yes'))
-          .width(40)
-          .height(40)
-          .margin({ right: 10 });
-        Column({ space: 4 }) {
-          Text('VIP 用户')
-            .fontSize(18)
-            .fontWeight(FontWeight.Bold)
-            .fontColor($r('[basic].color.vip_label'))
-          Text(this.getVipExpireText())
-            .fontSize(13)
-            .fontColor($r('[basic].color.vip_expire'))
-        }
-        .alignItems(HorizontalAlign.Start)
-
-        Blank()
-        Button('续费')
-          .fontSize(16)
-          .fontWeight(FontWeight.Medium)
-          .backgroundColor($r('[basic].color.vip_renew_btn'))
-          .fontColor($r('[basic].color.white'))
-          .borderRadius(20)
-          .padding({ top: 5, bottom: 5, left: 10, right: 10 })
-          .onClick(() => {
-            HMRouterMgr.push({ pageUrl: PAGE_PATH.VIP_PAGE })
-          })
-      }
-      .width('96%')
-      .padding({
-        top: 18,
-        bottom: 18,
-        left: 20,
-        right: 20
-      })
-      .borderColor($r('[basic].color.vip_renew_btn'))
-      .borderWidth(1)
-      .linearGradient({
-        angle: 135,
-        colors: [
-          [$r('[basic].color.vip_linear_begin'), 0],
-          [$r('[basic].color.vip_linear_end'), 1]
-        ]
-      })
-      .borderRadius(24)
-    } else {
-      Row() {
-        Image($r('app.media.huiyuan_no'))
-          .width(40)
-          .height(40)
-          .margin({ right: 10 });
-        Column() {
-          Text('当前不是 VIP 用户')
-            .fontSize(16)
-            .fontColor($r('[basic].color.text_primary'))
-        }
-
-        Blank()
-        Button('立即开通')
-          .fontSize(14)
-          .borderRadius(20)
-          .backgroundColor($r('[basic].color.vip_renew_btn'))
-          .fontColor($r('[basic].color.white'))
-          .onClick(() => { HMRouterMgr.push({ pageUrl: PAGE_PATH.VIP_PAGE }) })
-      }
-      .width('96%')
-      .padding({
-        top: 16,
-        bottom: 16,
-        left: 20,
-        right: 20
-      })
-      .backgroundColor($r('[basic].color.white'))
-      .borderRadius(20)
-    }
-  }
+  // @Builder
+  // private renderVipSection() {
+  //   if (this.isVipActive()) {
+  //     Row() {
+  //       Image($r('app.media.huiyuan_yes'))
+  //         .width(40)
+  //         .height(40)
+  //         .margin({ right: 10 });
+  //       Column({ space: 4 }) {
+  //         Text('VIP 用户')
+  //           .fontSize(18)
+  //           .fontWeight(FontWeight.Bold)
+  //           .fontColor($r('[basic].color.vip_label'))
+  //         Text(this.getVipExpireText())
+  //           .fontSize(13)
+  //           .fontColor($r('[basic].color.vip_expire'))
+  //       }
+  //       .alignItems(HorizontalAlign.Start)
+  //
+  //       Blank()
+  //       Button('续费')
+  //         .fontSize(16)
+  //         .fontWeight(FontWeight.Medium)
+  //         .backgroundColor($r('[basic].color.vip_renew_btn'))
+  //         .fontColor($r('[basic].color.white'))
+  //         .borderRadius(20)
+  //         .padding({ top: 5, bottom: 5, left: 10, right: 10 })
+  //         .onClick(() => {
+  //           HMRouterMgr.push({ pageUrl: PAGE_PATH.VIP_PAGE })
+  //         })
+  //     }
+  //     .width('96%')
+  //     .padding({
+  //       top: 18,
+  //       bottom: 18,
+  //       left: 20,
+  //       right: 20
+  //     })
+  //     .borderColor($r('[basic].color.vip_renew_btn'))
+  //     .borderWidth(1)
+  //     .linearGradient({
+  //       angle: 135,
+  //       colors: [
+  //         [$r('[basic].color.vip_linear_begin'), 0],
+  //         [$r('[basic].color.vip_linear_end'), 1]
+  //       ]
+  //     })
+  //     .borderRadius(24)
+  //   } else {
+  //     Row() {
+  //       Image($r('app.media.huiyuan_no'))
+  //         .width(40)
+  //         .height(40)
+  //         .margin({ right: 10 });
+  //       Column() {
+  //         Text('当前不是 VIP 用户')
+  //           .fontSize(16)
+  //           .fontColor($r('[basic].color.text_primary'))
+  //       }
+  //
+  //       Blank()
+  //       Button('立即开通')
+  //         .fontSize(14)
+  //         .borderRadius(20)
+  //         .backgroundColor($r('[basic].color.vip_renew_btn'))
+  //         .fontColor($r('[basic].color.white'))
+  //         .onClick(() => { HMRouterMgr.push({ pageUrl: PAGE_PATH.VIP_PAGE }) })
+  //     }
+  //     .width('96%')
+  //     .padding({
+  //       top: 16,
+  //       bottom: 16,
+  //       left: 20,
+  //       right: 20
+  //     })
+  //     .backgroundColor($r('[basic].color.white'))
+  //     .borderRadius(20)
+  //   }
+  // }
 
   @Builder
   private renderShortcutsCard() {
@@ -539,23 +549,28 @@ export struct MineView {
     ]
   }
 
-  private buildVipStateFromStorage(): VipState {
-    const user = this.appUser.user
-    const expireText = user?.vip_expire_time
-    if (!expireText) {
-      return { isVip: false, expireText: '未开通' }
-    }
-    const expireDate = new Date(expireText)
-    const isVip = !Number.isNaN(expireDate.getTime()) && expireDate.getTime() > Date.now()
-    return {
-      isVip,
-      expireText: isVip ? `到期时间：${expireText}` : '未开通'
-    }
-  }
+  // private buildVipStateFromStorage(): VipState {
+  //   const user = this.appUser.user
+  //   const expireText = user?.vip_expire_time
+  //   if (!expireText) {
+  //     return { isVip: false, expireText: '未开通' }
+  //   }
+  //   const expireDate = new Date(expireText)
+  //   const isVip = !Number.isNaN(expireDate.getTime()) && expireDate.getTime() > Date.now()
+  //   return {
+  //     isVip,
+  //     expireText: isVip ? `到期时间：${expireText}` : '未开通'
+  //   }
+  // }
 
   private syncUserState() {
     this.profile = this.buildProfileFromStorage()
     this.statistics = this.buildStatisticsFromStorage()
+    const u = this.appUser.user
+    const isLoggedIn = !!(u?.token && u.token.length > 0 && u?.id)
+    if (!isLoggedIn) {
+      this.reputation = { totalScore: 0, weightedScore: 0, creditLevel: '未登录' }
+    }
     // this.vipState = this.buildVipStateFromStorage()
   }
 
@@ -632,18 +647,18 @@ export struct MineView {
     ]
   }
 
-  private isVipActive(): boolean {
-    const exp = this.appUser.user?.vip_expire_time
-    if (!exp) { return false }
-    const t = new Date(exp).getTime()
-    return !Number.isNaN(t) && t > Date.now()
-  }
-
-  private getVipExpireText(): string {
-    const exp = this.appUser.user?.vip_expire_time
-    if (!exp) { return '未开通' }
-    return this.isVipActive() ? `到期时间：${exp}` : '未开通'
-  }
+  // private isVipActive(): boolean {
+  //   const exp = this.appUser.user?.vip_expire_time
+  //   if (!exp) { return false }
+  //   const t = new Date(exp).getTime()
+  //   return !Number.isNaN(t) && t > Date.now()
+  // }
+  //
+  // private getVipExpireText(): string {
+  //   const exp = this.appUser.user?.vip_expire_time
+  //   if (!exp) { return '未开通' }
+  //   return this.isVipActive() ? `到期时间：${exp}` : '未开通'
+  // }
 
   private formatBalance(b: number | string | undefined): string {
     if (typeof b === 'number') { return `¥${b.toFixed(2)}` }

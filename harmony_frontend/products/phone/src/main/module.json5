@@ -7,6 +7,12 @@
     "deviceTypes": [
       "phone"
     ],
+    "querySchemes": [
+      // "weixin",     // 用于校验微信是否安装
+      // "wxopensdk",  // 用于校验是否可以通过 openLink 拉起微信（不填写将尝试采用显式跳转拉起微信）
+      "alipays",    // 用于校验支付宝是否安装
+      "https"       // 用于校验是否可以通过 openLink 拉起支付宝（不填写将尝试前往H5页面进行支付）
+    ],
     "deliveryWithInstall": true,
     "installationFree": false,
     "pages": "$profile:main_pages",
@@ -29,7 +35,8 @@
               "entity.system.home"
             ],
             "actions": [
-              "action.system.home"
+              "action.system.home",
+              // "wxentity.action.open"
             ]
           }
         ]

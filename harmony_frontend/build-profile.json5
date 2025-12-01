@@ -123,6 +123,10 @@
           ]
         }
       ]
+    },
+    {
+      "name": "aggregated_payment",
+      "srcPath": "./payment/aggregated_payment"
     }
   ]
 }

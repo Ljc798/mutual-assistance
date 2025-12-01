@@ -31,6 +31,17 @@ export struct ReputationView {
     const userId = Number(this.appUser.user.id ?? 0)
     const token = this.appUser.user.token
     if (!userId || !token) {
+      this.summary = {
+        totalScore: 0,
+        completed: 0,
+        canceled: 0,
+        reports: 0,
+        averageRating: 0,
+        reliabilityIndex: 0,
+        updatedAt: ''
+      }
+      this.logs = []
+      this.rules = []
       promptAction.showToast({ message: '请先登录' });
       return
     }

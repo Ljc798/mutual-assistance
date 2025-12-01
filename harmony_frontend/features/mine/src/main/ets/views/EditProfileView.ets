@@ -297,8 +297,10 @@ export struct EditProfileView {
 
   private handleLogout() {
     userPersistence.clearUser()
+    const nowTick: number = Date.now()
+    AppStorage.setOrCreate('reload_home_now', nowTick)
     promptAction.showToast({ message: '已退出登录' })
-    HMRouterMgr.pop()
+    HMRouterMgr.push({ pageUrl: PAGE_PATH.LOGIN_PAGE })
   }
 
   private getAvatarSource(url: string): ResourceStr {

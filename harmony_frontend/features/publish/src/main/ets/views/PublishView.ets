@@ -1,29 +1,51 @@
 import promptAction from '@ohos.promptAction'
 import { AppStorageV2 } from '@kit.ArkUI'
-import { AppSafeArea, AppSelectedSchool, AppUser, PAGE_PATH, SCHOOL_SELECTION_VERSION_KEY, TaskMode, schoolPersistence,
-  AppSchoolPickerContext } from 'basic'
-import { PublishCategory, PublishFormModel, PublishMethod, PUBLISH_CATEGORIES, PublishCreatePayload } from '../viewmodels/PublishTypes'
+import {
+  AppSafeArea,
+  AppSelectedSchool,
+  AppUser,
+  PAGE_PATH,
+  SCHOOL_SELECTION_VERSION_KEY,
+  TaskMode,
+  schoolPersistence,
+  AppSchoolPickerContext
+} from 'basic'
+import {
+  PublishCategory,
+  PublishFormModel,
+  PublishMethod,
+  PUBLISH_CATEGORIES,
+  PublishCreatePayload
+} from '../viewmodels/PublishTypes'
 import { calculateCommission, createTask, prepayAliTask } from '../services/PublishService'
 import { AliPaySDK, AliPayPayResult } from 'basic'
+import { paymentService } from '@kit.PaymentKit'
+import { BusinessError } from '@kit.BasicServicesKit'
+import { common } from '@kit.AbilityKit'
 import { HMRouterMgr } from '@hadss/hmrouter'
-interface AliPrepayData { orderInfo?: string; orderStr?: string }
+import { aggregatedPaymentService, CashierPicker, PaymentType } from 'aggregated_payment';
+
+interface AliPrepayData {
+  orderInfo?: string;
+  orderStr?: string
+}
+
+interface AliPrepayPayload extends AliPrepayData { paymentUrl?: string }
 
 @Component
 export struct PublishView {
   private readonly scroller: Scroller = new Scroller()
   safeArea: AppSafeArea = AppStorageV2.connect(AppSafeArea, () => new AppSafeArea())!
   private readonly appUser: AppUser = AppStorageV2.connect(AppUser, () => new AppUser())!
-  private readonly schoolSelection: AppSelectedSchool = AppStorageV2.connect(AppSelectedSchool, () => new AppSelectedSchool())!
+  private readonly schoolSelection: AppSelectedSchool =
+    AppStorageV2.connect(AppSelectedSchool, () => new AppSelectedSchool())!
   @StorageLink(SCHOOL_SELECTION_VERSION_KEY) schoolVersion: number = 0
   private lastSyncedVersion: number = 0
   private hasMounted: boolean = false
-
   form: PublishFormModel = new PublishFormModel()
   @State selectedSchoolId: number = 0
   @State selectedSchoolName: string = '请选择学校'
   @State showCategoryDialog: boolean = false
-  @State showCommissionPopup: boolean = false
-  @State commissionAmount: string = '0.00'
   @State isPublishDisabled: boolean = true
   @State showTakeCodeField: boolean = false
   @State showTakeAwayField: boolean = false
@@ -31,11 +53,32 @@ export struct PublishView {
   @State isSubmittingPublish: boolean = false
   @State showPayDialog: boolean = false
   @State payParamsText: string = ''
+  @State payAmount: string = ''
+  @State outTradeNo: string = ''
+  private readonly abilityCtx: common.UIAbilityContext =
+    (this.getUIContext()!.getHostContext() as common.UIAbilityContext)
+  private paymentCbId: string = ''
 
   aboutToAppear() {
     this.hasMounted = true
     this.lastSyncedVersion = this.schoolVersion
     this.syncSelectedSchool()
+    if (!this.paymentCbId) {
+      this.paymentCbId = aggregatedPaymentService.registerPaymentCallback((type: PaymentType, ok: boolean) => {
+        if (type === PaymentType.ALIPAY) {
+          if (ok) {
+            promptAction.showToast({ message: '发布成功' })
+            this.resetForm()
+            const nowTick: number = Date.now()
+            // 触发首页刷新
+            AppStorage.setOrCreate('reload_home_now', nowTick)
+            HMRouterMgr.push({ pageUrl: PAGE_PATH.MAIN_PAGE })
+          } else {
+            promptAction.showToast({ message: '支付未完成' })
+          }
+        }
+      })
+    }
   }
 
   aboutToRender() {
@@ -83,39 +126,122 @@ export struct PublishView {
           right: 20
         })
         .backgroundColor($r('[basic].color.home_header_bg'));
+
         Scroll(this.scroller) {
           Column({ space: 16 }) {
             this.renderCategorySelector()
-            this.renderTextField('任务标题', '请输入任务标题(取件请标注大/中/小件)', this.form.title, (value: string) => {
-              this.form.title = value
-              this.handleFormUpdated()
-            })
+            Column({ space: 6 }) {
+              Row({ space: 4 }) {
+                Text('任务标题')
+                  .fontSize(15)
+                  .fontColor($r('[basic].color.text_primary'))
+              }
+              TextInput({ placeholder: '请输入任务标题(取件请标注大/中/小件)', text: this.form.title })
+                .placeholderColor($r('[basic].color.text_secondary'))
+                .placeholderFont({ size: 13 })
+                .caretColor($r('[basic].color.text_primary'))
+                .fontColor($r('[basic].color.text_primary'))
+                .height(44)
+                .backgroundColor($r('[basic].color.white'))
+                .borderRadius(14)
+                .padding({ left: 12, right: 12 })
+                .onChange((val: string) => { this.form.title = val; this.handleFormUpdated() })
+            }
             if (this.showTakeCodeField) {
-              this.renderTextField('快递取件码', '请输入取件码(仅对接单员可见)', this.form.takeCode, (value: string) => {
-                this.form.takeCode = value
-                this.handleFormUpdated()
-              })
+              Column({ space: 6 }) {
+                Row({ space: 4 }) {
+                  Text('快递取件码')
+                    .fontSize(15)
+                    .fontColor($r('[basic].color.text_primary'))
+                }
+                TextInput({ placeholder: '请输入取件码(仅对接单员可见)', text: this.form.takeCode })
+                  .placeholderColor($r('[basic].color.text_secondary'))
+                  .placeholderFont({ size: 13 })
+                  .caretColor($r('[basic].color.text_primary'))
+                  .fontColor($r('[basic].color.text_primary'))
+                  .height(44)
+                  .backgroundColor($r('[basic].color.white'))
+                  .borderRadius(14)
+                  .padding({ left: 12, right: 12 })
+                  .onChange((val: string) => { this.form.takeCode = val; this.handleFormUpdated() })
+              }
             }
             if (this.showTakeAwayField) {
-              this.renderTextField('外卖姓名', '请输入外卖姓名(仅对接单员可见)', this.form.takeName, (value: string) => {
-                this.form.takeName = value
-                this.handleFormUpdated()
-              })
-              this.renderTextField('手机尾号', '请输入手机尾号(仅对接单员可见)', this.form.takeTel, (value: string) => {
-                this.form.takeTel = value
-                this.isTakeTelValid = value.length === 0 || /^\d{4}$/.test(value)
-                this.handleFormUpdated()
-              }, !this.isTakeTelValid ? '请输入4位数字' : undefined)
+              Column({ space: 6 }) {
+                Row({ space: 4 }) {
+                  Text('外卖姓名')
+                    .fontSize(15)
+                    .fontColor($r('[basic].color.text_primary'))
+                }
+                TextInput({ placeholder: '请输入外卖姓名(仅对接单员可见)', text: this.form.takeName })
+                  .placeholderColor($r('[basic].color.text_secondary'))
+                  .placeholderFont({ size: 13 })
+                  .caretColor($r('[basic].color.text_primary'))
+                  .fontColor($r('[basic].color.text_primary'))
+                  .height(44)
+                  .backgroundColor($r('[basic].color.white'))
+                  .borderRadius(14)
+                  .padding({ left: 12, right: 12 })
+                  .onChange((val: string) => { this.form.takeName = val; this.handleFormUpdated() })
+              }
+              Column({ space: 6 }) {
+                Row({ space: 4 }) {
+                  Text('手机尾号')
+                    .fontSize(15)
+                    .fontColor($r('[basic].color.text_primary'))
+                  if (!this.isTakeTelValid) {
+                    Text('请输入4位数字')
+                      .fontSize(13)
+                      .fontColor('#FF4D4F')
+                  }
+                }
+                TextInput({ placeholder: '请输入手机尾号(仅对接单员可见)', text: this.form.takeTel })
+                  .placeholderColor($r('[basic].color.text_secondary'))
+                  .placeholderFont({ size: 13 })
+                  .caretColor($r('[basic].color.text_primary'))
+                  .fontColor($r('[basic].color.text_primary'))
+                  .height(44)
+                  .backgroundColor($r('[basic].color.white'))
+                  .borderRadius(14)
+                  .padding({ left: 12, right: 12 })
+                  .onChange((val: string) => { this.form.takeTel = val; this.isTakeTelValid = val.length === 0 || /^\d{4}$/.test(val); this.handleFormUpdated() })
+              }
             }
             this.renderDateRow()
-            this.renderTextField('交易地点', '请输入交易地点/线上交易', this.form.position, (value: string) => {
-              this.form.position = value
-              this.handleFormUpdated()
-            })
-            this.renderTextField('送达地点', '请输入交付地点/线上交易', this.form.address, (value: string) => {
-              this.form.address = value
-              this.handleFormUpdated()
-            })
+            Column({ space: 6 }) {
+              Row({ space: 4 }) {
+                Text('交易地点')
+                  .fontSize(15)
+                  .fontColor($r('[basic].color.text_primary'))
+              }
+              TextInput({ placeholder: '请输入交易地点/线上交易', text: this.form.position })
+                .placeholderColor($r('[basic].color.text_secondary'))
+                .placeholderFont({ size: 13 })
+                .caretColor($r('[basic].color.text_primary'))
+                .fontColor($r('[basic].color.text_primary'))
+                .height(44)
+                .backgroundColor($r('[basic].color.white'))
+                .borderRadius(14)
+                .padding({ left: 12, right: 12 })
+                .onChange((val: string) => { this.form.position = val; this.handleFormUpdated() })
+            }
+            Column({ space: 6 }) {
+              Row({ space: 4 }) {
+                Text('送达地点')
+                  .fontSize(15)
+                  .fontColor($r('[basic].color.text_primary'))
+              }
+              TextInput({ placeholder: '请输入交付地点/线上交易', text: this.form.address })
+                .placeholderColor($r('[basic].color.text_secondary'))
+                .placeholderFont({ size: 13 })
+                .caretColor($r('[basic].color.text_primary'))
+                .fontColor($r('[basic].color.text_primary'))
+                .height(44)
+                .backgroundColor($r('[basic].color.white'))
+                .borderRadius(14)
+                .padding({ left: 12, right: 12 })
+                .onChange((val: string) => { this.form.address = val; this.handleFormUpdated() })
+            }
             this.renderDetailField()
             this.renderModeSwitch()
             this.renderRewardField()
@@ -131,11 +257,19 @@ export struct PublishView {
         }
         .scrollBar(BarState.Off)
       }
+
       this.renderCategoryDialog()
       this.renderPayDialog()
     }
     .height('100%')
     .backgroundColor($r('[basic].color.page_background'))
+  }
+
+  aboutToDisappear() {
+    if (this.paymentCbId) {
+      aggregatedPaymentService.unregisterPaymentCallback(this.paymentCbId)
+      this.paymentCbId = ''
+    }
   }
 
   @Builder
@@ -144,13 +278,18 @@ export struct PublishView {
       Text('任务分类')
         .fontSize(15)
         .fontColor($r('[basic].color.text_primary'))
-        .margin({top: 10})
+        .margin({ top: 10 })
       Row() {
         Text(this.form.category || '请选择任务分类')
           .fontSize(14)
           .fontColor(this.form.category ? $r('[basic].color.text_primary') : $r('[basic].color.text_secondary'))
       }
-      .padding({ left: 14, right: 14, top: 14, bottom: 14 })
+      .padding({
+        left: 14,
+        right: 14,
+        top: 14,
+        bottom: 14
+      })
       .width('100%')
       .backgroundColor($r('[basic].color.white'))
       .borderRadius(16)
@@ -161,7 +300,8 @@ export struct PublishView {
   }
 
   @Builder
-  private renderTextField(label: string, placeholder: string, value: string, onChange: (value: string) => void, errorText?: string) {
+  private renderTextField(label: string, placeholder: string, value: string, onChange: (value: string) => void,
+    errorText?: string) {
     Column({ space: 6 }) {
       Row({ space: 4 }) {
         Text(label)
@@ -173,6 +313,7 @@ export struct PublishView {
             .fontColor('#FF4D4F')
         }
       }
+
       TextInput({ placeholder, text: value })
         .placeholderColor($r('[basic].color.text_secondary'))
         .placeholderFont({ size: 13 })
@@ -204,18 +345,18 @@ export struct PublishView {
               end: new Date(2030, 11, 31),
               selected: this.form.deadlineDate
                 ? new Date(
-                    Number.parseInt(this.form.deadlineDate.substring(0, 4)),
-                    Number.parseInt(this.form.deadlineDate.substring(5, 7)) - 1,
-                    Number.parseInt(this.form.deadlineDate.substring(8, 10))
-                  )
+                  Number.parseInt(this.form.deadlineDate.substring(0, 4)),
+                  Number.parseInt(this.form.deadlineDate.substring(5, 7)) - 1,
+                  Number.parseInt(this.form.deadlineDate.substring(8, 10))
+                )
                 : undefined,
               onAccept: (value: DatePickerResult) => {
-                const yearValue = value.year ?? 0
-                const monthValue = value.month ?? 1
-                const dayValue = value.day ?? 1
-                const year = yearValue.toString().padStart(4, '0')
-                const month = monthValue.toString().padStart(2, '0')
-                const day = dayValue.toString().padStart(2, '0')
+                const yearValue: number = value.year ?? 0
+                const monthValue: number = (value.month ?? 0) + 1;
+                const dayValue: number = value.day ?? 1
+                const year: string = yearValue.toString().padStart(4, '0')
+                const month: string = monthValue.toString().padStart(2, '0')
+                const day: string = dayValue.toString().padStart(2, '0')
                 this.form.deadlineDate = `${year}-${month}-${day}`
                 this.updateDeadline()
                 this.handleFormUpdated()
@@ -223,6 +364,7 @@ export struct PublishView {
             })
           })
       }
+
       Column({ space: 6 }) {
         Text('选择时间')
           .fontSize(15)
@@ -235,7 +377,8 @@ export struct PublishView {
           .onClick((): void => {
             TimePickerDialog.show({
               selected: this.form.deadlineTime
-                ? new Date(0, 0, 0, Number.parseInt(this.form.deadlineTime.substring(0, 2)), Number.parseInt(this.form.deadlineTime.substring(3, 5)))
+                ? new Date(0, 0, 0, Number.parseInt(this.form.deadlineTime.substring(0, 2)),
+                  Number.parseInt(this.form.deadlineTime.substring(3, 5)))
                 : undefined,
               onAccept: (value: TimePickerResult) => {
                 const hour = value.hour.toString().padStart(2, '0')
@@ -310,6 +453,7 @@ export struct PublishView {
         .backgroundColor($r('[basic].color.white'))
         .padding({ left: 12, right: 12 })
         .placeholderColor($r('[basic].color.text_secondary'))
+        .type(InputType.NUMBER_DECIMAL)
         .onChange((value: string) => {
           this.form.reward = value
           this.handleFormUpdated()
@@ -335,7 +479,9 @@ export struct PublishView {
       .fontColor($r('[basic].color.white'))
       .borderRadius(24)
       .enabled(!this.isPublishDisabled && !this.isSubmittingPublish)
-      .onClick((): void => { this.handlePublish() })
+      .onClick((): void => {
+        this.handlePublish()
+      })
   }
 
   private updateDeadline() {
@@ -357,7 +503,8 @@ export struct PublishView {
     const requireTakeCode = this.form.category === '代拿快递'
     const requireTakeAway = this.form.category === '代拿外卖'
     const expressOk = !requireTakeCode || !!this.form.takeCode
-    const takeAwayOk = !requireTakeAway || (!!this.form.takeName && this.form.takeTel.length === 4 && this.isTakeTelValid)
+    const takeAwayOk =
+      !requireTakeAway || (!!this.form.takeName && this.form.takeTel.length === 4 && this.isTakeTelValid)
     const rewardValue = Number.parseFloat(this.form.reward)
     const isValid = hasBasics && expressOk && takeAwayOk && !Number.isNaN(rewardValue) && rewardValue > 0
     this.isPublishDisabled = !isValid
@@ -423,22 +570,30 @@ export struct PublishView {
       if (this.form.mode === 'fixed') {
         const taskId: number = Number(response.task_id ?? 0)
         if (!taskId) { promptAction.showToast({ message: '发布成功但任务ID异常' }); return }
-        const prepayRes = await prepayAliTask(taskId, true, token)
-        if (!prepayRes.success || !prepayRes.data) { promptAction.showToast({ message: prepayRes.message ?? '预下单失败' }); return }
-        const objText: string = JSON.stringify(prepayRes.data)
-        this.payParamsText = objText
-        const parsed: AliPrepayData = JSON.parse(objText) as AliPrepayData
-        const orderInfoRaw: string = (parsed.orderInfo ?? parsed.orderStr ?? '')
-        if (orderInfoRaw.length > 0) {
-          const r: AliPayPayResult = await AliPaySDK.pay({ orderInfo: orderInfoRaw, showLoading: true })
-          promptAction.showToast({ message: r.resultStatus === '9000' ? '支付成功' : '支付未完成' })
-        } else {
-          this.showPayDialog = true
-        }
-        this.resetForm()
+        const ui = this.getUIContext()!
+        const picker = new CashierPicker(ui)
+        const amountFen: number = Math.round(Number(this.form.reward) * 100)
+        await picker
+          .reset()
+          .setAmount(amountFen)
+          .setTradeSummary('任务发布支付')
+          .onRealPayment(async (type: PaymentType) => {
+            if (type === PaymentType.ALIPAY) {
+              const res = await prepayAliTask(taskId, false, token)
+              if (!res.success || !res.data) { promptAction.showToast({ message: res.message ?? '预下单失败' }); return }
+              const objText: string = JSON.stringify(res.data)
+              const data: AliPrepayPayload = JSON.parse(objText) as AliPrepayPayload
+              const orderInfo: string = String((data.orderInfo ?? data.orderStr ?? ''))
+              if (!orderInfo) { promptAction.showToast({ message: '支付参数缺失: orderInfo' }); return }
+              aggregatedPaymentService.requestPaymentByAliPay({ orderInfo })
+              picker.close()
+            } else {
+              promptAction.showToast({ message: '当前仅支持支付宝' })
+            }
+          })
+          .open()
       } else {
         promptAction.showToast({ message: '发布成功' })
-        this.resetForm()
       }
     } catch (error) {
       console.error('publish failed', JSON.stringify(error))
@@ -466,17 +621,14 @@ export struct PublishView {
     this.showTakeAwayField = false
     this.isTakeTelValid = true
     this.isPublishDisabled = true
+    this.showPayDialog = false
+    this.handleFormUpdated()
   }
 
   private handleCategorySelected(category: PublishCategory) {
     this.form.category = category
     this.showCategoryDialog = false
     this.handleFormUpdated()
-  }
-
-  private async handleCommissionSelection(method: PublishMethod): Promise<void> {
-    this.showCommissionPopup = false
-    await this.submitTask(method)
   }
 
   private syncSelectedSchool(): void {
@@ -504,72 +656,37 @@ export struct PublishView {
   }
 
   @Builder
-  private renderCommissionPopup() {
-    if (this.showCommissionPopup) {
-      Column() {
-        Column({ space: 12 }) {
-          Text('请选择发布方式')
-            .fontSize(18)
-            .fontWeight(FontWeight.Medium)
-            .fontColor($r('[basic].color.text_primary'))
-          this.renderCommissionOption('🎁 使用免佣金次数', 'free')
-          this.renderCommissionOption(`💰 支付佣金 ¥${this.commissionAmount}`, 'pay')
-          this.renderCommissionOption('🌟 使用 VIP 免费发布', 'vip')
-        }
-        .width('90%')
-        .padding(20)
-        .backgroundColor($r('[basic].color.white'))
-        .borderRadius(20)
-      }
-      .width('100%')
-      .height('100%')
-      .justifyContent(FlexAlign.Center)
-      .alignItems(HorizontalAlign.Center)
-      .backgroundColor('rgba(0,0,0,0.35)')
-    } else {
-      Blank()
-    }
-  }
-
-  @Builder
-  private renderCommissionOption(label: string, method: PublishMethod) {
-    Button(label)
-      .width('100%')
-      .height(46)
-      .borderRadius(16)
-      .backgroundColor($r('[basic].color.white'))
-      .fontColor($r('[basic].color.text_primary'))
-      .border({ color: '#FFE1EB', width: 1 })
-      .onClick((): void => { this.handleCommissionSelection(method) })
-  }
-
-  @Builder
   private renderPayDialog() {
     if (this.showPayDialog) {
       Column() {
         Column({ space: 12 }) {
-          Text('预下单成功')
+          Text('预下单成功：打开支付台完成支付')
             .fontSize(18)
             .fontWeight(FontWeight.Medium)
-          Text('支付参数如下，可用于调用原生支付：')
+          Text(`订单号：${this.outTradeNo}`)
             .fontSize(13)
             .fontColor($r('[basic].color.text_secondary'))
-          Text(this.payParamsText)
-            .fontSize(12)
+          Text(`支付金额：¥${this.payAmount}`)
+            .fontSize(16)
+            .fontWeight(FontWeight.Medium)
             .fontColor($r('[basic].color.text_primary'))
-            .width('100%')
           Row({ space: 12 }) {
-            Button('尝试原生支付')
+            Button('支付宝支付')
               .height(40)
               .borderRadius(14)
               .backgroundColor($r('[basic].color.filter_active_bg'))
               .fontColor($r('[basic].color.white'))
-              .onClick(() => { this.tryNativePay() })
+              .onClick(() => {
+                this.tryNativePay()
+              })
             Button('关闭')
               .height(40)
               .borderRadius(14)
               .backgroundColor($r('[basic].color.search_box_bg'))
-              .onClick(() => { this.showPayDialog = false; this.resetForm() })
+              .onClick(() => {
+                this.showPayDialog = false;
+                this.resetForm()
+              })
           }
         }
         .width('90%')
@@ -589,9 +706,25 @@ export struct PublishView {
 
   private tryNativePay() {
     try {
-      promptAction.showToast({ message: '已尝试调用原生支付（示例占位）' })
+      const data: AliPrepayPayload = JSON.parse(this.payParamsText) as AliPrepayPayload
+      const paymentUrl: string = String(data.paymentUrl ?? '')
+      const info: paymentService.PaymentInfo =
+        { tradeSummary: '任务发布支付', amount: Math.round(Number(this.payAmount || '0') * 100), currency: 'CNY' }
+      paymentService.cashierPicker(this.abilityCtx, info).then(() => {
+        const orderStr = JSON.stringify({
+          nextAction: 'L',
+          linkUrl: paymentUrl,
+          scheme: 'alipays://platformapi/startapp?appId=20000067&url=',
+          clientToken: ''
+        })
+        paymentService.requestPayment(this.abilityCtx, orderStr, 'AP').then(() => {
+          this.showPayDialog = false
+        }).catch(() => {
+        })
+      }).catch(() => {
+      })
     } catch (_e) {
-      promptAction.showToast({ message: '原生支付不可用' })
+      promptAction.showToast({ message: '支付参数解析失败' })
     }
   }
 
@@ -614,13 +747,21 @@ export struct PublishView {
             Row() {
               Text(item)
                 .fontSize(15)
-                .fontColor(this.form.category === item ? $r('[basic].color.filter_active_bg') : $r('[basic].color.text_primary'))
+                .fontColor(this.form.category === item ? $r('[basic].color.filter_active_bg') :
+                  $r('[basic].color.text_primary'))
             }
             .width('100%')
-            .padding({ left: 16, right: 16, top: 12, bottom: 12 })
+            .padding({
+              left: 16,
+              right: 16,
+              top: 12,
+              bottom: 12
+            })
             .backgroundColor(this.form.category === item ? '#1AFF6B8B' : $r('[basic].color.white'))
             .borderRadius(12)
-            .onClick((): void => { this.handleCategorySelected(item) })
+            .onClick((): void => {
+              this.handleCategorySelected(item)
+            })
           }, (item: PublishCategory) => item)
         }
         .width('90%')
@@ -633,7 +774,10 @@ export struct PublishView {
       .justifyContent(FlexAlign.Center)
       .alignItems(HorizontalAlign.Center)
       .backgroundColor('rgba(0,0,0,0.35)')
-      .onClick((): void => { this.showCategoryDialog = false })
+      .onClick((): void => {
+        this.showCategoryDialog = false
+      })
+
     } else {
       Blank()
     }
