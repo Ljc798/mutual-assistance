@@ -16,7 +16,10 @@ Page({
         ],
     },
 
-    onLoad() {
+    onLoad(options) {
+        if (options.showPopup === 'true') {
+            this.setData({ showPopup: true })
+        }
         this.fetchPlans();
         const app = getApp();
         let expire = app.globalData.userInfo.vip_expire_time;
