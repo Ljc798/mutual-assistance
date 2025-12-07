@@ -14,8 +14,6 @@ SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret")
 
 @router.post("/login")
 def login(req: LoginRequest):
-    print("👀 环境变量用户名:", os.getenv("ADMIN_USERNAME"))
-    print("👀 环境变量密码:", os.getenv("ADMIN_PASSWORD"))
     if req.username != os.getenv("ADMIN_USERNAME") or req.password != os.getenv("ADMIN_PASSWORD"):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 

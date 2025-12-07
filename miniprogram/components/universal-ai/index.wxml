@@ -31,6 +31,10 @@
             <text wx:elif="{{remaining >= 0}}">💬 今日剩余 {{remaining}} / {{limit}} 次</text>
             <text class="quota" wx:if="{{limit !== -1 && !isSVIP && quotaRemain > 0}}">🎟️ 额外额度 {{quotaRemain}} 次</text>
         </view>
+
+        <view wx:if="{{showActionButton}}" class="action-button-container">
+            <button class="action-button" bindtap="triggerAiAction">{{actionButtonLabel}}</button>
+        </view>
         <view class="chat-input-container">
             <!-- 注意：textarea 在 WXML 里不要自闭合，用显式结束标签 -->
             <textarea class="chat-input" placeholder="说点什么..." value="{{chatInput}}" bindinput="handleChatInput" auto-height maxlength="500"></textarea>

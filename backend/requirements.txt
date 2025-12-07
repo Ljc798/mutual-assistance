@@ -6,3 +6,6 @@ pymysql
 python-dotenv  # 可选，若你用它读取 env 文件
 PyJWT
 pydantic_settings
+requests
+ddddocr
+pycryptodome

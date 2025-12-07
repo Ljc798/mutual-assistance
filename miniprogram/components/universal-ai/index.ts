@@ -2,12 +2,61 @@ interface ChatMessage {
     type: "user" | "ai";
     content: string;
     timestamp: string;
+    isFormatted?: boolean;
 }
 
 import { BASE_URL } from '../../config/env';
 
 const TAP_MOVE_THRESHOLD = 8;     // 小于 8px 视为点击
 const TAP_TIME_THRESHOLD = 300;   // 小于 300ms 视为点击
+
+const CODE_ROUTE_MAP: Record<string, string> = {
+    // 基础页
+    home: '/pages/home/home',
+    square: '/pages/square/square',
+    publish: '/pages/publish/publish',
+    message: '/pages/message/message',
+    user: '/pages/user/user',
+    task: '/pages/task/task',
+    order: '/pages/order/order',
+    timetable: '/pages/timetable/timetable',
+    register: '/pages/register/register',
+    course: '/pages/course/course',
+    shop: '/pages/shop/shop',
+    chat: '/pages/chat/chat',
+    wallet: '/pages/wallet/wallet',
+    vip: '/pages/vip/vip',
+    mysquare: '/pages/mysquare/mysquare',
+    notifications: '/pages/notifications/notifications',
+    schools: '/pages/schools/schools',
+    reputation: '/pages/reputation/reputation',
+    profile: '/pages/user/profile',
+
+    // 带中划线/下划线别名
+    'task-list': '/pages/task-list/task-list',
+    task_list: '/pages/task-list/task-list',
+    'square-detail': '/pages/square-detail/square-detail',
+    square_detail: '/pages/square-detail/square-detail',
+    'edit-profile': '/pages/edit-profile/edit-profile',
+    edit_profile: '/pages/edit-profile/edit-profile',
+    'timetable-config': '/pages/timetable-config/timetable-config',
+    timetable_config: '/pages/timetable-config/timetable-config',
+    'edit-task': '/pages/edit-task/edit-task',
+    edit_task: '/pages/edit-task/edit-task',
+
+    // 子页映射
+    'mysquare/edit': '/pages/mysquare/edit',
+    mysquare_edit: '/pages/mysquare/edit',
+    'order/other-orders': '/pages/order/other-orders',
+    'other-orders': '/pages/order/other-orders',
+    other_orders: '/pages/order/other-orders',
+    'agreements/terms': '/pages/agreements/terms',
+    terms: '/pages/agreements/terms',
+    'agreements/privacy': '/pages/agreements/privacy',
+    privacy: '/pages/agreements/privacy',
+    'user/profile': '/pages/user/profile',
+    user_profile: '/pages/user/profile',
+};
 
 Component({
     properties: {
@@ -36,6 +85,9 @@ Component({
         dailyBonus: 0,
         quotaRemain: 0,
         isSVIP: false,
+        showActionButton: false,
+        actionButtonLabel: "",
+        actionPayload: null as any,
     },
 
     lifetimes: {
@@ -115,7 +167,10 @@ Component({
                 showChatPopup: true,
                 chatMessages: [],
                 conversationId: "",
-                chatInput: ""
+                chatInput: "",
+                showActionButton: false,
+                actionButtonLabel: "",
+                actionPayload: null
             });
 
             const welcomeMessage: ChatMessage = {
@@ -179,18 +234,13 @@ Component({
                 const { data } = response;
 
                 if (data?.success && typeof data?.answer === "string") {
-                    const aiMessage: ChatMessage = {
-                        type: "ai",
-                        content: data.answer || "（没有得到回答）",
-                        timestamp: new Date().toLocaleTimeString()
-                    };
+                    const handled = this.handleAiReply(data.answer);
                     this.setData({
-                        chatMessages: [...this.data.chatMessages, aiMessage],
                         conversationId: data.conversation_id || conversationId || null,
                         isLoading: false
                     });
                     this.fetchAiUsage();
-                    this.scrollToBottom();
+                    if (!handled) this.scrollToBottom();
                 } else {
                     this.setData({ isLoading: false });
                     wx.showToast({ title: data?.message || "AI 回复失败", icon: "none" });
@@ -230,5 +280,134 @@ Component({
             const level = Number(app?.globalData?.userInfo?.vip_level || 0);
             this.setData({ isSVIP: level === 2 });
         },
+
+        handleAiReply(reply: string) {
+            try {
+                const jsonMatch = reply.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    const json = JSON.parse(jsonMatch[0]);
+                    const rest = reply.replace(jsonMatch[0], "").replace(/^[\s\n]+/, "");
+                    const replyText =
+                        (typeof json.reply === "string" && json.reply.trim())
+                            || (typeof json.message === "string" && json.message.trim())
+                            || rest
+                            || "（没有得到回答）";
+
+                    const newMessage: ChatMessage = {
+                        type: "ai",
+                        content: replyText,
+                        timestamp: new Date().toLocaleTimeString()
+                    };
+
+                    // 解析按钮
+                    let btnText = "";
+                    let btnCode = "";
+                    const btn = json.button;
+                    if (Array.isArray(btn)) {
+                        const b = btn[0] || {};
+                        btnText = String(b.text || "");
+                        btnCode = String(b.code || "");
+                    } else if (typeof btn === "object" && btn) {
+                        btnText = String(btn.text || "");
+                        btnCode = String(btn.code || "");
+                    } else if (typeof btn === "string") {
+                        btnText = btn;
+                    }
+
+                    this.setData({
+                        chatMessages: [...this.data.chatMessages, newMessage],
+                        showActionButton: !!btnText,
+                        actionButtonLabel: btnText || "",
+                        actionPayload: btnCode ? { code: btnCode } : null,
+                    });
+                    this.scrollToBottom();
+                    return true;
+                }
+            } catch {}
+            const aiMessage: ChatMessage = {
+                type: "ai",
+                content: reply || "（没有得到回答）",
+                timestamp: new Date().toLocaleTimeString()
+            };
+            this.setData({ chatMessages: [...this.data.chatMessages, aiMessage] });
+            return false;
+        },
+
+        async triggerAiAction() {
+            const action = this.data.actionPayload;
+            if (!action) return;
+            try {
+                if (action.code) {
+                    console.log('[universal-ai] trigger action:', action);
+                    const code: string = String(action.code).trim();
+                    const url = safePageUrlFromCode(code);
+                    console.log('[universal-ai] navigate url:', url, 'from code:', code);
+                    const pages = getCurrentPages();
+                    const useRedirect = pages.length >= 9;
+                    const navigate = () => new Promise<void>((resolve, reject) => {
+                        (useRedirect ? wx.redirectTo : wx.navigateTo)({
+                            url: url || '',
+                            success: () => resolve(),
+                            fail: (err) => {
+                                console.error('[universal-ai] navigate fail:', err, 'url:', url);
+                                reject(new Error('navigate'));
+                            },
+                        });
+                    });
+                    try {
+                        await navigate();
+                        this.setData({ showActionButton: false, actionButtonLabel: '', actionPayload: null });
+                        return;
+                    } catch {
+                        try {
+                            await new Promise<void>((resolve, reject) => {
+                                wx.reLaunch({
+                                    url: url || '',
+                                    success: () => resolve(),
+                                    fail: (err) => {
+                                        console.error('[universal-ai] reLaunch fail:', err, 'url:', url);
+                                        reject(new Error('relaunch'));
+                                    }
+                                });
+                            });
+                            this.setData({ showActionButton: false, actionButtonLabel: '', actionPayload: null });
+                            return;
+                        } catch {
+                            wx.showToast({ title: '跳转失败', icon: 'none' });
+                        }
+                    }
+                    return;
+                }
+                wx.showToast({ title: "未提供跳转页面", icon: "none" });
+            } catch (e) {
+                console.error('[universal-ai] triggerAiAction exception:', e);
+                wx.showToast({ title: "跳转失败", icon: "none" });
+            }
+        },
+
+        // 保留空占位，未来如需扩展其他处理再加
     }
 });
+function safePageUrlFromCode(codeRaw: string): string | null {
+    let code = String(codeRaw || '').trim();
+    code = code.replace(/[\s\n]+/g, ' ');
+    code = code.replace(/["']/g, '');
+    code = code.replace(/[\)\}]+/g, '');
+    const parts = code.split('?');
+    let path = parts[0].trim();
+    const query = parts[1] ? `?${parts.slice(1).join('?')}` : '';
+    if (path.startsWith('pages/')) path = `/${path}`;
+    if (!path.startsWith('/')) {
+        const mapped = CODE_ROUTE_MAP[path];
+        if (mapped) path = mapped;
+    }
+    const m = path.match(/^\/pages\/[A-Za-z0-9_-]+(?:\/[A-Za-z0-9_-]+)?$/);
+    if (!m) {
+        const seg = path.replace(/^\//, '').split('/');
+        const last = seg.pop() || '';
+        if (last) path = `/pages/${last}/${last}`;
+    }
+    const valid = path.match(/^\/pages\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+$/);
+    if (!valid) return null;
+    return `${path}${query}`;
+}
