@@ -84,11 +84,11 @@ Page({
     },
 
     onShow() {
-        // 建议也做下防御，避免第一次进入的时候数据没加载就执行
-        if (getApp().globalData.timetableConfig) {
+        const hasWeekly = Array.isArray(this.data.weeklyCourses) && this.data.weeklyCourses.length > 0;
+        if (hasWeekly) {
             this.processWeeklyCourses();
-        } else {
-            console.warn("⏳ timetableConfig 尚未加载完成，暂不执行 processWeeklyCourses");
+        } else if (this.data.timetableConfigLoaded) {
+            this.loadWeeklyCourses();
         }
     },
 
@@ -134,8 +134,7 @@ Page({
             data: {
                 user_id: this.data.userId,
                 week: this.data.currentWeek,
-                weekday: dayMap[this.data.dayOfWeek],
-                term: this.data.term
+                weekday: dayMap[this.data.dayOfWeek]
             },
             success: (res) => {
                 wx.hideLoading();
@@ -502,8 +501,7 @@ Page({
             method: "GET",
             data: {
                 user_id: this.data.userId,
-                week: this.data.currentWeek,
-                term: this.data.term
+                week: this.data.currentWeek
             },
             success: (res) => {
                 if (res.data.success && typeof res.data.data === "object") {
