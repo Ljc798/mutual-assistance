@@ -136,7 +136,7 @@ export struct MyOrdersView {
           ListItem() {
             Column({ space: 12 }) {
               Row() {
-                Text('id123')
+                Text(`订单号 ${item.id}`).fontSize(14).fontColor($r('[basic].color.text_secondary'))
                 Text(this.getStatusText(item.status)).fontSize(13).fontColor($r('[basic].color.text_primary'))
               }
               .width('100%')
@@ -164,8 +164,11 @@ export struct MyOrdersView {
             })
             .backgroundColor($r('[basic].color.white'))
             .borderRadius(16)
+            .onClick(() => {
+              HMRouterMgr.push({ pageUrl: PAGE_PATH.TASK_DETAIL_PAGE, param: { taskId: item.id } })
+            })
           }
-        }, (item: MyOrderItem) => `${item.id}`)
+        }, (item: MyOrderItem) => `${item.id}_${item.status}_${item.employer_done ?? 0}_${item.employee_done ?? 0}`)
       }
       .padding({ left: 16, right: 16, bottom: 20 })
     }
@@ -175,27 +178,42 @@ export struct MyOrdersView {
   private renderOrderActions(item: MyOrderItem) {
     Row({ space: 12 }) {
       if (item.status === 1) {
-        Button('取消任务')
-          .height(36)
-          .borderRadius(16)
-          .backgroundColor(Color.Red)
-          .onClick(async () => {
-            await this.openCancelDialog(item.id)
-          })
-        Button('我已完成')
-          .height(36)
-          .borderRadius(16)
-          .backgroundColor(Color.Green)
-          .fontColor($r('[basic].color.white'))
-          .onClick(async () => {
-            await this.handleConfirmDone(item.id)
-          })
+        if (this.isMeDone(item)) {
+          Text('等待对方确认').fontSize(14).fontColor($r('[basic].color.text_secondary'))
+        } else {
+          Button('取消任务')
+            .height(36)
+            .borderRadius(16)
+            .backgroundColor(Color.Red)
+            .onClick(async () => {
+              await this.openCancelDialog(item.id)
+            })
+          Button('我已完成')
+            .height(36)
+            .borderRadius(16)
+            .backgroundColor(Color.Green)
+            .fontColor($r('[basic].color.white'))
+            .onClick(async () => {
+              await this.handleConfirmDone(item.id)
+            })
+        }
       } else {
         Blank()
       }
     }
     .width('100%')
     .justifyContent(FlexAlign.End)
+  }
+
+  private isMeDone(item: MyOrderItem): boolean {
+    const myId = Number(this.appUser.user.id ?? 0)
+    if (item.employer_id === myId) {
+      return (item.employer_done ?? 0) === 1
+    }
+    if (item.employee_id === myId) {
+      return (item.employee_done ?? 0) === 1
+    }
+    return false
   }
 
   @Builder
@@ -301,13 +319,71 @@ export struct MyOrdersView {
       this.showToast('请先登录');
       return
     }
-    const res = await confirmTaskDone(taskId, token)
-    if (!res.success) {
-      this.showToast(res.message ?? '提交失败');
-      return
+
+    const idx = this.orders.findIndex(o => o.id === taskId)
+    if (idx < 0) return
+
+    // 1. 乐观更新（假更新）：立即修改 UI
+    const order = this.orders[idx]
+    const originalOrder: MyOrderItem = {
+      id: order.id,
+      title: order.title,
+      offer: order.offer,
+      DDL: order.DDL,
+      status: order.status,
+      employer_id: order.employer_id,
+      employee_id: order.employee_id,
+      employer_done: order.employer_done,
+      employee_done: order.employee_done,
+      pay_amount: order.pay_amount
+    } // 备份旧数据用于回滚
+
+    const myId = Number(this.appUser.user.id ?? 0)
+    let employerDone = order.employer_done ?? 0
+    let employeeDone = order.employee_done ?? 0
+
+    if (order.employer_id === myId) { employerDone = 1 }
+    if (order.employee_id === myId) { employeeDone = 1 }
+
+    let newStatus = order.status
+    if (employerDone === 1 && employeeDone === 1) {
+      newStatus = 2
     }
+
+    const newOrder: MyOrderItem = {
+      id: order.id,
+      title: order.title,
+      offer: order.offer,
+      DDL: order.DDL,
+      status: newStatus,
+      employer_id: order.employer_id,
+      employee_id: order.employee_id,
+      employer_done: employerDone,
+      employee_done: employeeDone,
+      pay_amount: order.pay_amount
+    }
+    
+    this.orders.splice(idx, 1, newOrder)
     this.showToast('已提交完成')
-    await this.loadOrders()
+
+    // 2. 后台异步请求，不阻塞 UI
+    confirmTaskDone(taskId, token).then((res) => {
+      if (!res.success) {
+        // 失败回滚
+        this.showToast(res.message ?? '提交失败，状态已恢复')
+        const currentIdx = this.orders.findIndex(o => o.id === taskId)
+        if (currentIdx >= 0) {
+          this.orders.splice(currentIdx, 1, originalOrder)
+        }
+      }
+    }).catch(() => {
+      // 异常回滚
+      this.showToast('网络异常，状态已恢复')
+      const currentIdx = this.orders.findIndex(o => o.id === taskId)
+      if (currentIdx >= 0) {
+        this.orders.splice(currentIdx, 1, originalOrder)
+      }
+    })
   }
 
   private async loadOrders() {

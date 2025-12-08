@@ -10,7 +10,7 @@ export struct WalletView {
   safeArea: AppSafeArea = AppStorageV2.connect(AppSafeArea, () => new AppSafeArea())!
   private readonly appUser: AppUser = AppStorageV2.connect(AppUser, () => new AppUser())!
   @State amountText: string = ''
-  @State methodText: string = '微信'
+  @State methodText: string = '支付宝'
   @State phoneText: string = ''
   @State isSubmitting: boolean = false
 
@@ -55,7 +55,22 @@ export struct WalletView {
   private renderForm() {
     Column({ space: 10 }) {
       this.renderTextField('提现金额', '请输入金额', this.amountText, (v: string) => this.amountText = v)
-      this.renderTextField('收款方式', '微信/支付宝', this.methodText, (v: string) => this.methodText = v)
+      
+      Column({ space: 6 }) {
+        Text('收款方式').fontSize(14).fontColor($r('[basic].color.text_secondary'))
+        Row() {
+          Text('支付宝（目前仅支持支付宝，其他收款方式接入中～）')
+            .fontSize(16)
+            .fontColor($r('[basic].color.text_primary'))
+        }
+        .height(44)
+        .width('100%')
+        .backgroundColor($r('[basic].color.white'))
+        .borderRadius(14)
+        .padding({ left: 12, right: 12 })
+        .alignItems(VerticalAlign.Center)
+      }
+
       this.renderTextField('收款手机号', '请输入手机号', this.phoneText, (v: string) => this.phoneText = v)
       Button(this.isSubmitting ? '提交中...' : '提交提现')
         .height(44)
@@ -64,7 +79,6 @@ export struct WalletView {
         .fontColor($r('[basic].color.white'))
         .enabled(!this.isSubmitting)
         .onClick(async () => { await this.handleSubmit() })
-      Text('微信方式需在微信设置开启手机号收款').fontSize(12).fontColor($r('[basic].color.text_secondary')).textAlign(TextAlign.Center)
     }
     .padding({ left: 16, right: 16, top: 16 })
   }
@@ -85,11 +99,10 @@ export struct WalletView {
   private async handleSubmit() {
     const token = this.appUser.user.token
     const amount = Number.parseFloat(this.amountText)
-    const method = this.methodText.trim()
+    const method = '支付宝'
     const phone = this.phoneText.trim()
     if (!token) { this.showToast('请先登录'); return }
     if (Number.isNaN(amount) || amount <= 0) { this.showToast('请输入正确的金额'); return }
-    if (!(method === '微信' || method === '支付宝')) { this.showToast('请输入微信或支付宝'); return }
     if (!/^\d{11}$/.test(phone)) { this.showToast('请输入11位手机号'); return }
     this.isSubmitting = true
     try {

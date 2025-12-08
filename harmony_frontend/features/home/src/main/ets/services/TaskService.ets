@@ -34,6 +34,7 @@ function toTaskItem(item: TaskDTO): TaskItem {
     formattedDeadline: formatDeadline(item.DDL),
     detail: item.detail,
     employerId: item.employer_id,
+    employeeId: item.employee_id,
     takeawayCode: item.takeaway_code,
     takeawayTel: item.takeaway_tel,
     takeawayName: item.takeaway_name
@@ -80,6 +81,7 @@ function buildQueryParams(query?: TaskQuery): QueryParam[] | undefined {
       value: `${query.schoolId}`
     })
   }
+  params.push({ key: '_t', value: `${Date.now()}` })
   console.info('[TaskService] buildQueryParams: output params =', JSON.stringify(params))
   return params
 }

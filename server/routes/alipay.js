@@ -48,6 +48,82 @@ router.get('/test', async (req, res) => {
   }
 })
 
+const { sendToUser } = require('./ws-helper');
+const { sendTaskAssignedToEmployee, sendOrderStatusNotify } = require('../utils/wechat');
+
+router.post('/prepay-bid', authMiddleware, async (req, res) => {
+  const c = getClient()
+  if (!c) return res.status(500).json({ success: false, message: 'missing ALIPAY_APP_ID or private/public key' })
+  try {
+    const userId = req.user.id
+    const { bid_id } = req.body || {}
+    const [[bid]] = await db.query('SELECT task_id, user_id AS receiver_id, price FROM task_bids WHERE id = ?', [bid_id])
+    if (!bid) return res.status(404).json({ success: false, message: '投标不存在' })
+    
+    const { task_id, receiver_id, price } = bid
+    const [[task]] = await db.query('SELECT title FROM tasks WHERE id = ?', [task_id])
+    
+    const amountFen = Math.floor(Number(price) * 100)
+    const totalFen = amountFen // 暂不计算VIP折扣，如需可补充
+    const outTradeNo = `ALI_BID_${bid_id}_${String(Date.now()).slice(-8)}`
+    
+    await db.query(
+      `INSERT INTO task_payments (task_id, bid_id, payer_user_id, receiver_id, amount, out_trade_no, status) 
+       VALUES (?, ?, ?, ?, ?, ?, "pending")`, 
+      [task_id, bid_id, userId, receiver_id, totalFen, outTradeNo]
+    )
+    
+    const totalAmount = (totalFen / 100).toFixed(2)
+    const notifyUrl = process.env.ALIPAY_NOTIFY_URL || 'https://mutualcampus.top/api/pay/ali/notify'
+    const subject = `选标支付-${task?.title || '任务'}`
+    const appId = process.env.ALIPAY_APP_ID
+    const priv = readFileIfExists(process.env.ALIPAY_PRIVATE_KEY_PATH) || process.env.ALIPAY_PRIVATE_KEY
+    const timestamp = new Date().toISOString().slice(0, 19).replace('T', ' ')
+    
+    const params = {
+      app_id: appId,
+      method: 'alipay.trade.app.pay',
+      format: 'JSON',
+      charset: 'utf-8',
+      sign_type: 'RSA2',
+      timestamp,
+      version: '1.0',
+      notify_url: notifyUrl,
+      biz_content: JSON.stringify({ subject, out_trade_no: outTradeNo, total_amount: totalAmount, product_code: 'QUICK_MSECURITY_PAY' })
+    }
+    const keys = Object.keys(params).sort()
+    const signContent = keys.map(k => `${k}=${params[k]}`).join('&')
+    const signer = require('crypto').createSign('RSA-SHA256')
+    signer.update(signContent)
+    const sign = signer.sign(priv, 'base64')
+    const orderInfo = keys.map(k => `${k}=${encodeURIComponent(params[k])}`).join('&') + `&sign=${encodeURIComponent(sign)}`
+    
+    const wapParams = {
+      app_id: appId,
+      method: 'alipay.trade.wap.pay',
+      format: 'JSON',
+      charset: 'utf-8',
+      sign_type: 'RSA2',
+      timestamp,
+      version: '1.0',
+      notify_url: notifyUrl,
+      return_url: process.env.ALIPAY_RETURN_URL || notifyUrl,
+      biz_content: JSON.stringify({ subject, out_trade_no: outTradeNo, total_amount: totalAmount, product_code: 'QUICK_WAP_WAY', quit_url: process.env.ALIPAY_QUIT_URL || 'https://mutualcampus.top/' })
+    }
+    const wapKeys = Object.keys(wapParams).sort()
+    const wapSignContent = wapKeys.map(k => `${k}=${wapParams[k]}`).join('&')
+    const wapSigner = require('crypto').createSign('RSA-SHA256')
+    wapSigner.update(wapSignContent)
+    const wapSign = wapSigner.sign(priv, 'base64')
+    const gateway = process.env.ALIPAY_ENDPOINT || 'https://openapi.alipay.com/gateway.do'
+    const paymentUrl = gateway + '?' + wapKeys.map(k => `${k}=${encodeURIComponent(wapParams[k])}`).join('&') + `&sign=${encodeURIComponent(wapSign)}`
+
+    return res.json({ success: true, out_trade_no: outTradeNo, total_amount: totalAmount, data: { orderInfo, orderStr: orderInfo, paymentUrl } })
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message })
+  }
+})
+
 router.post('/prepay-task', authMiddleware, async (req, res) => {
   const c = getClient()
   if (!c) return res.status(500).json({ success: false, message: 'missing ALIPAY_APP_ID or private/public key' })
@@ -151,6 +227,68 @@ router.post('/notify', async (req, res) => {
         `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
         [task.employer_id, '💰 支付成功', `你已成功支付任务《${task.title}》，支付金额¥${(finalFen/100).toFixed(2)}，等待接单人完成任务～`]
       )
+    } else if (/^ALI_BID_\d+_/.test(outTradeNo)) {
+      const [[payRow]] = await db.query(`SELECT task_id, bid_id, amount, payer_user_id, receiver_id FROM task_payments WHERE out_trade_no = ?`, [outTradeNo])
+      if (!payRow) throw new Error('payment record not found')
+      const { task_id, bid_id, amount: finalFen, receiver_id: employeeId, payer_user_id: employerId } = payRow
+      
+      const [[task]] = await db.query(`SELECT title, employer_id, position, address FROM tasks WHERE id = ?`, [task_id])
+      const [[bidRow]] = await db.query('SELECT price FROM task_bids WHERE id = ?', [bid_id])
+      const basePrice = parseFloat(bidRow?.price || 0)
+      
+      await db.query(
+        `UPDATE tasks 
+         SET employee_id = ?, selected_bid_id = ?, status = 1, has_paid = 1, 
+             pay_amount = ?, payment_transaction_id = ?
+         WHERE id = ?`,
+        [employeeId, bid_id, basePrice, tradeNo || null, task_id]
+      )
+
+      await db.query(
+        `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
+        [employeeId, '🎉 任务委派成功', `任务《${task.title}》已经指派给你，快去完成吧！`]
+      )
+      sendToUser(employeeId, {
+         type: 'notify',
+         content: `🎉 你的投标被采纳！任务《${task.title}》已委派给你～`,
+         created_time: new Date().toISOString()
+      })
+      const [[emplUser]] = await db.query(`SELECT openid FROM users WHERE id = ?`, [employeeId]);
+      if (emplUser?.openid) {
+          try {
+            await sendTaskAssignedToEmployee({
+                openid: emplUser.openid,
+                serviceType: task.title,
+                pickupAddr: task.position,
+                deliveryAddr: task.address,
+                fee: basePrice,
+                assignTime: new Date()
+            });
+          } catch(e) { console.error('sendTaskAssignedToEmployee fail', e) }
+      }
+
+      await db.query(
+        `INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'task', ?, ?)`,
+        [employerId, '💰 支付成功', `你已成功支付任务《${task.title}》，订单已委派给接单人～`]
+      )
+      sendToUser(employerId, {
+        type: 'notify',
+        content: `💰 你已成功支付任务《${task.title}》，金额¥${(finalFen/100).toFixed(2)}，等待接单人完成任务～`,
+        created_time: new Date().toISOString()
+      })
+      const [[empUser]] = await db.query(`SELECT openid FROM users WHERE id = ?`, [employerId]);
+      if (empUser?.openid) {
+          try {
+            await sendOrderStatusNotify({
+                openid: empUser.openid,
+                orderNo: task_id,
+                title: task.title,
+                status: `进行中`,
+                time: new Date().toISOString().slice(0, 16).replace('T', ' '),
+                taskId: task_id
+            });
+          } catch(e) { console.error('sendOrderStatusNotify fail', e) }
+      }
     }
     return res.status(200).send('success')
   } catch (err) {

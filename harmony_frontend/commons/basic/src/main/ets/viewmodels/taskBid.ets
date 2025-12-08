@@ -1,8 +1,12 @@
 export interface TaskBidDTO {
   id: number
   task_id: number
-  bidder_id: number
+  bidder_id?: number
+  user_id?: number
   bidder_name?: string
+  username?: string
+  bidder_avatar?: string
+  avatar_url?: string
   price: number
   advantage: string
   selected?: number
@@ -14,6 +18,7 @@ export interface TaskBidItem {
   taskId: number
   bidderId: number
   bidderName: string
+  bidderAvatar?: string
   price: number
   advantage: string
   selected: boolean

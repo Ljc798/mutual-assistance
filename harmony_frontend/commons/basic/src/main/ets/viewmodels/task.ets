@@ -36,6 +36,7 @@ export interface TaskItemBase {
   formattedDeadline: string
   detail?: string
   employerId?: number
+  employeeId?: number
   takeawayCode?: string
   takeawayTel?: number
   takeawayName?: string

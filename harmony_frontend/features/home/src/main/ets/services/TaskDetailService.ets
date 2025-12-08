@@ -1,16 +1,22 @@
-import { HttpClient, TaskBidDTO, TaskBidItem, TaskBidBaseResponse } from 'basic'
+import { HttpClient, TaskBidDTO, TaskBidItem, TaskBidBaseResponse, TaskDTO, TaskItem, TaskStatus } from 'basic'
 
 interface QueryParam {
   key: string
   value: string
 }
 
+interface TaskBidListResponse {
+  success: boolean
+  bids: TaskBidDTO[]
+}
+
 function toBidItem(dto: TaskBidDTO): TaskBidItem {
   return {
     id: dto.id,
     taskId: dto.task_id,
-    bidderId: dto.bidder_id,
-    bidderName: dto.bidder_name ?? '匿名用户',
+    bidderId: dto.user_id ?? dto.bidder_id ?? 0,
+    bidderName: dto.username ?? dto.bidder_name ?? '匿名用户',
+    bidderAvatar: dto.avatar_url ?? dto.bidder_avatar,
     price: dto.price,
     advantage: dto.advantage,
     selected: Boolean(dto.selected),
@@ -18,13 +24,52 @@ function toBidItem(dto: TaskBidDTO): TaskBidItem {
   }
 }
 
+function formatDeadline(value: string): string {
+  const date = new Date(value)
+  const month = date.getMonth() + 1
+  const day = date.getDate()
+  const hours = date.getHours()
+  const minutes = date.getMinutes()
+  const pad = (num: number) => num < 10 ? `0${num}` : `${num}`
+  return `${pad(month)}-${pad(day)} ${pad(hours)}:${pad(minutes)}`
+}
+
+function toTaskItem(item: TaskDTO): TaskItem {
+  return {
+    id: String(item.id),
+    title: item.title,
+    category: item.category,
+    deadline: item.DDL,
+    position: item.position,
+    address: item.address,
+    status: item.status as TaskStatus,
+    mode: item.mode === 'bidding' ? 'bidding' : 'fixed',
+    offer: item.offer,
+    hasPaid: false,
+    formattedDeadline: formatDeadline(item.DDL),
+    detail: item.detail,
+    employerId: item.employer_id,
+    employeeId: item.employee_id,
+    takeawayCode: item.takeaway_code,
+    takeawayTel: item.takeaway_tel,
+    takeawayName: item.takeaway_name
+  }
+}
+
+export async function fetchTaskDetail(taskId: number): Promise<TaskItem> {
+  const response = await HttpClient.get<TaskDTO>(`/task/${taskId}`)
+  return toTaskItem(response)
+}
+
 export async function fetchTaskBids(taskId: number): Promise<TaskBidItem[]> {
-  const response = await HttpClient.get<TaskBidDTO[]>(`/task/${taskId}/bids`)
-  return (response ?? []).map(toBidItem)
+  const response = await HttpClient.get<TaskBidListResponse>(`/task/${taskId}/bids`)
+  console.info('[TaskDetailService] fetchTaskBids raw:', JSON.stringify(response))
+  return (response.bids ?? []).map(toBidItem)
 }
 
 export interface SubmitBidPayload {
   task_id: number
+  user_id: number
   price: number
   advantage: string
 }
@@ -55,5 +100,24 @@ export interface TakeTaskPayload {
 }
 
 export async function takeTask(payload: TakeTaskPayload, token: string): Promise<TaskBidBaseResponse> {
-  return HttpClient.post<TaskBidBaseResponse, TakeTaskPayload>('/task/take', payload, { Authorization: `Bearer ${token}` })
+  return HttpClient.post<TaskBidBaseResponse, TakeTaskPayload>(`/task/${payload.task_id}/accept`, payload, { Authorization: `Bearer ${token}` })
+}
+
+export interface AliPrepayResponse {
+  success: boolean
+  out_trade_no?: string
+  total_amount?: string
+  data?: Object
+  responseHttpStatus?: number
+  traceId?: string
+  message?: string
+}
+
+export interface AliPrepayBidPayload {
+  bid_id: number
+}
+
+export async function prepayAliBid(bidId: number, token: string): Promise<AliPrepayResponse> {
+  const payload: AliPrepayBidPayload = { bid_id: bidId }
+  return HttpClient.post<AliPrepayResponse, AliPrepayBidPayload>('/pay/ali/prepay-bid', payload, { Authorization: `Bearer ${token}` })
 }

@@ -143,8 +143,8 @@ export struct HomeView {
     const changed = this.syncSchoolSelection()
     if (changed) {
       this.resetPagingState()
-      this.loadTasks()
     }
+    this.loadTasks()
   }
 
   aboutToDisappear() {
@@ -467,7 +467,7 @@ export struct HomeView {
             this.TaskCard(task);
           }
           .padding({ left: 16, right: 16, top: 6 });
-        }, (task: TaskItem) => task.id);
+        }, (task: TaskItem) => `${task.id}_${task.status}_${task.offer}_${task.payAmount ?? 0}`);
         this.renderLoadMoreSection()
       }
     }

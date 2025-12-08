@@ -23,6 +23,8 @@ interface GeneratedTypeLiteralInterface_2 {
 
 export async function fetchMyOrders(query: MyOrderQuery, token: string): Promise<GeneratedTypeLiteralInterface_1> {
   const params = buildQuery(query)
+  // Prevent cache
+  params.push({ key: '_t', value: `${Date.now()}` })
   return HttpClient.get<GeneratedTypeLiteralInterface_2>("/task/my", params, { Authorization: `Bearer ${token}` })
 }
 
