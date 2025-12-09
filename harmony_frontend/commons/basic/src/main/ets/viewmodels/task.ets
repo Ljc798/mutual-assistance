@@ -22,6 +22,12 @@ export interface TaskDTO {
   takeaway_tel?: number
   takeaway_name: string
   mode?: TaskMode
+  has_paid?: number
+  pay_amount?: number
+  employer_name?: string
+  employer_avatar?: string
+  employee_name?: string
+  employee_avatar?: string
 }
 
 export interface TaskItemBase {
@@ -37,6 +43,10 @@ export interface TaskItemBase {
   detail?: string
   employerId?: number
   employeeId?: number
+  employerName?: string
+  employerAvatar?: string
+  employeeName?: string
+  employeeAvatar?: string
   takeawayCode?: string
   takeawayTel?: number
   takeawayName?: string

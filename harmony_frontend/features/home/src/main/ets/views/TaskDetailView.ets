@@ -158,72 +158,99 @@ export struct TaskDetailView {
           }
 
           if (this.detailVM.task!.mode === 'bidding') {
-            Column({ space: 10 }) {
-              Text('留言区（竞价）')
-                .fontSize(15)
-                .fontColor($r('[basic].color.text_primary'))
-              Column({ space: 8 }) {
+            Column({ space: 12 }) {
                 ForEach(this.bids, (bid: TaskBidItem) => {
-                  Row({ space: 10 }) {
-                    Image(bid.bidderAvatar && bid.bidderAvatar.length > 0 ? bid.bidderAvatar : $r('[basic].media.ic_public_user'))
-                      .width(40)
-                      .height(40)
-                      .borderRadius(20)
-                      .objectFit(ImageFit.Cover)
-                      .backgroundColor($r('[basic].color.search_box_bg'))
-                      .onClick(() => {
-                        this.navigateToProfile(bid.bidderId)
-                      })
+                  Column() {
+                    Row() {
+                      Row({ space: 8 }) {
+                        Image(bid.bidderAvatar && bid.bidderAvatar.length > 0 ? bid.bidderAvatar : $r('[basic].media.ic_public_user'))
+                          .width(32)
+                          .height(32)
+                          .borderRadius(16)
+                          .objectFit(ImageFit.Cover)
+                          .backgroundColor($r('[basic].color.search_box_bg'))
+                          .onClick(() => {
+                            this.navigateToProfile(bid.bidderId)
+                          })
+                        Text(`${bid.bidderName}`)
+                          .fontSize(16)
+                          .fontWeight(FontWeight.Medium)
+                          .fontColor($r('[basic].color.text_primary'))
+                          .onClick(() => {
+                            this.navigateToProfile(bid.bidderId)
+                          })
+                      }.alignItems(VerticalAlign.Center)
 
-                    Column() {
-                      Text(`${bid.bidderName}`)
+                      Blank()
+                      Text(`¥${bid.price.toFixed(2)}`)
+                        .fontSize(16)
+                        .fontColor('#FF4D4F')
+                        .fontWeight(FontWeight.Medium)
+                    }
+                    .width('100%')
+                    .alignItems(VerticalAlign.Center)
+
+                    Row() {
+                      Text(bid.advantage)
                         .fontSize(14)
                         .fontColor($r('[basic].color.text_primary'))
-                      Text(`出价：¥${bid.price.toFixed(2)}`)
-                        .fontSize(13)
-                        .fontColor($r('[basic].color.text_secondary'))
-                      Text(`优势：${bid.advantage}`)
-                        .fontSize(13)
-                        .fontColor($r('[basic].color.text_secondary'))
-                    }
-                    .onClick(() => {
-                      this.navigateToProfile(bid.bidderId)
-                    })
-                    .layoutWeight(1)
-                    if (this.isEmployer()) {
-                      Row({ space: 6 }) {
-                        if (!bid.selected) {
-                          Button('选择')
+                        .layoutWeight(1)
+                        .maxLines(2)
+                        .textOverflow({ overflow: TextOverflow.Ellipsis })
+
+                      if (this.isEmployer() && this.detailVM.task!.status === 0) {
+                        Row({ space: 10 }) {
+                          Button('聊一聊')
                             .height(32)
-                            .borderRadius(12)
-                            .enabled(!bid.selected)
-                            .onClick(() => this.handleSelectBid(bid))
+                            .fontSize(13)
+                            .borderRadius(16)
+                            .backgroundColor('#409EFF')
+                            .fontColor(Color.White)
+                            .onClick(() => this.handleChat(bid.bidderId, bid.bidderName, bid.bidderAvatar))
+
+                          if (!bid.selected) {
+                            Button('选择TA')
+                              .height(32)
+                              .fontSize(13)
+                              .borderRadius(16)
+                              .backgroundColor('#67C23A')
+                              .fontColor(Color.White)
+                              .enabled(!bid.selected)
+                              .onClick(() => this.handleSelectBid(bid))
+                          }
                         }
-                        Button('聊一聊')
-                          .height(32)
-                          .borderRadius(12)
-                          .onClick(() => this.handleChat())
+                        .alignItems(VerticalAlign.Center)
+                      } else if (this.detailVM.task!.status !== 0 && bid.selected) {
+                        Text('已中标')
+                          .fontSize(13)
+                          .fontColor($r('[basic].color.filter_active_bg'))
                       }
                     }
+                    .width('100%')
+                    .alignItems(VerticalAlign.Center)
+                    .margin({ top: 8 })
                   }
-                  .padding({ left: 12, right: 12 })
+                  .width('100%')
+                  .padding(12)
+                  .backgroundColor($r('[basic].color.white'))
+                  .borderRadius(12)
+                  .shadow({ radius: 4, color: '#1A000000', offsetY: 2 })
                 }, (bid: TaskBidItem) => `bid-${bid.id}`)
               }
-              .backgroundColor($r('[basic].color.white'))
-              .borderRadius(16)
-              .padding(8)
-            }
+              .width('100%')
+              .padding(4)
+              .backgroundColor(Color.Transparent)
             .width('100%')
             .padding(6)
             .backgroundColor(Color.Transparent)
           }
+        }
 
           this.renderBottomActions()
         }
-      }
       .padding({ left: 16, right: 16, top: 16, bottom: 16 })
     }
-  }
+    }
 
   @Builder
   private renderBottomActions() {
@@ -242,7 +269,7 @@ export struct TaskDetailView {
               .height(44)
               .borderRadius(16)
               .backgroundColor($r('[basic].color.home_accent'))
-              .onClick(() => this.handleChat())
+              .onClick(() => this.handleChatWithPartner())
           } else {
             Button('接单')
               .height(44)
@@ -254,15 +281,29 @@ export struct TaskDetailView {
               .height(44)
               .borderRadius(16)
               .backgroundColor($r('[basic].color.home_accent'))
-              .onClick(() => this.handleChat())
+              .onClick(() => this.handleChatWithPartner())
           }
+        } else if (this.detailVM.task!.status === 1) {
+          Button('联系雇主')
+            .height(44)
+            .borderRadius(16)
+            .backgroundColor($r('[basic].color.home_accent'))
+            .onClick(() => this.handleChatWithPartner())
         }
       } else {
-        Button('编辑任务')
-          .height(44)
-          .borderRadius(16)
-          .backgroundColor($r('[basic].color.home_accent'))
-          .onClick(() => this.handleEditTask())
+        if (this.detailVM.task!.status === 1) {
+          Button('联系接单人')
+            .height(44)
+            .borderRadius(16)
+            .backgroundColor($r('[basic].color.home_accent'))
+            .onClick(() => this.handleChatWithPartner())
+        } else if (this.detailVM.task!.status === 0) {
+           Button('编辑任务')
+             .height(44)
+             .borderRadius(16)
+             .backgroundColor($r('[basic].color.home_accent'))
+             .onClick(() => this.handleEditTask())
+        }
       }
     }
     .width('100%')
@@ -352,7 +393,7 @@ export struct TaskDetailView {
     }
     if (this.detailVM.id > 0 && (!this.detailVM.task || this.detailVM.task.id !== String(this.detailVM.id))) {
       this.loadTaskDetail()
-    } else if (this.detailVM.task && this.detailVM.task.mode === 'bidding' && this.detailVM.task.status !== 2) {
+    } else if (this.detailVM.task && this.detailVM.task.mode === 'bidding') {
       this.loadBids()
     }
 
@@ -370,6 +411,12 @@ export struct TaskDetailView {
     }
   }
 
+  onPageShow() {
+    if (this.detailVM.id > 0) {
+      this.loadTaskDetail()
+    }
+  }
+
   aboutToDisappear() {
     if (this.paymentCbId) {
       aggregatedPaymentService.unregisterPaymentCallback(this.paymentCbId)
@@ -381,7 +428,7 @@ export struct TaskDetailView {
     try {
       const task = await fetchTaskDetail(this.detailVM.id)
       this.detailVM.setTask(task)
-      if (task.mode === 'bidding' && task.status !== 2) {
+      if (task.mode === 'bidding') {
         this.loadBids()
       }
     } catch (e) {
@@ -484,12 +531,43 @@ export struct TaskDetailView {
     }
   }
 
-  private handleChat() {
-    promptAction.showToast({ message: '聊天功能开发中' })
+  private handleChatWithPartner() {
+    let tId = 0
+    let tName = '对方'
+    let tAvatar = ''
+    if (this.isEmployer()) {
+      tId = this.detailVM.task?.employeeId ?? 0
+      tName = this.detailVM.task?.employeeName || '接单人'
+      tAvatar = this.detailVM.task?.employeeAvatar || ''
+    } else {
+      tId = this.detailVM.task?.employerId ?? 0
+      tName = this.detailVM.task?.employerName || '雇主'
+      tAvatar = this.detailVM.task?.employerAvatar || ''
+    }
+    
+    if (tId > 0) {
+      this.handleChat(tId, tName, tAvatar)
+    } else {
+       promptAction.showToast({ message: '暂无联系人' })
+    }
+  }
+
+  private handleChat(targetId?: number, targetName?: string, avatarUrl?: string) {
+    if (targetId) {
+      HMRouterMgr.push({
+        pageUrl: PAGE_PATH.CHAT_PAGE,
+        param: { targetId, targetName, avatarUrl: avatarUrl || '' }
+      })
+      return
+    }
   }
 
   private handleEditTask() {
-    promptAction.showToast({ message: '编辑任务开发中' })
+    if (!this.detailVM.id) return
+    HMRouterMgr.push({
+      pageUrl: PAGE_PATH.EDIT_TASK_PAGE,
+      param: { taskId: this.detailVM.id }
+    })
   }
 
   private navigateToProfile(userId: number) {

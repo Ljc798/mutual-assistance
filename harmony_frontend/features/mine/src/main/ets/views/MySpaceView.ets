@@ -59,12 +59,15 @@ export struct MySpaceView {
                 Blank()
                 Button('删除').height(32).borderRadius(16).backgroundColor(Color.Red).onClick(async () => { await this.handleDelete(post.id) })
               }
-              Text(post.content).fontSize(15).fontColor($r('[basic].color.text_primary')).lineHeight(22)
+              Text(post.content).fontSize(16).fontColor($r('[basic].color.text_primary')).lineHeight(24)
             }
-            .padding({ left: 16, right: 16, top: 12, bottom: 12 })
+            .width('100%')
+            .padding(16)
             .backgroundColor($r('[basic].color.white'))
-            .borderRadius(16)
+            .borderRadius(12)
+            .shadow({ radius: 8, color: '#0A000000', offsetY: 2 })
           }
+          .padding({ left: 16, right: 16, top: 6, bottom: 6 })
         }, (post: MyPostItem) => `${post.id}`)
       }
       .padding({ left: 16, right: 16, bottom: 20 })
@@ -78,13 +81,25 @@ export struct MySpaceView {
     this.posts = res.success ? res.posts : []
   }
 
-  private async handleDelete(postId: number) {
+  private handleDelete(postId: number) {
     const token = this.appUser.user.token
     if (!token) { this.showToast('请先登录'); return }
-    const r = await deletePost(postId, token)
-    if (!r.success) { this.showToast(r.message ?? '删除失败'); return }
-    this.showToast('已删除')
-    await this.loadPosts()
+
+    promptAction.showDialog({
+      title: '确认删除',
+      message: '确定要删除这条动态吗？删除后不可恢复',
+      buttons: [
+        { text: '取消', color: '#666666' },
+        { text: '删除', color: '#FF0000' }
+      ]
+    }).then(async (resp) => {
+      if (resp.index === 1) {
+        const r = await deletePost(postId, token)
+        if (!r.success) { this.showToast(r.message ?? '删除失败'); return }
+        this.showToast('已删除')
+        await this.loadPosts()
+      }
+    })
   }
 
   private getAvatar(url: string): ResourceStr { return (url?.length ? url : 'https://mutual-campus-1348081197.cos.ap-nanjing.myqcloud.com/avatar/default.png') as ResourceStr }

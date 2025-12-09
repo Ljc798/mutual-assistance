@@ -141,3 +141,21 @@ export interface PublishAiFormPayload {
   time: string
   user_input?: string
 }
+
+export interface PublishUpdatePayload {
+  id: number
+  title: string
+  offer: number
+  detail: string
+  DDL: string
+  address: string
+  position: string
+  takeaway_name?: string
+  takeaway_tel?: string
+  takeaway_code?: string
+}
+
+export interface PublishUpdateResponse {
+  success: boolean
+  message?: string
+}

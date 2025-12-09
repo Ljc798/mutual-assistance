@@ -129,11 +129,20 @@ router.post('/prepay-task', authMiddleware, async (req, res) => {
   if (!c) return res.status(500).json({ success: false, message: 'missing ALIPAY_APP_ID or private/public key' })
   try {
     const userId = req.user.id
-    const { task_id } = req.body || {}
+    const { task_id, amount } = req.body || {}
     const [[task]] = await db.query('SELECT * FROM tasks WHERE id = ?', [task_id])
     if (!task) return res.status(404).json({ success: false, message: '任务不存在' })
-    const offerFen = Math.floor(Number(task.offer) * 100)
-    let totalFen = offerFen
+    
+    let totalFen
+    if (amount && Number(amount) > 0) {
+       // Support paying a specific amount (e.g. price difference)
+       totalFen = Math.floor(Number(amount) * 100)
+    } else {
+       // Default to full task offer
+       const offerFen = Math.floor(Number(task.offer) * 100)
+       totalFen = offerFen
+    }
+    
     const outTradeNo = `ALI_TASK_${task_id}_${String(Date.now()).slice(-8)}`
     await db.query('INSERT INTO task_payments (task_id, payer_user_id, receiver_id, amount, out_trade_no, status) VALUES (?, ?, ?, ?, ?, "pending")', [task_id, userId, null, totalFen, outTradeNo])
     const totalAmount = (totalFen / 100).toFixed(2)

@@ -50,6 +50,10 @@ function toTaskItem(item: TaskDTO): TaskItem {
     detail: item.detail,
     employerId: item.employer_id,
     employeeId: item.employee_id,
+    employerName: item.employer_name,
+    employerAvatar: item.employer_avatar,
+    employeeName: item.employee_name,
+    employeeAvatar: item.employee_avatar,
     takeawayCode: item.takeaway_code,
     takeawayTel: item.takeaway_tel,
     takeawayName: item.takeaway_name

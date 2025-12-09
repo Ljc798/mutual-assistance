@@ -868,13 +868,16 @@ router.get("/:id", async (req, res) => {
         const [results] = await db.query(`
             SELECT 
                 t.*, 
-                u.username AS employer_name 
+                u1.username AS employer_name,
+                u1.avatar_url AS employer_avatar,
+                u2.username AS employee_name,
+                u2.avatar_url AS employee_avatar
             FROM 
                 tasks t
             LEFT JOIN 
-                users u 
-            ON 
-                t.employer_id = u.id
+                users u1 ON t.employer_id = u1.id
+            LEFT JOIN
+                users u2 ON t.employee_id = u2.id
             WHERE 
                 t.id = ?
         `, [taskId]);

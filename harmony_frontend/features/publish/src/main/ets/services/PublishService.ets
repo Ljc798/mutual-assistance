@@ -1,7 +1,9 @@
-import { AuthHeader, HttpClient } from 'basic'
+import { AuthHeader, HttpClient, TaskDTO } from 'basic'
 import {
   PublishCreatePayload,
   PublishCreateResponse,
+  PublishUpdatePayload,
+  PublishUpdateResponse,
   TaskPrepayResponse
 } from '../viewmodels/PublishTypes'
 
@@ -14,6 +16,14 @@ function buildAuthHeader(token?: string): AuthHeader | undefined {
 
 export async function createTask(payload: PublishCreatePayload, token: string): Promise<PublishCreateResponse> {
   return HttpClient.post<PublishCreateResponse, PublishCreatePayload>('/harmony/task/create', payload, buildAuthHeader(token))
+}
+
+export async function updateTask(payload: PublishUpdatePayload, token: string): Promise<PublishUpdateResponse> {
+  return HttpClient.post<PublishUpdateResponse, PublishUpdatePayload>('/task/update', payload, buildAuthHeader(token))
+}
+
+export async function getTaskDetail(taskId: number, token?: string): Promise<TaskDTO> {
+  return HttpClient.get<TaskDTO>(`/task/${taskId}`, undefined, buildAuthHeader(token))
 }
 
 export function calculateCommission(amountYuan: number): number {
@@ -31,10 +41,13 @@ export async function prepayFixed(taskId: number, includeCommission: boolean, to
   return HttpClient.post<TaskPrepayResponse, PrepayFixedPayload>('/taskPayment/prepay-fixed', payload, buildAuthHeader(token))
 }
 
-interface AliPrepayPayload { task_id: number, include_commission: boolean }
+interface AliPrepayPayload { task_id: number, include_commission: boolean, amount?: number }
 export interface AliPrepayResponse { success: boolean, out_trade_no?: string, total_amount?: string, data?: Object, responseHttpStatus?: number, traceId?: string, message?: string }
 
-export async function prepayAliTask(taskId: number, includeCommission: boolean, token: string): Promise<AliPrepayResponse> {
+export async function prepayAliTask(taskId: number, includeCommission: boolean, token: string, amount?: number): Promise<AliPrepayResponse> {
   const payload: AliPrepayPayload = { task_id: taskId, include_commission: includeCommission }
+  if (amount !== undefined) {
+    payload.amount = amount
+  }
   return HttpClient.post<AliPrepayResponse, AliPrepayPayload>('/pay/ali/prepay-task', payload, buildAuthHeader(token))
 }
