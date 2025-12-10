@@ -3,6 +3,7 @@ import { ChatMessageDTO, ChatMessageItem } from '../viewmodels/ChatVM'
 import webSocket from '@ohos.net.webSocket'
 import { BusinessError } from '@ohos.base'
 import { GlobalVariable } from 'basic'
+import { notificationManager } from '@kit.NotificationKit'
 
 interface QueryParam {
   key: string
@@ -147,6 +148,10 @@ export class ChatClient {
     } catch (_e) {}
   }
 
+  isConnectedState(): boolean {
+    return this.connected
+  }
+
   close(): void {
     if (this.timer) { clearInterval(this.timer); this.timer = undefined }
     try { this.socket?.close() } catch (_e) {}
@@ -198,5 +203,105 @@ export class ChatClient {
   private buildChatPayload(text: string): WSChatPayload {
     const payload: WSChatPayload = { type: 'chat', userId: this.userId, targetId: this.targetId, content: text }
     return payload
+  }
+}
+
+export class GlobalMessageClient {
+  private readonly userId: number
+  private socket?: webSocket.WebSocket
+  private connected: boolean = false
+  private timer?: number
+
+  constructor(userId: number) {
+    this.userId = userId
+  }
+
+  connect(onNewMessage: () => void): void {
+    if (this.connected) { return }
+    const url: string = this.buildWsUrl()
+    this.socket = webSocket.createWebSocket()
+
+    this.socket.on('open', (_err: BusinessError | undefined, _value: Object) => {
+      this.connected = true
+      const initPayload: WSInitPayload = { type: 'init', userId: this.userId }
+      try {
+        this.socket?.send(JSON.stringify(initPayload), (_e?: BusinessError) => {})
+      } catch (_e) {}
+    })
+
+    this.socket.on('message', (_err: BusinessError | undefined, value: string | ArrayBuffer) => {
+      const text: string = typeof value === 'string' ? value : ''
+      if (!text) { return }
+      try {
+        const data = JSON.parse(text) as WSIncomingChatMessage
+        // 收到任何 chat 类型的消息，或者 notification 类型的消息，都触发刷新
+        if (data.type === 'chat' || data.type === 'notification') {
+          // 发送系统通知
+          const title = data.type === 'chat' ? '新消息' : '系统通知'
+          const content = data.content
+          this.sendSystemNotification(title, content)
+          
+          onNewMessage()
+        }
+      } catch (_e) {}
+    })
+
+    this.socket.on('close', () => {
+      this.connected = false
+      this.startPoll(onNewMessage)
+    })
+
+    this.socket.on('error', () => {
+      this.connected = false
+      this.startPoll(onNewMessage)
+    })
+
+    this.socket.connect(url, (_err: BusinessError | undefined, _ok: boolean) => {})
+  }
+
+  isConnectedState(): boolean {
+    return this.connected
+  }
+
+  close(): void {
+    if (this.timer) { clearInterval(this.timer); this.timer = undefined }
+    try { this.socket?.close() } catch (_e) {}
+    this.connected = false
+  }
+
+  private startPoll(callback: () => void) {
+    if (this.timer) { return }
+    this.timer = setInterval(() => {
+      callback()
+    }, 5000) // 每5秒轮询一次作为兜底
+  }
+
+  private buildWsUrl(): string {
+    const apiBase: string = GlobalVariable.BASE_URL
+    const isHttps: boolean = apiBase.startsWith('https')
+    const scheme: string = isHttps ? 'wss' : 'ws'
+    const trimmed: string = apiBase.replace('http://', '').replace('https://', '')
+    const slashIndex: number = trimmed.indexOf('/')
+    const host: string = slashIndex >= 0 ? trimmed.substring(0, slashIndex) : trimmed
+    return `${scheme}://${host}/ws`
+  }
+
+  private async sendSystemNotification(title: string, content: string): Promise<void> {
+    try {
+      const request: notificationManager.NotificationRequest = {
+        id: Date.now(),
+        content: {
+          normal: {
+            title: title,
+            text: content,
+            additionalText: ''
+          }
+        },
+        notificationSlotType: notificationManager.SlotType.SOCIAL_COMMUNICATION
+      }
+      await notificationManager.publish(request)
+    } catch (e) {
+      console.error('[GlobalMessageClient] send notification failed', JSON.stringify(e))
+    }
   }
 }

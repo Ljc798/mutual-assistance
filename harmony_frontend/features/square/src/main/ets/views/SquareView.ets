@@ -85,7 +85,14 @@ export struct SquareView {
   @State isSubmittingCheckin: boolean = false
   @State checkinSubTitle: string = '签到领积分'
   @State postModels: SquarePostModel[] = []
+  @Prop @Watch('onVisibleChange') isVisible: boolean = false
   private readonly previewVM: AppImagePreview = AppStorageV2.connect(AppImagePreview, () => new AppImagePreview())!
+
+  onVisibleChange() {
+    if (this.isVisible) {
+      this.onPageShow()
+    }
+  }
 
   aboutToAppear() {
     this.hasMounted = true
@@ -860,7 +867,7 @@ export struct SquareView {
         .fontSize(13)
         .fontColor($r('[basic].color.text_secondary'))
       // 加载动画组件
-      ProgressLoading({ pWidth: 18, strokeWidth: 2 })
+      ProgressLoading({ pWidth: 18, strokeWidth: 2, loading: this.isRefreshing && this.isVisible })
     }
     .width('100%')
     .height(60)

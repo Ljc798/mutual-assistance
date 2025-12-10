@@ -7,14 +7,15 @@ export interface ChatDTO {
   unread_count?: number
 }
 
-export interface ChatPreview {
-  roomId: string
-  targetId: number
-  username: string
-  avatarUrl: string
-  lastMessage: string
-  timestamp: string
-  unread: number
+@ObservedV2
+export class ChatPreview {
+  @Trace roomId: string = ''
+  @Trace targetId: number = 0
+  @Trace username: string = ''
+  @Trace avatarUrl: string = ''
+  @Trace lastMessage: string = ''
+  @Trace timestamp: string = ''
+  @Trace unread: number = 0
 }
 
 export interface ChatListResponse {

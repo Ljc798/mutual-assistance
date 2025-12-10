@@ -5,7 +5,15 @@ import { emitter } from '@kit.BasicServicesKit'
 
 import { HMRouter, HMRouterMgr } from '@hadss/hmrouter'
 import { LoginFormModel, PhoneLoginFormModel } from '../viewmodels/MyTypes'
-import { passwordLoginAPI, PasswordLoginPayload, sendSmsCodeAPI, PhoneCodeLoginPayload, phoneCodeLoginAPI } from '../api/user'
+import {
+  passwordLoginAPI,
+  PasswordLoginPayload,
+  sendSmsCodeAPI,
+  PhoneCodeLoginPayload,
+  phoneCodeLoginAPI,
+  adminLoginAPI,
+  AdminLoginPayload
+} from '../api/user'
 
 
 @Extend(Text)
@@ -120,6 +128,7 @@ export struct LoginView {
     password: '12345678'
   })
   @Local agree: boolean = false
+  @Local loginType: 'sms' | 'password' = 'sms'
   safeArea: AppSafeArea = AppStorageV2.connect(AppSafeArea, () => new AppSafeArea())!
   private appUser: AppUser = AppStorageV2.connect(AppUser, () => new AppUser())!
   smsForm: PhoneLoginFormModel = new PhoneLoginFormModel({ phone: '', code: '' })
@@ -158,16 +167,23 @@ export struct LoginView {
       return promptAction.showToast({ message: '请先勾选协议' })
     }
     if (!this.loginForm.account || !this.loginForm.password) {
-      promptAction.showToast({ message: '请输入手机号和验证码' })
+      promptAction.showToast({ message: '请输入账号和密码' })
+      return
+    }
+    const phoneText = this.loginForm.account.trim()
+    if (!/^\d{11}$/.test(phoneText)) {
+      promptAction.showToast({ message: '手机号格式错误' })
       return
     }
     try {
+      // 密码登录
       const payload: PasswordLoginPayload = {
-        phone: this.loginForm.account.trim(),
+        phone: phoneText,
         password: this.loginForm.password.trim()
       }
       const response = await passwordLoginAPI(payload)
       if (response.success && response.user) {
+        // ... (用户信息处理逻辑)
         const userPayload: UserInfo = {
           id: response.user.id,
           username: response.user.username,
@@ -185,32 +201,17 @@ export struct LoginView {
           token: response.token ?? ''
         }
         userPersistence.persistUser(userPayload)
-        const appUserSnapshot = this.appUser.user
-        const afterLoginLog: AfterLoginLogView = {
-          id: appUserSnapshot.id,
-          username: appUserSnapshot.username,
-          wxid: appUserSnapshot.wxid,
-          points: appUserSnapshot.points,
-          free_counts: appUserSnapshot.free_counts,
-          balance: appUserSnapshot.balance,
-          school_id: appUserSnapshot.school_id,
-          school_name: appUserSnapshot.school_name,
-          token_len: appUserSnapshot.token.length
-        }
-        console.info('AppUserAfterLogin', JSON.stringify(afterLoginLog))
+        
         promptAction.showToast({ message: '登录成功' })
         HMRouterMgr.pop()
       } else {
         promptAction.showToast({ message: response.message ?? '登录失败' })
       }
     } catch (error) {
-      let message: string = '登录失败，请稍后再试'
-      if (error instanceof Error && error.message) {
-        message = `登录失败：${error.message}`
-      } else if (typeof error === 'string' && error.length > 0) {
-        message = `登录失败：${error}`
-      }
-      console.error('Password login failed', JSON.stringify(error))
+      let message: string = '登录失败，请检查账号密码'
+      const errorMsg = (error instanceof Error) ? error.message : (typeof error === 'string' ? error : JSON.stringify(error))
+      console.error('Password login failed', errorMsg)
+      if (errorMsg && errorMsg.length > 0) { message = errorMsg }
       promptAction.showToast({ message })
     }
   }
@@ -317,168 +318,147 @@ export struct LoginView {
         }
       })
 
-      // Column({ space: 16 }) {
-        Text('账号密码登录')
-          .fontSize(18)
-          .fontColor($r('[basic].color.black'))
-          .width('100%')
-          .fontWeight(500)
-          .margin({ bottom: 10 })
-        TextInput({ placeholder: '请输入账号', text: $$this.loginForm.account })
-          .placeholderColor($r('[basic].color.gray'))
-          .placeholderFont({ size: 14 })
-          .form()
-        TextInput({ placeholder: '请输入密码', text: $$this.loginForm.password })
-          .type(InputType.Password)
-          .showPasswordIcon(false)
-          .placeholderColor($r('[basic].color.gray'))
-          .placeholderFont({ size: 14 })
-          .form()
-
-        Row({ space: 4 }) {
-          Checkbox()
-            .select($$this.agree)
-            .width(12)
-            .aspectRatio(1)
-            .selectedColor($r('[basic].color.black'))
-            .mark({ size: 10, strokeWidth: 1 })
-          Text() {
-            Span('查看并同意')
-            Span('《隐私条款》')
-              .fontColor('#007DFB')
-            Span('和')
-            Span('《用户协议》')
-              .fontColor('#007DFB')
-          }
-          .width('100%')
-          .fontSize(12)
-          .fontColor($r('[basic].color.gray'))
-        }
-
-        Button('登录')
-          .backgroundColor(this.btnEnable ? $r('[basic].color.black') : '#D4D2D9')
-          .fontColor(this.btnEnable ? $r('[basic].color.white') : $r('[basic].color.black'))
-          .form()
-          .enabled(this.btnEnable)
-          .onClick(() => {
-            this.onSubmit()
-          })
-
-        Row() {
-          Blank()
-          Text('忘记密码')
-            .fontColor('#007DFB')
-            .fontSize(12)
-        }
-        .width('100%')
-
-        // Column({ space: 16 }) {
-
-
-          // 华为login无法使用
-          // Stack() {
-          //   Text()
-          //     .width(200)
-          //     .height(1)
-          //     .backgroundColor($r('[basic].color.under'))
-          //   Text('其他登录方式')
-          //     .width(100)
-          //     .fontSize(12)
-          //     .backgroundColor($r('[basic].color.white'))
-          //     .fontColor($r('[basic].color.text'))
-          //     .textAlign(TextAlign.Center)
-          // }
-          // Row() {
-          //   Image($r("app.media.huawei"))
-          //     .width(60)
-          //     .height(60)
-          //     .onClick(async () => {
-          //       const code = (await huaweiAuthManager.launchAuth())! // 拉起华为登录
-          //       const result: LoginResponse = await huaweiLoginAPI({
-          //         code,
-          //         clientId: '6917589220426632079',
-          //         clientSecret: 'a7901edd60ce814769a9e90006cef64976682001b9597450e11589c8498a66a9'
-          //       })
-          //       console.info("后端返回:", JSON.stringify(result))
-          //       if (result.success && result.user) {
-          //         auth.setUser(result.user)
-          //         HMRouterMgr.pop()
-          //       } else {
-          //         promptAction.showToast({ message: result.message ?? '登录失败' })
-          //       }
-          //     })
-          // }
-
-
-      //   }
-      //   .margin({ top: 200 })
-      // }
-      // .padding(30)
-      Column({ space: 16 }) {
-        Text('手机号验证码登录')
-          .fontSize(18)
-          .fontColor($r('[basic].color.black'))
-          .width('100%')
-          .fontWeight(500)
-          .margin({ bottom: 10 })
-        Row({ space: 8 }) {
-          Text('+86')
-            .fontSize(14)
-            .fontColor($r('[basic].color.text_primary'))
-            .height(42)
-            .backgroundColor($r('[basic].color.white'))
-            .borderRadius(8)
-            .padding({ left: 12, right: 12 })
-          TextInput({ placeholder: '请输入手机号', text: $$this.smsForm.phone })
+      if (this.loginType === 'password') {
+        Column({ space: 16 }) {
+          Text('账号密码登录')
+            .fontSize(18)
+            .fontColor($r('[basic].color.black'))
+            .width('100%')
+            .fontWeight(500)
+            .margin({ bottom: 10 })
+          TextInput({ placeholder: '请输入账号', text: $$this.loginForm.account })
             .placeholderColor($r('[basic].color.gray'))
             .placeholderFont({ size: 14 })
-            .layoutWeight(1)
-            .type(InputType.PhoneNumber)
             .form()
-        }
-        Row({ space: 8 }) {
-          VerifyCodeInlineComponent({
-            onCodeChange: (code: string) => { this.smsForm.code = code },
-            onComplete: (code: string) => { this.smsForm.code = code }
-          })
-            .layoutWeight(1)
-          Button(this.smsCountdown > 0 ? `${this.smsCountdown}s` : (this.smsSending ? '发送中...' : '发送验证码'))
-            .height(42)
-            .borderRadius(12)
-            .backgroundColor(this.canSendCode ? $r('[basic].color.filter_active_bg') : $r('[basic].color.search_box_bg'))
-            .fontColor(this.canSendCode ? $r('[basic].color.white') : $r('[basic].color.text_primary'))
-            .enabled(this.canSendCode)
-            .onClick(() => { this.onSendCode() })
-        }
-        Row({ space: 6 }) {
-          Checkbox()
-            .select($$this.agree)
-            .width(12)
-            .aspectRatio(1)
-            .selectedColor($r('[basic].color.black'))
-            .mark({ size: 10, strokeWidth: 1 })
-          Text('我已阅读并同意')
+          TextInput({ placeholder: '请输入密码', text: $$this.loginForm.password })
+            .type(InputType.Password)
+            .showPasswordIcon(false)
+            .placeholderColor($r('[basic].color.gray'))
+            .placeholderFont({ size: 14 })
+            .form()
+
+          Row({ space: 4 }) {
+            Checkbox()
+              .select($$this.agree)
+              .width(12)
+              .aspectRatio(1)
+              .selectedColor($r('[basic].color.black'))
+              .mark({ size: 10, strokeWidth: 1 })
+            Text() {
+              Span('查看并同意')
+              Span('《隐私条款》')
+                .fontColor('#007DFB')
+              Span('和')
+              Span('《用户协议》')
+                .fontColor('#007DFB')
+            }
+            .width('100%')
             .fontSize(12)
             .fontColor($r('[basic].color.gray'))
-          Column() {
-            Text('《隐私说明》')
-              .fontSize(12)
-              .fontColor('#007DFB')
-              .onClick(() => { HMRouterMgr.push({ pageUrl: PAGE_PATH.PRIVACY_PAGE }) })
-            Row() { Blank() }
-              .width(60)
-              .height(1)
-              .backgroundColor('#007DFB')
           }
+
+          Button('登录')
+            .backgroundColor(this.btnEnable ? $r('[basic].color.black') : '#D4D2D9')
+            .fontColor(this.btnEnable ? $r('[basic].color.white') : $r('[basic].color.black'))
+            .form()
+            .enabled(this.btnEnable)
+            .onClick(() => {
+              this.onSubmit()
+            })
+
+          Row() {
+            Blank()
+            Text('切换到验证码登录')
+              .fontColor('#007DFB')
+              .fontSize(14)
+              .onClick(() => {
+                this.loginType = 'sms'
+              })
+          }
+          .width('100%')
+          .padding({ top: 10 })
         }
-        // Button('登录')
-        //   .backgroundColor(this.smsBtnEnable && this.agree ? $r('[basic].color.black') : '#D4D2D9')
-        //   .fontColor(this.smsBtnEnable && this.agree ? $r('[basic].color.white') : $r('[basic].color.black'))
-        //   .form()
-        //   .enabled(this.smsBtnEnable && this.agree)
-        //   .onClick(() => { this.onSmsLogin() })
+        .padding(30)
+      } else {
+        // --- 手机号验证码登录 ---
+        Column({ space: 16 }) {
+          Text('手机号验证码登录')
+            .fontSize(18)
+            .fontColor($r('[basic].color.black'))
+            .width('100%')
+            .fontWeight(500)
+            .margin({ bottom: 10 })
+          Row({ space: 8 }) {
+            Text('+86')
+              .fontSize(14)
+              .fontColor($r('[basic].color.text_primary'))
+              .height(42)
+              .backgroundColor($r('[basic].color.white'))
+              .borderRadius(8)
+              .padding({ left: 12, right: 12 })
+            TextInput({ placeholder: '请输入手机号', text: $$this.smsForm.phone })
+              .placeholderColor($r('[basic].color.gray'))
+              .placeholderFont({ size: 14 })
+              .layoutWeight(1)
+              .type(InputType.PhoneNumber)
+              .form()
+          }
+          Row({ space: 8 }) {
+            VerifyCodeInlineComponent({
+              onCodeChange: (code: string) => { this.smsForm.code = code },
+              onComplete: (code: string) => { this.smsForm.code = code }
+            })
+              .layoutWeight(1)
+            Button(this.smsCountdown > 0 ? `${this.smsCountdown}s` : (this.smsSending ? '发送中...' : '发送验证码'))
+              .height(42)
+              .borderRadius(12)
+              .backgroundColor(this.canSendCode ? $r('[basic].color.filter_active_bg') : $r('[basic].color.search_box_bg'))
+              .fontColor(this.canSendCode ? $r('[basic].color.white') : $r('[basic].color.text_primary'))
+              .enabled(this.canSendCode)
+              .onClick(() => { this.onSendCode() })
+          }
+          Row({ space: 6 }) {
+            Checkbox()
+              .select($$this.agree)
+              .width(12)
+              .aspectRatio(1)
+              .selectedColor($r('[basic].color.black'))
+              .mark({ size: 10, strokeWidth: 1 })
+            Text('我已阅读并同意')
+              .fontSize(12)
+              .fontColor($r('[basic].color.gray'))
+            Column() {
+              Text('《隐私说明》')
+                .fontSize(12)
+                .fontColor('#007DFB')
+                .onClick(() => { HMRouterMgr.push({ pageUrl: PAGE_PATH.PRIVACY_PAGE }) })
+              Row() { Blank() }
+                .width(60)
+                .height(1)
+                .backgroundColor('#007DFB')
+            }
+          }
+          Button('登录')
+            .backgroundColor(this.smsBtnEnable && this.agree ? $r('[basic].color.black') : '#D4D2D9')
+            .fontColor(this.smsBtnEnable && this.agree ? $r('[basic].color.white') : $r('[basic].color.black'))
+            .form()
+            .enabled(this.smsBtnEnable && this.agree)
+            .onClick(() => { this.onSmsLogin() })
+            
+          Row() {
+            Blank()
+            Text('切换到管理员登录')
+              .fontColor('#007DFB')
+              .fontSize(14)
+              .onClick(() => {
+                this.loginType = 'password'
+              })
+          }
+          .width('100%')
+          .padding({ top: 10 })
+        }
+        .padding(30)
       }
-      .padding(30)
     }
     .width('100%')
     .height('100%')

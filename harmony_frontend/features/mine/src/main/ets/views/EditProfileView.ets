@@ -10,7 +10,7 @@ import { fileIo as fs } from '@kit.CoreFileKit'
 import { common } from '@kit.AbilityKit'
 import { BusinessError } from '@ohos.base'
 import { HMRouter, HMRouterMgr } from '@hadss/hmrouter'
-import { checkUsername, checkWxid, updateProfile, UpdatePayload, deleteAccount } from '../services/EditProfileService'
+import { checkUsername, checkWxid, updateProfileBasic, UpdatePayload, deleteAccount } from '../services/EditProfileService'
 
 @HMRouter({ pageUrl: PAGE_PATH.EDIT_PROFILE_PAGE })
 @Component
@@ -28,6 +28,7 @@ export struct EditProfileView {
   @State usernameInput: string = ''
   @State wxidInput: string = ''
   @State isSubmitting: boolean = false
+  @State avatarReviewing: boolean = false
   
 
   aboutToAppear() {
@@ -54,7 +55,7 @@ export struct EditProfileView {
           Column({ space: 12 }) {
             this.renderAvatarField()
             this.renderTextField('姓名', '请输入姓名', this.usernameInput, (v: string) => this.usernameInput = v)
-            this.renderTextField('微信号', '请输入微信号', this.wxidInput, (v: string) => this.wxidInput = v)
+            this.renderTextField('id', '请输入id', this.wxidInput, (v: string) => this.wxidInput = v)
             this.renderSchoolField()
             this.renderSubmitButton()
             this.renderLogoutButton()
@@ -192,18 +193,22 @@ export struct EditProfileView {
     const name = this.usernameInput.trim()
     const wxid = this.wxidInput.trim()
     if (!name || name.length < 2) { promptAction.showToast({ message: '姓名至少2个字符' }); return }
-    if (!wxid || wxid.length < 3) { promptAction.showToast({ message: '微信号至少3个字符' }); return }
+    if (!wxid || wxid.length < 3) { promptAction.showToast({ message: 'id至少3个字符' }); return }
     const nameCheck = await checkUsername(name, idNum)
     if (!nameCheck.success || !nameCheck.available) { promptAction.showToast({ message: nameCheck.message ?? '用户名已被占用' }); return }
     const wxidCheck = await checkWxid(wxid, idNum)
-    if (!wxidCheck.success || !wxidCheck.available) { promptAction.showToast({ message: wxidCheck.message ?? '微信号已被占用' }); return }
+    if (!wxidCheck.success || !wxidCheck.available) { promptAction.showToast({ message: wxidCheck.message ?? 'id已被占用' }); return }
     const currentSchoolId: number = Number(this.selectedSchoolVM.id ?? 0)
     const schoolOk = currentSchoolId > 0
     if (!schoolOk) { promptAction.showToast({ message: '请选择学校' }); return }
     this.isSubmitting = true
     try {
-      const payload: UpdatePayload = { username: name, wxid, school_id: currentSchoolId }
-      const res = await updateProfile(payload, token)
+      const payload: UpdatePayload = {
+        username: name,
+        wxid,
+        school_id: currentSchoolId
+      }
+      const res = await updateProfileBasic(payload, token)
       if (!res.success) { promptAction.showToast({ message: res.message ?? '更新失败' }); return }
       // 本地更新用户快照，避免下次进入用旧学校
       this.appUser.user.school_id = currentSchoolId
@@ -263,21 +268,13 @@ export struct EditProfileView {
         fs.closeSync(file.fd)
         this.avatarCachePath = target
         this.avatarCacheUri = `internal://cache/${target.split('/').pop()}`
-        // 不再使用原始 URI 作为预览，等待 COS 返回的正式 URL
-        // 使用系统 request.uploadFile 上传到 COS（与原始实现一致）
         const token = this.appUser.user.token
         if (token) {
           const imageUrl = await this.uploadAvatarAndGetUrl(this.avatarCacheUri)
           if (imageUrl && imageUrl.length > 0 && imageUrl !== this.getCurrentAvatarUrl()) {
-            const payload: UpdatePayload = {
-              username: this.appUser.user.username ?? '',
-              avatar_url: imageUrl,
-              wxid: this.appUser.user.wxid ?? '',
-              school_id: Number(this.appUser.user.school_id ?? 1)
-            }
-            const saved = await updateProfile(payload, token)
-            if (saved.success) { this.appUser.user.avatar_url = imageUrl; this.avatarPreviewUrl = imageUrl; promptAction.showToast({ message: '头像已更新' }) }
-            else { promptAction.showToast({ message: saved.message ?? '头像更新失败' }) }
+            this.avatarPreviewUrl = ''
+            this.appUser.user.avatar_url = imageUrl
+            promptAction.showToast({ message: '头像已更新' })
           } else {
             promptAction.showToast({ message: '头像上传失败' })
           }
@@ -295,6 +292,8 @@ export struct EditProfileView {
     return typeof raw === 'string' ? raw : ''
   }
 
+  // Harmony 端：头像上传后即生效，无需轮询
+
   private handleLogout() {
     userPersistence.clearUser()
     const nowTick: number = Date.now()
@@ -311,9 +310,9 @@ export struct EditProfileView {
     return new Promise<string>((resolve) => {
       const header = new Map<Object, string>()
       header.set('Content-Type', 'multipart/form-data')
-      const files: Array<request.File> = [{ name: 'image0.jpeg', filename: 'image0.jpeg', uri: cacheUri, type: 'image' }]
+      const files: Array<request.File> = [{ name: 'image', filename: 'avatar.jpeg', uri: cacheUri, type: 'image' }]
       const data: Array<request.RequestData> = [{ name: 'type', value: 'avatar' }, { name: 'username', value: this.appUser.user.username ?? 'user' }]
-      const uploadConfig: request.UploadConfig = { url: `${GlobalVariable.BASE_URL}/uploads/upload-image`, header, method: 'POST', files, data }
+      const uploadConfig: request.UploadConfig = { url: `${GlobalVariable.BASE_URL}/uploads/harmony/upload-avatar`, header, method: 'POST', files, data }
       try {
         request.uploadFile((this.getUIContext().getHostContext() as common.UIAbilityContext), uploadConfig, (error: Error | undefined, task) => {
           if (task) {

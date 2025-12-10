@@ -28,8 +28,18 @@ export async function updateProfile(payload: UpdatePayload, token: string): Prom
   return HttpClient.post<BaseResponse, UpdatePayload>('/user/update', payload, auth(token))
 }
 
+export async function updateProfileBasic(payload: UpdatePayload, token: string): Promise<BaseResponse> {
+  return HttpClient.post<BaseResponse, UpdatePayload>('/user/harmony/update-basic', payload, auth(token))
+}
+
 export interface DeletePayload { reason: string }
 export async function deleteAccount(token: string): Promise<BaseResponse> {
   const payload: DeletePayload = { reason: 'user_request' }
   return HttpClient.post<BaseResponse, DeletePayload>('/user/delete', payload, auth(token))
+}
+
+export interface UserInfoSnapshot { avatar_url?: string }
+export interface UserInfoResponse { success: boolean; user?: UserInfoSnapshot }
+export async function fetchUserInfo(token: string): Promise<UserInfoResponse> {
+  return HttpClient.get<UserInfoResponse>('/user/info', undefined, auth(token))
 }

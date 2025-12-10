@@ -52,6 +52,14 @@ export struct HomeView {
   @State isFinished: boolean = false
   @State currentSchoolId: number = 0
   @State currentSchoolName: string = '请选择学校'
+  @Prop @Watch('onVisibleChange') isVisible: boolean = false
+
+  onVisibleChange() {
+    if (this.isVisible) {
+      this.onPageShow()
+    }
+  }
+
   private searchTimer?: number
   private readonly filters: TaskFilter[] = [
     { label: '全部', value: 'all' },
@@ -278,7 +286,7 @@ export struct HomeView {
         .fontSize(13)
         .fontColor($r('[basic].color.text_secondary'))
       // 加载动画组件
-      ProgressLoading({ pWidth: 18, strokeWidth: 2 })
+      ProgressLoading({ pWidth: 18, strokeWidth: 2, loading: this.isRefreshing && this.isVisible })
     }
     .width('100%')
     .height(60)

@@ -1113,3 +1113,43 @@ router.post("/delete", authMiddleware, async (req, res) => {
     }
 });
 module.exports = router;
+// Harmony 专用：更新基础资料（不涉及头像）
+router.post("/harmony/update-basic", authMiddleware, async (req, res) => {
+  const userId = req.user.id;
+  const { username, wxid, school_id } = req.body;
+
+  try {
+    const [[user]] = await db.query("SELECT * FROM users WHERE id = ?", [userId]);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "用户不存在" });
+    }
+
+    // 检查用户名占用
+    const [nameCheck] = await db.query(
+      "SELECT id FROM users WHERE username = ? AND id != ?",
+      [username, userId]
+    );
+    if (nameCheck.length > 0) {
+      return res.status(400).json({ success: false, message: "用户名已被占用，请重新输入" });
+    }
+
+    // 检查 wxid 占用
+    const [wxidCheck] = await db.query(
+      "SELECT id FROM users WHERE wxid = ? AND id != ?",
+      [wxid, userId]
+    );
+    if (wxidCheck.length > 0) {
+      return res.status(400).json({ success: false, message: "用户ID已被使用，请重新输入" });
+    }
+
+    await db.query(
+      "UPDATE users SET username = ?, wxid = ?, school_id = ? WHERE id = ?",
+      [username, wxid, school_id || user.school_id || 1, userId]
+    );
+
+    return res.json({ success: true, message: "用户信息更新成功" });
+  } catch (err) {
+    console.error("❌ Harmony 基础资料更新失败:", err);
+    return res.status(500).json({ success: false, message: "服务器错误" });
+  }
+});

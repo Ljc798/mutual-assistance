@@ -1,11 +1,8 @@
 import promptAction from '@ohos.promptAction'
 import { AppStorageV2 } from '@kit.ArkUI'
-import { AppSafeArea, PAGE_PATH, AppUser, USER_LOGIN_TIME_KEY, userPersistence, UserInfo, PROFILE_TARGET_ID_KEY } from 'basic'
+import { AppSafeArea, PAGE_PATH, AppUser, USER_LOGIN_TIME_KEY, userPersistence, UserInfo, PROFILE_TARGET_ID_KEY, ReputationInfo } from 'basic'
 import {
   ActionShortcut,
-  ReputationSummary,
-  StatisticCard,
-  UserProfileSummary,
   VipState
 } from '../viewmodels/MyTypes'
 import { HMRouterMgr } from '@hadss/hmrouter'
@@ -20,13 +17,6 @@ export struct MineView {
   @StorageLink(USER_LOGIN_TIME_KEY) userLoginVersion: number = 0
   private lastUserLoginVersion: number = -1
   private readonly defaultAvatar: ResourceStr = 'https://mutual-campus-1348081197.cos.ap-nanjing.myqcloud.com/avatar/default.png'
-  @State profile: UserProfileSummary = this.buildProfileFromStorage()
-  @State reputation: ReputationSummary = {
-    totalScore: 80,
-    weightedScore: 4.0,
-    creditLevel: '良好'
-  }
-  @State statistics: StatisticCard[] = this.buildStatisticsFromStorage()
   // @State vipState: VipState = this.buildVipStateFromStorage()
   @State shortcuts: ActionShortcut[] = [
     { title: '我的订单', action: 'orders' },
@@ -62,7 +52,9 @@ export struct MineView {
     if (token.length > 0) {
       this.refreshProfileAndReputation()
     } else {
-      this.reputation = { totalScore: 0, weightedScore: 0, creditLevel: '未登录' }
+      if (this.appUser.user) {
+        this.appUser.user.reputation = { totalScore: 80, weightedScore: 80, creditLevel: '点击查看' }
+      }
       this.syncUserState()
     }
   }
@@ -162,11 +154,11 @@ export struct MineView {
   private renderReputationCard() {
     Row({ space: 8 }) {
       Row({ space: 6 }) {
-        Text(`信誉 ${this.reputation.totalScore} 分`)
+        Text(`信誉 ${this.appUser.user.reputation.totalScore} 分`)
           .fontSize(16)
           .fontWeight(FontWeight.Medium)
           .fontColor($r('[basic].color.text_primary'))
-        Text(this.reputation.creditLevel)
+        Text(this.appUser.user.reputation.creditLevel)
           .fontSize(14)
           .fontColor($r('[basic].color.filter_active_bg'))
       }
@@ -427,17 +419,17 @@ export struct MineView {
   }
 
   private getStarSymbol(index: number): string {
-    if (this.reputation.weightedScore >= index + 1) {
+    if (this.appUser.user.reputation.weightedScore >= index + 1) {
       return '★'
     }
-    if (this.reputation.weightedScore > index) {
+    if (this.appUser.user.reputation.weightedScore > index) {
       return '☆'
     }
     return '☆'
   }
 
   private getStarColor(index: number): ResourceColor | string {
-    return this.reputation.weightedScore > index ? '#FFB400' : $r('[basic].color.text_secondary')
+    return this.appUser.user.reputation.weightedScore > index ? '#FFB400' : $r('[basic].color.text_secondary')
   }
 
   private handleProtectedAction(action: string) {
@@ -509,45 +501,9 @@ export struct MineView {
     })
   }
 
-  private buildProfileFromStorage(): UserProfileSummary {
-    const user = this.appUser.user
-    if (!user?.token) {
-      return {
-        name: '立即登录',
-        idLabel: '登录以体验完整功能',
-        avatar: this.defaultAvatar,
-        freeCounts: 0,
-        points: 0,
-        balance: '¥0.00'
-      }
-    }
-    const idLabel = user.wxid?.length
-      ? `ID: ${user.wxid}`
-      : user.phone_number?.length
-        ? `手机号：${user.phone_number}`
-        : '欢迎回来'
-    const balanceValue = user.balance !== undefined ? `¥${Number(user.balance).toFixed(2)}` : '¥0.00'
-    return {
-      name: user.username?.length ? user.username : '校园用户',
-      idLabel,
-      avatar: user.avatar_url?.length ? user.avatar_url : this.defaultAvatar,
-      freeCounts: user.free_counts ?? 0,
-      points: user.points ?? 0,
-      balance: balanceValue
-    }
-  }
 
-  private buildStatisticsFromStorage(): StatisticCard[] {
-    const user = this.appUser.user
-    const freeCounts = user?.free_counts ?? 0
-    const points = user?.points ?? 0
-    const balanceValue = user?.balance !== undefined ? `¥${Number(user.balance).toFixed(2)}` : '¥0.00'
-    return [
-      { label: '免佣金次数', value: `${freeCounts}`, action: 'shop' },
-      { label: '积分余额', value: `${points}`, action: 'points' },
-      { label: '账户余额', value: balanceValue, action: 'wallet' }
-    ]
-  }
+
+
 
   // private buildVipStateFromStorage(): VipState {
   //   const user = this.appUser.user
@@ -564,12 +520,14 @@ export struct MineView {
   // }
 
   private syncUserState() {
-    this.profile = this.buildProfileFromStorage()
-    this.statistics = this.buildStatisticsFromStorage()
     const u = this.appUser.user
     const isLoggedIn = !!(u?.token && u.token.length > 0 && u?.id)
     if (!isLoggedIn) {
-      this.reputation = { totalScore: 0, weightedScore: 0, creditLevel: '未登录' }
+      if (this.appUser.user) {
+        this.appUser.user.reputation = { totalScore: 80, weightedScore: 80, creditLevel: '点击查看' }
+      }
+    } else {
+      this.fetchReputationData(u.id)
     }
     // this.vipState = this.buildVipStateFromStorage()
   }
@@ -598,12 +556,13 @@ export struct MineView {
             token: token
           }
           userPersistence.persistUser(merged)
-          this.profile = this.buildProfileFromStorage()
-          this.statistics = this.buildStatisticsFromStorage()
         }
       } catch (_e) {}
     }
-    const uid = this.appUser.user?.id
+  }
+
+  private async fetchReputationData(userId?: number) {
+    const uid = userId ?? this.appUser.user?.id
     if (uid) {
       try {
         const rep = await fetchReputation(uid)
@@ -612,7 +571,9 @@ export struct MineView {
         const normalized = 0.3 * (score / 100) + 0.7 * (avg / 5)
         const stars = Math.round(normalized * 5 * 10) / 10
         const level = stars >= 4.5 ? '优秀' : stars >= 4.0 ? '良好' : stars >= 3.0 ? '合格' : '需提升'
-        this.reputation = { totalScore: score, weightedScore: stars, creditLevel: level }
+        if (this.appUser.user) {
+          this.appUser.user.reputation = { totalScore: score, weightedScore: stars, creditLevel: level }
+        }
       } catch (_e) {}
     }
   }
@@ -635,17 +596,7 @@ export struct MineView {
     return '欢迎回来'
   }
 
-  private getStatistics(): StatisticCard[] {
-    const u = this.appUser.user
-    const freeCounts = u?.free_counts ?? 0
-    const points = u?.points ?? 0
-    const balanceValue = u?.balance !== undefined ? `¥${Number(u.balance).toFixed(2)}` : '¥0.00'
-    return [
-      { label: '免佣金次数', value: `${freeCounts}`, action: 'shop' },
-      { label: '积分余额', value: `${points}`, action: 'points' },
-      { label: '账户余额', value: balanceValue, action: 'wallet' }
-    ]
-  }
+
 
   // private isVipActive(): boolean {
   //   const exp = this.appUser.user?.vip_expire_time

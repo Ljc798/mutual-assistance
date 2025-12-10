@@ -1,5 +1,7 @@
 import http from '@ohos.net.http'
+import promptAction from '@ohos.promptAction'
 import { GlobalVariable } from '../components/GlobalVariable'
+import { userPersistence } from './UserPersistenceManager'
 
 interface QueryParam {
   key: string
@@ -41,6 +43,15 @@ export class HttpClient {
         readTimeout: GlobalVariable.TIME_OUT
       }
       const res = await client.request(url, config)
+      // 如果是登录接口报 401，说明是账号密码错误，不应该清除本地用户信息，而是抛出错误让业务层处理
+      const isLoginPath = path.includes('/login')
+      if (res.responseCode === 401) {
+        if (!isLoginPath) {
+          userPersistence.clearUser()
+          promptAction.showToast({ message: '登录已过期，请重新登录' })
+        }
+        throw new Error('HTTP 401')
+      }
       if (res.responseCode >= 200 && res.responseCode < 300) {
         const text = typeof res.result === 'string' ? res.result : JSON.stringify(res.result)
         return JSON.parse(text) as T
@@ -64,13 +75,35 @@ export class HttpClient {
         extraData: JSON.stringify(body)
       }
       const res = await client.request(url, config)
+      const isLoginPath = path.includes('/login')
+      if (res.responseCode === 401) {
+        if (!isLoginPath) {
+          userPersistence.clearUser()
+          promptAction.showToast({ message: '登录已过期，请重新登录' })
+        }
+        const text401 = typeof res.result === 'string' ? res.result : JSON.stringify(res.result)
+        try {
+          const data = JSON.parse(text401) as ErrorPayload
+          const msg: string = data.message ? data.message : (data.error ? data.error : 'HTTP 401')
+          throw new Error(msg)
+        } catch (_e) {
+          throw new Error('HTTP 401')
+        }
+      }
+      const text = typeof res.result === 'string' ? res.result : JSON.stringify(res.result)
       if (res.responseCode >= 200 && res.responseCode < 300) {
-        const text = typeof res.result === 'string' ? res.result : JSON.stringify(res.result)
         return JSON.parse(text) as T
       }
-      throw new Error(`HTTP ${res.responseCode}`)
+      try {
+        const data = JSON.parse(text) as ErrorPayload
+        const msg: string = data.message ? data.message : (data.error ? data.error : `HTTP ${res.responseCode}`)
+        throw new Error(msg)
+      } catch (_e) {
+        throw new Error(`HTTP ${res.responseCode}`)
+      }
     } finally {
       client.destroy()
     }
   }
 }
+interface ErrorPayload { message?: string; error?: string }

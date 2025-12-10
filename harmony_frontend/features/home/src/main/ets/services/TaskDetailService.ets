@@ -125,3 +125,32 @@ export async function prepayAliBid(bidId: number, token: string): Promise<AliPre
   const payload: AliPrepayBidPayload = { bid_id: bidId }
   return HttpClient.post<AliPrepayResponse, AliPrepayBidPayload>('/pay/ali/prepay-bid', payload, { Authorization: `Bearer ${token}` })
 }
+
+export interface ReviewPayload {
+  rating: number
+  comment: string
+}
+
+export interface ReviewDetail {
+  id: number
+  task_id: number
+  reviewer_id: number
+  target_id: number
+  rating: string
+  comment: string
+  created_at: string
+}
+
+export interface ReviewResponse {
+  success: boolean
+  message?: string
+  review?: ReviewDetail
+}
+
+export async function submitReview(taskId: number, payload: ReviewPayload, token: string): Promise<ReviewResponse> {
+  return HttpClient.post<ReviewResponse, ReviewPayload>(`/task/${taskId}/review`, payload, { Authorization: `Bearer ${token}` })
+}
+
+export async function fetchReview(taskId: number, token: string): Promise<ReviewResponse> {
+  return HttpClient.get<ReviewResponse>(`/task/${taskId}/review`, undefined, { Authorization: `Bearer ${token}` })
+}

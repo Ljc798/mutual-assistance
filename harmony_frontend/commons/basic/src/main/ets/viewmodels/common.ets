@@ -15,6 +15,13 @@ export interface UserInfo {
   vip_level?: number
   school_id?: number
   school_name?: string
+  reputation?: ReputationInfo
+}
+
+export interface ReputationInfo {
+  totalScore: number
+  weightedScore: number
+  creditLevel: string
 }
 
 // 全局用户类型
@@ -48,6 +55,8 @@ export class MutualUser implements UserInfo {
   school_id?: number
   @Trace
   school_name: string = ''
+  @Trace
+  reputation: ReputationInfo = { totalScore: 80, weightedScore: 80, creditLevel: '点击查看' }
 
   constructor(model?: UserInfo) {
     if (!model) {
@@ -67,6 +76,9 @@ export class MutualUser implements UserInfo {
     this.vip_level = model.vip_level
     this.school_id = model.school_id
     this.school_name = model.school_name ?? ''
+    if (model.reputation) {
+      this.reputation = model.reputation
+    }
   }
 }
 

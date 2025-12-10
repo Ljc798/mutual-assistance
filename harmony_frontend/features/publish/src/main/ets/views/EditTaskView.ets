@@ -22,7 +22,7 @@ interface AliPrepayPayload {
   paymentUrl?: string
 }
 
-@HMRouter({ pageUrl: PAGE_PATH.EDIT_TASK_PAGE })
+@HMRouter({ pageUrl: 'EditTaskView' })
 @Component
 export struct EditTaskView {
   private readonly scroller: Scroller = new Scroller()

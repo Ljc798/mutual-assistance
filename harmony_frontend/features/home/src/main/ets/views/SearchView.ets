@@ -5,7 +5,7 @@ import { searchTasks } from '../services/TaskService'
 import { PriceInfo } from '../viewmodels/HomeTypes'
 import { AppCurrentTaskDetail } from '../viewmodels/TaskDetailVM'
 
-@HMRouter({ pageUrl: PAGE_PATH.SEARCH_PAGE })
+@HMRouter({ pageUrl: 'SearchView' })
 @Component
 export struct SearchView {
   safeArea: AppSafeArea = AppStorageV2.connect(AppSafeArea, () => new AppSafeArea())!

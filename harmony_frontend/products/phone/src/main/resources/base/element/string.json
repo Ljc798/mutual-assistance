@@ -11,6 +11,14 @@
     {
       "name": "EntryAbility_label",
       "value": "互助Campus"
+    },
+    {
+      "name": "permission_reason_read_imagevideo",
+      "value": "需要访问相册以选择图片进行上传"
+    },
+    {
+      "name": "permission_reason_write_imagevideo",
+      "value": "需要保存图片到相册"
     }
   ]
 }

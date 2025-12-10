@@ -3,7 +3,7 @@ import { AppStorageV2 } from '@kit.ArkUI'
 import { AppSafeArea, PAGE_PATH, AppUser, TaskBidItem, PROFILE_TARGET_ID_KEY } from 'basic'
 import { HMRouter, HMRouterMgr } from '@hadss/hmrouter'
 import { AppCurrentTaskDetail } from '../viewmodels/TaskDetailVM'
-import { fetchTaskBids, submitBid, selectBid, takeTask, fetchTaskDetail, prepayAliBid, AliPrepayResponse } from '../services/TaskDetailService'
+import { fetchTaskBids, submitBid, selectBid, takeTask, fetchTaskDetail, prepayAliBid, AliPrepayResponse, submitReview, fetchReview } from '../services/TaskDetailService'
 import { aggregatedPaymentService, CashierPicker, PaymentType } from 'aggregated_payment'
 import { common } from '@kit.AbilityKit'
 
@@ -13,7 +13,7 @@ interface AliPrepayPayload {
   paymentUrl?: string
 }
 
-@HMRouter({ pageUrl: PAGE_PATH.TASK_DETAIL_PAGE })
+@HMRouter({ pageUrl: 'TaskDetailView' })
 @Component
 export struct TaskDetailView {
   safeArea: AppSafeArea = AppStorageV2.connect(AppSafeArea, () => new AppSafeArea())!
@@ -24,6 +24,11 @@ export struct TaskDetailView {
   @State isSubmittingBid: boolean = false
   @State bidPriceInput: string = ''
   @State bidAdvantageInput: string = ''
+  @State showReviewDialog: boolean = false
+  @State reviewRating: number = 5
+  @State reviewComment: string = ''
+  @State isReviewReadOnly: boolean = false
+  @State hasReviewed: boolean = false
   private paymentCbId: string = ''
 
   build() {
@@ -31,6 +36,7 @@ export struct TaskDetailView {
       this.renderHeader()
       this.renderBody()
       this.renderBidDialog()
+      this.renderReviewDialog()
     }
     .height('100%')
     .width('100%')
@@ -101,12 +107,19 @@ export struct TaskDetailView {
         .backgroundColor($r('[basic].color.white'))
         .borderRadius(16)
 
-        if (this.detailVM.task!.status === 2) {
+        if (this.detailVM.task!.status === 2 && this.canViewSensitiveInfo()) {
           Column() {
             Text('该任务已完成')
               .fontSize(16)
               .fontColor($r('[basic].color.text_secondary'))
               .margin({ top: 20 })
+            Button(this.hasReviewed ? '查看评价' : '评价')
+              .height(36)
+              .fontSize(14)
+              .backgroundColor($r('[basic].color.filter_active_bg'))
+              .fontColor($r('[basic].color.white'))
+              .margin({ top: 12 })
+              .onClick(() => this.handleReview())
           }
           .width('100%')
           .alignItems(HorizontalAlign.Center)
@@ -362,6 +375,141 @@ export struct TaskDetailView {
     }
   }
 
+  @Builder
+  private renderReviewDialog() {
+    if (!this.showReviewDialog) {
+      Blank()
+    } else {
+      Column() {
+        Column({ space: 15 }) {
+          Text(this.isReviewReadOnly ? '查看评价' : '评价任务')
+            .fontSize(18)
+            .fontWeight(FontWeight.Medium)
+          
+          Row({ space: 8 }) {
+            ForEach([1, 2, 3, 4, 5], (score: number) => {
+              Text('★')
+                .fontSize(40)
+                .fontColor(score <= this.reviewRating ? '#FFB800' : '#E5E5E5')
+                .onClick(() => {
+                  if (!this.isReviewReadOnly) {
+                    this.reviewRating = score
+                  }
+                })
+            })
+          }
+          .width('100%')
+          .justifyContent(FlexAlign.Center)
+
+          if (this.isReviewReadOnly) {
+            Text(this.reviewComment || '暂无文字评价')
+              .fontSize(14)
+              .fontColor($r('[basic].color.text_primary'))
+              .width('100%')
+              .padding(12)
+              .backgroundColor($r('[basic].color.search_box_bg'))
+              .borderRadius(12)
+          } else {
+            TextArea({ placeholder: '请输入评价内容', text: this.reviewComment })
+              .height(100)
+              .backgroundColor($r('[basic].color.search_box_bg'))
+              .borderRadius(12)
+              .onChange((v: string) => this.reviewComment = v)
+          }
+
+          Row({ space: 12 }) {
+            Button(this.isReviewReadOnly ? '关闭' : '取消')
+              .layoutWeight(1)
+              .height(44)
+              .borderRadius(12)
+              .backgroundColor($r('[basic].color.search_box_bg'))
+              .fontColor($r('[basic].color.text_primary'))
+              .onClick(() => {
+                this.showReviewDialog = false
+                this.reviewRating = 5
+                this.reviewComment = ''
+                this.isReviewReadOnly = false
+              })
+            
+            if (!this.isReviewReadOnly) {
+              Button('提交')
+                .layoutWeight(1)
+                .height(44)
+                .borderRadius(12)
+                .backgroundColor($r('[basic].color.filter_active_bg'))
+                .fontColor($r('[basic].color.white'))
+                .onClick(() => this.handleSubmitReview())
+            }
+          }
+        }
+        .width('90%')
+        .padding(20)
+        .backgroundColor($r('[basic].color.white'))
+        .borderRadius(20)
+      }
+      .width('100%')
+      .height('100%')
+      .justifyContent(FlexAlign.Center)
+      .alignItems(HorizontalAlign.Center)
+      .backgroundColor('rgba(0,0,0,0.35)')
+      .position({ x: 0, y: 0 })
+      .zIndex(999)
+    }
+  }
+
+  private async handleReview() {
+    const token = this.appUser.user.token
+    if (!token) { promptAction.showToast({ message: '请先登录' }); return }
+    const taskId = Number(this.detailVM.task?.id ?? 0)
+    
+    try {
+      const res = await fetchReview(taskId, token)
+      if (res.success && res.review) {
+        // Show existing review
+        this.reviewRating = Number(res.review.rating)
+        this.reviewComment = res.review.comment
+        this.isReviewReadOnly = true
+        this.showReviewDialog = true
+      } else {
+        // Open dialog for new review
+        this.reviewRating = 5
+        this.reviewComment = ''
+        this.isReviewReadOnly = false
+        this.showReviewDialog = true
+      }
+    } catch (e) {
+      promptAction.showToast({ message: '获取评价信息失败' })
+    }
+  }
+
+  private async handleSubmitReview() {
+    const token = this.appUser.user.token
+    if (!token) { promptAction.showToast({ message: '请先登录' }); return }
+    const taskId = Number(this.detailVM.task?.id ?? 0)
+    
+    if (!this.reviewComment.trim()) {
+      promptAction.showToast({ message: '请输入评价内容' })
+      return
+    }
+
+    try {
+      const res = await submitReview(taskId, {
+        rating: this.reviewRating,
+        comment: this.reviewComment
+      }, token)
+      
+      if (res.success) {
+        promptAction.showToast({ message: '评价成功' })
+        this.showReviewDialog = false
+        this.hasReviewed = true
+      } else {
+        promptAction.showToast({ message: res.message || '评价失败' })
+      }
+    } catch (e) {
+      promptAction.showToast({ message: '评价提交失败' })
+    }
+  }
+
   private isEmployer(): boolean {
     const employerId = this.detailVM.task?.employerId ?? 0
     return employerId > 0 && employerId === this.appUser.user.id
@@ -431,8 +579,25 @@ export struct TaskDetailView {
       if (task.mode === 'bidding') {
         this.loadBids()
       }
+      this.checkReviewStatus()
     } catch (e) {
       promptAction.showToast({ message: '加载详情失败' })
+    }
+  }
+
+  private async checkReviewStatus() {
+    if (this.detailVM.task?.status !== 2) return
+    const token = this.appUser.user.token
+    if (!token) return
+    try {
+      const res = await fetchReview(this.detailVM.id, token)
+      if (res.success && res.review) {
+        this.hasReviewed = true
+      } else {
+        this.hasReviewed = false
+      }
+    } catch (e) {
+      // ignore
     }
   }
 

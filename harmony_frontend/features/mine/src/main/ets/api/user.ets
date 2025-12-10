@@ -17,6 +17,19 @@ export async function passwordLoginAPI(payload: PasswordLoginPayload): Promise<L
   return HttpClient.post<LoginResponse, PasswordLoginPayload>('/user/password-login', payload)
 }
 
+export interface AdminLoginPayload {
+  phone: string
+  password: string
+}
+
+export interface AdminLoginResponse {
+  token: string
+}
+
+export async function adminLoginAPI(payload: AdminLoginPayload): Promise<AdminLoginResponse> {
+  return HttpClient.post<AdminLoginResponse, AdminLoginPayload>('/user/admin-login', payload)
+}
+
 export interface SendCodePayload { phone: string }
 export interface BaseResponse { success: boolean; message?: string }
 

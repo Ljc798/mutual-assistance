@@ -25,6 +25,16 @@ struct Index {
   modifier: MyModifier = new MyModifier() // 专门用来修改Navigation特性对象实例
   safeArea: AppSafeArea = AppStorageV2.connect(AppSafeArea, () => new AppSafeArea())!
   @State activeIndex: number = 0
+  @State isPageShown: boolean = true
+
+  onPageShow(): void {
+    this.isPageShown = true
+  }
+
+  onPageHide(): void {
+    this.isPageShown = false
+  }
+
   list: TabItem[] = [
     { text: '首页', normal: $r('app.media.icon_nav_home'), active: $r('app.media.icon_nav_home') },
     { text: '广场', normal: $r('app.media.icon_nav_square'), active: $r('app.media.icon_nav_square') },
@@ -54,13 +64,13 @@ struct Index {
           ForEach(this.list, (item: TabItem, index: number) => {
             TabContent() {
               if (index == 0) {
-                HomeView()
+                HomeView({ isVisible: this.isPageShown && this.activeIndex === 0 })
               } else if (index == 1) {
-                SquareView()
+                SquareView({ isVisible: this.isPageShown && this.activeIndex === 1 })
               } else if (index == 2) {
                 PublishView()
               } else if (index == 3) {
-                MessageView()
+                MessageView({ isVisible: this.isPageShown && this.activeIndex === 3 })
               } else {
                 MineView()
               }

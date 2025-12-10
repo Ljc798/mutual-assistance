@@ -6,6 +6,8 @@ export struct ProgressLoading {
   strokeWidth: number = 4
   @Param
   color: ResourceColor = $r("app.color.red")
+  @Param
+  loading: boolean = true
   @Local
   angle: number = 0
   @Local
@@ -13,11 +15,23 @@ export struct ProgressLoading {
   isRight: boolean = true // 是否是正向追加
   timer: number = -1
 
+  @Monitor("loading")
+  onLoadingChange() {
+    if (this.loading) {
+      this.beginRun()
+    } else {
+      clearInterval(this.timer)
+    }
+  }
+
   aboutToAppear(): void {
-    this.beginRun()
+    if (this.loading) {
+      this.beginRun()
+    }
   }
 
   beginRun() {
+    clearInterval(this.timer)
     this.timer = setInterval(() => {
       if (this.value == 80) {
         this.isRight = false

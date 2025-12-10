@@ -236,7 +236,6 @@ export struct MyOrdersView {
               .layoutWeight(1)
               .height(40)
               .borderRadius(16)
-              .backgroundColor($r('[basic].color.search_box_bg'))
               .onClick(() => {
                 this.closeCancelDialog()
               })
@@ -410,6 +409,12 @@ export struct MyOrdersView {
   }
 
   private getStatusText(s: number): string {
+    if (s === -2) {
+      return '已取消'
+    }
+    if (s === -1) {
+      return '未支付'
+    }
     if (s === 0) {
       return '待接单'
     }

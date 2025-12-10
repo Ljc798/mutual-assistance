@@ -21,7 +21,7 @@ import {
 } from '../services/SchoolPickerService'
 import { SchoolFeedbackPayload, SchoolListItem, SchoolListQuery } from '../viewmodels/SchoolPickerTypes'
 
-@HMRouter({ pageUrl: PAGE_PATH.SCHOOL_PICKER_PAGE })
+@HMRouter({ pageUrl: 'SchoolPickerView' })
 @Component
 export struct SchoolPickerView {
   safeArea: AppSafeArea = AppStorageV2.connect(AppSafeArea, () => new AppSafeArea())!
@@ -50,6 +50,15 @@ export struct SchoolPickerView {
   @State isSubmittingFeedback: boolean = false
   @State provinceOptions: SelectOption[] = []
   @State cityOptions: SelectOption[] = []
+  @State isPageVisible: boolean = true
+
+  onPageShow(): void {
+    this.isPageVisible = true
+  }
+
+  onPageHide(): void {
+    this.isPageVisible = false
+  }
 
   aboutToAppear(): void {
     if (this.hasBootstrapped) {
@@ -508,7 +517,7 @@ export struct SchoolPickerView {
 
       if (this.isLoadingSchools) {
         Row({ space: 8 }) {
-          ProgressLoading({ pWidth: 20, strokeWidth: 2 })
+          ProgressLoading({ pWidth: 20, strokeWidth: 2, loading: this.isLoadingSchools && this.isPageVisible })
           Text('加载中...')
             .fontSize(13)
             .fontColor($r('[basic].color.text_secondary'))

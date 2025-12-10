@@ -5,6 +5,7 @@ const multer = require("multer");
 const path = require("path");
 const dotenv = require("dotenv");
 const db = require("../config/db")
+const authMiddleware = require("./authMiddleware")
 
 dotenv.config();
 
@@ -196,5 +197,35 @@ router.post("/image-review", express.json(), async (req, res) => {
 });
 
 
+// Harmony 专用：上传头像并立即写入用户表
+router.post("/harmony/upload-avatar", authMiddleware, upload.single("image"), async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ success: false, message: "未上传文件" });
+    }
+
+    const extension = path.extname(file.originalname) || ".jpeg";
+    const timestamp = new Date().toISOString().replace(/[-:T]/g, "").split(".")[0];
+    const fileName = `avatar/user_${userId}_${timestamp}${extension}`;
+
+    await uploadToCOS({
+      Bucket: bucketName,
+      Region: region,
+      Key: fileName,
+      Body: file.buffer,
+      ContentType: file.mimetype,
+    });
+
+    const imageUrl = `https://${bucketName}.cos.${region}.myqcloud.com/${fileName}`;
+    await db.query("UPDATE users SET avatar_url = ? WHERE id = ?", [imageUrl, userId]);
+
+    return res.json({ success: true, imageUrl });
+  } catch (err) {
+    console.error("❌ Harmony 上传头像失败:", err);
+    return res.status(500).json({ success: false, message: "上传失败", error: err.message });
+  }
+});
 
 module.exports = router;

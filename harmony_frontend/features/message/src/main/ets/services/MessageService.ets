@@ -54,15 +54,14 @@ export async function fetchChatPreviews(userId: number, token: string): Promise<
   const previews: ChatPreview[] = []
   for (let i = 0; i < response.chats.length; i++) {
     const item: ChatDTO = response.chats[i]
-    const preview: ChatPreview = {
-      roomId: item.room_id,
-      targetId: parseRoomId(item.room_id, userId),
-      username: item.username ?? '匿名用户',
-      avatarUrl: item.avatar_url ?? '',
-      lastMessage: item.content ?? '',
-      timestamp: formatTimestamp(item.created_time),
-      unread: item.unread_count ?? 0
-    }
+    const preview = new ChatPreview()
+    preview.roomId = item.room_id
+    preview.targetId = parseRoomId(item.room_id, userId)
+    preview.username = item.username ?? '匿名用户'
+    preview.avatarUrl = item.avatar_url ?? ''
+    preview.lastMessage = item.content ?? ''
+    preview.timestamp = formatTimestamp(item.created_time)
+    preview.unread = item.unread_count ?? 0
     previews.push(preview)
   }
   return previews

@@ -722,19 +722,34 @@ router.post('/cancel', async (req, res) => {
             penalty = Math.ceil(task.pay_amount * 0.1 * 100) / 100; // 向上取两位小数
         }
 
-        const refundAmount = task.pay_amount - penalty;
-
         // 更新任务状态为已取消（-2）
         await db.query(
             `UPDATE tasks SET status = -2, cancel_reason = ?, cancel_by = ?, refunded = 1 WHERE id = ?`,
             [cancel_reason, role, task_id]
         );
 
-        // 给取消人扣罚金 or 退款
-        await db.query(
-            `UPDATE users SET balance = balance + ? WHERE id = ?`,
-            [refundAmount, user_id]
-        );
+        // 给雇主退款 (如果有支付)
+        if (task.has_paid === 1 && Number(task.pay_amount) > 0) {
+            let realRefund = Number(task.pay_amount);
+            // 如果是雇主取消，扣除违约金
+            if (role === 'employer') {
+                realRefund = realRefund - penalty;
+            }
+            if (realRefund > 0) {
+                 await db.query(
+                    `UPDATE users SET balance = balance + ? WHERE id = ?`,
+                    [realRefund, task.employer_id]
+                );
+            }
+        }
+
+        // 如果是雇员取消且有违约金，扣除雇员余额
+        if (role === 'employee' && penalty > 0) {
+             await db.query(
+                `UPDATE users SET balance = balance - ? WHERE id = ?`,
+                [penalty, user_id]
+            );
+        }
 
         // 记录取消记录
         await db.query(

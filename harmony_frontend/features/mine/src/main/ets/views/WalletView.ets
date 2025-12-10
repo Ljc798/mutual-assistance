@@ -109,6 +109,13 @@ export struct WalletView {
       const payload: WithdrawPayload = { amount: amount.toFixed(2), method, phone }
       const res = await submitWithdraw(payload, token)
       if (!res.success) { this.showToast(res.message ?? '提现失败'); return }
+
+      // 手动扣除余额，更新 UI
+      const currentBalance = Number(this.appUser.user.balance ?? 0)
+      if (!Number.isNaN(currentBalance)) {
+        this.appUser.user.balance = currentBalance - amount
+      }
+
       this.showToast('提现申请已提交')
       HMRouterMgr.pop()
     } catch (_e) { this.showToast('提现失败') } finally { this.isSubmitting = false }
