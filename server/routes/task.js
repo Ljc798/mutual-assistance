@@ -381,6 +381,7 @@ router.post("/update", authMiddleware, async (req, res) => {
 router.get("/search", async (req, res) => {
     const keyword = req.query.q;
     const school_id = req.query.school_id; // 👈 接收school_id
+    const harmony = req.query.harmony; // 👈 接收harmony标识
 
     if (!keyword || keyword.trim() === "") {
         return res.json({
@@ -399,6 +400,11 @@ router.get("/search", async (req, res) => {
         if (school_id) {
             sql += ` AND school_id = ?`; // 👈 加筛选
             params.push(school_id);
+        }
+
+        // 如果是鸿蒙端，排除"兼职发布"
+        if (harmony === '1') {
+            sql += ` AND category != '兼职发布'`;
         }
 
         sql += ` ORDER BY created_time DESC LIMIT 30`;
@@ -875,7 +881,60 @@ router.get("/:taskId/bids", async (req, res) => {
     }
 });
 
-// ===== 9. 获取任务详情 =====
+// ===== 2.1 获取所有任务（鸿蒙专属接口，排除兼职发布） =====
+router.get("/harmony/list", async (req, res) => {
+    let {
+        category,
+        page = 1,
+        pageSize = 10,
+        school_id,
+        status // 'all' | 0 | 1 | 2
+    } = req.query;
+
+    category = decodeURIComponent(category || "全部");
+    const offset = (parseInt(page) - 1) * parseInt(pageSize);
+    const limit = parseInt(pageSize);
+
+    let query = `SELECT * FROM tasks WHERE status >= 0 AND category != '兼职发布'`;
+    const queryParams = [];
+
+    // 状态筛选
+    const parsedStatus = Number(status);
+    const hasStatusFilter = status !== undefined && status !== '' && !Number.isNaN(parsedStatus);
+    if (hasStatusFilter && [0, 1, 2].includes(parsedStatus)) {
+        query += " AND status = ?";
+        queryParams.push(parsedStatus);
+    }
+
+    if (category && category !== "全部") {
+        query += " AND category = ?";
+        queryParams.push(category);
+    }
+
+    if (school_id) {
+        query += " AND school_id = ?";
+        queryParams.push(school_id);
+    }
+
+    query += " ORDER BY created_time DESC LIMIT ? OFFSET ?";
+    queryParams.push(limit, offset);
+
+    try {
+        const [tasks] = await db.query(query, queryParams);
+        res.json({
+            success: true,
+            tasks
+        });
+    } catch (err) {
+        console.error("❌ 获取鸿蒙任务列表失败:", err);
+        res.status(500).json({
+            success: false,
+            message: "服务器错误"
+        });
+    }
+});
+
+// ===== 3. 获取任务详情 =====
 router.get("/:id", async (req, res) => {
     const taskId = req.params.id;
 

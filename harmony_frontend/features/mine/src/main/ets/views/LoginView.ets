@@ -124,8 +124,8 @@ export struct LoginView {
   // @Local account: string = '13200000010' // 13200000010 - 13200000060
   // @Local password: string = '123456'
   loginForm: LoginFormModel = new LoginFormModel({
-    account: '16607923402',
-    password: '12345678'
+    account: '',
+    password: ''
   })
   @Local agree: boolean = false
   @Local loginType: 'sms' | 'password' = 'sms'
@@ -313,6 +313,7 @@ export struct LoginView {
     Column() {
       NavBar({
         title: '登录',
+        showRightIcon: false,
         onLeftClick: () => {
           HMRouterMgr.pop()
         }
@@ -344,17 +345,17 @@ export struct LoginView {
               .aspectRatio(1)
               .selectedColor($r('[basic].color.black'))
               .mark({ size: 10, strokeWidth: 1 })
-            Text() {
-              Span('查看并同意')
-              Span('《隐私条款》')
+            Text('我已阅读并同意')
+              .fontSize(12)
+              .fontColor($r('[basic].color.gray'))
+            Column() {
+              Text('《隐私说明》')
+                .fontSize(12)
                 .fontColor('#007DFB')
-              Span('和')
-              Span('《用户协议》')
-                .fontColor('#007DFB')
+                .onClick(() => {
+                  HMRouterMgr.push({ pageUrl: PAGE_PATH.PRIVACY_PAGE })
+                })
             }
-            .width('100%')
-            .fontSize(12)
-            .fontColor($r('[basic].color.gray'))
           }
 
           Button('登录')

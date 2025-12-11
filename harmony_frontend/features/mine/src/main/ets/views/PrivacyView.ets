@@ -10,7 +10,7 @@ export struct PrivacyView {
 
   build() {
     Column() {
-      NavBar({ title: '隐私说明', onLeftClick: () => HMRouterMgr.pop() })
+      NavBar({ title: '隐私说明', showRightIcon: false, onLeftClick: () => HMRouterMgr.pop() })
       Scroll() {
         Column({ space: 12 }) {
           this.renderParagraph('互助Campus 是由 娄嘉辰 （以下简称“我们”）为您提供的，用于校园便民服务的应用。本隐私声明由我们为处理您的个人信息而制定。')

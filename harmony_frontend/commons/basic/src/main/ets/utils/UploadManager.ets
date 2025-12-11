@@ -98,6 +98,7 @@ function buildMultipartBody(item: UploadFileItem, boundary: string): ArrayBuffer
 
 interface MultipartHeader { 'Content-Type': string }
 interface MultipartHeaderWithLength { 'Content-Type': string, 'Content-Length': string }
+interface MultipartHeaderAuthLen { 'Content-Type': string, 'Content-Length': string, Authorization?: string }
 
 interface GeneratedTypeLiteralInterface_1 {
   success: boolean;
@@ -105,13 +106,19 @@ interface GeneratedTypeLiteralInterface_1 {
   message?: string;
 }
 
-export async function uploadSingle(item: UploadFileItem, progress?: (evt: UploadProgressEvent) => void, index: number = 0): Promise<UploadResultItem> {
+export async function uploadSingle(
+  item: UploadFileItem,
+  progress?: (evt: UploadProgressEvent) => void,
+  index: number = 0,
+  endpoint?: string,
+  authToken?: string
+): Promise<UploadResultItem> {
   const boundary = buildBoundary()
   const body = buildMultipartBody(item, boundary)
   const client = http.createHttp()
   try {
-    const headers: MultipartHeader = { 'Content-Type': `multipart/form-data; boundary=${boundary}` }
-    const headersWithLen: MultipartHeaderWithLength = { 'Content-Type': `multipart/form-data; boundary=${boundary}`, 'Content-Length': `${(body as ArrayBuffer).byteLength}` }
+    const headersWithLen: MultipartHeaderAuthLen = { 'Content-Type': `multipart/form-data; boundary=${boundary}`, 'Content-Length': `${(body as ArrayBuffer).byteLength}` }
+    if (authToken && authToken.length > 0) { headersWithLen.Authorization = `Bearer ${authToken}` }
     const options: http.HttpRequestOptions = {
       method: http.RequestMethod.POST,
       header: headersWithLen as Object,
@@ -122,7 +129,8 @@ export async function uploadSingle(item: UploadFileItem, progress?: (evt: Upload
     const sz = (body as ArrayBuffer).byteLength
     console.info('[UploadManager] request.start', JSON.stringify({ index, filename: item.filename, size: sz }))
     if (progress) { progress({ index, loaded: sz, total: sz }) }
-    const res = await client.request(`${GlobalVariable.BASE_URL}/uploads/upload-image`, options)
+    const url = endpoint && endpoint.length > 0 ? endpoint : `${GlobalVariable.BASE_URL}/uploads/upload-image`
+    const res = await client.request(url, options)
     console.info('[UploadManager] response.code', JSON.stringify({ index, code: res.responseCode }))
     if (res.responseCode >= 200 && res.responseCode < 300) {
       const text = typeof res.result === 'string' ? res.result : JSON.stringify(res.result)

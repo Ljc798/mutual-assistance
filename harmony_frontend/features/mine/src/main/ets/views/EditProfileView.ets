@@ -3,7 +3,7 @@ import { AppStorageV2 } from '@kit.ArkUI'
 import { AppSafeArea, AppUser, PAGE_PATH, userPersistence, AppEditSelectedSchool,
   UserInfo,
   AppSchoolPickerContext} from 'basic'
-import { GlobalVariable, readFileAsBytes, uploadSingle, UploadFileItem } from 'basic'
+import { GlobalVariable, readFileAsBytes, guessMimeByName } from 'basic'
 import { photoAccessHelper } from '@kit.MediaLibraryKit'
 import { request } from '@kit.BasicServicesKit'
 import { fileIo as fs } from '@kit.CoreFileKit'
@@ -11,6 +11,7 @@ import { common } from '@kit.AbilityKit'
 import { BusinessError } from '@ohos.base'
 import { HMRouter, HMRouterMgr } from '@hadss/hmrouter'
 import { checkUsername, checkWxid, updateProfileBasic, UpdatePayload, deleteAccount } from '../services/EditProfileService'
+import { uploadAvatarImage, AvatarLocalImage } from '../services/AvatarUploadService'
 
 @HMRouter({ pageUrl: PAGE_PATH.EDIT_PROFILE_PAGE })
 @Component
@@ -210,6 +211,47 @@ export struct EditProfileView {
       }
       const res = await updateProfileBasic(payload, token)
       if (!res.success) { promptAction.showToast({ message: res.message ?? '更新失败' }); return }
+      // 如果选择了新头像，按 square 的模式在保存后上传，等待审核回调入库
+      if (this.avatarCacheUri && this.avatarCacheUri.length > 0) {
+        try {
+          const sourcePath: string = (this.avatarCachePath && this.avatarCachePath.length > 0) ? this.avatarCachePath : this.avatarCacheUri
+          const bytes: Uint8Array = await readFileAsBytes(sourcePath)
+          const name: string = (() => {
+            if (this.avatarCachePath && this.avatarCachePath.length > 0) { return this.avatarCachePath.split('/').pop()! }
+            const segs = this.avatarCacheUri.split('/')
+            return segs[segs.length - 1] || 'avatar.jpeg'
+          })()
+          const mime: string = guessMimeByName(name)
+          const img: AvatarLocalImage = { filename: name, mime, data: bytes }
+          const u = await uploadAvatarImage(img, this.appUser.user.username ?? 'user', this.appUser.user.token ?? '')
+          if (u.success && u.url) {
+            this.appUser.user.avatar_url = u.url
+            this.avatarPreviewUrl = ''
+            const localPersist: UserInfo = {
+              id: this.appUser.user.id,
+              token: this.appUser.user.token,
+              avatar_url: u.url,
+              username: this.appUser.user.username ?? '',
+              wxid: this.appUser.user.wxid ?? '',
+              phone_number: this.appUser.user.phone_number,
+              openid: this.appUser.user.openid,
+              points: this.appUser.user.points,
+              free_counts: this.appUser.user.free_counts,
+              balance: this.appUser.user.balance,
+              vip_expire_time: this.appUser.user.vip_expire_time,
+              vip_level: this.appUser.user.vip_level,
+              school_id: this.appUser.user.school_id,
+              school_name: this.appUser.user.school_name
+            }
+            userPersistence.persistUser(localPersist)
+            promptAction.showToast({ message: '头像已更新' })
+          } else {
+            promptAction.showToast({ message: '头像上传失败' })
+          }
+        } catch (_e) {
+          promptAction.showToast({ message: '头像读取失败' })
+        }
+      }
       // 本地更新用户快照，避免下次进入用旧学校
       this.appUser.user.school_id = currentSchoolId
       this.appUser.user.school_name = this.selectedSchoolVM.name ?? ''
@@ -268,19 +310,14 @@ export struct EditProfileView {
         fs.closeSync(file.fd)
         this.avatarCachePath = target
         this.avatarCacheUri = `internal://cache/${target.split('/').pop()}`
-        const token = this.appUser.user.token
-        if (token) {
-          const imageUrl = await this.uploadAvatarAndGetUrl(this.avatarCacheUri)
-          if (imageUrl && imageUrl.length > 0 && imageUrl !== this.getCurrentAvatarUrl()) {
-            this.avatarPreviewUrl = ''
-            this.appUser.user.avatar_url = imageUrl
-            promptAction.showToast({ message: '头像已更新' })
-          } else {
-            promptAction.showToast({ message: '头像上传失败' })
-          }
-        }
+        console.info('[EditProfile] avatar cached', JSON.stringify({ src: uri, dst: target }))
+        this.avatarPreviewUrl = uri as string
+        promptAction.showToast({ message: '已选择头像，保存后提交审核' })
       } catch (_e) {
-        promptAction.showToast({ message: '复制失败' })
+        console.warn('[EditProfile] cache copy failed, fallback to original uri')
+        this.avatarCacheUri = uri
+        this.avatarPreviewUrl = uri as string
+        promptAction.showToast({ message: '已选择头像，保存后提交审核' })
       }
     })
   }
@@ -306,32 +343,7 @@ export struct EditProfileView {
     if (!url) { return $r('[basic].media.ic_public_user') }
     return url as ResourceStr
   }
-  private async uploadAvatarAndGetUrl(cacheUri: string): Promise<string> {
-    return new Promise<string>((resolve) => {
-      const header = new Map<Object, string>()
-      header.set('Content-Type', 'multipart/form-data')
-      const files: Array<request.File> = [{ name: 'image', filename: 'avatar.jpeg', uri: cacheUri, type: 'image' }]
-      const data: Array<request.RequestData> = [{ name: 'type', value: 'avatar' }, { name: 'username', value: this.appUser.user.username ?? 'user' }]
-      const uploadConfig: request.UploadConfig = { url: `${GlobalVariable.BASE_URL}/uploads/harmony/upload-avatar`, header, method: 'POST', files, data }
-      try {
-        request.uploadFile((this.getUIContext().getHostContext() as common.UIAbilityContext), uploadConfig, (error: Error | undefined, task) => {
-          if (task) {
-            task.on('complete', (states: Object) => {
-              const arr = states as Array<UploadTaskState>
-              for (let i = 0; i < arr.length; i++) {
-                const dataStr = (arr[i].data as string) ?? ''
-                try {
-                  const parsed = JSON.parse(dataStr) as UploadImageResponse
-                  if (parsed.success && parsed.imageUrl) { resolve(parsed.imageUrl); return }
-                } catch (_e) {}
-              }
-              resolve(this.getCurrentAvatarUrl())
-            })
-          } else { resolve(this.getCurrentAvatarUrl()) }
-        })
-      } catch (_e) { resolve(this.getCurrentAvatarUrl()) }
-    })
-  }
+  // 头像上传改为复用 UploadManager，在保存后执行
 
 }
 

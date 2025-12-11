@@ -202,6 +202,7 @@ router.post("/harmony/upload-avatar", authMiddleware, upload.single("image"), as
   try {
     const userId = req.user.id;
     const file = req.file;
+    console.log("Harmony upload-avatar headers:", req.headers);
     if (!file) {
       return res.status(400).json({ success: false, message: "未上传文件" });
     }

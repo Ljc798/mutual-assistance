@@ -3,7 +3,6 @@ import { TaskMode } from 'basic'
 export type PublishCategory =
   | '代拿快递'
   | '代拿外卖'
-  | '兼职发布'
   | '作业协助'
   | '二手交易'
   | '寻物启事'
@@ -13,7 +12,6 @@ export type PublishCategory =
 export const PUBLISH_CATEGORIES: PublishCategory[] = [
   '代拿快递',
   '代拿外卖',
-  '兼职发布',
   '作业协助',
   '二手交易',
   '寻物启事',

@@ -6,9 +6,9 @@
         "type": "HarmonyOS",
         "material": {
           "storeFile": "/Users/alex/Downloads/harmony_key/mutual_key_pre.p12",
-          "storePassword": "0000001AC1C3D77B9A92CDED550DD912515814F32CABD8ED500D4F642BC57A08A5DEB94C67EF6A29C791",
+          "storePassword": "0000001A04FFAA3025098F666FBC679A19FD99F03752A5278B9AEF224AB2FCDDFA1DA71C9055FDE887C9",
           "keyAlias": "mutual_key_pre",
-          "keyPassword": "0000001A22113FFDA4E3BDFADA7EAB00110198598379A254D1260CCC7FB0BFFD06F124FE81D0B660F9D3",
+          "keyPassword": "0000001AF757C0351B8EB24EBFFA2D81C35F9646AFD15DF4EEAB52DA4282E4903F2B3E25BCF60AA960A2",
           "signAlg": "SHA256withECDSA",
           "profile": "/Users/alex/Downloads/harmony_key/mutualDebug.p7b",
           "certpath": "/Users/alex/Downloads/harmony_key/mutual_key_pre.cer"

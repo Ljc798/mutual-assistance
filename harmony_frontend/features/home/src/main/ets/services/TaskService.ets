@@ -111,9 +111,27 @@ export async function fetchTasks(query?: TaskQuery, token?: string): Promise<Tas
   }
 }
 
+export async function fetchHarmonyTasks(query: TaskQuery): Promise<TaskItem[]> {
+  const params: QueryParam[] = []
+  if (query.category) { params.push({ key: 'category', value: query.category }) }
+  if (query.page) { params.push({ key: 'page', value: String(query.page) }) }
+  if (query.pageSize) { params.push({ key: 'pageSize', value: String(query.pageSize) }) }
+  if (query.status !== undefined && query.status !== 'all') { params.push({ key: 'status', value: String(query.status) }) }
+  if (query.schoolId) { params.push({ key: 'school_id', value: String(query.schoolId) }) }
+
+  return HttpClient.get<TaskSearchResponse>('/task/harmony/list', params)
+    .then(res => {
+      if (res.success) {
+        return res.tasks.map(toTaskItem)
+      }
+      return []
+    })
+    .catch(() => [])
+}
+
 export async function searchTasks(keyword: string, schoolId?: number, token?: string): Promise<TaskItem[]> {
   const headers: Record<string, string> = token ? { "Authorization": `Bearer ${token}` } : {}
-  const params: QueryParam[] = [{ key: 'q', value: keyword.trim() }]
+  const params: QueryParam[] = [{ key: 'q', value: keyword.trim() }, { key: 'harmony', value: '1' }]
   if (typeof schoolId === 'number' && schoolId > 0) { params.push({ key: 'school_id', value: `${schoolId}` }) }
   console.info('[TaskService] searchTasks: GET /task/search with params =', JSON.stringify(params))
   const t0 = Date.now()

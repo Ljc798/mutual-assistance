@@ -13,7 +13,7 @@ import {
   AppSchoolPickerContext
 } from 'basic'
 import { TaskFilterValue, HomeCategoryItem, TaskFilter, PriceInfo } from '../viewmodels/HomeTypes'
-import { fetchTasks as fetchHomeTasks, TaskQuery } from '../services/TaskService'
+import { fetchHarmonyTasks as fetchHomeTasks, TaskQuery } from '../services/TaskService'
 import { AppCurrentTaskDetail } from '../viewmodels/TaskDetailVM'
 import { AppStorageV2 } from '@kit.ArkUI'
 import { HMRouterMgr } from '@hadss/hmrouter'
@@ -81,12 +81,6 @@ export struct HomeView {
       action: 'category'
     },
     {
-      label: '兼职发布',
-      value: '兼职发布',
-      icon: $r('app.media.icon_category_parttime'),
-      action: 'category'
-    },
-    {
       label: '代办服务',
       value: '代办服务',
       icon: $r('app.media.icon_category_agency'),
@@ -115,7 +109,13 @@ export struct HomeView {
       value: '万能服务',
       icon: $r('app.media.icon_category_service'),
       action: 'category'
-    }
+    },
+    {
+      label: '我的订单',
+      value: 'orders',
+      icon: $r('app.media.icon_category_orders'),
+      action: 'orders'
+    },
   ]
 
   aboutToAppear() {
@@ -169,7 +169,13 @@ export struct HomeView {
     const nextId: number = typeof idValue === 'number' && idValue > 0 && nameValue.length > 0 ? idValue : 0
     const nextName: string = nextId > 0 ? nameValue : '请选择学校'
     const hasChanged: boolean = nextId !== this.lastSchoolId || nextName !== this.lastSchoolName
-    console.info('[HomeView] syncSchoolSelection', JSON.stringify({ prevId: this.lastSchoolId, prevName: this.lastSchoolName, nextId, nextName, changed: hasChanged }))
+    console.info('[HomeView] syncSchoolSelection', JSON.stringify({
+      prevId: this.lastSchoolId,
+      prevName: this.lastSchoolName,
+      nextId,
+      nextName,
+      changed: hasChanged
+    }))
     this.lastSchoolId = nextId
     this.lastSchoolName = nextName
     this.currentSchoolId = nextId
@@ -351,7 +357,9 @@ export struct HomeView {
           .borderRadius(24)
           .backgroundColor($r('[basic].color.white'))
           .onChange((value: string) => this.onSearchInput(value))
-          .onSubmit(() => { this.executeSearch(this.keyword) })
+          .onSubmit(() => {
+            this.executeSearch(this.keyword)
+          })
           .layoutWeight(1);
 
         Row() {
@@ -633,10 +641,14 @@ export struct HomeView {
   }
 
   private async fetchTasks(query?: TaskQuery): Promise<TaskItem[]> {
-    return await fetchHomeTasks(query)
+    return await fetchHomeTasks(query ?? {})
   }
 
   private handleCategoryTap(item: HomeCategoryItem) {
+    if (item.action === 'orders') {
+      HMRouterMgr.push({ pageUrl: PAGE_PATH.MY_ORDERS_PAGE })
+      return
+    }
     if (item.value) {
       const nextCategory = this.selectedCategory === item.value ? '全部' : item.value
       this.selectedCategory = nextCategory
@@ -666,7 +678,10 @@ export struct HomeView {
 
   private executeSearch(value: string): void {
     const keyword = (value || '').trim()
-    if (!keyword) { this.showToast('请输入搜索关键词'); return }
+    if (!keyword) {
+      this.showToast('请输入搜索关键词');
+      return
+    }
     AppStorage.setOrCreate('home_search_keyword', keyword)
     HMRouterMgr.push({ pageUrl: PAGE_PATH.SEARCH_PAGE })
   }
@@ -734,7 +749,9 @@ export struct HomeView {
     return { label: `中标价 ¥${bidAmount}`, color: $r('[basic].color.price_deal') }
   }
 
-  private getSchoolDisplayName(): string { return this.schoolSelection.name?.length > 0 ? this.schoolSelection.name : '请选择学校' }
+  private getSchoolDisplayName(): string {
+    return this.schoolSelection.name?.length > 0 ? this.schoolSelection.name : '请选择学校'
+  }
 
   private resolveSelectedSchoolId(): number {
     const snapshot = schoolPersistence.getSelection()
@@ -744,7 +761,9 @@ export struct HomeView {
     return normalizedId
   }
 
-  private resolveSelectedSchoolName(): string { return this.schoolSelection.name?.length > 0 ? this.schoolSelection.name : '请选择学校' }
+  private resolveSelectedSchoolName(): string {
+    return this.schoolSelection.name?.length > 0 ? this.schoolSelection.name : '请选择学校'
+  }
 
   private handleTaskSelect(task: TaskItem) {
     const vm = AppStorageV2.connect(AppCurrentTaskDetail, () => new AppCurrentTaskDetail())!
