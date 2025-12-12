@@ -358,11 +358,11 @@ export struct SchoolPickerView {
         this.renderLocationSelectors()
         this.renderSchoolList()
       }
-      .backgroundColor($r('[basic].color.page_background'))
       .height('100%')
       .width('100%')
-      .padding({bottom: 180 + this.safeArea.bottomHeight})
     }
+    .padding({bottom: 200 + this.safeArea.bottomHeight})
+    .backgroundColor($r('[basic].color.page_background'))
   }
 
   @Builder
@@ -489,10 +489,10 @@ export struct SchoolPickerView {
                 Text(item.name)
                   .fontSize(16)
                   .fontWeight(FontWeight.Medium)
-                  .fontColor($r('[basic].color.text_primary'))
+                  .fontColor($r('[basic].color.text_on_light'))
                 Text(this.formatSchoolLocation(item))
                   .fontSize(13)
-                  .fontColor($r('[basic].color.text_secondary'))
+                  .fontColor($r('[basic].color.text_on_light'))
               }
               .width('100%')
               .padding({
@@ -508,41 +508,38 @@ export struct SchoolPickerView {
               })
             }
           }, (item: SchoolListItem) => `school-${item.id}`)
+
+          if (this.isLoadingSchools) {
+            ListItem() {
+              Row({ space: 8 }) {
+                ProgressLoading({ pWidth: 20, strokeWidth: 2, loading: this.isLoadingSchools && this.isPageVisible })
+                Text('加载中...')
+                  .fontSize(13)
+                  .fontColor($r('[basic].color.text_secondary'))
+              }
+              .justifyContent(FlexAlign.Center)
+              .padding({ top: 6, bottom: 6 })
+              .width('100%')
+            }
+          } else if (!this.hasMore && this.schools.length > 0) {
+            ListItem() {
+              Row() {
+                Text('没有更多学校了')
+                  .fontSize(13)
+                  .fontColor($r('[basic].color.text_secondary'))
+                  .padding({ top: 6, bottom: 6 })
+              }
+              .width('100%')
+              .justifyContent(FlexAlign.Center)
+            }
+          }
         }
         .scrollBar(BarState.Off)
         .onReachEnd(() => {
           this.handleLoadMore()
         })
       }
-
-      if (this.isLoadingSchools) {
-        Row({ space: 8 }) {
-          ProgressLoading({ pWidth: 20, strokeWidth: 2, loading: this.isLoadingSchools && this.isPageVisible })
-          Text('加载中...')
-            .fontSize(13)
-            .fontColor($r('[basic].color.text_secondary'))
-        }
-        .justifyContent(FlexAlign.Center)
-        .padding({ top: 12, bottom: 12 })
-      } else if (!this.isSearchMode && this.hasMore && this.schools.length > 0) {
-        Button('加载更多')
-          .width('100%')
-          .height(46)
-          .fontColor($r('[basic].color.text_primary'))
-          .backgroundColor($r('[basic].color.white'))
-          .borderRadius(18)
-          .onClick((): void => {
-            this.handleLoadMore()
-          })
-          .padding({ left: 16, right: 16 })
-      } else if (this.schools.length > 0) {
-        Text('没有更多学校了')
-          .fontSize(13)
-          .fontColor($r('[basic].color.text_secondary'))
-          .padding({ top: 12 })
-      }
-
     }
-    .padding({ left: 16, right: 16, bottom: 20 })
+    .padding({ left: 16, right: 16})
   }
 }

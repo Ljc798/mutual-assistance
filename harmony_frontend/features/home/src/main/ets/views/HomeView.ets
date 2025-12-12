@@ -427,7 +427,7 @@ export struct HomeView {
         ForEach(this.filters, (item: TaskFilter) => {
           Text(item.label)
             .fontSize(14)
-            .fontColor(this.activeFilter === item.value ? $r('[basic].color.white') : $r('[basic].color.text_primary'))
+            .fontColor(this.activeFilter === item.value ? $r('[basic].color.white') : $r('[basic].color.text_on_light'))
             .padding({
               left: 18,
               right: 18,
@@ -468,10 +468,10 @@ export struct HomeView {
         Column({ space: 6 }) {
           Text('暂无任务')
             .fontSize(16)
-            .fontColor($r('[basic].color.text_secondary'))
+            .fontColor($r('[basic].color.text_on_light'))
           Text('换个分类或稍后再试试吧~')
             .fontSize(13)
-            .fontColor($r('[basic].color.text_secondary'))
+            .fontColor($r('[basic].color.text_on_light'))
         }
         .width('100%')
         .padding(24)
@@ -529,19 +529,19 @@ export struct HomeView {
         Text(task.title)
           .fontSize(18)
           .fontWeight(FontWeight.Medium)
-          .fontColor($r('[basic].color.text_primary'))
+          .fontColor($r('[basic].color.text_on_light'))
           .margin({ bottom: 8 });
         Text(`期望完成时间：${task.formattedDeadline ? task.formattedDeadline : '--'}前`)
           .fontSize(13)
-          .fontColor($r('[basic].color.text_primary'))
+          .fontColor($r('[basic].color.text_on_light'))
           .margin({ bottom: 4 });
         Text(`交易地点：${task.position ? task.position : '-'}`)
           .fontSize(13)
-          .fontColor($r('[basic].color.text_primary'))
+          .fontColor($r('[basic].color.text_on_light'))
           .margin({ bottom: 4 });
         Text(`送达地点：${task.address ? task.address : '-'}`)
           .fontSize(13)
-          .fontColor($r('[basic].color.text_primary'));
+          .fontColor($r('[basic].color.text_on_light'));
       }
       .alignItems(HorizontalAlign.Start)
 

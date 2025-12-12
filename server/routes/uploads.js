@@ -151,13 +151,13 @@ router.post("/upload-voice", upload.single("voice"), async (req, res) => {
 
 // COS 审核结果回调接口
 router.post("/image-review", express.json(), async (req, res) => {
-    // 立即返回 200
-    res.status(200).send("OK");
+  // 立即返回 200
+  res.status(200).send("OK");
 
-    try {
-        const {
-            data
-        } = req.body;
+  try {
+    const {
+      data
+    } = req.body;
 
         if (!data || !data.url || data.forbidden_status === undefined) {
             console.warn("⚠️ 回调格式异常:", req.body);
@@ -172,28 +172,59 @@ router.post("/image-review", express.json(), async (req, res) => {
         const auditStatus = data.forbidden_status === 0 ? "pass" : "fail";
 
         // 使用连接池独立连接执行更新
-        const conn = await db.getConnection();
-        const [result] = await conn.query(
-            `UPDATE square_images 
-         SET audit_status = ? 
-         WHERE image_url LIKE ?`,
-            [auditStatus, `%${objectKey}%`]
-        );
-        conn.release();
+    const conn = await db.getConnection();
+    const [result] = await conn.query(
+      `UPDATE square_images 
+       SET audit_status = ? 
+       WHERE image_url LIKE ?`,
+      [auditStatus, `%${objectKey}%`]
+    );
 
-        console.log("COS 回调成功:", {
-            url: data.url,
-            objectKey,
-            auditStatus,
-            affectedRows: result.affectedRows
-        });
+    console.log("COS 回调成功:", {
+      url: data.url,
+      objectKey,
+      auditStatus,
+      affectedRows: result.affectedRows
+    });
 
-        if (result.affectedRows === 0) {
-            console.warn("⚠️ 未匹配到对应图片记录:", objectKey);
+    if (result.affectedRows === 0) {
+      console.warn("⚠️ 未匹配到对应图片记录:", objectKey);
+      // 尝试补偿：如果没有匹配到记录，则根据 objectKey 解析 square_id 并插入一条记录
+      try {
+        const parts = objectKey.split("/");
+        const isSquare = parts[0] === "square";
+        const squareId = isSquare && parts.length >= 3 ? parseInt(parts[1], 10) : null;
+        const imageUrl = `https://${bucketName}.cos.${region}.myqcloud.com/${objectKey}`;
+
+        if (squareId && !Number.isNaN(squareId)) {
+          // 仅当不存在时插入
+          const [existsRows] = await conn.query(
+            `SELECT id FROM square_images WHERE image_url LIKE ? LIMIT 1`,
+            [`%${objectKey}%`]
+          );
+          if (existsRows.length === 0) {
+            await conn.query(
+              `INSERT INTO square_images (square_id, image_url, audit_status) VALUES (?, ?, ?)`,
+              [squareId, imageUrl, auditStatus]
+            );
+            console.log("✅ 已补充插入图片记录:", { squareId, imageUrl, auditStatus });
+          } else {
+            console.log("ℹ️ 记录已存在但未被更新，可能是 URL 不完全匹配:", { objectKey });
+          }
+        } else {
+          console.warn("⚠️ 无法解析 square_id，跳过插入:", objectKey);
         }
-    } catch (err) {
-        console.error("❌ COS 回调异常:", err);
+      } catch (e) {
+        console.error("❌ 回调补偿插入失败:", e);
+      } finally {
+        conn.release();
+      }
+      return;
     }
+    conn.release();
+  } catch (err) {
+    console.error("❌ COS 回调异常:", err);
+  }
 });
 
 

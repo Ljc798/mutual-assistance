@@ -43,10 +43,11 @@ export struct MyOrdersView {
       }
       .height('100%')
       .width('100%')
-      .backgroundColor($r('[basic].color.page_background'))
 
       this.renderCancelDialog()
     }
+    .backgroundColor($r('[basic].color.page_background'))
+    .padding({bottom: 170 + this.safeArea.bottomHeight})
   }
 
   @Builder

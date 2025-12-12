@@ -323,7 +323,7 @@ export struct LoginView {
         Column({ space: 16 }) {
           Text('账号密码登录')
             .fontSize(18)
-            .fontColor($r('[basic].color.black'))
+            .fontColor($r('[basic].color.text_primary'))
             .width('100%')
             .fontWeight(500)
             .margin({ bottom: 10 })
@@ -385,7 +385,7 @@ export struct LoginView {
         Column({ space: 16 }) {
           Text('手机号验证码登录')
             .fontSize(18)
-            .fontColor($r('[basic].color.black'))
+            .fontColor($r('[basic].color.text_primary'))
             .width('100%')
             .fontWeight(500)
             .margin({ bottom: 10 })
@@ -463,6 +463,7 @@ export struct LoginView {
     }
     .width('100%')
     .height('100%')
+    .backgroundColor($r('[basic].color.page_background'))
 
   }
 }

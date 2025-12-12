@@ -265,17 +265,19 @@ router.post("/update-images", authMiddleware, async (req, res) => {
     }
 
     try {
-        // 👇 每张图的审核状态初始化为 pending
-        const imageInserts = images.map(url => [square_id, url, 'pending']);
+        // 👇 避免重复：逐条插入，若已存在则跳过
+        for (const url of images) {
+            await db.query(
+                `INSERT INTO square_images (square_id, image_url, audit_status)
+                 SELECT ?, ?, 'pending'
+                 WHERE NOT EXISTS (
+                   SELECT 1 FROM square_images WHERE image_url = ?
+                 )`,
+                [square_id, url, url]
+            );
+        }
 
-        await db.query(
-            `INSERT INTO square_images (square_id, image_url, audit_status) VALUES ?`,
-            [imageInserts]
-        );
-
-        res.json({
-            success: true
-        });
+        res.json({ success: true });
     } catch (err) {
         console.error("❌ 存储图片失败:", err);
         res.status(500).json({

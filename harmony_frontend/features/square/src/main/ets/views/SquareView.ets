@@ -41,7 +41,7 @@ import { photoAccessHelper } from '@kit.MediaLibraryKit'
 import { fileIo as fs } from '@kit.CoreFileKit'
 import { common } from '@kit.AbilityKit'
 import { BusinessError } from '@ohos.base'
-import { readFileAsBytes, uploadSingle, UploadFileItem } from 'basic'
+import { readFileAsBytes, uploadSingle, uploadBatch, UploadFileItem, UploadResultItem } from 'basic'
 
 const MAX_IMAGES: number = 9
 
@@ -583,7 +583,7 @@ export struct SquareView {
         }
         .width('90%')
         .padding(20)
-        .backgroundColor($r('[basic].color.white'))
+        .backgroundColor($r('[basic].color.search_box_bg'))
         .borderRadius(24)
       }
       .width('100%')
@@ -632,46 +632,49 @@ export struct SquareView {
       Text('图片（最多9张）')
         .fontSize(13)
         .fontColor($r('[basic].color.text_secondary'))
-      Row({ space: 10 }) {
-        ForEach(this.tempImages, (_value: string, index: number) => {
-          Stack() {
-            Image(this.tempImages[index] as ResourceStr)
-              .width(64)
-              .height(64)
-              .borderRadius(12)
-              .objectFit(ImageFit.Cover)
-            Text('×')
-              .fontSize(14)
-              .fontColor($r('[basic].color.white'))
-              .backgroundColor('rgba(0,0,0,0.5)')
-              .padding(4)
-              .borderRadius(12)
-              .position({
-                right: -8,
-                top: -8
-              })
-              .onClick((): void => {
-                this.removeTempImage(index)
-              })
+      Scroll() {
+        Row({ space: 10 }) {
+          ForEach(this.tempImages, (_value: string, index: number) => {
+            Stack() {
+              Image(this.tempImages[index] as ResourceStr)
+                .width(64)
+                .height(64)
+                .borderRadius(12)
+                .objectFit(ImageFit.Cover)
+              Text('×')
+                .fontSize(14)
+                .fontColor($r('[basic].color.white'))
+                .backgroundColor('rgba(0,0,0,0.5)')
+                .padding(4)
+                .borderRadius(12)
+                .position({
+                  right: -8,
+                  top: -8
+                })
+                .onClick((): void => {
+                  this.removeTempImage(index)
+                })
+            }
+          }, (_: string, index: number) => `temp-${index}`)
+          if (this.tempImages.length < MAX_IMAGES) {
+            Column() {
+              Text('+')
+                .fontSize(20)
+                .fontColor($r('[basic].color.text_secondary'))
+            }
+            .width(64)
+            .height(64)
+            .borderRadius(12)
+            .backgroundColor($r('[basic].color.search_box_bg'))
+            .justifyContent(FlexAlign.Center)
+            .alignItems(HorizontalAlign.Center)
+            .onClick((): void => {
+              this.handleImagePick()
+            })
           }
-        }, (_: string, index: number) => `temp-${index}`)
-        if (this.tempImages.length < MAX_IMAGES) {
-          Column() {
-            Text('+')
-              .fontSize(20)
-              .fontColor($r('[basic].color.text_secondary'))
-          }
-          .width(64)
-          .height(64)
-          .borderRadius(12)
-          .backgroundColor($r('[basic].color.search_box_bg'))
-          .justifyContent(FlexAlign.Center)
-          .alignItems(HorizontalAlign.Center)
-          .onClick((): void => {
-            this.handleImagePick()
-          })
         }
       }
+      .scrollable(ScrollDirection.Horizontal)
     }
   }
 
@@ -685,6 +688,7 @@ export struct SquareView {
           Text('举报帖子')
             .fontSize(18)
             .fontWeight(FontWeight.Medium)
+            .fontColor($r('[basic].color.text_primary'))
           this.renderReasonSelector()
           TextArea({ placeholder: '补充说明（可选）' })
             .height(100)
@@ -714,7 +718,7 @@ export struct SquareView {
         }
         .width('90%')
         .padding(20)
-        .backgroundColor($r('[basic].color.white'))
+        .backgroundColor($r('[basic].color.search_box_bg'))
         .borderRadius(24)
       }
       .width('100%')
@@ -1002,6 +1006,7 @@ export struct SquareView {
     this.publishContent = ''
     this.tempImages = []
     this.uploadedImages = []
+    this.selectedCachePaths = []
   }
 
 
@@ -1038,17 +1043,18 @@ export struct SquareView {
       }
       const created = await createSquarePost(payload, token)
       if (created.success) {
-        const uploaded: string[] = []
+        const items: UploadFileItem[] = []
         for (let i = 0; i < this.selectedCachePaths.length; i++) {
           try {
             const p = this.selectedCachePaths[i]
             const bytes = await readFileAsBytes(p)
             const fname = p.split('/').pop()!
-            const item: UploadFileItem = { filename: fname, mime: 'image/jpeg', data: bytes, extra: { type: 'square', postId: `${created.square_id}`, userId: this.appUser.user.id } }
-            const res = await uploadSingle(item)
-            if (res.success && res.url) { uploaded.push(res.url) }
-          } catch (e) { console.error('[SquareView] publish.upload.error', (e as Error)?.message) }
+            items.push({ filename: fname, mime: 'image/jpeg', data: bytes, extra: { type: 'square', postId: `${created.square_id}`, userId: this.appUser.user.id } })
+          } catch (e) { console.error('[SquareView] publish.buildItem.error', (e as Error)?.message) }
         }
+        const results: UploadResultItem[] = await uploadBatch(items, 3, 3)
+        const uploaded: string[] = []
+        for (const r of results) { if (r.success && r.url) { uploaded.push(r.url) } }
         if (uploaded.length > 0) {
           const linkPayload: SquareImageUpdatePayload = { square_id: created.square_id, images: uploaded }
           await updateSquareImages(linkPayload, token)

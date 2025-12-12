@@ -366,6 +366,10 @@ export struct MineView {
         .fontSize(13)
         .fontColor($r('[basic].color.text_secondary'))
         .textAlign(TextAlign.Center)
+      Text('深色模式开发中，感谢您的等待～')
+        .fontSize(13)
+        .fontColor($r('[basic].color.text_secondary'))
+        .textAlign(TextAlign.Center)
     }
     .alignItems(HorizontalAlign.Center)
     .padding({ top: 12, bottom: 12 })
@@ -408,7 +412,7 @@ export struct MineView {
         }
         .width('90%')
         .padding(20)
-        .backgroundColor($r('[basic].color.white'))
+        .backgroundColor($r('[basic].color.search_box_bg'))
         .borderRadius(24)
       }
       .width('100%')

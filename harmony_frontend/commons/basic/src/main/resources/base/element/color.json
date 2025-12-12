@@ -29,6 +29,10 @@
       "value": "#222222"
     },
     {
+      "name": "text_on_light",
+      "value": "#222222"
+    },
+    {
       "name": "text_secondary",
       "value": "#666666"
     },
