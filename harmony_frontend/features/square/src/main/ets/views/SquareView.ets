@@ -8,10 +8,10 @@ import { AppSafeArea,
   SCHOOL_SELECTION_VERSION_KEY,
   schoolPersistence,
   AppSchoolPickerContext,
-  AppImagePreview,
   PROFILE_TARGET_ID_KEY,
   SQUARE_DETAIL_ID_KEY
 } from 'basic'
+import { ImagePreview } from 'module_imagepreview'
 import { HMRouterMgr } from '@hadss/hmrouter'
 import {
   DEFAULT_SQUARE_CATEGORIES,
@@ -42,7 +42,6 @@ import { fileIo as fs } from '@kit.CoreFileKit'
 import { common } from '@kit.AbilityKit'
 import { BusinessError } from '@ohos.base'
 import { readFileAsBytes, uploadSingle, UploadFileItem } from 'basic'
-import http from '@ohos.net.http'
 
 const MAX_IMAGES: number = 9
 
@@ -86,7 +85,6 @@ export struct SquareView {
   @State checkinSubTitle: string = '签到领积分'
   @State postModels: SquarePostModel[] = []
   @Prop @Watch('onVisibleChange') isVisible: boolean = false
-  private readonly previewVM: AppImagePreview = AppStorageV2.connect(AppImagePreview, () => new AppImagePreview())!
 
   onVisibleChange() {
     if (this.isVisible) {
@@ -126,11 +124,9 @@ export struct SquareView {
   }
 
   onPageShow() {
-    const changed = this.syncSchoolSelection()
-    if (changed) {
-      this.resetPagingState()
-      this.loadPosts(false)
-    }
+    this.syncSchoolSelection()
+    this.resetPagingState()
+    this.loadPosts(false)
   }
 
   private bootstrap() {
@@ -451,7 +447,10 @@ export struct SquareView {
               .height(120)
               .borderRadius(16)
               .objectFit(ImageFit.Cover)
-              .onClick(() => this.openPreviewPage(post.images.filter((it: SquareImageDTO) => it.status === 'pass').map((it: SquareImageDTO) => it.url), index))
+              .onClick(() => this.openPreviewPage(
+                post.images.filter((it: SquareImageDTO) => it.status === 'pass').map((it: SquareImageDTO) => it.url),
+                index
+              ))
           } else {
             Column() {
               Text('图片审核中')
@@ -479,8 +478,11 @@ export struct SquareView {
 
   private openPreviewPage(urls: string[], index: number): void {
     const oriented: string[] = urls.map((u: string) => this.getOrientedUrl(u))
-    this.previewVM.set(oriented, index)
-    HMRouterMgr.push({ pageUrl: PAGE_PATH.IMAGE_PREVIEW_PAGE })
+    ImagePreview.show(oriented, {
+      startIndex: index,
+      showIndex: true,
+      loop: false
+    })
   }
 
   @Builder
@@ -536,6 +538,8 @@ export struct SquareView {
       Blank()
     }
   }
+
+
 
   @Builder
   private renderPublishModal() {

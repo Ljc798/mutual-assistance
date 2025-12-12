@@ -283,6 +283,15 @@ export struct EditProfileView {
     const token = this.appUser.user.token
     if (!token) { promptAction.showToast({ message: '请先登录' }); return }
     try {
+      const resp = await promptAction.showDialog({
+        title: '确认注销',
+        message: '注销后不可恢复，是否注销？',
+        buttons: [
+          { text: '取消', color: '#666666' },
+          { text: '注销', color: '#FF0000' }
+        ]
+      })
+      if (resp.index !== 1) { return }
       const res = await deleteAccount(token)
       if (!res.success) { promptAction.showToast({ message: res.message ?? '注销失败' }); return }
       userPersistence.clearUser()

@@ -16,7 +16,6 @@ export class PAGE_PATH {
   static readonly WALLET_PAGE: string = "WalletView"
   static readonly VIP_PAGE: string = "VipView"
   static readonly PRIVACY_PAGE: string = "PrivacyView"
-  static readonly IMAGE_PREVIEW_PAGE: string = "ImagePreviewView"
   static readonly AVATAR_CROP_PAGE: string = "AvatarCropView"
   static readonly USER_PROFILE_PAGE: string = "UserProfileView"
   static readonly EDIT_TASK_PAGE: string = "EditTaskView"

@@ -1,6 +1,7 @@
 import promptAction from '@ohos.promptAction'
 import { AppStorageV2 } from '@kit.ArkUI'
-import { AppSafeArea, PAGE_PATH, AppUser, SquareCommentItem, AppImagePreview, PROFILE_TARGET_ID_KEY, SQUARE_DETAIL_ID_KEY } from 'basic'
+import { AppSafeArea, PAGE_PATH, AppUser, SquareCommentItem, PROFILE_TARGET_ID_KEY, SQUARE_DETAIL_ID_KEY } from 'basic'
+import { ImagePreview } from 'module_imagepreview'
 import { SquarePost } from '../viewmodels/SquareTypes'
 import { SquareImageDTO, SquareLikePayload } from '../viewmodels/SquareTypes'
 import { HMRouter, HMRouterMgr } from '@hadss/hmrouter'
@@ -13,10 +14,6 @@ import {
   unlikeSquareComment
 } from '../services/SquareDetailService'
 import { likeSquarePost, unlikeSquarePost } from '../services/SquareService'
-import http from '@ohos.net.http'
-import { fileIo as fs } from '@kit.CoreFileKit'
-import { photoAccessHelper } from '@kit.MediaLibraryKit'
-import { common } from '@kit.AbilityKit'
 
 @Entry
 @HMRouter({ pageUrl: PAGE_PATH.SQUARE_DETAIL_PAGE })
@@ -34,10 +31,6 @@ export struct SquareDetailView {
   @State replyToCommentId: number = 0
   @State replyRootParentId: number = 0
   @State replyToName: string = ''
-  private readonly previewVM: AppImagePreview = AppStorageV2.connect(AppImagePreview, () => new AppImagePreview())!
-  @State previewVisible: boolean = false
-  @State previewIndex: number = 0
-  @State previewImages: string[] = []
 
   build() {
     Stack() {
@@ -556,36 +549,13 @@ export struct SquareDetailView {
     }
   }
 
-  private openPreview(urls: string[], index: number) {
-    this.previewImages = urls
-    this.previewIndex = index
-    this.previewVisible = true
-  }
-
-  private async downloadCurrentImage(): Promise<void> {
-    try {
-      const url: string = this.previewImages[this.previewIndex]
-      const client = http.createHttp()
-      const res = await client.request(url, { method: http.RequestMethod.GET, expectDataType: http.HttpDataType.ARRAY_BUFFER })
-      const context = (this.getUIContext().getHostContext() as common.UIAbilityContext)
-      const cacheDir: string = context.cacheDir
-      const fname: string = `square_dl_${Date.now()}.jpg`
-      const target: string = `${cacheDir}/${fname}`
-      const file = fs.openSync(target, fs.OpenMode.CREATE | fs.OpenMode.WRITE_ONLY)
-      await fs.write(file.fd, res.result as ArrayBuffer)
-      fs.closeSync(file.fd)
-      const helper = photoAccessHelper.getPhotoAccessHelper(context)
-      await helper.createAsset(photoAccessHelper.PhotoType.IMAGE, target)
-      promptAction.showToast({ message: '已保存到相册' })
-    } catch (e) {
-      promptAction.showToast({ message: '下载失败' })
-    }
-  }
-
   private openPreviewPage(urls: string[], index: number): void {
     const oriented: string[] = urls.map((u: string) => this.getOrientedUrl(u))
-    this.previewVM.set(oriented, index)
-    HMRouterMgr.push({ pageUrl: PAGE_PATH.IMAGE_PREVIEW_PAGE })
+    ImagePreview.show(oriented, {
+      startIndex: index,
+      showIndex: true,
+      loop: false
+    })
   }
 }
 

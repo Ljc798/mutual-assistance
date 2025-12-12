@@ -26,7 +26,7 @@ router.post("/submit", authMiddleware, async (req, res) => {
 
         res.json({
             success: true,
-            message: "感谢您的反馈，我们可能会忽略它。",
+            message: "非常感谢您的反馈！",
         });
     } catch (err) {
         console.error("❌ 提交反馈失败:", err);

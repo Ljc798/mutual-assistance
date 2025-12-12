@@ -5,7 +5,8 @@
     "@hadss/hmrouter": "^1.2.2",
     "@hadss/hmrouter-transitions": "^1.2.2",
     "@cashier_alipay/cashiersdk": "^15.8.39",
-    "aggregated_payment": "file:./payment/aggregated_payment"
+    "aggregated_payment": "file:./payment/aggregated_payment",
+    "module_imagepreview": "file:./ohos_agcit/agcit_huawei_comprehensive_news_module_imagepreview/components/module_imagepreview"
   },
   "devDependencies": {
     "@ohos/hypium": "1.0.24",

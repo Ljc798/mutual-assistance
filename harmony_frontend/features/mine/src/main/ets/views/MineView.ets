@@ -127,6 +127,7 @@ export struct MineView {
           .fontColor($r('[basic].color.text_primary'))
         Text(this.getProfileIdLabel())
           .fontSize(13)
+          .width('50%')
           .fontColor($r('[basic].color.text_secondary'))
       }
       .alignItems(HorizontalAlign.Start)

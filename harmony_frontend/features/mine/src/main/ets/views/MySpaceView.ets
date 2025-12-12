@@ -24,8 +24,9 @@ export struct MySpaceView {
       }
       .height('100%')
       .width('100%')
-      .backgroundColor($r('[basic].color.page_background'))
     }
+    .padding({bottom: 120 + this.safeArea.bottomHeight})
+    .backgroundColor($r('[basic].color.page_background'))
   }
 
   @Builder
@@ -45,6 +46,7 @@ export struct MySpaceView {
     if (this.posts.length === 0) {
       Column() { Text('暂无动态').fontSize(14).fontColor($r('[basic].color.text_secondary')).textAlign(TextAlign.Center) }
         .padding({ top: 40 })
+        .backgroundColor(Color.Transparent)
     } else {
       List({ space: 10 }) {
         ForEach(this.posts, (post: MyPostItem) => {
@@ -67,10 +69,12 @@ export struct MySpaceView {
             .borderRadius(12)
             .shadow({ radius: 8, color: '#0A000000', offsetY: 2 })
           }
+          .backgroundColor(Color.Transparent)
           .padding({ left: 16, right: 16, top: 6, bottom: 6 })
         }, (post: MyPostItem) => `${post.id}`)
       }
-      .padding({ left: 16, right: 16, bottom: 20 })
+      .padding({ left: 16, right: 16 })
+      .backgroundColor(Color.Transparent)
     }
   }
 
@@ -98,6 +102,7 @@ export struct MySpaceView {
         if (!r.success) { this.showToast(r.message ?? '删除失败'); return }
         this.showToast('已删除')
         await this.loadPosts()
+        AppStorage.setOrCreate('reload_square_now', Date.now())
       }
     })
   }
