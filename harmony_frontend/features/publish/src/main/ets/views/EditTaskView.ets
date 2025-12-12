@@ -11,7 +11,7 @@ import {
   PublishFormModel,
   PublishUpdatePayload
 } from '../viewmodels/PublishTypes'
-import { getTaskDetail, updateTask, prepayAliTask } from '../services/PublishService'
+import { getTaskDetail, updateTask, prepayAliTask, prepayHuaweiTask } from '../services/PublishService'
 import { HMRouter, HMRouterMgr } from '@hadss/hmrouter'
 import { aggregatedPaymentService, CashierPicker, PaymentType } from 'aggregated_payment'
 import { common } from '@kit.AbilityKit'
@@ -20,6 +20,10 @@ interface AliPrepayPayload {
   orderInfo?: string;
   orderStr?: string
   paymentUrl?: string
+}
+
+interface HuaweiPrepayPayload {
+  orderStr?: string
 }
 
 @HMRouter({ pageUrl: 'EditTaskView' })
@@ -62,7 +66,7 @@ export struct EditTaskView {
 
     if (!this.paymentCbId) {
       this.paymentCbId = aggregatedPaymentService.registerPaymentCallback((type: PaymentType, ok: boolean) => {
-        if (type === PaymentType.ALIPAY) {
+        if (type === PaymentType.ALIPAY || type === PaymentType.HUAWEI) {
           if (ok) {
             promptAction.showToast({ message: '支付成功' })
             HMRouterMgr.pop({ param: { updated: true } })
@@ -442,8 +446,27 @@ export struct EditTaskView {
                    }
                    aggregatedPaymentService.requestPaymentByAliPay({ orderInfo })
                    picker.close()
+                } else if (type === PaymentType.HUAWEI) {
+                   const payRes = await prepayHuaweiTask(this.taskId, false, this.appUser.user.token, diff)
+                   if (!payRes.success || !payRes.data) { 
+                      promptAction.showToast({ message: payRes.message ?? '预下单失败' })
+                      this.revertTaskUpdate()
+                      return 
+                   }
+                   
+                   const objText: string = JSON.stringify(payRes.data)
+                   const data: HuaweiPrepayPayload = JSON.parse(objText) as HuaweiPrepayPayload
+                   const orderStr: string = String(data.orderStr ?? '')
+                   
+                   if (!orderStr) { 
+                      promptAction.showToast({ message: '支付参数缺失' })
+                      this.revertTaskUpdate()
+                      return 
+                   }
+                   aggregatedPaymentService.requestPaymentByHuawei(this.getUIContext(), { orderStr })
+                   picker.close()
                 } else {
-                   promptAction.showToast({ message: '当前仅支持支付宝' })
+                   promptAction.showToast({ message: '当前仅支持支付宝和华为支付' })
                 }
               })
               .open()

@@ -51,3 +51,14 @@ export async function prepayAliTask(taskId: number, includeCommission: boolean, 
   }
   return HttpClient.post<AliPrepayResponse, AliPrepayPayload>('/pay/ali/prepay-task', payload, buildAuthHeader(token))
 }
+
+interface HuaweiPrepayPayload { task_id: number, include_commission: boolean, amount?: number }
+export interface HuaweiPrepayResponse { success: boolean, out_trade_no?: string, total_amount?: string, data?: Object, responseHttpStatus?: number, traceId?: string, message?: string }
+
+export async function prepayHuaweiTask(taskId: number, includeCommission: boolean, token: string, amount?: number): Promise<HuaweiPrepayResponse> {
+  const payload: HuaweiPrepayPayload = { task_id: taskId, include_commission: includeCommission }
+  if (amount !== undefined) {
+    payload.amount = amount
+  }
+  return HttpClient.post<HuaweiPrepayResponse, HuaweiPrepayPayload>('/pay/huawei/prepay-task', payload, buildAuthHeader(token))
+}

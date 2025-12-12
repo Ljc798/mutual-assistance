@@ -126,6 +126,25 @@ export async function prepayAliBid(bidId: number, token: string): Promise<AliPre
   return HttpClient.post<AliPrepayResponse, AliPrepayBidPayload>('/pay/ali/prepay-bid', payload, { Authorization: `Bearer ${token}` })
 }
 
+export interface HuaweiPrepayResponse {
+  success: boolean
+  out_trade_no?: string
+  total_amount?: string
+  data?: Object
+  responseHttpStatus?: number
+  traceId?: string
+  message?: string
+}
+
+export interface HuaweiPrepayBidPayload {
+  bid_id: number
+}
+
+export async function prepayHuaweiBid(bidId: number, token: string): Promise<HuaweiPrepayResponse> {
+  const payload: HuaweiPrepayBidPayload = { bid_id: bidId }
+  return HttpClient.post<HuaweiPrepayResponse, HuaweiPrepayBidPayload>('/pay/huawei/prepay-bid', payload, { Authorization: `Bearer ${token}` })
+}
+
 export interface ReviewPayload {
   rating: number
   comment: string

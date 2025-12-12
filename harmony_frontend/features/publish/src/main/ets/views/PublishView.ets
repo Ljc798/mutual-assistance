@@ -17,7 +17,7 @@ import {
   PUBLISH_CATEGORIES,
   PublishCreatePayload
 } from '../viewmodels/PublishTypes'
-import { calculateCommission, createTask, prepayAliTask } from '../services/PublishService'
+import { calculateCommission, createTask, prepayAliTask, prepayHuaweiTask } from '../services/PublishService'
 import { AliPaySDK, AliPayPayResult } from 'basic'
 import { paymentService } from '@kit.PaymentKit'
 import { BusinessError } from '@kit.BasicServicesKit'
@@ -31,6 +31,10 @@ interface AliPrepayData {
 }
 
 interface AliPrepayPayload extends AliPrepayData { paymentUrl?: string }
+
+interface HuaweiPrepayPayload {
+  orderStr?: string
+}
 
 @Component
 export struct PublishView {
@@ -65,7 +69,7 @@ export struct PublishView {
     this.syncSelectedSchool()
     if (!this.paymentCbId) {
       this.paymentCbId = aggregatedPaymentService.registerPaymentCallback((type: PaymentType, ok: boolean) => {
-        if (type === PaymentType.ALIPAY) {
+        if (type === PaymentType.ALIPAY || type === PaymentType.HUAWEI) {
           if (ok) {
             promptAction.showToast({ message: '发布成功' })
             this.resetForm()
@@ -587,8 +591,17 @@ export struct PublishView {
               if (!orderInfo) { promptAction.showToast({ message: '支付参数缺失: orderInfo' }); return }
               aggregatedPaymentService.requestPaymentByAliPay({ orderInfo })
               picker.close()
+            } else if (type === PaymentType.HUAWEI) {
+              const res = await prepayHuaweiTask(taskId, false, token)
+              if (!res.success || !res.data) { promptAction.showToast({ message: res.message ?? '预下单失败' }); return }
+              const objText: string = JSON.stringify(res.data)
+              const data: HuaweiPrepayPayload = JSON.parse(objText) as HuaweiPrepayPayload
+              const orderStr: string = String(data.orderStr ?? '')
+              if (!orderStr) { promptAction.showToast({ message: '支付参数缺失: orderStr' }); return }
+              aggregatedPaymentService.requestPaymentByHuawei(ui, { orderStr })
+              picker.close()
             } else {
-              promptAction.showToast({ message: '当前仅支持支付宝' })
+              promptAction.showToast({ message: '当前仅支持支付宝和华为支付' })
             }
           })
           .open()

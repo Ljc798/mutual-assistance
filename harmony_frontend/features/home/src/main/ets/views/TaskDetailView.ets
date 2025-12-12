@@ -3,7 +3,7 @@ import { AppStorageV2 } from '@kit.ArkUI'
 import { AppSafeArea, PAGE_PATH, AppUser, TaskBidItem, PROFILE_TARGET_ID_KEY } from 'basic'
 import { HMRouter, HMRouterMgr } from '@hadss/hmrouter'
 import { AppCurrentTaskDetail } from '../viewmodels/TaskDetailVM'
-import { fetchTaskBids, submitBid, selectBid, takeTask, fetchTaskDetail, prepayAliBid, AliPrepayResponse, submitReview, fetchReview } from '../services/TaskDetailService'
+import { fetchTaskBids, submitBid, selectBid, takeTask, fetchTaskDetail, prepayAliBid, AliPrepayResponse, prepayHuaweiBid, HuaweiPrepayResponse, submitReview, fetchReview } from '../services/TaskDetailService'
 import { aggregatedPaymentService, CashierPicker, PaymentType } from 'aggregated_payment'
 import { common } from '@kit.AbilityKit'
 
@@ -11,6 +11,10 @@ interface AliPrepayPayload {
   orderInfo?: string;
   orderStr?: string
   paymentUrl?: string
+}
+
+interface HuaweiPrepayPayload {
+  orderStr?: string
 }
 
 @HMRouter({ pageUrl: 'TaskDetailView' })
@@ -671,8 +675,24 @@ export struct TaskDetailView {
              console.error('[TaskDetailView] pay error:', JSON.stringify(e), e.message)
              promptAction.showToast({ message: `支付发起失败: ${e.message || '未知错误'}` })
           }
+        } else if (type === PaymentType.HUAWEI) {
+          try {
+             const res = await prepayHuaweiBid(bid.id, token)
+             if (!res.success || !res.data) { promptAction.showToast({ message: res.message ?? '预下单失败' }); return }
+             
+             const objText: string = JSON.stringify(res.data)
+             const data: HuaweiPrepayPayload = JSON.parse(objText) as HuaweiPrepayPayload
+             const orderStr: string = String(data.orderStr ?? '')
+             
+             if (!orderStr) { promptAction.showToast({ message: '支付参数缺失' }); return }
+             aggregatedPaymentService.requestPaymentByHuawei(ui, { orderStr })
+             picker.close()
+          } catch (e) {
+             console.error('[TaskDetailView] huawei pay error:', JSON.stringify(e), e.message)
+             promptAction.showToast({ message: `支付发起失败: ${e.message || '未知错误'}` })
+          }
         } else {
-          promptAction.showToast({ message: '当前仅支持支付宝' })
+          promptAction.showToast({ message: '当前仅支持支付宝和华为支付' })
         }
       })
       .open()
