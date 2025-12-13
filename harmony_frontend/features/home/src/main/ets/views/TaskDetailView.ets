@@ -551,7 +551,7 @@ export struct TaskDetailView {
 
     if (!this.paymentCbId) {
       this.paymentCbId = aggregatedPaymentService.registerPaymentCallback((type: PaymentType, ok: boolean) => {
-        if (type === PaymentType.ALIPAY) {
+        if (type === PaymentType.ALIPAY || type === PaymentType.HUAWEI) {
           if (ok) {
             promptAction.showToast({ message: '支付成功' })
             this.loadTaskDetail()
@@ -692,7 +692,7 @@ export struct TaskDetailView {
              promptAction.showToast({ message: `支付发起失败: ${e.message || '未知错误'}` })
           }
         } else {
-          promptAction.showToast({ message: '当前仅支持支付宝和华为支付' })
+          promptAction.showToast({ message: '当前仅支持支付宝支付' })
         }
       })
       .open()

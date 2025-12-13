@@ -117,8 +117,8 @@ router.post("/like", authMiddleware, async (req, res) => {
 
     const redisKey = `square:like:${user_id}:${square_id}`;
 
+    // Redis 检查 (非强一致性，仅作快速拦截)
     try {
-        // ✅ Redis 检查是否已点赞
         const liked = await redis.get(redisKey);
         if (liked) {
             return res.status(400).json({
@@ -126,31 +126,59 @@ router.post("/like", authMiddleware, async (req, res) => {
                 message: "已经点赞过了"
             });
         }
+    } catch (e) {
+        console.error("Redis error:", e);
+    }
+
+    let connection;
+    try {
+        connection = await db.getConnection();
+        await connection.beginTransaction();
 
         // ✅ 数据库插入
-        await db.query(`INSERT INTO square_likes (user_id, square_id) VALUES (?, ?)`, [user_id, square_id]);
-        await db.query(`UPDATE square SET likes_count = likes_count + 1 WHERE id = ?`, [square_id]);
+        try {
+            await connection.query(`INSERT INTO square_likes (user_id, square_id) VALUES (?, ?)`, [user_id, square_id]);
+        } catch (insertErr) {
+            // 如果是重复键错误，说明已点赞
+            if (insertErr.code === 'ER_DUP_ENTRY') {
+                await connection.rollback();
+                return res.status(400).json({
+                    success: false,
+                    message: "已经点赞过了"
+                });
+            }
+            throw insertErr;
+        }
+        
+        await connection.query(`UPDATE square SET likes_count = likes_count + 1 WHERE id = ?`, [square_id]);
 
-        // ✅ 缓存标记 1小时有效
-        await redis.set(redisKey, "1", "EX", 3600);
-
-        // ✅ 通知逻辑不变
+        // ✅ 通知逻辑
         const [
             [{
                 user_id: receiver_id
-            }]
-        ] = await db.query(`SELECT user_id FROM square WHERE id = ?`, [square_id]);
+            } = {}]
+        ] = await connection.query(`SELECT user_id FROM square WHERE id = ?`, [square_id]);
+        
         const [
             [{
                 username
-            }]
-        ] = await db.query(`SELECT username FROM users WHERE id = ?`, [user_id]);
+            } = {}]
+        ] = await connection.query(`SELECT username FROM users WHERE id = ?`, [user_id]);
 
         if (receiver_id && receiver_id !== user_id) {
-            await db.query(
+            await connection.query(
                 `INSERT INTO notifications (user_id, type, title, content, is_read) VALUES (?, 'like', NULL, ?, 0)`,
-                [receiver_id, `${username} 赞了你的一条动态`]
+                [receiver_id, `${username || '有人'} 赞了你的一条动态`]
             );
+        }
+
+        await connection.commit();
+
+        // ✅ 缓存标记 1小时有效
+        try {
+            await redis.set(redisKey, "1", "EX", 3600);
+        } catch (e) {
+            console.error("Redis set error:", e);
         }
 
         res.json({
@@ -158,11 +186,16 @@ router.post("/like", authMiddleware, async (req, res) => {
             message: "点赞成功"
         });
     } catch (err) {
+        if (connection) await connection.rollback();
         console.error("❌ 点赞失败:", err);
+        // 如果是死锁，可以建议客户端重试，这里直接返回错误
         res.status(500).json({
             success: false,
-            message: "点赞失败"
+            message: "点赞失败",
+            error: err.code // 返回错误码方便调试
         });
+    } finally {
+        if (connection) connection.release();
     }
 });
 
@@ -180,38 +213,52 @@ router.post("/unlike", authMiddleware, async (req, res) => {
     }
 
     const redisKey = `square:like:${user_id}:${square_id}`;
+    let connection;
 
     try {
-        const [result] = await db.query(
+        connection = await db.getConnection();
+        await connection.beginTransaction();
+
+        const [result] = await connection.query(
             `DELETE FROM square_likes WHERE user_id = ? AND square_id = ?`,
             [user_id, square_id]
         );
 
         if (result.affectedRows === 0) {
+            await connection.rollback();
             return res.status(400).json({
                 success: false,
                 message: "未点赞，无法取消"
             });
         }
 
-        await db.query(
+        await connection.query(
             `UPDATE square SET likes_count = likes_count - 1 WHERE id = ? AND likes_count > 0`,
             [square_id]
         );
 
+        await connection.commit();
+
         // ✅ Redis 删除缓存
-        await redis.del(redisKey);
+        try {
+            await redis.del(redisKey);
+        } catch (e) {
+            console.error("Redis del error:", e);
+        }
 
         res.json({
             success: true,
             message: "取消点赞成功"
         });
     } catch (err) {
+        if (connection) await connection.rollback();
         console.error("❌ 取消点赞失败:", err);
         res.status(500).json({
             success: false,
             message: "取消点赞失败"
         });
+    } finally {
+        if (connection) connection.release();
     }
 });
 

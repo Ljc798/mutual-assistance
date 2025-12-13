@@ -466,7 +466,7 @@ export struct EditTaskView {
                    aggregatedPaymentService.requestPaymentByHuawei(this.getUIContext(), { orderStr })
                    picker.close()
                 } else {
-                   promptAction.showToast({ message: '当前仅支持支付宝和华为支付' })
+                   promptAction.showToast({ message: '当前仅支持支付宝支付' })
                 }
               })
               .open()

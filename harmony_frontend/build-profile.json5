@@ -5,13 +5,13 @@
         "name": "default",
         "type": "HarmonyOS",
         "material": {
-          "storeFile": "/Users/alex/Downloads/harmony_key/mutual_key_pre.p12",
-          "storePassword": "0000001A4D3D828B24699EFC114BEC98CB4002CE672F1695572D6521EFE3A5773A78D02BCE3ADDD564A2",
-          "keyAlias": "mutual_key_pre",
-          "keyPassword": "0000001AEE8207540664A80AB48FC57CD3B414A8179484A1DA72C0237EEA6C0E8AC751303E0D1A018515",
+          "storeFile": "/Users/alex/Downloads/harmony_key/release/release.p12",
+          "storePassword": "0000001A8445C053A4DF377A416263DC69D2E3C498B522FBD227F71E2D7F167985E7EDAE4807F7660546",
+          "keyAlias": "release",
+          "keyPassword": "0000001A5D1E981D81696F2075872B5AB59082185AD13D9B59F9D4580CF6C625F3A93FA314E43D217D1D",
           "signAlg": "SHA256withECDSA",
-          "profile": "/Users/alex/Downloads/harmony_key/mutualDebug.p7b",
-          "certpath": "/Users/alex/Downloads/harmony_key/mutual_key_pre.cer"
+          "profile": "/Users/alex/Downloads/harmony_key/release/releaseRelease.p7b",
+          "certpath": "/Users/alex/Downloads/harmony_key/release/release.cer"
         }
       }
     ],

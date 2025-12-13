@@ -147,7 +147,7 @@ export struct CashierPickerSheet {
               .fontWeight(FontWeight.Bold)
               .margin({ top: 8 })
               Column() {
-                this.buildPaymentItem($r('[aggregated_payment].media.huawei_pay_logo'), '华为支付', PaymentType.HUAWEI)
+                // this.buildPaymentItem($r('[aggregated_payment].media.huawei_pay_logo'), '华为支付', PaymentType.HUAWEI)
                 this.buildPaymentItem($r('[aggregated_payment].media.alipay_logo'), '支付宝', PaymentType.ALIPAY)
                 // this.buildPaymentItem($r('[aggregated_payment].media.wechat_pay_logo'), '微信支付', PaymentType.WECHAT)
               }
