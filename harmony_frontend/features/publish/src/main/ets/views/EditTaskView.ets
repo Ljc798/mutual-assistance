@@ -69,6 +69,8 @@ export struct EditTaskView {
         if (type === PaymentType.ALIPAY || type === PaymentType.HUAWEI) {
           if (ok) {
             promptAction.showToast({ message: '支付成功' })
+            AppStorage.setOrCreate('reload_task_detail_now', Date.now())
+            AppStorage.setOrCreate('reload_home_now', Date.now())
             HMRouterMgr.pop({ param: { updated: true } })
           } else {
             promptAction.showToast({ message: '支付未完成，修改已撤销' })
@@ -472,6 +474,8 @@ export struct EditTaskView {
               .open()
          } else {
            promptAction.showToast({ message: '保存成功' })
+           AppStorage.setOrCreate('reload_task_detail_now', Date.now())
+           AppStorage.setOrCreate('reload_home_now', Date.now())
            HMRouterMgr.pop({ param: { updated: true } })
          }
        } else {

@@ -29,12 +29,11 @@ export struct HomeView {
     AppStorageV2.connect(AppSelectedSchool, () => new AppSelectedSchool())!
   private readonly pickerContext: AppSchoolPickerContext =
     AppStorageV2.connect(AppSchoolPickerContext, () => new AppSchoolPickerContext())!
-  @StorageLink(SCHOOL_SELECTION_VERSION_KEY) schoolVersion: number = 0
-  @StorageLink('reload_home_now') reloadHomeNow: number = 0
+  @StorageLink(SCHOOL_SELECTION_VERSION_KEY) @Watch('onSchoolVersionChange') schoolVersion: number = 0
+  @StorageLink('reload_home_now') @Watch('onReloadHomeNowChange') reloadHomeNow: number = 0
+  @StorageLink('last_updated_task_tick') @Watch('onTaskPatchTickChange') taskPatchTick: number = 0
   private lastSchoolId: number = 0
   private lastSchoolName: string = '请选择学校'
-  private lastSyncedVersion: number = 0
-  private lastReloadHomeNow: number = 0
   private hasMounted: boolean = false
   @State isRefreshing: boolean = false
   @State keyword: string = ''
@@ -121,29 +120,62 @@ export struct HomeView {
   aboutToAppear() {
     this.hasMounted = true
     this.syncSchoolSelection()
-    this.lastSyncedVersion = this.schoolVersion
     this.loadTasks()
   }
 
-  aboutToRender() {
-    if (this.schoolVersion !== this.lastSyncedVersion) {
-      this.lastSyncedVersion = this.schoolVersion
-      const vChanged = this.syncSchoolSelection()
-      this.resetPagingState()
-      this.loadTasks()
-      return
-    }
-    if (this.reloadHomeNow !== this.lastReloadHomeNow) {
-      this.lastReloadHomeNow = this.reloadHomeNow
-      const changed = this.syncSchoolSelection()
-      this.resetPagingState()
-      this.loadTasks()
+  private onSchoolVersionChange() {
+    if (!this.hasMounted || !this.isVisible) {
       return
     }
     const changed = this.syncSchoolSelection()
-    if (changed && this.hasMounted) {
+    if (changed) {
       this.resetPagingState()
       this.loadTasks()
+    }
+  }
+
+  private onReloadHomeNowChange() {
+    if (!this.hasMounted || !this.isVisible) {
+      return
+    }
+    this.syncSchoolSelection()
+    this.resetPagingState()
+    this.loadTasks()
+  }
+
+  private onTaskPatchTickChange() {
+    const raw: string = AppStorage.get<string>('last_updated_task') ?? ''
+    if (!raw) {
+      return
+    }
+    let patched: TaskItem | undefined = undefined
+    try {
+      patched = JSON.parse(raw) as TaskItem
+    } catch (_e) {
+      return
+    }
+    if (!patched || !patched.id) {
+      return
+    }
+    const targetId: string = String(patched.id)
+    let changed: boolean = false
+    const nextAll: TaskItem[] = this.allTasks.map((t: TaskItem) => {
+      if (String(t.id) === targetId) {
+        changed = true
+        return patched as TaskItem
+      }
+      return t
+    })
+    const nextVisible: TaskItem[] = this.visibleTasks.map((t: TaskItem) => {
+      if (String(t.id) === targetId) {
+        return patched as TaskItem
+      }
+      return t
+    })
+    if (changed) {
+      this.allTasks = nextAll
+      this.visibleTasks = nextVisible
+      this.updateSearchResults(this.keyword)
     }
   }
 
@@ -767,7 +799,9 @@ export struct HomeView {
 
   private handleTaskSelect(task: TaskItem) {
     const vm = AppStorageV2.connect(AppCurrentTaskDetail, () => new AppCurrentTaskDetail())!
-    vm.setTask(task)
+    const idValue: number = Number(task.id)
+    vm.id = Number.isFinite(idValue) && idValue > 0 ? idValue : 0
+    vm.task = undefined
     HMRouterMgr.push({
       pageUrl: PAGE_PATH.TASK_DETAIL_PAGE
     })

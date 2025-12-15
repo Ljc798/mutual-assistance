@@ -8,6 +8,7 @@ import {
 import { HMRouterMgr } from '@hadss/hmrouter'
 import { fetchReputation } from '../services/ReputationService'
 import { fetchProfile } from '../services/UserInfoService'
+import { submitFeedback, FeedbackPayload } from '../services/FeedbackService'
 
 @Component
 export struct MineView {
@@ -29,6 +30,7 @@ export struct MineView {
   @State showFeedbackModal: boolean = false
   @State feedbackTitle: string = ''
   @State feedbackContent: string = ''
+  @State isSubmittingFeedback: boolean = false
 
   aboutToAppear() {
     this.syncUserState()
@@ -402,11 +404,12 @@ export struct MineView {
               .layoutWeight(1)
               .borderRadius(16)
               .onClick(() => this.closeFeedbackModal())
-            Button('提交')
+            Button(this.isSubmittingFeedback ? '提交中...' : '提交')
               .layoutWeight(1)
               .borderRadius(16)
               .backgroundColor($r('[basic].color.filter_active_bg'))
               .fontColor($r('[basic].color.white'))
+              .enabled(!this.isSubmittingFeedback)
               .onClick(() => this.submitFeedback())
           }
         }
@@ -493,9 +496,42 @@ export struct MineView {
     this.feedbackContent = ''
   }
 
-  private submitFeedback() {
-    this.showToast('反馈提交功能稍后接入')
-    this.closeFeedbackModal()
+  private async submitFeedback() {
+    const title = (this.feedbackTitle || '').trim()
+    const content = (this.feedbackContent || '').trim()
+    if (!title) {
+      this.showToast('请填写标题')
+      return
+    }
+    if (!content || content.length < 5) {
+      this.showToast('请详细描述您的问题或建议')
+      return
+    }
+    const token = this.appUser.user?.token ?? ''
+    if (!token) {
+      this.showToast('请先登录')
+      this.closeFeedbackModal()
+      HMRouterMgr.push({ pageUrl: PAGE_PATH.LOGIN_PAGE })
+      return
+    }
+    if (this.isSubmittingFeedback) {
+      return
+    }
+    this.isSubmittingFeedback = true
+    try {
+      const payload: FeedbackPayload = { title, content }
+      const res = await submitFeedback(payload, token)
+      if (res.success) {
+        this.showToast('反馈已提交，感谢您的建议')
+        this.closeFeedbackModal()
+      } else {
+        this.showToast(res.message ?? '反馈提交失败，请稍后重试')
+      }
+    } catch (_e) {
+      this.showToast('网络错误，反馈提交失败')
+    } finally {
+      this.isSubmittingFeedback = false
+    }
   }
 
   private showToast(message: string) {

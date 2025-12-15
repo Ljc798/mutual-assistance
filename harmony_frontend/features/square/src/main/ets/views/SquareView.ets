@@ -42,6 +42,7 @@ import { fileIo as fs } from '@kit.CoreFileKit'
 import { common } from '@kit.AbilityKit'
 import { BusinessError } from '@ohos.base'
 import { readFileAsBytes, uploadSingle, uploadBatch, UploadFileItem, UploadResultItem } from 'basic'
+import { AppSquarePostState } from '../viewmodels/SquarePostStateVM'
 
 const MAX_IMAGES: number = 9
 
@@ -51,13 +52,13 @@ export struct SquareView {
   safeArea: AppSafeArea = AppStorageV2.connect(AppSafeArea, () => new AppSafeArea())!
   private readonly appUser: AppUser = AppStorageV2.connect(AppUser, () => new AppUser())!
   private readonly schoolSelection: AppSelectedSchool = AppStorageV2.connect(AppSelectedSchool, () => new AppSelectedSchool())!
-  @StorageLink(SCHOOL_SELECTION_VERSION_KEY) schoolVersion: number = 0
-  @StorageLink('reload_square_now') reloadSquareNow: number = 0
+  @StorageLink(SCHOOL_SELECTION_VERSION_KEY) @Watch('onSchoolVersionChange') schoolVersion: number = 0
+  @StorageLink('reload_square_now') @Watch('onReloadSquareNowChange') reloadSquareNow: number = 0
+  @StorageLink('last_updated_square_post_tick') @Watch('onSquarePostPatchTickChange') squarePostPatchTick: number = 0
   private lastSchoolId: number = 0
   private lastSchoolName: string = '请选择学校'
-  private lastSyncedVersion: number = 0
-  private lastReloadSquareNow: number = 0
   private hasMounted: boolean = false
+  private readonly postState: AppSquarePostState = AppStorageV2.connect(AppSquarePostState, () => new AppSquarePostState())!
   @State posts: SquarePost[] = []
   @State selectedCategory: SquareCategory = '全部'
   @State currentSchoolId: number = 0
@@ -95,37 +96,36 @@ export struct SquareView {
   aboutToAppear() {
     this.hasMounted = true
     this.syncSchoolSelection()
-    this.lastSyncedVersion = this.schoolVersion
     this.bootstrap()
     this.resetPagingState()
     this.loadPosts(false)
   }
 
-  aboutToRender() {
-    if (this.schoolVersion !== this.lastSyncedVersion) {
-      this.lastSyncedVersion = this.schoolVersion
-      const vChanged = this.syncSchoolSelection()
-      this.resetPagingState()
-      this.loadPosts(false)
-      return
-    }
-    if (this.reloadSquareNow !== this.lastReloadSquareNow) {
-      this.lastReloadSquareNow = this.reloadSquareNow
-      const changed = this.syncSchoolSelection()
-      this.resetPagingState()
-      this.loadPosts(false)
+  private onSchoolVersionChange() {
+    if (!this.hasMounted || !this.isVisible) {
       return
     }
     const changed = this.syncSchoolSelection()
-    if (changed && this.hasMounted) {
+    if (changed) {
       this.resetPagingState()
       this.loadPosts(false)
     }
   }
 
-  onPageShow() {
+  private onReloadSquareNowChange() {
+    if (!this.hasMounted || !this.isVisible) {
+      return
+    }
     this.syncSchoolSelection()
     this.resetPagingState()
+    this.loadPosts(false)
+  }
+
+  onPageShow() {
+    const changed = this.syncSchoolSelection()
+    if (changed) {
+      this.resetPagingState()
+    }
     this.loadPosts(false)
   }
 
@@ -146,6 +146,44 @@ export struct SquareView {
     this.currentSchoolId = nextId
     this.currentSchoolName = nextName
     return hasChanged
+  }
+
+  private patchPostFromStorage() {
+    const raw: string = AppStorage.get<string>('last_updated_square_post') ?? ''
+    if (!raw) {
+      return
+    }
+    let patched: SquarePost | undefined = undefined
+    try {
+      patched = JSON.parse(raw) as SquarePost
+    } catch (_e) {
+      return
+    }
+    if (!patched || !patched.id) {
+      return
+    }
+    const targetId: number = patched.id
+    let changed: boolean = false
+    const nextPosts: SquarePost[] = this.posts.map((p: SquarePost) => {
+      if (p.id === targetId) {
+        changed = true
+        return patched as SquarePost
+      }
+      return p
+    })
+    if (!changed) {
+      return
+    }
+    this.posts = nextPosts
+    const ms: SquarePostModel[] = []
+    for (let i = 0; i < this.posts.length; i++) {
+      ms.push(new SquarePostModel(this.posts[i]))
+    }
+    this.postModels = ms
+  }
+
+  private onSquarePostPatchTickChange() {
+    this.patchPostFromStorage()
   }
 
   build() {
@@ -401,9 +439,9 @@ export struct SquareView {
             .fontSize(13)
             .fontColor($r('[basic].color.text_secondary'))
         }
-      .onClick((): void => {
+        .onClick((): void => {
           this.toggleLikeModel(post)
-      })
+        })
 
         Row({ space: 6 }) {
           Image($r('app.media.icon_square_comment'))

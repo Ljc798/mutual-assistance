@@ -34,6 +34,7 @@ export struct TaskDetailView {
   @State isReviewReadOnly: boolean = false
   @State hasReviewed: boolean = false
   private paymentCbId: string = ''
+  @StorageLink('reload_task_detail_now') @Watch('onReloadTaskDetail') reloadTaskTick: number = 0
 
   build() {
     Column() {
@@ -102,6 +103,12 @@ export struct TaskDetailView {
             .fontSize(13)
             .fontColor($r('[basic].color.text_secondary'))
           Text(`报价：¥${Number(this.detailVM.task!.offer ?? 0).toFixed(2)}`)
+            .fontSize(13)
+            .fontColor($r('[basic].color.text_secondary'))
+          Text(`交易地点：${this.detailVM.task!.position ? this.detailVM.task!.position : '-'}`)
+            .fontSize(13)
+            .fontColor($r('[basic].color.text_secondary'))
+          Text(`送达地点：${this.detailVM.task!.address ? this.detailVM.task!.address : '-'}`)
             .fontSize(13)
             .fontColor($r('[basic].color.text_secondary'))
         }
@@ -535,6 +542,12 @@ export struct TaskDetailView {
     }
   }
 
+  private onReloadTaskDetail() {
+    if (this.detailVM.id > 0) {
+      this.loadTaskDetail()
+    }
+  }
+
   aboutToAppear() {
     const param = HMRouterMgr.getCurrentParam() as Record<string, Object>
     if (param && param.taskId) {
@@ -543,10 +556,8 @@ export struct TaskDetailView {
         this.detailVM.id = tid
       }
     }
-    if (this.detailVM.id > 0 && (!this.detailVM.task || this.detailVM.task.id !== String(this.detailVM.id))) {
+    if (this.detailVM.id > 0) {
       this.loadTaskDetail()
-    } else if (this.detailVM.task && this.detailVM.task.mode === 'bidding') {
-      this.loadBids()
     }
 
     if (!this.paymentCbId) {
@@ -580,6 +591,8 @@ export struct TaskDetailView {
     try {
       const task = await fetchTaskDetail(this.detailVM.id)
       this.detailVM.setTask(task)
+      AppStorage.setOrCreate('last_updated_task', JSON.stringify(task))
+      AppStorage.setOrCreate('last_updated_task_tick', Date.now())
       if (task.mode === 'bidding') {
         this.loadBids()
       }

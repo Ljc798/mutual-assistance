@@ -55,8 +55,8 @@ export struct EditProfileView {
         Scroll(this.scroller) {
           Column({ space: 12 }) {
             this.renderAvatarField()
-            this.renderTextField('姓名', '请输入姓名', this.usernameInput, (v: string) => this.usernameInput = v)
-            this.renderTextField('id', '请输入id', this.wxidInput, (v: string) => this.wxidInput = v)
+            this.renderTextField('姓名(3-10个字符)', '请输入姓名', this.usernameInput, (v: string) => this.usernameInput = v)
+            this.renderIdField()
             this.renderSchoolField()
             this.renderSubmitButton()
             this.renderLogoutButton()
@@ -134,6 +134,21 @@ export struct EditProfileView {
   }
 
   @Builder
+  private renderIdField() {
+    Column({ space: 6 }) {
+      Text('ID')
+        .fontSize(14)
+        .fontColor($r('[basic].color.text_secondary'))
+      TextInput({ placeholder: '请输入ID', text: this.wxidInput })
+        .height(40)
+        .backgroundColor($r('[basic].color.white'))
+        .borderRadius(12)
+        .padding({ left: 12, right: 12 })
+        .onChange((v: string) => this.wxidInput = v)
+    }
+  }
+
+  @Builder
   private renderSchoolField() {
     Column({ space: 6 }) {
       Text('学校')
@@ -193,8 +208,12 @@ export struct EditProfileView {
     if (!token || !idNum) { promptAction.showToast({ message: '请先登录' }); return }
     const name = this.usernameInput.trim()
     const wxid = this.wxidInput.trim()
-    if (!name || name.length < 2) { promptAction.showToast({ message: '姓名至少2个字符' }); return }
-    if (!wxid || wxid.length < 3) { promptAction.showToast({ message: 'id至少3个字符' }); return }
+    if (!name || name.length < 3 || name.length > 10) {
+      promptAction.showToast({ message: '姓名需为3-10个字符' }); return
+    }
+    if (!wxid) {
+      promptAction.showToast({ message: 'ID不能为空' }); return
+    }
     const nameCheck = await checkUsername(name, idNum)
     if (!nameCheck.success || !nameCheck.available) { promptAction.showToast({ message: nameCheck.message ?? '用户名已被占用' }); return }
     const wxidCheck = await checkWxid(wxid, idNum)
@@ -296,7 +315,8 @@ export struct EditProfileView {
       if (!res.success) { promptAction.showToast({ message: res.message ?? '注销失败' }); return }
       userPersistence.clearUser()
       promptAction.showToast({ message: '已注销' })
-      HMRouterMgr.push({ pageUrl: PAGE_PATH.LOGIN_PAGE })
+      AppStorage.setOrCreate('main_page_active_index', 0)
+      HMRouterMgr.pop()
     } catch (_e) { promptAction.showToast({ message: '网络错误' }) }
   }
 
@@ -344,8 +364,9 @@ export struct EditProfileView {
     userPersistence.clearUser()
     const nowTick: number = Date.now()
     AppStorage.setOrCreate('reload_home_now', nowTick)
+    AppStorage.setOrCreate('main_page_active_index', 0)
     promptAction.showToast({ message: '已退出登录' })
-    HMRouterMgr.push({ pageUrl: PAGE_PATH.LOGIN_PAGE })
+    HMRouterMgr.pop()
   }
 
   private getAvatarSource(url: string): ResourceStr {

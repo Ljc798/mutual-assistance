@@ -403,7 +403,7 @@ export struct PublishView {
       Text('任务简介')
         .fontSize(15)
         .fontColor($r('[basic].color.text_primary'))
-      TextArea({ placeholder: '请输入任务简介并留下联系方式(联系方式仅对接单员可见)', text: this.form.detail })
+      TextArea({ placeholder: '请输入任务简介', text: this.form.detail })
         .height(120)
         .backgroundColor($r('[basic].color.white'))
         .borderRadius(16)

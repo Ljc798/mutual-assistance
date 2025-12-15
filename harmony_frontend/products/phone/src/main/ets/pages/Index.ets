@@ -24,7 +24,7 @@ class MyModifier extends AttributeUpdater<NavigationAttribute> {
 struct Index {
   modifier: MyModifier = new MyModifier() // 专门用来修改Navigation特性对象实例
   safeArea: AppSafeArea = AppStorageV2.connect(AppSafeArea, () => new AppSafeArea())!
-  @State activeIndex: number = 0
+  @StorageLink('main_page_active_index') activeIndex: number = 0
   @State isPageShown: boolean = true
 
   onPageShow(): void {

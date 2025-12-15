@@ -612,6 +612,13 @@ router.post("/update", authMiddleware, async (req, res) => {
     } = req.body;
 
     try {
+        if (!username || username.length < 3 || username.length > 10) {
+            return res.status(400).json({
+                success: false,
+                message: "用户名长度需为3-10个字符"
+            });
+        }
+
         const [userRows] = await db.query("SELECT * FROM users WHERE id = ?", [userId]);
         if (userRows.length === 0) {
             return res.status(404).json({
@@ -1122,6 +1129,10 @@ router.post("/harmony/update-basic", authMiddleware, async (req, res) => {
     const [[user]] = await db.query("SELECT * FROM users WHERE id = ?", [userId]);
     if (!user) {
       return res.status(404).json({ success: false, message: "用户不存在" });
+    }
+
+    if (!username || username.length < 3 || username.length > 8) {
+      return res.status(400).json({ success: false, message: "用户名长度需为3-8个字符" });
     }
 
     // 检查用户名占用

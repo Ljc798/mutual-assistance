@@ -397,6 +397,9 @@ export struct SquareDetailView {
         this.detailVM.post.likesCount += 1
       }
       this.detailVM.post = this.rebuildPost(this.detailVM.post!)
+      AppStorage.setOrCreate('last_updated_square_post', JSON.stringify(this.detailVM.post))
+      AppStorage.setOrCreate('last_updated_square_post_tick', Date.now())
+      AppStorage.setOrCreate('reload_square_now', Date.now())
     } catch (error) {
       promptAction.showToast({ message: '操作失败' })
     }
@@ -449,6 +452,13 @@ export struct SquareDetailView {
         root_parent_id: rootParentId
       }, token)
       const newId = (res.comment_id ?? 0)
+      const now = new Date()
+      const y = now.getFullYear()
+      const m = String(now.getMonth() + 1).padStart(2, '0')
+      const d = String(now.getDate()).padStart(2, '0')
+      const hh = String(now.getHours()).padStart(2, '0')
+      const mi = String(now.getMinutes()).padStart(2, '0')
+      const localTime: string = `${y}-${m}-${d} ${hh}:${mi}`
       const newItem: SquareCommentItem = {
         id: newId,
         userId,
@@ -457,7 +467,7 @@ export struct SquareDetailView {
         parentId: parentId,
         rootParentId: rootParentId ?? newId,
         likesCount: 0,
-        createdTime: new Date().toISOString().slice(0, 16).replace('T', ' '),
+        createdTime: localTime,
         username: this.appUser.user.username ?? '我',
         avatarUrl: this.appUser.user.avatar_url ?? '',
         isVip: Boolean(this.appUser.user.vip_expire_time &&
@@ -480,6 +490,13 @@ export struct SquareDetailView {
       } else {
         const next2: SquareCommentModel[] = [new SquareCommentModel(newItem)].concat(this.commentModels)
         this.commentModels = next2
+      }
+      if (this.detailVM.post) {
+        this.detailVM.post.commentsCount = this.detailVM.post.commentsCount + 1
+        this.detailVM.post = this.rebuildPost(this.detailVM.post)
+        AppStorage.setOrCreate('last_updated_square_post', JSON.stringify(this.detailVM.post))
+        AppStorage.setOrCreate('last_updated_square_post_tick', Date.now())
+        AppStorage.setOrCreate('reload_square_now', Date.now())
       }
       this.commentInput = ''
       this.clearReply()
