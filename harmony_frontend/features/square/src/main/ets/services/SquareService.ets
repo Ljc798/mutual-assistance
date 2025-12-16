@@ -39,6 +39,7 @@ function buildQueryParams(query?: SquareQuery): QueryParam[] | undefined {
   }
   params.push({ key: 'page', value: `${query.page ?? 1}` })
   params.push({ key: 'pageSize', value: `${query.pageSize ?? 10}` })
+  params.push({ key: '_t', value: `${Date.now()}` })
   console.info('[SquareService] buildQueryParams: output params =', JSON.stringify(params))
   return params
 }

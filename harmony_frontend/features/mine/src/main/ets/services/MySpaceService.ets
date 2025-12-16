@@ -8,6 +8,7 @@ function buildQuery(query: MyPostQuery): QueryParam[] {
   if (query.viewerId) { params.push({ key: 'viewer_id', value: `${query.viewerId}` }) }
   params.push({ key: 'page', value: `${query.page ?? 1}` })
   params.push({ key: 'pageSize', value: `${query.pageSize ?? 10}` })
+  params.push({ key: '_t', value: `${Date.now()}` })
   return params
 }
 

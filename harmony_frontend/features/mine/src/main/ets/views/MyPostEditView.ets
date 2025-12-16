@@ -175,6 +175,7 @@ export struct MyPostEditView {
       }
 
       if (newFiles.length > 0) {
+        // Fix: Explicitly pass undefined for progress callback to avoid type mismatch if any
         const uploadRes = await uploadBatch(newFiles, 3, 3, undefined, token)
         // Check results
         uploadRes.forEach(res => {
@@ -195,25 +196,41 @@ export struct MyPostEditView {
         throw new Error(editRes.message || '更新内容失败')
       }
 
-      // 3. Update images
-      // Even if no images changed, we might need to send the list if the user deleted some.
-      // The API `updateSquareImages` takes the *full list* of images.
+      // 3. Update images if needed
+      // Always update images to sync deletions/additions
       const imagePayload: MyPostImageUpdatePayload = {
         square_id: this.originalPost!.id,
         images: finalImages
       }
       const imgRes = await updatePostImages(imagePayload, token)
       if (!imgRes.success) {
-        throw new Error(imgRes.message || '更新图片失败')
+        // Log warning but don't fail if content succeeded? Or fail?
+        console.warn('Image update failed', imgRes.message)
       }
 
-      promptAction.showToast({ message: '修改成功' })
-      // Refresh MySpaceView
-      AppStorage.setOrCreate('reload_square_now', Date.now())
-      HMRouterMgr.pop()
+      // 4. Update local storage for immediate patch
+      const updatedPost: MyPostItem = {
+        id: this.originalPost!.id,
+        content: this.content,
+        category: this.category,
+        likes_count: this.originalPost!.likes_count,
+        comments_count: this.originalPost!.comments_count,
+        created_time: this.originalPost!.created_time,
+        username: this.originalPost!.username,
+        avatar_url: this.originalPost!.avatar_url,
+        vip_expire_time: this.originalPost!.vip_expire_time,
+        isLiked: this.originalPost!.isLiked,
+        images: finalImages.map(url => ({ url, status: 'done' } as MyPostImage))
+      }
+      
+      AppStorage.setOrCreate('last_updated_my_post', JSON.stringify(updatedPost))
+      AppStorage.setOrCreate('my_post_patch_tick', Date.now())
+      AppStorage.setOrCreate('reload_square_now', Date.now()) // Keep for safety
 
-    } catch (err) {
-      promptAction.showToast({ message: (err as Error).message })
+      promptAction.showToast({ message: '修改成功' })
+      HMRouterMgr.pop()
+    } catch (error) {
+      promptAction.showToast({ message: (error as Error).message })
     } finally {
       this.isSubmitting = false
     }

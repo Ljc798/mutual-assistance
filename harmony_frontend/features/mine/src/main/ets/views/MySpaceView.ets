@@ -15,8 +15,37 @@ export struct MySpaceView {
   @State posts: MyPostItem[] = []
   @State isRefreshing: boolean = false
   @State refreshText: string = '下拉刷新'
+  @StorageProp('reload_square_now') @Watch('onReloadSignalChange') reloadSignal: number = 0
+  @StorageLink('my_post_patch_tick') @Watch('onPatchTickChange') patchTick: number = 0
 
-  aboutToAppear() { this.loadPosts(false) }
+  onReloadSignalChange() {
+    this.loadPosts(true)
+  }
+
+  onPatchTickChange() {
+    this.patchPostFromStorage()
+  }
+
+  private patchPostFromStorage() {
+    const raw: string = AppStorage.get<string>('last_updated_my_post') ?? ''
+    if (!raw) return
+    try {
+      const patched = JSON.parse(raw) as MyPostItem
+      if (!patched || !patched.id) return
+
+      const index = this.posts.findIndex(p => p.id === patched.id)
+      if (index !== -1) {
+        // Create a new array to trigger UI update
+        const nextPosts = [...this.posts]
+        nextPosts[index] = patched
+        this.posts = nextPosts
+      }
+    } catch (e) {
+      console.error('[MySpaceView] Patch failed', e)
+    }
+  }
+
+  aboutToAppear() { this.loadPosts(true) }
   onPageShow() { this.loadPosts(false) }
 
   build() {
@@ -135,7 +164,7 @@ export struct MySpaceView {
           .borderRadius(12)
           .shadow({ radius: 8, color: '#0A000000', offsetY: 2 })
           .onClick(() => this.openPostDetail(post.id))
-        }, (post: MyPostItem) => `${post.id}`)
+        }, (post: MyPostItem) => `${post.id}-${post.content}-${JSON.stringify(post.images)}`)
       }
       .backgroundColor(Color.Transparent)
       .width('100%')

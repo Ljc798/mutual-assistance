@@ -105,6 +105,7 @@ export async function fetchUserPosts(userId: number, viewerId?: number, page: nu
   params.push({ key: 'page', value: `${page}` })
   params.push({ key: 'pageSize', value: `${pageSize}` })
   if (viewerId) { params.push({ key: 'viewer_id', value: `${viewerId}` }) }
+  params.push({ key: '_t', value: `${Date.now()}` })
   const url = `/square/public/${userId}/posts`
   console.info('ProfileApi.FetchUserPosts', JSON.stringify({ url, params }))
   const res = await HttpClient.get<UserPostsResponse>(url, params)

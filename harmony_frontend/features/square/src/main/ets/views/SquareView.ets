@@ -46,6 +46,25 @@ import { AppSquarePostState } from '../viewmodels/SquarePostStateVM'
 
 const MAX_IMAGES: number = 9
 
+interface MyPostImagePatch {
+  url: string
+  status: string
+}
+
+interface MyPostItemPatch {
+  id: number
+  content: string
+  category: string
+  likes_count: number
+  comments_count: number
+  created_time: string
+  username: string
+  avatar_url: string
+  vip_expire_time?: string
+  isLiked?: boolean
+  images?: MyPostImagePatch[]
+}
+
 @Component
 export struct SquareView {
   private readonly scroller: Scroller = new Scroller()
@@ -55,6 +74,7 @@ export struct SquareView {
   @StorageLink(SCHOOL_SELECTION_VERSION_KEY) @Watch('onSchoolVersionChange') schoolVersion: number = 0
   @StorageLink('reload_square_now') @Watch('onReloadSquareNowChange') reloadSquareNow: number = 0
   @StorageLink('last_updated_square_post_tick') @Watch('onSquarePostPatchTickChange') squarePostPatchTick: number = 0
+  @StorageLink('my_post_patch_tick') @Watch('onMyPostPatchTickChange') myPostPatchTick: number = 0
   private lastSchoolId: number = 0
   private lastSchoolName: string = '请选择学校'
   private hasMounted: boolean = false
@@ -122,6 +142,7 @@ export struct SquareView {
   }
 
   onPageShow() {
+    console.info('[SquareView] onPageShow - Entering Square Page')
     const changed = this.syncSchoolSelection()
     if (changed) {
       this.resetPagingState()
@@ -146,6 +167,14 @@ export struct SquareView {
     this.currentSchoolId = nextId
     this.currentSchoolName = nextName
     return hasChanged
+  }
+
+  onSquarePostPatchTickChange() {
+    this.patchPostFromStorage()
+  }
+
+  onMyPostPatchTickChange() {
+    this.patchMyPostFromStorage()
   }
 
   private patchPostFromStorage() {
@@ -182,8 +211,61 @@ export struct SquareView {
     this.postModels = ms
   }
 
-  private onSquarePostPatchTickChange() {
-    this.patchPostFromStorage()
+  private patchMyPostFromStorage() {
+    const raw: string = AppStorage.get<string>('last_updated_my_post') ?? ''
+    if (!raw) {
+      return
+    }
+    let patched: MyPostItemPatch | undefined = undefined
+    try {
+      patched = JSON.parse(raw) as MyPostItemPatch
+    } catch (_e) {
+      return
+    }
+    if (!patched || !patched.id) {
+      return
+    }
+    const targetId: number = patched.id
+    let changed: boolean = false
+    const nextPosts: SquarePost[] = this.posts.map((p: SquarePost) => {
+      if (p.id === targetId) {
+        changed = true
+        const images: SquareImageDTO[] = (patched?.images ?? []).map((img: MyPostImagePatch) => {
+          return { url: img.url, status: img.status } as SquareImageDTO
+        })
+        const approvedImages: SquareImageDTO[] = images.filter((img: SquareImageDTO) => img.status === 'pass')
+        
+        const newPost: SquarePost = {
+          id: p.id,
+          userId: p.userId,
+          username: patched!.username,
+          avatarUrl: patched!.avatar_url,
+          content: patched!.content,
+          category: patched!.category,
+          likesCount: patched!.likes_count,
+          commentsCount: patched!.comments_count,
+          createdTime: p.createdTime,
+          formattedTime: p.formattedTime,
+          isLiked: Boolean(patched!.isLiked),
+          isVip: p.isVip,
+          pinned: p.pinned,
+          schoolId: p.schoolId,
+          images: images,
+          approvedImages: approvedImages
+        }
+        return newPost
+      }
+      return p
+    })
+    if (!changed) {
+      return
+    }
+    this.posts = nextPosts
+    const ms: SquarePostModel[] = []
+    for (let i = 0; i < this.posts.length; i++) {
+      ms.push(new SquarePostModel(this.posts[i]))
+    }
+    this.postModels = ms
   }
 
   build() {
@@ -835,9 +917,7 @@ export struct SquareView {
         userId: this.appUser.user.id,
         schoolId: this.getSelectedSchoolId()
       }
-      console.info('[SquareView] loadPosts.query', JSON.stringify(query))
       const list = await fetchSquarePosts(query)
-      console.info('[SquareView] loadPosts.result.length', list.length)
       if (isLoadMore) {
         const merged: SquarePost[] = [...this.posts, ...list]
         this.posts = merged
@@ -849,6 +929,11 @@ export struct SquareView {
       const ms: SquarePostModel[] = []
       for (let i = 0; i < this.posts.length; i++) { ms.push(new SquarePostModel(this.posts[i])) }
       this.postModels = ms
+
+      // Apply local patches to ensure UI reflects latest user actions immediately,
+      // covering cases where server data might be slightly stale or effective updates happened locally.
+      this.patchPostFromStorage()
+      this.patchMyPostFromStorage()
     } catch (error) {
       console.error('[SquareView] loadPosts.error', error?.message ?? error)
       this.showToast('获取帖子失败，请稍后重试')
@@ -1012,7 +1097,6 @@ export struct SquareView {
     const cacheDir: string = context.cacheDir
     picker.select(options, async (_err: BusinessError | undefined, result: photoAccessHelper.PhotoSelectResult) => {
       const uris: string[] = result?.photoUris ?? []
-      console.info('[SquareView] picker.selected', JSON.stringify({ count: uris.length, uris }))
       if (!uris.length) { return }
       const internalPaths: string[] = []
       const cachePaths: string[] = []
@@ -1024,7 +1108,6 @@ export struct SquareView {
           internalPaths.push(`internal://cache/${target.split('/').pop()}`)
           cachePaths.push(target)
           fs.closeSync(file.fd)
-          console.info('[SquareView] cache.copy.ok', JSON.stringify({ src: uris[i], dst: target }))
         } catch (err) {
           console.warn('[SquareView] cache.copy.fail', JSON.stringify({ src: uris[i], message: (err as Error)?.message }))
         }
@@ -1225,10 +1308,8 @@ export struct SquareView {
   }
 
   private openProfile(userId: number): void {
-    console.info('ProfileNav.SetId', JSON.stringify({ userId }))
     AppStorage.setOrCreate(PROFILE_TARGET_ID_KEY, userId)
     const readBack: number | undefined = AppStorage.get<number>(PROFILE_TARGET_ID_KEY)
-    console.info('ProfileNav.ReadBack', JSON.stringify({ readBack }))
     HMRouterMgr.push({ pageUrl: PAGE_PATH.USER_PROFILE_PAGE })
   }
 

@@ -24,8 +24,13 @@ export struct UserProfileView {
   safeArea: AppSafeArea = AppStorageV2.connect(AppSafeArea, () => new AppSafeArea())!
   @StorageLink(PROFILE_TARGET_ID_KEY) targetUserId: number = 0
   @StorageLink(USER_LOGIN_TIME_KEY) loginTick: number = 0
+  @StorageLink('last_updated_square_post_tick') @Watch('onSquarePostPatchTickChange') squarePostPatchTick: number = 0
   private readonly appUser: AppUser = AppStorageV2.connect(AppUser, () => new AppUser())!
   @State user?: PublicUser = undefined
+
+
+
+
   @State rep?: ReputationItem = undefined
   @State posts: UserPostModel[] = []
   @State reviews: ReviewItem[] = []
@@ -70,6 +75,89 @@ export struct UserProfileView {
   onPageShow(): void {
     const id = Number(this.targetUserId ?? 0)
     if (id && id > 0) { this.loadAll(id) }
+  }
+
+  private onSquarePostPatchTickChange() {
+    this.patchPostFromStorage()
+  }
+
+  private patchPostFromStorage() {
+    const raw: string = AppStorage.get<string>('last_updated_square_post') ?? ''
+    if (!raw) {
+      return
+    }
+    // 我们需要定义一个简单的接口来匹配 SquarePost 的结构，或者直接用 any (虽然不推荐但为了兼容 SquarePost 结构差异)
+    // SquarePost 结构: id, userId, username, avatarUrl, content, category, likesCount, commentsCount, createdTime, formattedTime, isLiked, isVip, pinned, schoolId, images, approvedImages
+    // UserPostModel 结构: id, content, created_time, likes_count, images, isLiked, comments_count
+    
+    try {
+      // 临时定义一个接口来匹配 last_updated_square_post 中的数据
+      interface SquarePostPatch {
+        id: number
+        likesCount: number
+        commentsCount: number
+        isLiked: boolean
+        content: string
+        images: SquareImageDTO[]
+      }
+      
+      const patched = JSON.parse(raw) as SquarePostPatch
+      if (!patched || !patched.id) {
+        return
+      }
+      
+      const targetId = patched.id
+      let changed = false
+      
+      // 遍历查找并更新
+      // 注意: 这里我们不直接替换对象，而是更新属性，或者创建新对象替换
+      // 由于 UserPostModel 是 ObservedV2，直接修改属性应该可以触发 UI 更新，
+      // 但为了确保列表刷新，我们构建一个新的数组
+      
+      const nextPosts = this.posts.map((p: UserPostModel) => {
+        if (p.id === targetId) {
+          changed = true
+          // 映射 SquarePost 属性到 UserPostModel
+          // 注意: SquarePost 使用 likesCount, commentsCount (驼峰)
+          // UserPostModel 使用 likes_count, comments_count (下划线，源自 DTO)
+          
+          // 创建一个新的 UserPostModel 实例或者直接修改当前实例的属性
+          // 为了稳妥，我们更新属性值
+          p.likes_count = patched.likesCount
+          p.comments_count = patched.commentsCount
+          p.isLiked = patched.isLiked
+          // 如果内容或图片也变了，也可以更新
+          p.content = patched.content
+          if (patched.images) {
+             p.images = patched.images
+          }
+          return p
+        }
+        return p
+      })
+      
+      if (changed) {
+        // 强制触发更新，虽然 ObservedV2 可能已经处理了内部属性变化
+        // 如果是替换整个数组，UI 肯定会更新
+        // 由于 UserPostModel 是类实例，map 返回的是同一个实例引用(如果直接修改)
+        // 为了确保 @State posts 触发更新，最好重新赋值
+        // 这里 nextPosts 还是原来的引用数组（如果我们只是修改了 p 的属性）
+        // 除非我们 clone p。
+        // 鉴于 UserPostModel 是 @ObservedV2，修改其 @Trace 属性应该会自动更新 UI。
+        // 但为了保险，我们可以不做任何特殊的数组替换，只要属性变了就行。
+        // 不过，如果 posts 数组本身没变引用，@State 监听可能不会触发重新渲染（对于 V2 来说，嵌套属性变化会自动追踪）
+        // 所以这里只要 changed 为 true，说明属性已更新。
+        
+        // 调试日志
+        console.info('UserProfile.Patch', JSON.stringify({ 
+          id: targetId, 
+          liked: patched.isLiked, 
+          likes: patched.likesCount 
+        }))
+      }
+    } catch (e) {
+      console.error('UserProfile.PatchError', JSON.stringify(e))
+    }
   }
 
   build(): void {
