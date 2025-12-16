@@ -160,6 +160,26 @@ export struct UserProfileView {
     }
   }
 
+  private startChat() {
+    if (!this.user || !this.user.id) {
+      return
+    }
+    const currentUserId = Number(this.appUser.user.id ?? 0)
+    if (currentUserId === this.user.id) {
+      promptAction.showToast({ message: '不能和自己聊天' })
+      return
+    }
+
+    HMRouterMgr.push({
+      pageUrl: PAGE_PATH.CHAT_PAGE,
+      param: {
+        targetId: this.user.id,
+        targetName: this.user.username,
+        avatarUrl: this.user.avatar_url
+      }
+    })
+  }
+
   build(): void {
     Stack() {
       Column() {
@@ -279,6 +299,16 @@ export struct UserProfileView {
         }
         .justifyContent(FlexAlign.Start)
         .layoutWeight(1)
+
+        if (this.user?.id && Number(this.appUser.user.id) !== this.user.id) {
+          Button('聊一聊')
+            .fontSize(12)
+            .height(28)
+            .backgroundColor($r('[basic].color.home_header_bg'))
+            .fontColor($r('[basic].color.white'))
+            .borderRadius(14)
+            .onClick(() => this.startChat())
+        }
       }
     }
     .padding(16)

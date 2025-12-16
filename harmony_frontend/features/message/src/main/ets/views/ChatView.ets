@@ -30,7 +30,7 @@ export struct ChatView {
       const tName = String(param.targetName || '用户')
       const tAvatar = String(param.avatarUrl || '')
       if (tId > 0 && userId > 0) {
-         const roomId = userId < tId ? `${userId}_${tId}` : `${tId}_${userId}`
+         const roomId = `room_${userId < tId ? `${userId}_${tId}` : `${tId}_${userId}`}`
          this.chatVM.set(roomId, tId, tName, tAvatar)
       }
     }

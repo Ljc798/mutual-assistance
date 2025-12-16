@@ -68,7 +68,7 @@ export struct MineView {
           this.renderTitleSection()
           this.renderProfileCard()
           this.renderReputationCard()
-          this.renderStatisticBoxes()
+          // this.renderStatisticBoxes()
           // this.renderVipSection()
           this.renderShortcutsCard()
           this.renderFeedbackHint()
