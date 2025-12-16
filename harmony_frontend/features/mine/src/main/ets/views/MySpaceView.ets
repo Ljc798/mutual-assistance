@@ -17,6 +17,7 @@ export struct MySpaceView {
   @State refreshText: string = '下拉刷新'
   @StorageProp('reload_square_now') @Watch('onReloadSignalChange') reloadSignal: number = 0
   @StorageLink('my_post_patch_tick') @Watch('onPatchTickChange') patchTick: number = 0
+  @StorageLink('last_updated_square_post_tick') @Watch('onSquarePostPatchTickChange') squarePostPatchTick: number = 0
 
   onReloadSignalChange() {
     this.loadPosts(true)
@@ -24,6 +25,10 @@ export struct MySpaceView {
 
   onPatchTickChange() {
     this.patchPostFromStorage()
+  }
+
+  onSquarePostPatchTickChange() {
+    this.patchSquarePostFromStorage()
   }
 
   private patchPostFromStorage() {
@@ -42,6 +47,48 @@ export struct MySpaceView {
       }
     } catch (e) {
       console.error('[MySpaceView] Patch failed', e)
+    }
+  }
+
+  private patchSquarePostFromStorage() {
+    const raw: string = AppStorage.get<string>('last_updated_square_post') ?? ''
+    if (!raw) return
+    try {
+      // Define a compatible interface for the patch data
+      interface SquarePostPatch {
+        id: number
+        likesCount: number
+        commentsCount: number
+        isLiked: boolean
+        content: string
+        images: MyPostImage[]
+      }
+      const patched = JSON.parse(raw) as SquarePostPatch
+      if (!patched || !patched.id) return
+
+      const index = this.posts.findIndex(p => p.id === patched.id)
+      if (index !== -1) {
+        const oldPost = this.posts[index]
+        const newPost: MyPostItem = {
+          id: oldPost.id,
+          content: patched.content,
+          category: oldPost.category,
+          likes_count: patched.likesCount,
+          comments_count: patched.commentsCount,
+          created_time: oldPost.created_time,
+          username: oldPost.username,
+          avatar_url: oldPost.avatar_url,
+          vip_expire_time: oldPost.vip_expire_time,
+          isLiked: patched.isLiked,
+          images: patched.images ? patched.images.map((img: MyPostImage): MyPostImage => ({ url: img.url, status: img.status } as MyPostImage)) : oldPost.images
+        }
+        
+        const nextPosts = [...this.posts]
+        nextPosts[index] = newPost
+        this.posts = nextPosts
+      }
+    } catch (e) {
+      console.error('[MySpaceView] patchSquarePostFromStorage failed', e)
     }
   }
 

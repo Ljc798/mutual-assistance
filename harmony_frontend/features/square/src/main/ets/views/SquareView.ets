@@ -72,7 +72,6 @@ export struct SquareView {
   private readonly appUser: AppUser = AppStorageV2.connect(AppUser, () => new AppUser())!
   private readonly schoolSelection: AppSelectedSchool = AppStorageV2.connect(AppSelectedSchool, () => new AppSelectedSchool())!
   @StorageLink(SCHOOL_SELECTION_VERSION_KEY) @Watch('onSchoolVersionChange') schoolVersion: number = 0
-  @StorageLink('reload_square_now') @Watch('onReloadSquareNowChange') reloadSquareNow: number = 0
   @StorageLink('last_updated_square_post_tick') @Watch('onSquarePostPatchTickChange') squarePostPatchTick: number = 0
   @StorageLink('my_post_patch_tick') @Watch('onMyPostPatchTickChange') myPostPatchTick: number = 0
   private lastSchoolId: number = 0
@@ -132,22 +131,14 @@ export struct SquareView {
     }
   }
 
-  private onReloadSquareNowChange() {
-    if (!this.hasMounted || !this.isVisible) {
-      return
-    }
-    this.syncSchoolSelection()
-    this.resetPagingState()
-    this.loadPosts(false)
-  }
 
   onPageShow() {
     console.info('[SquareView] onPageShow - Entering Square Page')
     const changed = this.syncSchoolSelection()
     if (changed) {
       this.resetPagingState()
+      this.loadPosts(false)
     }
-    this.loadPosts(false)
   }
 
   private bootstrap() {
@@ -185,13 +176,17 @@ export struct SquareView {
     let patched: SquarePost | undefined = undefined
     try {
       patched = JSON.parse(raw) as SquarePost
-    } catch (_e) {
+    } catch (e) {
+      console.error('[SquareView] patchPostFromStorage parse error:', JSON.stringify(e))
       return
     }
     if (!patched || !patched.id) {
       return
     }
     const targetId: number = patched.id
+    console.info('[SquareView] patchPostFromStorage targetId:', targetId, 'isLiked:', patched.isLiked, 'likesCount:', patched.likesCount)
+
+    // 1. Update raw posts data to keep it in sync
     let changed: boolean = false
     const nextPosts: SquarePost[] = this.posts.map((p: SquarePost) => {
       if (p.id === targetId) {
@@ -200,15 +195,27 @@ export struct SquareView {
       }
       return p
     })
-    if (!changed) {
-      return
+    
+    if (changed) {
+      this.posts = nextPosts
     }
-    this.posts = nextPosts
-    const ms: SquarePostModel[] = []
-    for (let i = 0; i < this.posts.length; i++) {
-      ms.push(new SquarePostModel(this.posts[i]))
+
+    // 2. Update existing view models in place to trigger UI update via @Trace
+    const index = this.postModels.findIndex(m => m.id === targetId)
+    if (index >= 0) {
+      console.info('[SquareView] patchPostFromStorage updating model for id:', targetId)
+      const model = this.postModels[index]
+      model.likesCount = patched.likesCount
+      model.commentsCount = patched.commentsCount
+      model.isLiked = Boolean(patched.isLiked)
+      model.content = patched.content
+      if (patched.images) {
+        model.images = patched.images
+        model.approvedImages = patched.approvedImages || patched.images.filter((img: SquareImageDTO) => img.status === 'pass')
+      }
+    } else {
+      console.warn('[SquareView] patchPostFromStorage model not found for id:', targetId)
     }
-    this.postModels = ms
   }
 
   private patchMyPostFromStorage() {
@@ -1239,8 +1246,12 @@ export struct SquareView {
       }
       if (post.isLiked) {
         await unlikeSquarePost(payload, token)
+        post.isLiked = false
+        post.likesCount = Math.max(0, post.likesCount - 1)
       } else {
         await likeSquarePost(payload, token)
+        post.isLiked = true
+        post.likesCount = post.likesCount + 1
       }
       const nextPosts: SquarePost[] = this.posts.slice()
       for (let i = 0; i < nextPosts.length; i++) {
@@ -1285,8 +1296,39 @@ export struct SquareView {
     }
     try {
       const payload: SquareLikePayload = { user_id: userId, square_id: post.id }
-      if (post.isLiked) { await unlikeSquarePost(payload, token); post.isLiked = false; post.likesCount = Math.max(0, post.likesCount - 1) }
-      else { await likeSquarePost(payload, token); post.isLiked = true; post.likesCount = post.likesCount + 1 }
+      if (post.isLiked) {
+        await unlikeSquarePost(payload, token)
+        post.isLiked = false
+        post.likesCount = Math.max(0, post.likesCount - 1)
+      } else {
+        await likeSquarePost(payload, token)
+        post.isLiked = true
+        post.likesCount = post.likesCount + 1
+      }
+      
+      // Sync to raw posts array so openDetail gets correct state
+      const rawIndex = this.posts.findIndex(p => p.id === post.id)
+      if (rawIndex >= 0) {
+        const rawPost = this.posts[rawIndex]
+        this.posts[rawIndex] = {
+          id: rawPost.id,
+          userId: rawPost.userId,
+          username: rawPost.username,
+          avatarUrl: rawPost.avatarUrl,
+          content: rawPost.content,
+          category: rawPost.category,
+          likesCount: post.likesCount,
+          commentsCount: rawPost.commentsCount,
+          createdTime: rawPost.createdTime,
+          formattedTime: rawPost.formattedTime,
+          isLiked: post.isLiked,
+          isVip: rawPost.isVip,
+          pinned: rawPost.pinned,
+          schoolId: rawPost.schoolId,
+          images: rawPost.images,
+          approvedImages: rawPost.approvedImages
+        }
+      }
     } catch (error) {
       console.error('点赞失败', JSON.stringify(error))
       this.showToast('操作失败，请稍后重试')

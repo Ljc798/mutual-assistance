@@ -399,7 +399,6 @@ export struct SquareDetailView {
       this.detailVM.post = this.rebuildPost(this.detailVM.post!)
       AppStorage.setOrCreate('last_updated_square_post', JSON.stringify(this.detailVM.post))
       AppStorage.setOrCreate('last_updated_square_post_tick', Date.now())
-      AppStorage.setOrCreate('reload_square_now', Date.now())
     } catch (error) {
       promptAction.showToast({ message: '操作失败' })
     }
@@ -496,7 +495,6 @@ export struct SquareDetailView {
         this.detailVM.post = this.rebuildPost(this.detailVM.post)
         AppStorage.setOrCreate('last_updated_square_post', JSON.stringify(this.detailVM.post))
         AppStorage.setOrCreate('last_updated_square_post_tick', Date.now())
-        AppStorage.setOrCreate('reload_square_now', Date.now())
       }
       this.commentInput = ''
       this.clearReply()
