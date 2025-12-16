@@ -73,7 +73,8 @@ export struct SquareView {
   private readonly schoolSelection: AppSelectedSchool = AppStorageV2.connect(AppSelectedSchool, () => new AppSelectedSchool())!
   @StorageLink(SCHOOL_SELECTION_VERSION_KEY) @Watch('onSchoolVersionChange') schoolVersion: number = 0
   @StorageLink('last_updated_square_post_tick') @Watch('onSquarePostPatchTickChange') squarePostPatchTick: number = 0
-  @StorageLink('my_post_patch_tick') @Watch('onMyPostPatchTickChange') myPostPatchTick: number = 0
+  // Conflict with patchPostFromStorage, disable watching my_post_patch_tick in SquareView
+  @StorageLink('my_post_patch_tick') myPostPatchTick: number = 0
   private lastSchoolId: number = 0
   private lastSchoolName: string = '请选择学校'
   private hasMounted: boolean = false
@@ -183,15 +184,36 @@ export struct SquareView {
     if (!patched || !patched.id) {
       return
     }
-    const targetId: number = patched.id
-    console.info('[SquareView] patchPostFromStorage targetId:', targetId, 'isLiked:', patched.isLiked, 'likesCount:', patched.likesCount)
+    const patchData = patched
+    const targetId: number = patchData.id
+    console.info('[SquareView] patchPostFromStorage targetId:', targetId, 'isLiked:', patchData.isLiked, 'likesCount:', patchData.likesCount)
 
     // 1. Update raw posts data to keep it in sync
     let changed: boolean = false
     const nextPosts: SquarePost[] = this.posts.map((p: SquarePost) => {
       if (p.id === targetId) {
         changed = true
-        return patched as SquarePost
+        // Merge patched data into existing post to avoid losing fields like username/avatar
+        // ArkTS doesn't support object spread, so we construct manually
+        const newPost: SquarePost = {
+          id: p.id,
+          userId: p.userId,
+          username: p.username,
+          avatarUrl: p.avatarUrl,
+          content: patchData.content || p.content,
+          category: patchData.category || p.category,
+          likesCount: patchData.likesCount ?? p.likesCount,
+          commentsCount: patchData.commentsCount ?? p.commentsCount,
+          createdTime: p.createdTime,
+          formattedTime: p.formattedTime,
+          isLiked: patchData.isLiked ?? p.isLiked,
+          isVip: p.isVip,
+          pinned: p.pinned,
+          schoolId: p.schoolId,
+          images: patchData.images || p.images,
+          approvedImages: patchData.approvedImages || p.approvedImages
+        }
+        return newPost
       }
       return p
     })
@@ -205,13 +227,14 @@ export struct SquareView {
     if (index >= 0) {
       console.info('[SquareView] patchPostFromStorage updating model for id:', targetId)
       const model = this.postModels[index]
-      model.likesCount = patched.likesCount
-      model.commentsCount = patched.commentsCount
-      model.isLiked = Boolean(patched.isLiked)
-      model.content = patched.content
-      if (patched.images) {
-        model.images = patched.images
-        model.approvedImages = patched.approvedImages || patched.images.filter((img: SquareImageDTO) => img.status === 'pass')
+      model.likesCount = patchData.likesCount
+      model.commentsCount = patchData.commentsCount
+      model.isLiked = Boolean(patchData.isLiked)
+      model.content = patchData.content
+      if (patchData.images) {
+        console.info('[SquareView] patchPostFromStorage updating images:', patchData.images.length)
+        model.images = patchData.images
+        model.approvedImages = patchData.approvedImages || patchData.images.filter((img: SquareImageDTO) => img.status === 'pass')
       }
     } else {
       console.warn('[SquareView] patchPostFromStorage model not found for id:', targetId)
@@ -591,7 +614,7 @@ export struct SquareView {
             .justifyContent(FlexAlign.Center)
             .alignItems(HorizontalAlign.Center)
           }
-        }, (_: SquareImageDTO, index: number) => `${post.id}-${index}`)
+        }, (item: SquareImageDTO, index: number) => `${post.id}-${index}-${item.url}-${item.status}`)
       }
     }
     .scrollable(ScrollDirection.Horizontal)

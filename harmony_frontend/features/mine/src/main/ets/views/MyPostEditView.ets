@@ -1,11 +1,23 @@
+import { PAGE_PATH, AppUser, AppSafeArea, NavBar, uploadBatch, UploadFileItem, UploadExtraFields, UploadResultItem } from 'basic'
 import { HMRouter, HMRouterMgr } from '@hadss/hmrouter'
-import { AppSafeArea, AppUser, NavBar, uploadBatch, UploadFileItem, UploadResultItem, PAGE_PATH } from 'basic'
-import { AppStorageV2 } from '@kit.ArkUI'
-import promptAction from '@ohos.promptAction'
-import picker from '@ohos.file.picker'
-import fs from '@ohos.file.fs'
+import { promptAction } from '@kit.ArkUI'
 import { MyPostItem, MyPostImage, MY_POST_EDIT_DATA_KEY, MyPostEditPayload, MyPostImageUpdatePayload } from '../viewmodels/MySpaceTypes'
+import { picker } from '@kit.CoreFileKit'
+import fs from '@ohos.file.fs'
 import { editPost, updatePostImages } from '../services/MySpaceService'
+import { AppStorageV2 } from '@kit.ArkUI'
+
+// Define interface for Square update patch
+interface SquarePatch {
+  id: number
+  content: string
+  category: string
+  likesCount: number
+  commentsCount: number
+  isLiked: boolean | undefined
+  images: MyPostImage[]
+  approvedImages: MyPostImage[]
+}
 
 @HMRouter({ pageUrl: PAGE_PATH.MY_POST_EDIT_PAGE })
 @Component
@@ -18,7 +30,6 @@ export struct MyPostEditView {
   @State content: string = ''
   @State category: string = ''
   @State images: MyPostImage[] = [] // Display images
-  @State newImageFiles: string[] = [] // Local paths for new images
   @State isSubmitting: boolean = false
 
   aboutToAppear() {
@@ -147,7 +158,7 @@ export struct MyPostEditView {
       return
     }
     this.isSubmitting = true
-    const token = this.appUser.user.token
+    const token: string = this.appUser.user.token
 
     try {
       // 1. Upload new images
@@ -164,11 +175,11 @@ export struct MyPostEditView {
            fs.closeSync(file.fd)
            
            newFiles.push({
-             filename: `img_${Date.now()}.jpg`, // Simplified
-             mime: 'image/jpeg', // Simplified
+             filename: `img_${Date.now()}.jpg`,
+             mime: 'image/jpeg',
              data: new Uint8Array(buf),
-             extra: { type: 'square' }
-           })
+             extra: { type: 'square' } as UploadExtraFields
+           } as UploadFileItem)
         } else {
           finalImages.push(img.url)
         }
@@ -176,9 +187,9 @@ export struct MyPostEditView {
 
       if (newFiles.length > 0) {
         // Fix: Explicitly pass undefined for progress callback to avoid type mismatch if any
-        const uploadRes = await uploadBatch(newFiles, 3, 3, undefined, token)
+        const uploadRes: UploadResultItem[] = await uploadBatch(newFiles, 3, 3, undefined, token)
         // Check results
-        uploadRes.forEach(res => {
+        uploadRes.forEach((res: UploadResultItem) => {
           if (res.success && res.url) {
             finalImages.push(res.url)
           }
@@ -209,6 +220,8 @@ export struct MyPostEditView {
       }
 
       // 4. Update local storage for immediate patch
+      const finalPostImages: MyPostImage[] = finalImages.map((url: string) => ({ url, status: 'pass' } as MyPostImage))
+      
       const updatedPost: MyPostItem = {
         id: this.originalPost!.id,
         content: this.content,
@@ -220,12 +233,26 @@ export struct MyPostEditView {
         avatar_url: this.originalPost!.avatar_url,
         vip_expire_time: this.originalPost!.vip_expire_time,
         isLiked: this.originalPost!.isLiked,
-        images: finalImages.map(url => ({ url, status: 'done' } as MyPostImage))
+        images: finalPostImages
       }
       
+      // Update for MySpace
       AppStorage.setOrCreate('last_updated_my_post', JSON.stringify(updatedPost))
       AppStorage.setOrCreate('my_post_patch_tick', Date.now())
-      AppStorage.setOrCreate('reload_square_now', Date.now()) // Keep for safety
+
+      // Update for SquareView (requires camelCase and 'pass' status)
+      const squarePatch: SquarePatch = {
+        id: this.originalPost!.id,
+        content: this.content,
+        category: this.category,
+        likesCount: this.originalPost!.likes_count,
+        commentsCount: this.originalPost!.comments_count,
+        isLiked: this.originalPost!.isLiked,
+        images: finalPostImages,
+        approvedImages: finalPostImages // Optimistically assume passed since we just uploaded/kept them
+      }
+      AppStorage.setOrCreate('last_updated_square_post', JSON.stringify(squarePatch))
+      AppStorage.setOrCreate('last_updated_square_post_tick', Date.now())
 
       promptAction.showToast({ message: '修改成功' })
       HMRouterMgr.pop()
