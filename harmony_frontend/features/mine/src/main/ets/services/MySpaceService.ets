@@ -1,6 +1,5 @@
 import { HttpClient } from 'basic'
-import { BaseResponse } from '../viewmodels/OrdersTypes'
-import { MyPostListResponse, MyPostQuery } from '../viewmodels/MySpaceTypes'
+import { MyPostListResponse, MyPostQuery, BaseResponse, MyPostEditPayload, MyPostImageUpdatePayload } from '../viewmodels/MySpaceTypes'
 
 interface QueryParam { key: string, value: string }
 
@@ -23,4 +22,16 @@ interface GeneratedTypeLiteralInterface_1 {
 
 export async function deletePost(postId: number, token: string): Promise<BaseResponse> {
   return HttpClient.post<BaseResponse, GeneratedTypeLiteralInterface_1>("/square/delete", { post_id: postId }, { Authorization: `Bearer ${token}` })
+}
+
+export async function editPost(payload: MyPostEditPayload, token: string): Promise<BaseResponse> {
+  return HttpClient.post<BaseResponse, MyPostEditPayload>('/square/edit', payload, {
+    Authorization: `Bearer ${token}`
+  })
+}
+
+export async function updatePostImages(payload: MyPostImageUpdatePayload, token: string): Promise<BaseResponse> {
+  return HttpClient.post<BaseResponse, MyPostImageUpdatePayload>('/square/update-images', payload, {
+    Authorization: `Bearer ${token}`
+  })
 }

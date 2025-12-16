@@ -19,4 +19,5 @@ export class PAGE_PATH {
   static readonly AVATAR_CROP_PAGE: string = "AvatarCropView"
   static readonly USER_PROFILE_PAGE: string = "UserProfileView"
   static readonly EDIT_TASK_PAGE: string = "EditTaskView"
+  static readonly MY_POST_EDIT_PAGE: string = "MyPostEditView"
 }

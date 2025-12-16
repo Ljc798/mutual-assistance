@@ -3,7 +3,7 @@ import { AppStorageV2 } from '@kit.ArkUI'
 import { HMRouter, HMRouterMgr } from '@hadss/hmrouter'
 import { AppSafeArea, AppUser, PAGE_PATH, ProgressLoading, SQUARE_DETAIL_ID_KEY } from 'basic'
 import { ImagePreview } from 'module_imagepreview'
-import { MyPostItem, MyPostImage } from '../viewmodels/MySpaceTypes'
+import { MyPostItem, MyPostImage, MY_POST_EDIT_DATA_KEY } from '../viewmodels/MySpaceTypes'
 import { deletePost, fetchMyPosts } from '../services/MySpaceService'
 
 @HMRouter({ pageUrl: PAGE_PATH.MY_SPACE_PAGE })
@@ -111,7 +111,18 @@ export struct MySpaceView {
                 Text(this.formatTime(post.created_time)).fontSize(12).fontColor($r('[basic].color.text_secondary'))
               }
               Blank()
-              Button('删除').height(32).borderRadius(16).backgroundColor(Color.Red).onClick(async () => { await this.handleDelete(post.id) })
+              Row({ space: 8 }) {
+                Button('编辑')
+                  .height(32)
+                  .borderRadius(16)
+                  .backgroundColor($r('[basic].color.home_primary'))
+                  .onClick(() => this.handleEdit(post))
+                Button('删除')
+                  .height(32)
+                  .borderRadius(16)
+                  .backgroundColor(Color.Red)
+                  .onClick(async () => { await this.handleDelete(post.id) })
+              }
             }
             Text(post.content).fontSize(16).fontColor($r('[basic].color.text_primary')).lineHeight(24)
             if (post.images && post.images.length > 0) {
@@ -197,6 +208,11 @@ export struct MySpaceView {
     if (!userId) { this.posts = []; return }
     const res = await fetchMyPosts({ userId, viewerId: userId, page: 1, pageSize: 10 })
     this.posts = res.success ? res.posts : []
+  }
+
+  private handleEdit(post: MyPostItem) {
+    AppStorage.setOrCreate(MY_POST_EDIT_DATA_KEY, post)
+    HMRouterMgr.push({ pageUrl: PAGE_PATH.MY_POST_EDIT_PAGE })
   }
 
   private handleDelete(postId: number) {

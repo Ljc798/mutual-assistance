@@ -149,13 +149,13 @@ export async function uploadSingle(
   }
 }
 
-async function startWorker(workerId: number, workerCount: number, items: UploadFileItem[], maxRetries: number, progress?: (evt: UploadProgressEvent) => void, results?: UploadResultItem[]): Promise<void> {
+async function startWorker(workerId: number, workerCount: number, items: UploadFileItem[], maxRetries: number, progress?: (evt: UploadProgressEvent) => void, results?: UploadResultItem[], authToken?: string): Promise<void> {
   const out = results!
   for (let idx = workerId; idx < items.length; idx += workerCount) {
     let attempt = 0
     let last: UploadResultItem | undefined
     while (attempt < maxRetries) {
-      const r = await uploadSingle(items[idx], progress, idx)
+      const r = await uploadSingle(items[idx], progress, idx, undefined, authToken)
       if (r.success) { out[idx] = r; last = r; break }
       attempt++
       last = r
@@ -164,12 +164,12 @@ async function startWorker(workerId: number, workerCount: number, items: UploadF
   }
 }
 
-export async function uploadBatch(items: UploadFileItem[], concurrency: number = 3, maxRetries: number = 3, progress?: (evt: UploadProgressEvent) => void): Promise<UploadResultItem[]> {
+export async function uploadBatch(items: UploadFileItem[], concurrency: number = 3, maxRetries: number = 3, progress?: (evt: UploadProgressEvent) => void, authToken?: string): Promise<UploadResultItem[]> {
   const results: UploadResultItem[] = new Array(items.length)
   const workerCount = Math.max(1, Math.min(concurrency, items.length))
   const tasks: Promise<void>[] = []
   for (let i = 0; i < workerCount; i++) {
-    tasks.push(startWorker(i, workerCount, items, maxRetries, progress, results))
+    tasks.push(startWorker(i, workerCount, items, maxRetries, progress, results, authToken))
   }
   await Promise.all(tasks)
   return results

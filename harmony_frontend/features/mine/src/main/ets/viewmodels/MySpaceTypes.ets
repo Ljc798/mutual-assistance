@@ -1,3 +1,5 @@
+export const MY_POST_EDIT_DATA_KEY = 'my_post_edit_data_key'
+
 export interface MyPostImage {
   url: string;
   status: string;
@@ -29,4 +31,20 @@ export interface MyPostQuery {
   viewerId?: number
   page?: number
   pageSize?: number
+}
+
+export interface MyPostEditPayload {
+  post_id: number
+  content: string
+  category: string
+}
+
+export interface MyPostImageUpdatePayload {
+  square_id: number
+  images: string[]
+}
+
+export interface BaseResponse {
+  success: boolean
+  message?: string
 }
