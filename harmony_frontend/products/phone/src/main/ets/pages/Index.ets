@@ -36,9 +36,9 @@ struct Index {
   }
 
   list: TabItem[] = [
-    { text: '首页', normal: $r('app.media.icon_nav_home'), active: $r('app.media.icon_nav_home') },
+    // { text: '首页', normal: $r('app.media.icon_nav_home'), active: $r('app.media.icon_nav_home') },
     { text: '广场', normal: $r('app.media.icon_nav_square'), active: $r('app.media.icon_nav_square') },
-    { text: '发布', normal: $r('app.media.icon_nav_publish'), active: $r('app.media.icon_nav_publish') },
+    // { text: '发布', normal: $r('app.media.icon_nav_publish'), active: $r('app.media.icon_nav_publish') },
     { text: '消息', normal: $r('app.media.icon_nav_message'), active: $r('app.media.icon_nav_message') },
     { text: '我的', normal: $r('app.media.icon_nav_user'), active: $r('app.media.icon_nav_user') },
 
@@ -63,14 +63,21 @@ struct Index {
         Tabs({ barPosition: BarPosition.End }) {
           ForEach(this.list, (item: TabItem, index: number) => {
             TabContent() {
+              // if (index == 0) {
+              //   HomeView({ isVisible: this.isPageShown && this.activeIndex === 0 })
+              // } else if (index == 1) {
+              //   SquareView({ isVisible: this.isPageShown && this.activeIndex === 1 })
+              // } else if (index == 2) {
+              //   PublishView()
+              // } else if (index == 3) {
+              //   MessageView({ isVisible: this.isPageShown && this.activeIndex === 3 })
+              // } else {
+              //   MineView()
+              // }
               if (index == 0) {
-                HomeView({ isVisible: this.isPageShown && this.activeIndex === 0 })
+                SquareView({ isVisible: this.isPageShown && this.activeIndex === 0 })
               } else if (index == 1) {
-                SquareView({ isVisible: this.isPageShown && this.activeIndex === 1 })
-              } else if (index == 2) {
-                PublishView()
-              } else if (index == 3) {
-                MessageView({ isVisible: this.isPageShown && this.activeIndex === 3 })
+                MessageView({ isVisible: this.isPageShown && this.activeIndex === 1 })
               } else {
                 MineView()
               }

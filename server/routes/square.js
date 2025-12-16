@@ -304,7 +304,7 @@ router.post("/update-images", authMiddleware, async (req, res) => {
         images
     } = req.body;
 
-    if (!square_id || !images || images.length === 0) {
+    if (!square_id || !images) {
         return res.status(400).json({
             success: false,
             message: "缺少必要参数"
@@ -312,16 +312,37 @@ router.post("/update-images", authMiddleware, async (req, res) => {
     }
 
     try {
-        // 👇 避免重复：逐条插入，若已存在则跳过
-        for (const url of images) {
+        const [existing] = await db.query(
+            `SELECT id, image_url, audit_status FROM square_images WHERE square_id = ?`,
+            [square_id]
+        );
+
+        const incomingSet = new Set(images);
+        const existingMap = new Map();
+        for (const row of existing) {
+            existingMap.set(row.image_url, row);
+        }
+
+        const toDelete = [];
+        for (const row of existing) {
+            if (!incomingSet.has(row.image_url)) {
+                toDelete.push(row.id);
+            }
+        }
+        if (toDelete.length > 0) {
             await db.query(
-                `INSERT INTO square_images (square_id, image_url, audit_status)
-                 SELECT ?, ?, 'pending'
-                 WHERE NOT EXISTS (
-                   SELECT 1 FROM square_images WHERE image_url = ?
-                 )`,
-                [square_id, url, url]
+                `DELETE FROM square_images WHERE id IN (?)`,
+                [toDelete]
             );
+        }
+
+        for (const url of images) {
+            if (!existingMap.has(url)) {
+                await db.query(
+                    `INSERT INTO square_images (square_id, image_url, audit_status) VALUES (?, ?, 'pending')`,
+                    [square_id, url]
+                );
+            }
         }
 
         res.json({ success: true });

@@ -1,4 +1,4 @@
-interface GeneratedTypeLiteralInterface_1 {
+export interface MyPostImage {
   url: string;
   status: string;
 }
@@ -14,7 +14,7 @@ export interface MyPostItem {
   avatar_url: string
   vip_expire_time?: string
   isLiked?: boolean
-  images?: GeneratedTypeLiteralInterface_1[]
+  images?: MyPostImage[]
 }
 
 export interface MyPostListResponse {

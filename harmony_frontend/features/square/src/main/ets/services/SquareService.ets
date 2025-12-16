@@ -5,6 +5,7 @@ import {
   CheckinStatusResult,
   SquareCreatePayload,
   SquareCreateResponse,
+  SquareEditPayload,
   SquareImageDTO,
   SquareImageUpdatePayload,
   SquareLikePayload,
@@ -124,6 +125,12 @@ export async function createSquarePost(payload: SquareCreatePayload, token: stri
 
 export async function updateSquareImages(payload: SquareImageUpdatePayload, token: string): Promise<BaseResponse> {
   return HttpClient.post<BaseResponse, SquareImageUpdatePayload>('/square/update-images', payload, {
+    Authorization: `Bearer ${token}`
+  })
+}
+
+export async function editSquarePost(payload: SquareEditPayload, token: string): Promise<BaseResponse> {
+  return HttpClient.post<BaseResponse, SquareEditPayload>('/square/edit', payload, {
     Authorization: `Bearer ${token}`
   })
 }

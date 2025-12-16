@@ -114,6 +114,12 @@ export interface SquareCreatePayload {
   school_id: number
 }
 
+export interface SquareEditPayload {
+  post_id: number
+  content: string
+  category: string
+}
+
 export interface SquareCreateResponse {
   success: boolean
   square_id: number

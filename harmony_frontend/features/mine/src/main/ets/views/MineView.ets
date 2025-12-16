@@ -329,12 +329,12 @@ export struct MineView {
   @Builder
   private renderShortcutsCard() {
     Column() {
-      ForEach(this.shortcuts, (item: ActionShortcut, index: number) => {
+      ForEach(this.visibleShortcuts(), (item: ActionShortcut, index: number) => {
         Column() {
           Text(item.title)
             .fontSize(16)
             .fontColor($r('[basic].color.text_primary'))
-          if (index < this.shortcuts.length - 1) {
+          if (index < this.visibleShortcuts().length - 1) {
             Divider()
               .color($r('[basic].color.status_finished'))
               .strokeWidth(0.5)
@@ -355,6 +355,16 @@ export struct MineView {
     .backgroundColor($r('[basic].color.white'))
     .borderRadius(20)
 
+  }
+
+  private visibleShortcuts(): ActionShortcut[] {
+    const list: ActionShortcut[] = []
+    for (const item of this.shortcuts) {
+      if (item.action !== 'orders') {
+        list.push(item)
+      }
+    }
+    return list
   }
 
   @Builder

@@ -1,7 +1,8 @@
 import promptAction from '@ohos.promptAction'
 import { AppStorageV2 } from '@kit.ArkUI'
-import { AppSafeArea, PAGE_PATH, PROFILE_TARGET_ID_KEY, AppUser, USER_LOGIN_TIME_KEY } from 'basic'
+import { AppSafeArea, PAGE_PATH, PROFILE_TARGET_ID_KEY, AppUser, USER_LOGIN_TIME_KEY, ProgressLoading } from 'basic'
 import { SQUARE_DETAIL_ID_KEY } from 'basic'
+import { ImagePreview } from 'module_imagepreview'
 import { HMRouter, HMRouterMgr } from '@hadss/hmrouter'
 import {
   fetchPublicUser,
@@ -35,6 +36,8 @@ export struct UserProfileView {
   @State reportDesc: string = ''
   @State isReporting: boolean = false
   private readonly reportReasons: string[] = ['不当内容', '广告', '侵权', '违法违规', '其他']
+  @State isRefreshing: boolean = false
+  @State refreshText: string = '下拉刷新'
 
   aboutToAppear(): void {
     const id = Number(this.targetUserId ?? 0)
@@ -73,20 +76,39 @@ export struct UserProfileView {
     Stack() {
       Column() {
         this.renderHeader()
-        Scroll(this.scroller) {
-          Column({ space: 12 }) {
-            this.renderProfileCard()
-            this.renderStats()
-            this.renderTabs()
-            if (this.tab === 'posts') {
+        Refresh({
+          refreshing: this.isRefreshing,
+          builder: this.renderRefreshHeader
+        }) {
+          Scroll(this.scroller) {
+            Column({ space: 12 }) {
+              this.renderProfileCard()
               this.renderPosts()
-            } else {
-              this.renderReviews()
             }
+            .padding({ left: 16, right: 16, bottom: 160 })
           }
-          .padding({ left: 16, right: 16, bottom: 160 })
+          .scrollBar(BarState.Off)
         }
-        .scrollBar(BarState.Off)
+        .onStateChange((state: RefreshStatus) => {
+          switch (state) {
+            case RefreshStatus.Inactive:
+              this.refreshText = '下拉刷新'
+              break
+            case RefreshStatus.Drag:
+              this.refreshText = '继续下拉'
+              break
+            case RefreshStatus.OverDrag:
+              this.refreshText = '松手刷新'
+              break
+            case RefreshStatus.Refresh:
+              this.refreshText = '刷新中...'
+              break
+            case RefreshStatus.Done:
+              this.refreshText = '刷新完成'
+              break
+          }
+        })
+        .onRefreshing(() => this.handleRefresh())
       }
       .height('100%')
       .justifyContent(FlexAlign.Start)
@@ -95,6 +117,22 @@ export struct UserProfileView {
     .width('100%')
     .height('100%')
     .backgroundColor($r('[basic].color.page_background'))
+  }
+
+  @Builder
+  private renderRefreshHeader() {
+    Row({ space: 10 }) {
+      if (this.isRefreshing) {
+        ProgressLoading({ pWidth: 18, strokeWidth: 2, loading: this.isRefreshing })
+      }
+      Text(this.refreshText)
+        .fontSize(13)
+        .fontColor($r('[basic].color.text_secondary'))
+    }
+    .width('100%')
+    .height(60)
+    .justifyContent(FlexAlign.Center)
+    .backgroundColor(Color.Transparent)
   }
 
   @Builder
@@ -289,17 +327,7 @@ export struct UserProfileView {
         .textAlign(TextAlign.Start)
         .width('100%')
       if (p.images && p.images.length > 0) {
-        Row({ space: 10 }) {
-          ForEach(p.images, (img: SquareImageDTO, index: number) => {
-            Image(this.getOrientedUrl(img.url) as ResourceStr)
-              .width(160)
-              .height(120)
-              .borderRadius(16)
-              .objectFit(ImageFit.Cover)
-          }, (_: SquareImageDTO, index: number) => `${p.id}-${index}`)
-        }
-        .justifyContent(FlexAlign.Start)
-        .width('100%')
+        this.renderPostImages(p)
       }
 
       Row({ space: 12 }) {
@@ -320,6 +348,40 @@ export struct UserProfileView {
     .borderRadius(18)
     .backgroundColor($r('[basic].color.white'))
     .onClick(() => this.openPostDetail(p.id))
+  }
+
+  @Builder
+  private renderPostImages(p: UserPostModel) {
+    Scroll() {
+      Row({ space: 10 }) {
+        ForEach(p.images, (img: SquareImageDTO, index: number) => {
+          if (img.status === 'pass') {
+            Image(this.getOrientedUrl(img.url) as ResourceStr)
+              .width(160)
+              .height(120)
+              .borderRadius(16)
+              .objectFit(ImageFit.Cover)
+              .onClick(() => this.openPreviewPage(
+                p.images.filter((it: SquareImageDTO) => it.status === 'pass').map((it: SquareImageDTO) => it.url),
+                index
+              ))
+          } else {
+            Column() {
+              Text('图片审核中')
+                .fontSize(12)
+                .fontColor($r('[basic].color.text_secondary'))
+            }
+            .width(160)
+            .height(120)
+            .borderRadius(16)
+            .backgroundColor($r('[basic].color.search_box_bg'))
+            .justifyContent(FlexAlign.Center)
+            .alignItems(HorizontalAlign.Center)
+          }
+        }, (_: SquareImageDTO, index: number) => `${p.id}-${index}`)
+      }
+    }
+    .scrollable(ScrollDirection.Horizontal)
   }
 
   @Builder
@@ -415,6 +477,15 @@ export struct UserProfileView {
     }
     const hasQuery: boolean = u.indexOf('?') >= 0
     return hasQuery ? `${u}&imageMogr2/auto-orient` : `${u}?imageMogr2/auto-orient`
+  }
+
+  private openPreviewPage(urls: string[], index: number): void {
+    const oriented: string[] = urls.map((u: string) => this.getOrientedUrl(u))
+    ImagePreview.show(oriented, {
+      startIndex: index,
+      showIndex: true,
+      loop: false
+    })
   }
 
   private calcWeighted(rep: ReputationItem): number {
@@ -575,6 +646,23 @@ export struct UserProfileView {
     }
     AppStorage.setOrCreate(SQUARE_DETAIL_ID_KEY, postId)
     HMRouterMgr.push({ pageUrl: PAGE_PATH.SQUARE_DETAIL_PAGE })
+  }
+
+  private async handleRefresh() {
+    if (this.isRefreshing) {
+      return
+    }
+    const id = Number(this.targetUserId ?? 0)
+    if (!id || id <= 0) {
+      this.isRefreshing = false
+      return
+    }
+    this.isRefreshing = true
+    try {
+      await this.loadAll(id)
+    } finally {
+      this.isRefreshing = false
+    }
   }
 
 }

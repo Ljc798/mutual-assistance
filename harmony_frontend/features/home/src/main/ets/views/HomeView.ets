@@ -423,7 +423,7 @@ export struct HomeView {
       wrap: FlexWrap.Wrap,
       justifyContent: FlexAlign.SpaceBetween,
     }) {
-      ForEach(this.categories, (item: HomeCategoryItem) => {
+      ForEach(this.visibleCategories(), (item: HomeCategoryItem) => {
         Column({ space: 8 }) {
           Image(item.icon)
             .width(48)
@@ -450,6 +450,16 @@ export struct HomeView {
         .accessibilityDescription(`${item.label}分类`)
       }, (item: HomeCategoryItem) => item.label)
     }
+  }
+
+  private visibleCategories(): HomeCategoryItem[] {
+    const list: HomeCategoryItem[] = []
+    for (const item of this.categories) {
+      if (item.action !== 'orders') {
+        list.push(item)
+      }
+    }
+    return list
   }
 
   @Builder
