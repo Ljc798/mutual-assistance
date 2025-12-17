@@ -22,7 +22,7 @@ Page({
 
     loadCourseDetails() {
         wx.request({
-            url: `${BASE_URL}/course-detail`,
+            url: `${BASE_URL}/timetable/course-detail`,
             method: "GET",
             data: {
                 user_id: this.data.userId,
@@ -33,9 +33,16 @@ Page({
                     const course = res.data.data;
                     const config = getApp().globalData.timetableConfig;
 
-                    const { startTime, endTime } = getCourseTime(course.class_period, config);
-                    course.time_start = startTime;
-                    course.time_end = endTime;
+                    // 优先使用数据库中的时间，如果没有才根据节次计算
+                    if (!course.time_start || !course.time_end || course.time_start === 'null' || course.time_end === 'null') {
+                        const { startTime, endTime } = getCourseTime(course.class_period, config);
+                        course.time_start = startTime;
+                        course.time_end = endTime;
+                    } else {
+                        // 格式化一下时间，去掉秒
+                        if (course.time_start && course.time_start.length > 5) course.time_start = course.time_start.slice(0, 5);
+                        if (course.time_end && course.time_end.length > 5) course.time_end = course.time_end.slice(0, 5);
+                    }
 
                     const rawWeeks = (course.weeks || "")
                         .split(",")

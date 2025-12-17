@@ -220,6 +220,42 @@ router.post("/update-course", async (req, res) => {
     }
 });
 
+router.post("/delete-course", async (req, res) => {
+    const { user_id, course_id } = req.body;
+
+    if (!user_id || !course_id) {
+        return res.status(400).json({
+            success: false,
+            message: "缺少必要参数"
+        });
+    }
+
+    try {
+        const [result] = await db.query(
+            "DELETE FROM timetable_theory WHERE id = ? AND user_id = ?",
+            [course_id, user_id]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "课程不存在或无权删除"
+            });
+        }
+
+        res.json({
+            success: true,
+            message: "删除成功"
+        });
+    } catch (error) {
+        console.error("❌ 删除课程失败:", error);
+        res.status(500).json({
+            success: false,
+            message: "服务器错误"
+        });
+    }
+});
+
 router.get("/weekly", async (req, res) => {
     const {
         user_id,

@@ -249,12 +249,23 @@ Page({
                             if (!dayRes.data?.success) return resolve([]);
                             const list = (dayRes.data.data || [])
                                 .map((c: any) => {
-                                    const st = new Date(c.time_start);
+                                    // Handle time_start which might be "HH:mm:ss" or "HH:mm"
+                                    let timeStr = c.time_start || "00:00";
+                                    // Take first 5 chars for HH:mm
+                                    if (timeStr.length > 5) timeStr = timeStr.slice(0, 5);
+                                    
+                                    // Construct Date object for today with this time
+                                    const st = new Date();
+                                    const [h, m] = timeStr.split(':').map(Number);
+                                    if (!isNaN(h) && !isNaN(m)) {
+                                        st.setHours(h, m, 0, 0);
+                                    }
+
                                     return {
                                         id: `course_${c.id}`,
                                         type: 'course' as TodoType,
                                         title: c.course_name,
-                                        timeText: `${fmtHM(st)} 开课 · ${c.location || ''}`,
+                                        timeText: `${timeStr} 开课 · ${c.location || ''}`,
                                         highlight: st.getTime() - now.getTime() < 3600 * 1000 && st.getTime() > now.getTime(),
                                         link: `/pages/course/course?course_id=${c.id}`
                                     };
