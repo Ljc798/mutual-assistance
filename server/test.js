@@ -6,7 +6,7 @@ function generatePasswordHash(plainPassword) {
   return hash;
 }
 
-const plainPassword = "12345678";
+const plainPassword = "";
 const hash = generatePasswordHash(plainPassword);
 
 console.log("🔐 原密码:", plainPassword);

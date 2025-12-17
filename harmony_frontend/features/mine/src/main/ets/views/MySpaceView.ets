@@ -307,8 +307,12 @@ export struct MySpaceView {
         const r = await deletePost(postId, token)
         if (!r.success) { this.showToast(r.message ?? '删除失败'); return }
         this.showToast('已删除')
-        await this.loadPosts(false)
-        AppStorage.setOrCreate('reload_square_now', Date.now())
+        
+        // 更新本地列表
+        this.posts = this.posts.filter(p => p.id !== postId)
+        
+        // 触发全局删除信号，让 SquareView / UserProfileView 移除该帖子
+        AppStorage.setOrCreate('last_deleted_post_id', postId)
       }
     })
   }

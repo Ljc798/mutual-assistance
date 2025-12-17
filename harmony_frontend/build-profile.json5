@@ -6,9 +6,9 @@
         "type": "HarmonyOS",
         "material": {
           "storeFile": "/Users/alex/Downloads/harmony_key/release/release.p12",
-          "storePassword": "0000001A76C59D54F9F0FF9E8177468E4E87BA6B0DE01E2F32FE0789108EF01116FB8594E4BCA5671EE2",
+          "storePassword": "0000001AA3EB8CDFC7899CD3E8F6120F99D14E87C472E860F99BD92DC667EF5F493AFEC73B64FAFD9597",
           "keyAlias": "release",
-          "keyPassword": "0000001AC850136BE72E5564202D81A62D24B316DFC329E7EAABDF929FD47A1DD2BAED336459BB17EFCE",
+          "keyPassword": "0000001A29D762BDF1AC0A621D1158BD535F23368AB883E54FC874C0BDEBD29436357C0211B3AEF35671",
           "signAlg": "SHA256withECDSA",
           "profile": "/Users/alex/Downloads/harmony_key/release/releaseRelease.p7b",
           "certpath": "/Users/alex/Downloads/harmony_key/release/release.cer"

@@ -73,8 +73,8 @@ export struct SquareView {
   private readonly schoolSelection: AppSelectedSchool = AppStorageV2.connect(AppSelectedSchool, () => new AppSelectedSchool())!
   @StorageLink(SCHOOL_SELECTION_VERSION_KEY) @Watch('onSchoolVersionChange') schoolVersion: number = 0
   @StorageLink('last_updated_square_post_tick') @Watch('onSquarePostPatchTickChange') squarePostPatchTick: number = 0
-  // Conflict with patchPostFromStorage, disable watching my_post_patch_tick in SquareView
-  @StorageLink('my_post_patch_tick') myPostPatchTick: number = 0
+  @StorageLink('last_updated_my_post_tick') @Watch('onMyPostPatchTickChange') myPostPatchTick: number = 0
+  @StorageLink('last_deleted_post_id') @Watch('onPostDeletedChange') deletedPostId: number = 0
   private lastSchoolId: number = 0
   private lastSchoolName: string = '请选择学校'
   private hasMounted: boolean = false
@@ -110,6 +110,26 @@ export struct SquareView {
   onVisibleChange() {
     if (this.isVisible) {
       this.onPageShow()
+    }
+  }
+
+  onPostDeletedChange() {
+    if (!this.deletedPostId || this.deletedPostId <= 0) {
+      return
+    }
+    const id = this.deletedPostId
+    console.info('[SquareView] Removing deleted post:', id)
+    
+    // 1. Remove from raw data
+    this.posts = this.posts.filter(p => p.id !== id)
+    
+    // 2. Remove from view models
+    const idx = this.postModels.findIndex(m => m.id === id)
+    if (idx >= 0) {
+      // 必须重新赋值数组以触发列表更新
+      const newModels = [...this.postModels]
+      newModels.splice(idx, 1)
+      this.postModels = newModels
     }
   }
 
@@ -772,6 +792,7 @@ export struct SquareView {
           }, (category: SquareCategory) => `publish-${category}`)
         }
       }
+      .scrollBar(BarState.Off)
       .scrollable(ScrollDirection.Horizontal)
     }
   }
