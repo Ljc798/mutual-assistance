@@ -22,7 +22,7 @@ Page({
 
     loadCourseDetails() {
         wx.request({
-            url: `${BASE_URL}/course-detail`,
+            url: `${BASE_URL}/timetable/course-detail`,
             method: "GET",
             data: {
                 user_id: this.data.userId,
