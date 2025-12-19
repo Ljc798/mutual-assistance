@@ -1,0 +1,17 @@
+{
+  "module": {
+    "name": "basic",
+    "type": "shared",
+    "description": "$string:shared_desc",
+    "deviceTypes": [
+      "phone",
+      "tablet",
+      "2in1",
+      "car",
+      "wearable",
+      "tv"
+    ],
+    "deliveryWithInstall": true,
+    "pages": "$profile:main_pages"
+  }
+}

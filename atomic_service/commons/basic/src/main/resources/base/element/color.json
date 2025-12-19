@@ -1,0 +1,184 @@
+{
+  "color": [
+    {
+      "name": "black",
+      "value": "#191919"
+    },
+    {
+      "name": "white",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "text",
+      "value": "#434343"
+    },
+    {
+      "name": "gray",
+      "value": "#A6A3AD"
+    },
+    {
+      "name": "red",
+      "value": "#FF2737"
+    },
+    {
+      "name": "home_header_bg",
+      "value": "#FF416C"
+    },
+    {
+      "name": "text_primary",
+      "value": "#222222"
+    },
+    {
+      "name": "text_on_light",
+      "value": "#222222"
+    },
+    {
+      "name": "text_secondary",
+      "value": "#666666"
+    },
+    {
+      "name": "category_text",
+      "value": "#333333"
+    },
+    {
+      "name": "my_linear_begin",
+      "value": "#FD3F8F"
+    },
+    {
+      "name": "my_linear_end",
+      "value": "#FF773C"
+    },
+    {
+      "name": "vip_linear_begin",
+      "value": "#FFF4E6"
+    },
+    {
+      "name": "vip_linear_end",
+      "value": "#FFE0B2"
+    },
+    {
+      "name": "vip_label",
+      "value": "#B8860B"
+    },
+    {
+      "name": "vip_expire",
+      "value": "#8D6E63"
+    },
+    {
+      "name": "vip_renew_btn",
+      "value": "#F6B100"
+    },
+    {
+      "name": "yellow",
+      "value": "#F2E7DC"
+    },
+    {
+      "name": "under",
+      "value": "#F5F4F9"
+    },
+    {
+      "name": "page_background",
+      "value": "#F5F5F5"
+    },
+    {
+      "name": "search_box_bg",
+      "value": "#F8F8F8"
+    },
+    {
+      "name": "border",
+      "value": "#e4e4e4"
+    },
+    {
+      "name": "filter_border",
+      "value": "#FFD1DC"
+    },
+    {
+      "name": "filter_active_bg",
+      "value": "#FF6B8B"
+    },
+    {
+      "name": "status_pending",
+      "value": "#FFCC00"
+    },
+    {
+      "name": "status_ongoing",
+      "value": "#4CAF50"
+    },
+    {
+      "name": "status_finished",
+      "value": "#999999"
+    },
+    {
+      "name": "price_fixed",
+      "value": "#FA541C"
+    },
+    {
+      "name": "price_processing",
+      "value": "#FA8C16"
+    },
+    {
+      "name": "price_bidding",
+      "value": "#D46B08"
+    },
+    {
+      "name": "price_deal",
+      "value": "#1890FF"
+    },
+    {
+      "name": "price_done",
+      "value": "#52C41A"
+    },
+    {
+      "name": "category_active_overlay",
+      "value": "#1AFF416C"
+    },
+    {
+      "name": "shadow_soft",
+      "value": "#1A000000"
+    },
+    {
+      "name": "shadow_card",
+      "value": "#12000000"
+    },
+    {
+      "name": "home_page_bg",
+      "value": "#F7F8FA"
+    },
+    {
+      "name": "home_primary",
+      "value": "#FF6B8B"
+    },
+    {
+      "name": "home_accent",
+      "value": "#FF416C"
+    },
+    {
+      "name": "home_text_dark",
+      "value": "#333333"
+    },
+    {
+      "name": "home_text_light",
+      "value": "#666666"
+    },
+    {
+      "name": "home_border",
+      "value": "#F2F2F2"
+    },
+    {
+      "name": "home_card_shadow",
+      "value": "#14000000"
+    },
+    {
+      "name": "home_text_gray",
+      "value": "#8C8C8C"
+    },
+    {
+      "name": "home_price",
+      "value": "#39B54A"
+    },
+    {
+      "name": "home_category_bg",
+      "value": "#FFF0F3"
+    }
+  ]
+}

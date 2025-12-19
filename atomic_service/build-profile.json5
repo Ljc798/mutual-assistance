@@ -1,0 +1,92 @@
+{
+  "app": {
+    "signingConfigs": [
+      {
+        "name": "default",
+        "type": "HarmonyOS",
+        "material": {
+          "storeFile": "/Users/alex/Downloads/harmony_key/mutual_atomic_pre/mutual_atomic_pre.p12",
+          "storePassword": "0000001C2791CC812FE5FBFA300DAB6E9D73367A8E8B64906653648241FA1891281124271784FA27705A47DE",
+          "keyAlias": "mutual_atomic_pre",
+          "keyPassword": "0000001C0828EF8E53DA56B6D994F636CD6B630997DD1058B1DF312F12E37D1FDA1BFF383D0AC112C6186954",
+          "signAlg": "SHA256withECDSA",
+          "profile": "/Users/alex/Downloads/harmony_key/mutual_atomic_pre/mutual_atomic_preDebug.p7b",
+          "certpath": "/Users/alex/Downloads/harmony_key/mutual_atomic_pre/mutual_atomic_pre.cer"
+        }
+      }
+    ],
+    "products": [
+      {
+        "name": "default",
+        "signingConfig": "default",
+        "targetSdkVersion": "6.0.0(20)",
+        "compatibleSdkVersion": "6.0.0(20)",
+        "runtimeOS": "HarmonyOS",
+        "buildOption": {
+          "strictMode": {
+            "caseSensitiveCheck": true,
+            "useNormalizedOHMUrl": true
+          }
+        }
+      }
+    ],
+    "buildModeSet": [
+      {
+        "name": "debug",
+      },
+      {
+        "name": "release"
+      }
+    ]
+  },
+  "modules": [
+    {
+      "name": "phone",
+      "srcPath": "./products/phone",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "square",
+      "srcPath": "./features/square",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "mine",
+      "srcPath": "./features/mine",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "basic",
+      "srcPath": "./commons/basic",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    }
+  ]
+}
