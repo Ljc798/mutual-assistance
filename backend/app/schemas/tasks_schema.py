@@ -14,9 +14,9 @@ class TaskOut(BaseModel):
     title: str  # 任务标题
     offer: float  # 报酬
     detail: str  # 任务详情
-    takeaway_code: str  # 取件码
-    takeaway_tel: Optional[int]  # 手机尾号
-    takeaway_name: str  # 外卖名称
+    takeaway_code: Optional[str] = None  # 取件码
+    takeaway_tel: Optional[str] = None  # 手机尾号
+    takeaway_name: Optional[str] = None  # 外卖名称
 
     class Config:
         from_attributes = True
